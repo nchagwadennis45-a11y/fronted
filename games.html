@@ -1,3 +1,5 @@
+[file name]: games.html
+[file content begin]
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
@@ -308,9 +310,7 @@
                             <div class="font-semibold text-white" id="userCoins">0 coins</div>
                             <div class="text-slate-400 text-sm" id="userLevel">Level 1</div>
                         </div>
-                        <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                            <i class="fas fa-user text-white"></i>
-                        </div>
+                        <img id="userAvatar" class="w-10 h-10 rounded-full border-2 border-slate-600" alt="User Avatar">
                     </div>
                 </div>
             </div>
@@ -644,51 +644,17 @@
             apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
             authDomain: "uniconnect-ee95c.firebaseapp.com",
             projectId: "uniconnect-ee95c",
-            storageBucket: "uniconnect-ee95c.appspot.com",
+            storageBucket: "uniconnect-ee95c.firebasestorage.app",
             messagingSenderId: "1003264444309",
             appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
         };
 
+        // Cloudinary configuration
+        const cloudinaryCloudName = 'your-cloudinary-name';
+
         // Firebase services
         let auth;
         let db;
-
-        // Initialize Firebase with error handling
-        function initializeFirebase() {
-            try {
-                console.log("🔄 Initializing Firebase...");
-                
-                // Check if Firebase is available
-                if (typeof firebase === 'undefined') {
-                    throw new Error('Firebase SDK not loaded');
-                }
-
-                // Initialize Firebase
-                firebase.initializeApp(firebaseConfig);
-                
-                // Get Firebase services
-                auth = firebase.auth();
-                db = firebase.firestore();
-                
-                console.log("✅ Firebase initialized successfully!");
-                console.log("🔑 Auth service:", auth ? "Available" : "Not available");
-                console.log("🗄️ Firestore service:", db ? "Available" : "Not available");
-                
-                // Update debug panel
-                document.getElementById('firebaseStatus').textContent = 'Connected ✅';
-                document.getElementById('firebaseStatus').style.color = '#10b981';
-                
-                showToast('Firebase connected successfully!', 'success');
-                
-                return true;
-            } catch (error) {
-                console.error("❌ Firebase initialization failed:", error);
-                document.getElementById('firebaseStatus').textContent = 'Failed ❌';
-                document.getElementById('firebaseStatus').style.color = '#ef4444';
-                showToast('Firebase connection failed: ' + error.message, 'error');
-                return false;
-            }
-        }
 
         // Games data
         const freeGames = [
@@ -789,16 +755,6 @@
                             "HTML"
                         ],
                         correct: 2
-                    },
-                    {
-                        question: "What does HTML stand for?",
-                        options: [
-                            "Hyper Text Markup Language",
-                            "High Tech Modern Language",
-                            "Hyper Transfer Markup Language",
-                            "Home Tool Markup Language"
-                        ],
-                        correct: 0
                     }
                 ]
             },
@@ -817,72 +773,6 @@
                             "Ag"
                         ],
                         correct: 2
-                    },
-                    {
-                        question: "How many bones are in the human body?",
-                        options: [
-                            "196",
-                            "206",
-                            "216", 
-                            "226"
-                        ],
-                        correct: 1
-                    }
-                ]
-            },
-            {
-                id: "history",
-                name: "History & Geography",
-                icon: "fa-landmark",
-                color: "text-yellow-400",
-                questions: [
-                    {
-                        question: "Which year did World War II end?",
-                        options: [
-                            "1944",
-                            "1945", 
-                            "1946",
-                            "1947"
-                        ],
-                        correct: 1
-                    },
-                    {
-                        question: "What is the capital of Australia?",
-                        options: [
-                            "Sydney",
-                            "Melbourne",
-                            "Canberra", 
-                            "Perth"
-                        ],
-                        correct: 2
-                    }
-                ]
-            },
-            {
-                id: "entertainment",
-                name: "Entertainment & Movies",
-                icon: "fa-film",
-                color: "text-purple-400",
-                questions: [
-                    {
-                        question: "Who directed the movie 'Inception'?",
-                        options: [
-                            "Steven Spielberg",
-                            "Christopher Nolan", 
-                            "James Cameron",
-                            "Quentin Tarantino"
-                        ],
-                        correct: 1
-                    },
-                    {
-                        question: "Which actor played Iron Man in the MCU?",
-                        options: [
-                            "Chris Evans",
-                            "Robert Downey Jr.", 
-                            "Chris Hemsworth",
-                            "Mark Ruffalo"
-                        ],
-                        correct: 1
                     }
                 ]
             }
@@ -896,6 +786,7 @@
             gamesPlayed: 0,
             displayName: "Guest",
             isPremium: false,
+            profilePicture: null,
             gameProgress: {
                 chess: { level: 1, xp: 0 },
                 wordpuzzle: { level: 1, xp: 0 },
@@ -903,9 +794,6 @@
                 quiz: { level: 1, xp: 0 }
             }
         };
-
-        // Payment state
-        let selectedPaymentMethod = null;
 
         // Chess Game Variables
         let chessGame = {
@@ -926,11 +814,7 @@
             currentLevel: 1,
             wordList: [
                 'APPLE', 'BRAIN', 'CHESS', 'DREAM', 'EARTH', 'FLAME', 'GRAPE', 'HOUSE',
-                'IMAGE', 'JOKER', 'KNIFE', 'LIGHT', 'MAGIC', 'NIGHT', 'OCEAN', 'PIANO',
-                'QUEEN', 'RIVER', 'STONE', 'TIGER', 'UNITY', 'VOICE', 'WATER', 'YOUTH',
-                'ZEBRA', 'ALPHA', 'BETA', 'GAMMA', 'DELTA', 'OMEGA', 'CRYPT', 'QUANT',
-                'ZEPHYR', 'JUMBO', 'VORTEX', 'PYTHON', 'JAVASCRIPT', 'REACT', 'NODEJS',
-                'MONGODB', 'EXPRESS', 'TYPESCRIPT', 'GRAPHQL', 'DOCKER', 'KUBERNETES'
+                'IMAGE', 'JOKER', 'KNIFE', 'LIGHT', 'MAGIC', 'NIGHT', 'OCEAN', 'PIANO'
             ]
         };
 
@@ -954,6 +838,9 @@
             selectedCategory: null
         };
 
+        // Payment state
+        let selectedPaymentMethod = null;
+
         // Level progression system
         const LEVEL_XP_REQUIREMENTS = {
             1: 100, 2: 250, 3: 500, 4: 1000, 5: 2000,
@@ -962,25 +849,25 @@
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("🚀 Starting application initialization...");
             initializeApp();
         });
 
         async function initializeApp() {
-            // Initialize Firebase first
-            const firebaseInitialized = initializeFirebase();
-            
-            if (!firebaseInitialized) {
-                // If Firebase fails, load games with demo data
-                console.log("⚠️ Using demo mode (Firebase not available)");
-                loadGames();
-                updateUI();
-                return;
+            // Initialize Firebase
+            try {
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                
+                document.getElementById('firebaseStatus').textContent = 'Connected ✅';
+                document.getElementById('firebaseStatus').style.color = '#10b981';
+            } catch (error) {
+                document.getElementById('firebaseStatus').textContent = 'Failed ❌';
+                document.getElementById('firebaseStatus').style.color = '#ef4444';
             }
 
             // Set up auth state listener
             auth.onAuthStateChanged(async (user) => {
-                console.log("🔐 Auth state changed:", user ? `User: ${user.email}` : "No user");
                 currentUser = user;
                 
                 if (user) {
@@ -997,6 +884,7 @@
                         gamesPlayed: 0, 
                         displayName: "Guest", 
                         isPremium: false,
+                        profilePicture: null,
                         gameProgress: {
                             chess: { level: 1, xp: 0 },
                             wordpuzzle: { level: 1, xp: 0 },
@@ -1013,7 +901,6 @@
 
         async function loadUserData(userId) {
             try {
-                console.log("📥 Loading user data for:", userId);
                 const userDoc = await db.collection('users').doc(userId).get();
                 
                 if (userDoc.exists) {
@@ -1024,6 +911,7 @@
                         gamesPlayed: data.gamesPlayed || 0,
                         displayName: data.displayName || "Player",
                         isPremium: data.isPremium || false,
+                        profilePicture: data.profilePicture || null,
                         gameProgress: data.gameProgress || {
                             chess: { level: 1, xp: 0 },
                             wordpuzzle: { level: 1, xp: 0 },
@@ -1031,16 +919,15 @@
                             quiz: { level: 1, xp: 0 }
                         }
                     };
-                    console.log("✅ User data loaded:", userData);
                 } else {
                     // Create new user document
-                    console.log("👤 Creating new user document...");
                     userData = {
                         coins: 100,
                         level: 1,
                         gamesPlayed: 0,
                         displayName: "New Player",
                         isPremium: false,
+                        profilePicture: null,
                         gameProgress: {
                             chess: { level: 1, xp: 0 },
                             wordpuzzle: { level: 1, xp: 0 },
@@ -1050,19 +937,18 @@
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     };
                     await db.collection('users').doc(userId).set(userData);
-                    console.log("✅ New user document created");
                 }
                 
                 updateUI();
             } catch (error) {
-                console.error("❌ Error loading user data:", error);
-                // Fallback to demo data
+                console.error("Error loading user data:", error);
                 userData = { 
                     coins: 500, 
                     level: 1, 
                     gamesPlayed: 0, 
                     displayName: "Guest", 
                     isPremium: false,
+                    profilePicture: null,
                     gameProgress: {
                         chess: { level: 1, xp: 0 },
                         wordpuzzle: { level: 1, xp: 0 },
@@ -1084,6 +970,9 @@
             document.getElementById('nextLevel').textContent = userData.level + 1;
             document.getElementById('userCoinBalance').textContent = userData.coins.toLocaleString();
             
+            // Update user avatar
+            updateUserAvatar();
+            
             // Update level progress
             const currentLevel = userData.level;
             const currentXP = userData.gameProgress ? Object.values(userData.gameProgress).reduce((total, game) => total + game.xp, 0) : 0;
@@ -1092,6 +981,15 @@
             const progress = ((currentXP - xpForCurrentLevel) / (xpForNextLevel - xpForCurrentLevel)) * 100;
             
             document.getElementById('levelProgress').style.width = `${Math.max(0, Math.min(100, progress))}%`;
+        }
+
+        function updateUserAvatar() {
+            const avatarElement = document.getElementById('userAvatar');
+            if (userData.profilePicture) {
+                avatarElement.src = `https://res.cloudinary.com/${cloudinaryCloudName}/image/upload/w_100,h_100,c_fill/${userData.profilePicture}`;
+            } else {
+                avatarElement.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.displayName)}&background=3b82f6&color=fff`;
+            }
         }
 
         function loadGames() {
@@ -1157,9 +1055,6 @@
         }
 
         function startGame(gameId) {
-            console.log("🎮 Starting game:", gameId);
-            
-            // Check if premium game and user doesn't have premium
             const game = [...freeGames, ...premiumGames].find(g => g.id === gameId);
             if (game.premium && !userData.isPremium) {
                 showToast('This is a premium game. Upgrade to play!', 'info');
@@ -1196,54 +1091,15 @@
             }
         }
 
-        // ==================== QUIZ CATEGORY SELECTION ====================
-        function showQuizCategorySelection() {
-            const categoriesContainer = document.getElementById('quizCategories');
-            categoriesContainer.innerHTML = quizCategories.map(category => `
-                <div class="quiz-option flex items-center p-4" onclick="selectQuizCategory('${category.id}')">
-                    <i class="fas ${category.icon} ${category.color} text-xl mr-3"></i>
-                    <span class="text-white font-medium">${category.name}</span>
-                </div>
-            `).join('');
-            
-            openGameModal('quizCategoryModal');
-        }
-
-        function selectQuizCategory(categoryId) {
-            quizGame.selectedCategory = categoryId;
-            const category = quizCategories.find(c => c.id === categoryId);
-            
-            // Remove previous selections
-            document.querySelectorAll('.quiz-option').forEach(opt => {
-                opt.classList.remove('correct');
-            });
-            
-            // Highlight selected category
-            event.currentTarget.classList.add('correct');
-        }
-
-        function startSelectedQuiz() {
-            if (!quizGame.selectedCategory) {
-                showToast('Please select a quiz category', 'error');
-                return;
-            }
-            
-            closeGameModal('quizCategoryModal');
-            startQuizGame();
-        }
-
         // ==================== CHESS GAME ====================
         function startChessGame() {
             openGameModal('chessGameModal');
             document.getElementById('chessLevel').textContent = chessGame.currentLevel;
             initializeChessBoard();
             renderChessBoard();
-            
-            console.log("♟️ Chess game started - Level:", chessGame.currentLevel);
         }
 
         function initializeChessBoard() {
-            // Initialize empty board
             chessGame.board = Array(8).fill().map(() => Array(8).fill(null));
             
             // Set up pawns
@@ -1282,12 +1138,10 @@
                         square.style.cursor = 'pointer';
                     }
                     
-                    // Check if this square is a valid move
                     if (chessGame.validMoves.some(move => move.row === row && move.col === col)) {
                         square.classList.add('valid-move');
                     }
                     
-                    // Check if this square is selected
                     if (chessGame.selectedPiece && chessGame.selectedPiece.row === row && chessGame.selectedPiece.col === col) {
                         square.classList.add('selected');
                     }
@@ -1313,32 +1167,27 @@
         function handleChessClick(row, col) {
             const piece = chessGame.board[row][col];
             
-            // If a piece is already selected
             if (chessGame.selectedPiece) {
                 const selectedRow = chessGame.selectedPiece.row;
                 const selectedCol = chessGame.selectedPiece.col;
                 
-                // Check if clicking on a valid move
                 const isValidMove = chessGame.validMoves.some(move => move.row === row && move.col === col);
                 
                 if (isValidMove) {
-                    // Move the piece
                     chessGame.board[row][col] = chessGame.board[selectedRow][selectedCol];
                     chessGame.board[selectedRow][selectedCol] = null;
                     
-                    // Switch player
                     chessGame.currentPlayer = chessGame.currentPlayer === 'white' ? 'black' : 'white';
                     updateChessStatus();
+                    awardCoins(10);
                 }
                 
-                // Reset selection
                 chessGame.selectedPiece = null;
                 chessGame.validMoves = [];
                 renderChessBoard();
                 return;
             }
             
-            // If clicking on a piece of current player's color
             if (piece && piece.color === chessGame.currentPlayer) {
                 chessGame.selectedPiece = { row, col };
                 chessGame.validMoves = calculateValidMoves(row, col, piece);
@@ -1347,16 +1196,13 @@
         }
 
         function calculateValidMoves(row, col, piece) {
-            // Simplified move calculation - in a real game, this would be more complex
             const moves = [];
             
             if (piece.type === 'pawn') {
                 const direction = piece.color === 'white' ? -1 : 1;
-                // Forward move
                 if (row + direction >= 0 && row + direction < 8 && !chessGame.board[row + direction][col]) {
                     moves.push({ row: row + direction, col });
                 }
-                // Capture moves
                 if (col > 0 && chessGame.board[row + direction][col - 1] && chessGame.board[row + direction][col - 1].color !== piece.color) {
                     moves.push({ row: row + direction, col: col - 1 });
                 }
@@ -1378,24 +1224,19 @@
             initializeChessBoard();
             renderChessBoard();
             showToast(`Advanced to Chess Level ${chessGame.currentLevel}!`, 'success');
+            awardCoins(50);
         }
 
         // ==================== WORD PUZZLE GAME ====================
         function startWordPuzzle() {
             openGameModal('wordPuzzleModal');
             document.getElementById('wordPuzzleLevel').textContent = wordPuzzle.currentLevel;
-            
-            // Increase difficulty with level
             wordPuzzle.maxGuesses = Math.max(4, 7 - Math.floor(wordPuzzle.currentLevel / 10));
-            
             initializeWordPuzzle();
             renderWordPuzzle();
-            
-            console.log("🔤 Word puzzle game started - Level:", wordPuzzle.currentLevel);
         }
 
         function initializeWordPuzzle() {
-            // Select a random word based on level (more complex words for higher levels)
             const startIndex = Math.min(wordPuzzle.currentLevel - 1, wordPuzzle.wordList.length - 1);
             const endIndex = Math.min(startIndex + 20, wordPuzzle.wordList.length);
             const levelWords = wordPuzzle.wordList.slice(startIndex, endIndex);
@@ -1412,11 +1253,9 @@
             const grid = document.getElementById('wordPuzzleGrid');
             const keyboard = document.getElementById('wordKeyboard');
             
-            // Clear previous content
             grid.innerHTML = '';
             keyboard.innerHTML = '';
             
-            // Create grid
             for (let i = 0; i < wordPuzzle.maxGuesses; i++) {
                 for (let j = 0; j < 5; j++) {
                     const cell = document.createElement('div');
@@ -1426,7 +1265,6 @@
                         cell.textContent = wordPuzzle.guesses[i][j];
                         cell.classList.add('filled');
                         
-                        // Color coding
                         if (wordPuzzle.guesses[i][j] === wordPuzzle.targetWord[j]) {
                             cell.classList.add('correct');
                         } else if (wordPuzzle.targetWord.includes(wordPuzzle.guesses[i][j])) {
@@ -1440,7 +1278,6 @@
                 }
             }
             
-            // Create keyboard
             const keyboardLayout = 'QWERTYUIOPASDFGHJKLZXCVBNM';
             for (let char of keyboardLayout) {
                 const key = document.createElement('button');
@@ -1450,7 +1287,6 @@
                 keyboard.appendChild(key);
             }
             
-            // Add Enter and Backspace
             const enterKey = document.createElement('button');
             enterKey.className = 'key';
             enterKey.textContent = 'ENTER';
@@ -1487,11 +1323,10 @@
             
             wordPuzzle.guesses.push(wordPuzzle.currentGuess);
             
-            // Check if won
             if (wordPuzzle.currentGuess === wordPuzzle.targetWord) {
                 wordPuzzle.gameOver = true;
                 showToast('Congratulations! You guessed the word!', 'success');
-                handleWordPuzzleCompletion(true);
+                awardCoins(100);
             } else if (wordPuzzle.guesses.length >= wordPuzzle.maxGuesses) {
                 wordPuzzle.gameOver = true;
                 showToast(`Game Over! The word was: ${wordPuzzle.targetWord}`, 'info');
@@ -1520,21 +1355,17 @@
             initializeWordPuzzle();
             renderWordPuzzle();
             showToast(`Advanced to Word Puzzle Level ${wordPuzzle.currentLevel}!`, 'success');
+            awardCoins(50);
         }
 
         // ==================== MEMORY GAME ====================
         function startMemoryGame() {
             openGameModal('memoryGameModal');
             document.getElementById('memoryLevel').textContent = memoryGame.currentLevel;
-            
-            // Increase difficulty with level
             memoryGame.totalPairs = Math.min(16, 8 + Math.floor(memoryGame.currentLevel / 3));
-            
             resetMemoryGame();
             generateMemoryCards();
             renderMemoryCards();
-            
-            console.log("🧠 Memory game started - Level:", memoryGame.currentLevel);
         }
 
         function resetMemoryGame() {
@@ -1549,14 +1380,12 @@
             const symbols = ['🚀', '🌟', '🔮', '💎', '🎯', '🎨', '🎭', '🎪', '⚡', '🔥', '🌈', '⭐', '🎵', '🎮', '🏆', '🎲'];
             let cards = [];
             
-            // Create pairs of cards
             const levelSymbols = symbols.slice(0, memoryGame.totalPairs);
             levelSymbols.forEach(symbol => {
                 cards.push({ symbol, matched: false });
                 cards.push({ symbol, matched: false });
             });
             
-            // Shuffle cards
             memoryGame.cards = cards.sort(() => Math.random() - 0.5);
         }
 
@@ -1608,7 +1437,7 @@
                 if (memoryGame.matchedPairs === memoryGame.totalPairs) {
                     setTimeout(() => {
                         showToast(`Congratulations! You won in ${memoryGame.moves} moves!`, 'success');
-                        handleMemoryGameCompletion();
+                        awardCoins(80);
                     }, 500);
                 }
             } else {
@@ -1628,14 +1457,47 @@
             document.getElementById('memoryLevel').textContent = memoryGame.currentLevel;
             startMemoryGame();
             showToast(`Advanced to Memory Level ${memoryGame.currentLevel}!`, 'success');
+            awardCoins(50);
         }
 
         // ==================== QUIZ GAME ====================
+        function showQuizCategorySelection() {
+            const categoriesContainer = document.getElementById('quizCategories');
+            categoriesContainer.innerHTML = quizCategories.map(category => `
+                <div class="quiz-option flex items-center p-4" onclick="selectQuizCategory('${category.id}')">
+                    <i class="fas ${category.icon} ${category.color} text-xl mr-3"></i>
+                    <span class="text-white font-medium">${category.name}</span>
+                </div>
+            `).join('');
+            
+            openGameModal('quizCategoryModal');
+        }
+
+        function selectQuizCategory(categoryId) {
+            quizGame.selectedCategory = categoryId;
+            const category = quizCategories.find(c => c.id === categoryId);
+            
+            document.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.classList.remove('correct');
+            });
+            
+            event.currentTarget.classList.add('correct');
+        }
+
+        function startSelectedQuiz() {
+            if (!quizGame.selectedCategory) {
+                showToast('Please select a quiz category', 'error');
+                return;
+            }
+            
+            closeGameModal('quizCategoryModal');
+            startQuizGame();
+        }
+
         function startQuizGame() {
             openGameModal('quizGameModal');
             document.getElementById('quizLevel').textContent = quizGame.currentLevel;
             
-            // Set category title
             const category = quizCategories.find(c => c.id === quizGame.selectedCategory);
             if (category) {
                 document.getElementById('quizGameTitle').textContent = category.name;
@@ -1643,8 +1505,6 @@
             
             resetQuizGame();
             loadQuizQuestions();
-            
-            console.log("❓ Quiz game started - Level:", quizGame.currentLevel, "Category:", quizGame.selectedCategory);
         }
 
         function resetQuizGame() {
@@ -1657,7 +1517,6 @@
             const category = quizCategories.find(c => c.id === quizGame.selectedCategory);
             if (!category) return;
 
-            // For higher levels, mix questions from multiple categories
             if (quizGame.currentLevel > 5) {
                 const allQuestions = quizCategories.flatMap(cat => cat.questions);
                 quizGame.questions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, quizGame.totalQuestions);
@@ -1736,22 +1595,19 @@
             `;
             
             document.getElementById('nextQuizQuestion').style.display = 'none';
-            handleQuizCompletion();
+            awardCoins(quizGame.score * 20);
         }
 
         // ==================== PAYMENT SYSTEM ====================
         function selectPaymentMethod(method) {
             selectedPaymentMethod = method;
             
-            // Remove previous selections
             document.querySelectorAll('.payment-method').forEach(method => {
                 method.classList.remove('selected');
             });
             
-            // Highlight selected method
             event.currentTarget.classList.add('selected');
             
-            // Update subscribe button text
             const button = document.getElementById('subscribeButton');
             if (method === 'coins') {
                 button.innerHTML = '<i class="fas fa-coins mr-2"></i>Pay with Coins (5,000)';
@@ -1775,13 +1631,11 @@
 
             try {
                 if (selectedPaymentMethod === 'coins') {
-                    // Check if user has enough coins
                     if (userData.coins < 5000) {
                         showPaymentResult('error', 'Insufficient Coins', 'You need 5,000 coins to unlock premium. Keep playing to earn more!');
                         return;
                     }
 
-                    // Deduct coins and activate premium
                     await db.collection('users').doc(currentUser.uid).update({
                         coins: firebase.firestore.FieldValue.increment(-5000),
                         isPremium: true,
@@ -1794,7 +1648,6 @@
                     showPaymentResult('success', 'Premium Unlocked!', 'You have successfully unlocked premium using coins!');
                     
                 } else {
-                    // Simulate payment processing for real money methods
                     setTimeout(async () => {
                         await db.collection('users').doc(currentUser.uid).update({
                             isPremium: true,
@@ -1807,12 +1660,11 @@
                     }, 3000);
                 }
 
-                // Reload games to show premium games as unlocked
                 loadGames();
                 updateUI();
 
             } catch (error) {
-                console.error("❌ Payment processing error:", error);
+                console.error("Payment processing error:", error);
                 showPaymentResult('error', 'Payment Failed', 'There was an error processing your payment. Please try again.');
             }
         }
@@ -1840,79 +1692,7 @@
             closePremiumModal();
         }
 
-        // ==================== LEVEL PROGRESSION SYSTEM ====================
-        async function awardXP(gameId, xpAmount) {
-            if (!currentUser) return;
-
-            try {
-                const currentXP = userData.gameProgress[gameId]?.xp || 0;
-                const newXP = currentXP + xpAmount;
-                const currentLevel = userData.gameProgress[gameId]?.level || 1;
-                
-                // Calculate new level based on XP
-                let newLevel = currentLevel;
-                let xpForNextLevel = LEVEL_XP_REQUIREMENTS[newLevel] || 100;
-                
-                while (newXP >= xpForNextLevel) {
-                    newLevel++;
-                    xpForNextLevel = LEVEL_XP_REQUIREMENTS[newLevel] || xpForNextLevel * 2;
-                }
-
-                // Update user progress
-                await db.collection('users').doc(currentUser.uid).update({
-                    [`gameProgress.${gameId}.xp`]: newXP,
-                    [`gameProgress.${gameId}.level`]: newLevel
-                });
-
-                userData.gameProgress[gameId] = { xp: newXP, level: newLevel };
-                
-                // Check for level up
-                if (newLevel > currentLevel) {
-                    showToast(`🎉 Level Up! ${gameId} is now level ${newLevel}`, 'success');
-                }
-
-                updateUI();
-                
-            } catch (error) {
-                console.error("❌ Error awarding XP:", error);
-            }
-        }
-
-        // ==================== GAME COMPLETION HANDLERS ====================
-        async function handleWordPuzzleCompletion(success) {
-            if (success) {
-                const performance = 1 - (wordPuzzle.guesses.length / wordPuzzle.maxGuesses);
-                await completeGame('wordpuzzle', performance);
-                awardCoins(150);
-            }
-        }
-
-        async function handleMemoryGameCompletion() {
-            const performance = 1 - (memoryGame.moves / (memoryGame.totalPairs * 3));
-            await completeGame('memory', performance);
-            awardCoins(80);
-        }
-
-        async function handleQuizCompletion() {
-            const performance = quizGame.score / quizGame.totalQuestions;
-            await completeGame('quiz', performance);
-            awardCoins(quizGame.score * 20);
-        }
-
-        async function completeGame(gameId, performanceMultiplier = 1) {
-            const baseXP = 50;
-            const levelBonus = (userData.gameProgress[gameId]?.level || 1) * 10;
-            const xpEarned = Math.floor((baseXP + levelBonus) * performanceMultiplier);
-            
-            await awardXP(gameId, xpEarned);
-            
-            // Level up the game for next play
-            userData.gameProgress[gameId].level++;
-            
-            showToast(`+${xpEarned} XP earned! Next level unlocked.`, 'success');
-        }
-
-        // ==================== COMMON GAME FUNCTIONS ====================
+        // ==================== COMMON FUNCTIONS ====================
         function openGameModal(modalId) {
             document.getElementById(modalId).classList.remove('hidden');
         }
@@ -1929,7 +1709,6 @@
             document.getElementById('premiumModal').classList.add('hidden');
             selectedPaymentMethod = null;
             
-            // Reset payment method selections
             document.querySelectorAll('.payment-method').forEach(method => {
                 method.classList.remove('selected');
             });
@@ -1942,27 +1721,23 @@
             }
 
             try {
-                // Double coins for premium users
                 const finalAmount = userData.isPremium ? amount * 2 : amount;
                 const newCoins = userData.coins + finalAmount;
                 
-                // Update Firebase
                 await db.collection('users').doc(currentUser.uid).update({
                     coins: newCoins,
                     lastGamePlayed: firebase.firestore.FieldValue.serverTimestamp(),
                     gamesPlayed: firebase.firestore.FieldValue.increment(1)
                 });
                 
-                // Update local state
                 userData.coins = newCoins;
                 userData.gamesPlayed += 1;
                 
                 updateUI();
                 showToast(`+${finalAmount} coins awarded! ${userData.isPremium ? '(Premium bonus!)' : ''}`, 'success');
                 
-                console.log("💰 Coins awarded:", finalAmount, "New total:", newCoins);
             } catch (error) {
-                console.error("❌ Error awarding coins:", error);
+                console.error("Error awarding coins:", error);
                 showToast('Error saving coins to database', 'error');
             }
         }
@@ -1993,3 +1768,4 @@
     </script>
 </body>
 </html>
+[file content end]

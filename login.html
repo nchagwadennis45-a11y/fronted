@@ -7,65 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Firebase SDK (Modular Version) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
-            authDomain: "uniconnect-ee95c.firebaseapp.com",
-            projectId: "uniconnect-ee95c",
-            storageBucket: "uniconnect-ee95c.appspot.com",
-            messagingSenderId: "1003264444309",
-            appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const analytics = getAnalytics(app);
-
-        // Make Firebase available globally with enhanced functionality
-        window.firebaseApp = {
-            app,
-            db,
-            auth,
-            analytics,
-            authFunctions: {
-                signInWithEmailAndPassword,
-                GoogleAuthProvider,
-                signInWithPopup,
-                onAuthStateChanged
-            },
-            firestore: {
-                collection,
-                addDoc,
-                serverTimestamp,
-                doc,
-                getDoc,
-                setDoc
-            },
-            analyticsFunctions: {
-                logEvent
-            }
-        };
-
-        console.log('🔥 Firebase initialized successfully for login!');
-        
-        // Track page view
-        logEvent(analytics, 'login_page_view');
-        
-        // Initialize login functionality
-        if (window.initLogin) {
-            window.initLogin();
-        }
-    </script>
-
     <style>
         .glass-effect {
             background: rgba(255, 255, 255, 0.1);
@@ -78,110 +19,40 @@
         .quantum-glow {
             box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
         }
-        .hologram-effect {
-            background: linear-gradient(45deg, 
-                #3B82F6 0%, 
-                #8B5CF6 25%, 
-                #EC4899 50%, 
-                #EF4444 75%, 
-                #F59E0B 100%);
-            background-size: 400% 400%;
-            animation: hologram 8s ease-in-out infinite;
-        }
-        @keyframes hologram {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        .pulse-glow {
-            animation: pulseGlow 2s infinite;
-        }
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
-            50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
-        }
-        .login-option-card {
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        .login-option-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(59, 130, 246, 0.5);
-        }
-        .login-option-card.selected {
-            border-color: #3B82F6;
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-        }
         .neon-text {
             text-shadow: 0 0 10px rgba(59, 130, 246, 0.7),
                          0 0 20px rgba(59, 130, 246, 0.5),
                          0 0 30px rgba(59, 130, 246, 0.3);
         }
-        .cyber-border {
-            position: relative;
-            border: 2px solid transparent;
-            background: linear-gradient(45deg, #3B82F6, #8B5CF6, #EC4899, #EF4444);
-            background-clip: padding-box;
-            border-radius: 15px;
+        .loading-spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 2px solid #3B82F6;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 8px;
         }
-        .cyber-border::after {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #3B82F6, #8B5CF6, #EC4899, #EF4444);
-            border-radius: 15px;
-            z-index: -1;
-            opacity: 0.7;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        .otp-input {
-            width: 50px;
-            height: 50px;
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin: 0 5px;
-            border: 2px solid rgba(59, 130, 246, 0.5);
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
+        .shake {
+            animation: shake 0.5s ease-in-out;
         }
-        .otp-input:focus {
-            border-color: #3B82F6;
-            outline: none;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
-        .biometric-btn {
-            transition: all 0.3s ease;
+        .input-error {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
         }
-        .biometric-btn:hover {
-            transform: scale(1.05);
-        }
-        .biometric-btn:active {
-            transform: scale(0.95);
-        }
-        .back-btn {
-            position: fixed;
-            left: 2rem;
-            top: 2rem;
-            z-index: 100;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-        }
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.05);
+        .input-success {
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
         }
         .error-message {
             background: rgba(239, 68, 68, 0.1);
@@ -199,22 +70,25 @@
             border-radius: 0.5rem;
             margin-bottom: 1rem;
         }
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
+        .rate-limit-message {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fcd34d;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
         }
-        .modal-content {
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #86efac;
+            padding: 0.25rem 0.5rem;
             border-radius: 1rem;
-            padding: 2rem;
-            max-width: 400px;
-            width: 90%;
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            font-size: 0.75rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
         }
         .connection-status {
             position: fixed;
@@ -238,67 +112,27 @@
             background: rgba(239, 68, 68, 0.8);
             color: white;
         }
-        
-        /* New styles for enhanced functionality */
-        .input-error {
-            border-color: #ef4444 !important;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
-        }
-        .input-success {
-            border-color: #10b981 !important;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
-        }
-        .shake {
-            animation: shake 0.5s ease-in-out;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-        .password-strength {
-            height: 4px;
-            border-radius: 2px;
-            margin-top: 4px;
-            transition: all 0.3s ease;
-        }
-        .strength-weak { background: #ef4444; width: 25%; }
-        .strength-medium { background: #f59e0b; width: 50%; }
-        .strength-strong { background: #10b981; width: 75%; }
-        .strength-very-strong { background: #10b981; width: 100%; }
-        .rate-limit-message {
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            color: #fcd34d;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        .security-badge {
-            display: inline-flex;
+        .back-btn {
+            position: fixed;
+            left: 2rem;
+            top: 2rem;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            display: flex;
             align-items: center;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: #86efac;
-            padding: 0.25rem 0.5rem;
-            border-radius: 1rem;
-            font-size: 0.75rem;
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
         }
-        .loading-spinner {
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 2px solid #3B82F6;
-            width: 16px;
-            height: 16px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-left: 8px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
         }
     </style>
 </head>
@@ -363,7 +197,7 @@
                 </div>
             </div>
 
-            <!-- Password Login Form (Default) -->
+            <!-- Password Login Form -->
             <div id="passwordForm" class="space-y-6">
                 <form class="space-y-6" id="loginForm">
                     <div>
@@ -374,13 +208,12 @@
                         <div class="relative">
                             <input id="email" name="email" type="email" autocomplete="email" required 
                                    class="glass-effect appearance-none block w-full px-4 py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-white pl-12 transition"
-                                   placeholder="Enter your email"
-                                   aria-describedby="emailError">
+                                   placeholder="Enter your email">
                             <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
                                 <i class="fas fa-envelope"></i>
                             </div>
                         </div>
-                        <div id="emailError" class="text-red-400 text-sm mt-1 hidden" aria-live="polite"></div>
+                        <div id="emailError" class="text-red-400 text-sm mt-1 hidden"></div>
                     </div>
 
                     <div>
@@ -391,8 +224,7 @@
                         <div class="relative">
                             <input id="password" name="password" type="password" autocomplete="current-password" required 
                                    class="glass-effect appearance-none block w-full px-4 py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-white pl-12 pr-12 transition"
-                                   placeholder="Enter your password"
-                                   aria-describedby="passwordError">
+                                   placeholder="Enter your password">
                             <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
                                 <i class="fas fa-lock"></i>
                             </div>
@@ -400,7 +232,7 @@
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
-                        <div id="passwordError" class="text-red-400 text-sm mt-1 hidden" aria-live="polite"></div>
+                        <div id="passwordError" class="text-red-400 text-sm mt-1 hidden"></div>
                     </div>
 
                     <div class="flex items-center justify-between">
@@ -409,7 +241,6 @@
                                    class="h-4 w-4 text-cyan-400 focus:ring-cyan-400 border-blue-700 rounded glass-effect">
                             <label for="remember-me" class="ml-2 block text-sm text-blue-300">Remember me</label>
                         </div>
-
                         <div class="text-sm">
                             <a href="forgot-password.html" class="font-medium text-purple-400 hover:text-purple-300 transition">Forgot password?</a>
                         </div>
@@ -417,8 +248,7 @@
 
                     <div>
                         <button type="submit" id="loginBtn"
-                                class="w-full cyber-gradient text-white py-3 px-4 rounded-xl text-lg font-semibold hover:scale-105 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 quantum-glow disabled:opacity-50 disabled:cursor-not-allowed"
-                                aria-label="Sign in to your account">
+                                class="w-full cyber-gradient text-white py-3 px-4 rounded-xl text-lg font-semibold hover:scale-105 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 quantum-glow disabled:opacity-50 disabled:cursor-not-allowed">
                             <span id="loginBtnText">Sign In</span>
                             <div id="loginSpinner" class="loading-spinner hidden"></div>
                         </button>
@@ -439,14 +269,12 @@
 
                 <div class="mt-6 grid grid-cols-2 gap-3">
                     <button id="googleLogin" 
-                       class="glass-effect w-full inline-flex justify-center py-3 px-4 border border-blue-700 rounded-xl text-sm font-medium text-blue-300 hover:border-cyan-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                       aria-label="Sign in with Google">
+                            class="glass-effect w-full inline-flex justify-center py-3 px-4 border border-blue-700 rounded-xl text-sm font-medium text-blue-300 hover:border-cyan-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fab fa-google text-red-400"></i>
                         <span class="ml-2">Google</span>
                     </button>
                     <button id="appleLogin" 
-                       class="glass-effect w-full inline-flex justify-center py-3 px-4 border border-blue-700 rounded-xl text-sm font-medium text-blue-300 hover:border-cyan-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                       aria-label="Sign in with Apple">
+                            class="glass-effect w-full inline-flex justify-center py-3 px-4 border border-blue-700 rounded-xl text-sm font-medium text-blue-300 hover:border-cyan-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fab fa-apple text-gray-300"></i>
                         <span class="ml-2">Apple</span>
                     </button>
@@ -469,32 +297,63 @@
                         <i class="fas fa-clock text-purple-400 mr-2"></i>
                         <span>Real-time verification</span>
                     </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-user-shield text-yellow-400 mr-2"></i>
-                        <span>Rate limiting protection</span>
-                    </li>
                 </ul>
-            </div>
-
-            <!-- Login Stats (Real-time) -->
-            <div id="loginStats" class="glass-effect border border-blue-700 rounded-2xl p-4 mt-6 hidden">
-                <h3 class="text-sm font-medium text-cyan-400 mb-2">Recent Activity</h3>
-                <div class="text-xs text-blue-400 space-y-1">
-                    <div class="flex justify-between">
-                        <span>Active sessions:</span>
-                        <span id="activeSessions">0</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>Last login:</span>
-                        <span id="lastLoginTime">Never</span>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 
+    <!-- Firebase and App Script -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
+            authDomain: "uniconnect-ee95c.firebaseapp.com",
+            projectId: "uniconnect-ee95c",
+            storageBucket: "uniconnect-ee95c.appspot.com",
+            messagingSenderId: "1003264444309",
+            appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Make Firebase available globally
+        window.firebaseApp = {
+            app,
+            db,
+            auth,
+            authFunctions: {
+                signInWithEmailAndPassword,
+                GoogleAuthProvider,
+                signInWithPopup
+            },
+            firestore: {
+                collection,
+                addDoc,
+                serverTimestamp,
+                doc,
+                getDoc,
+                setDoc
+            }
+        };
+
+        console.log('🔥 Firebase initialized successfully!');
+
+        // Initialize login app after Firebase is ready
+        if (window.initLoginApp) {
+            window.initLoginApp();
+        }
+    </script>
+
     <script>
-        // Enhanced Login Application Class
+        // Login Application Class
         class LoginApplication {
             constructor() {
                 this.isConnected = false;
@@ -525,42 +384,8 @@
                 if (!window.firebaseApp) {
                     throw new Error('Firebase not available');
                 }
-
-                this.updateConnectionStatus('connecting');
-                
-                try {
-                    // Test Firestore connection by creating a reference (same approach as register page)
-                    const testDocRef = window.firebaseApp.firestore.doc(
-                        window.firebaseApp.db, 
-                        "connectionTests", 
-                        "loginTest"
-                    );
-                    
-                    // Just test the reference creation - don't actually read/write
-                    console.log("✅ Firebase connected successfully for login");
-                    
-                    this.isConnected = true;
-                    this.updateConnectionStatus('connected');
-                    
-                    // Track successful connection
-                    if (window.firebaseApp.analyticsFunctions) {
-                        window.firebaseApp.analyticsFunctions.logEvent(
-                            window.firebaseApp.analytics, 
-                            'firebase_connection_success'
-                        );
-                    }
-                    
-                } catch (error) {
-                    console.error('❌ Firebase connection failed:', error);
-                    if (window.firebaseApp.analyticsFunctions) {
-                        window.firebaseApp.analyticsFunctions.logEvent(
-                            window.firebaseApp.analytics, 
-                            'firebase_connection_failed',
-                            { error: error.message }
-                        );
-                    }
-                    throw error;
-                }
+                this.isConnected = true;
+                this.updateConnectionStatus('connected');
             }
 
             updateConnectionStatus(status) {
@@ -589,7 +414,6 @@
                 const securityStatus = document.getElementById('securityStatus');
                 securityStatus.classList.remove('hidden');
                 
-                // Simulate security check
                 setTimeout(() => {
                     securityStatus.querySelector('i').className = 'fas fa-shield-check text-green-400';
                     securityStatus.querySelector('span').textContent = 'Secure Connection Verified';
@@ -598,30 +422,22 @@
 
             showMessage(message, type = 'error') {
                 const messageContainer = document.getElementById('messageContainer');
-                const messageClass = type === 'error' ? 'error-message' : 
-                                   type === 'success' ? 'success-message' : 'info-message';
+                const messageClass = type === 'error' ? 'error-message' : 'success-message';
                 
                 messageContainer.innerHTML = `
                     <div class="${messageClass}">
                         <div class="flex items-center">
-                            <i class="fas ${
-                                type === 'error' ? 'fa-exclamation-triangle' : 
-                                type === 'success' ? 'fa-check-circle' : 'fa-info-circle'
-                            } mr-2"></i>
+                            <i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : 'fa-check-circle'} mr-2"></i>
                             <span>${message}</span>
                         </div>
                     </div>
                 `;
                 
-                // Add shake animation for errors
                 if (type === 'error') {
                     messageContainer.classList.add('shake');
-                    setTimeout(() => {
-                        messageContainer.classList.remove('shake');
-                    }, 500);
+                    setTimeout(() => messageContainer.classList.remove('shake'), 500);
                 }
                 
-                // Auto-hide success messages after 5 seconds
                 if (type === 'success') {
                     setTimeout(() => {
                         if (messageContainer.innerHTML.includes(message)) {
@@ -629,20 +445,6 @@
                         }
                     }, 5000);
                 }
-            }
-
-            showRateLimitMessage(remainingTime) {
-                const messageContainer = document.getElementById('messageContainer');
-                const minutes = Math.ceil(remainingTime / 60000);
-                
-                messageContainer.innerHTML = `
-                    <div class="rate-limit-message">
-                        <div class="flex items-center">
-                            <i class="fas fa-clock mr-2"></i>
-                            <span>Too many failed attempts. Please try again in ${minutes} minute${minutes > 1 ? 's' : ''}.</span>
-                        </div>
-                    </div>
-                `;
             }
 
             validateEmail(email) {
@@ -678,76 +480,6 @@
                 field.classList.remove('input-error');
             }
 
-            checkRateLimitStatus() {
-                const now = Date.now();
-                const storedAttempts = localStorage.getItem('loginAttempts');
-                const storedTime = localStorage.getItem('lastFailedAttempt');
-                
-                if (storedAttempts && storedTime) {
-                    this.loginAttempts = parseInt(storedAttempts);
-                    this.lastFailedAttempt = parseInt(storedTime);
-                    
-                    if (now - this.lastFailedAttempt < this.lockoutTime && this.loginAttempts >= this.maxLoginAttempts) {
-                        this.isRateLimited = true;
-                        const remainingTime = this.lockoutTime - (now - this.lastFailedAttempt);
-                        this.showRateLimitMessage(remainingTime);
-                        this.disableLoginForm();
-                        
-                        // Re-enable after lockout period
-                        setTimeout(() => {
-                            this.isRateLimited = false;
-                            this.loginAttempts = 0;
-                            localStorage.removeItem('loginAttempts');
-                            localStorage.removeItem('lastFailedAttempt');
-                            this.enableLoginForm();
-                            this.showMessage('You can now try to login again.', 'success');
-                        }, remainingTime);
-                    }
-                }
-            }
-
-            disableLoginForm() {
-                document.getElementById('loginBtn').disabled = true;
-                document.getElementById('googleLogin').disabled = true;
-                document.getElementById('appleLogin').disabled = true;
-            }
-
-            enableLoginForm() {
-                document.getElementById('loginBtn').disabled = false;
-                document.getElementById('googleLogin').disabled = false;
-                document.getElementById('appleLogin').disabled = false;
-            }
-
-            recordFailedAttempt() {
-                this.loginAttempts++;
-                this.lastFailedAttempt = Date.now();
-                
-                localStorage.setItem('loginAttempts', this.loginAttempts.toString());
-                localStorage.setItem('lastFailedAttempt', this.lastFailedAttempt.toString());
-                
-                if (this.loginAttempts >= this.maxLoginAttempts) {
-                    this.isRateLimited = true;
-                    this.disableLoginForm();
-                    const remainingTime = this.lockoutTime;
-                    this.showRateLimitMessage(remainingTime);
-                    
-                    // Track rate limiting event
-                    if (window.firebaseApp && window.firebaseApp.analyticsFunctions) {
-                        window.firebaseApp.analyticsFunctions.logEvent(
-                            window.firebaseApp.analytics, 
-                            'login_rate_limited'
-                        );
-                    }
-                }
-            }
-
-            clearFailedAttempts() {
-                this.loginAttempts = 0;
-                this.lastFailedAttempt = 0;
-                localStorage.removeItem('loginAttempts');
-                localStorage.removeItem('lastFailedAttempt');
-            }
-
             setLoadingState(isLoading, buttonText = 'Sign In') {
                 const loginBtn = document.getElementById('loginBtn');
                 const loginBtnText = document.getElementById('loginBtnText');
@@ -764,45 +496,15 @@
                 }
             }
 
-            // Real Firebase Email/Password Login (Enhanced)
             async loginWithEmailPassword(email, password) {
                 if (!this.isConnected || !window.firebaseApp) {
                     this.showMessage('Firebase not connected. Please try again.', 'error');
                     return false;
                 }
 
-                if (this.isRateLimited) {
-                    const remainingTime = this.lockoutTime - (Date.now() - this.lastFailedAttempt);
-                    this.showRateLimitMessage(remainingTime);
-                    return false;
-                }
-
-                // Enhanced validation
-                if (!this.validateEmail(email)) {
-                    this.showFieldError('email', 'Please enter a valid email address');
-                    return false;
-                }
-
-                if (!this.validatePassword(password)) {
-                    this.showFieldError('password', 'Password must be at least 6 characters');
-                    return false;
-                }
-
                 try {
                     this.setLoadingState(true);
                     
-                    console.log('Attempting login with:', email);
-                    
-                    // Track login attempt
-                    if (window.firebaseApp.analyticsFunctions) {
-                        window.firebaseApp.analyticsFunctions.logEvent(
-                            window.firebaseApp.analytics, 
-                            'login_attempt',
-                            { method: 'password' }
-                        );
-                    }
-                    
-                    // Use Firebase Auth (modular version)
                     const userCredential = await window.firebaseApp.authFunctions.signInWithEmailAndPassword(
                         window.firebaseApp.auth,
                         email, 
@@ -812,38 +514,17 @@
                     const user = userCredential.user;
                     console.log('Login successful:', user.email);
                     
-                    // Clear failed attempts on successful login
-                    this.clearFailedAttempts();
-                    
-                    // Store login information
-                    localStorage.setItem('loginMethod', 'password');
-                    localStorage.setItem('lastLogin', new Date().toISOString());
+                    // Store user info
                     localStorage.setItem('userEmail', user.email);
                     localStorage.setItem('userId', user.uid);
                     localStorage.setItem('userDisplayName', user.displayName || user.email.split('@')[0]);
                     
-                    // Update user preferences
-                    this.saveUserPreferences();
-                    
-                    // Create or update user document in Firestore
+                    // Update user document
                     await this.createOrUpdateUserDocument(user);
-                    
-                    // Log login activity
-                    await this.logLoginActivity(user, 'password');
                     
                     this.setLoadingState(false, 'Success!');
                     this.showMessage('Login successful! Redirecting...', 'success');
                     
-                    // Track successful login
-                    if (window.firebaseApp.analyticsFunctions) {
-                        window.firebaseApp.analyticsFunctions.logEvent(
-                            window.firebaseApp.analytics, 
-                            'login_success',
-                            { method: 'password' }
-                        );
-                    }
-                    
-                    // Redirect to profile page
                     setTimeout(() => {
                         window.location.href = 'profile.html';
                     }, 1500);
@@ -854,61 +535,73 @@
                     this.setLoadingState(false, 'Sign In');
                     console.error('Login error:', error);
                     
-                    // Record failed attempt
-                    this.recordFailedAttempt();
-                    
-                    // Track failed login
-                    if (window.firebaseApp.analyticsFunctions) {
-                        window.firebaseApp.analyticsFunctions.logEvent(
-                            window.firebaseApp.analytics, 
-                            'login_failed',
-                            { 
-                                method: 'password',
-                                error: error.code 
-                            }
-                        );
-                    }
-                    
-                    // Enhanced error handling
                     let errorMessage = 'Login failed. Please try again.';
-                    let fieldToHighlight = 'email';
                     
                     switch (error.code) {
                         case 'auth/invalid-email':
                             errorMessage = 'Invalid email address format.';
-                            fieldToHighlight = 'email';
-                            break;
-                        case 'auth/user-disabled':
-                            errorMessage = 'This account has been disabled.';
                             break;
                         case 'auth/user-not-found':
-                            errorMessage = 'No account found with this email. Please check your email or register first.';
-                            fieldToHighlight = 'email';
+                            errorMessage = 'No account found with this email.';
                             break;
                         case 'auth/wrong-password':
                             errorMessage = 'Incorrect password. Please try again.';
-                            fieldToHighlight = 'password';
-                            break;
-                        case 'auth/invalid-credential':
-                            errorMessage = 'Invalid login credentials. Please check your email and password.';
                             break;
                         case 'auth/too-many-requests':
                             errorMessage = 'Too many failed attempts. Please try again later.';
-                            this.isRateLimited = true;
                             break;
-                        case 'auth/network-request-failed':
-                            errorMessage = 'Network error. Please check your internet connection.';
-                            break;
-                        default:
-                            errorMessage = `Login failed: ${error.message}`;
                     }
                     
                     this.showMessage(errorMessage, 'error');
+                    return false;
+                }
+            }
+
+            async loginWithGoogle() {
+                if (!this.isConnected || !window.firebaseApp) {
+                    this.showMessage('Firebase not connected. Please try again.', 'error');
+                    return false;
+                }
+
+                try {
+                    const provider = new window.firebaseApp.authFunctions.GoogleAuthProvider();
+                    provider.addScope('email');
+                    provider.addScope('profile');
                     
-                    if (fieldToHighlight) {
-                        this.showFieldError(fieldToHighlight, errorMessage);
+                    const result = await window.firebaseApp.authFunctions.signInWithPopup(
+                        window.firebaseApp.auth, 
+                        provider
+                    );
+                    
+                    const user = result.user;
+                    console.log('Google login successful:', user.email);
+                    
+                    // Store user info
+                    localStorage.setItem('userEmail', user.email);
+                    localStorage.setItem('userId', user.uid);
+                    localStorage.setItem('userDisplayName', user.displayName);
+                    
+                    // Update user document
+                    await this.createOrUpdateUserDocument(user);
+                    
+                    this.showMessage('Google login successful! Redirecting...', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'profile.html';
+                    }, 1500);
+                    
+                    return true;
+                    
+                } catch (error) {
+                    console.error('Google login error:', error);
+                    
+                    let errorMessage = 'Google login failed. Please try again.';
+                    
+                    if (error.code === 'auth/popup-closed-by-user') {
+                        errorMessage = 'Google login was cancelled.';
                     }
                     
+                    this.showMessage(errorMessage, 'error');
                     return false;
                 }
             }
@@ -923,60 +616,23 @@
                     
                     const userDoc = await window.firebaseApp.firestore.getDoc(userRef);
                     
-                    if (userDoc.exists()) {
-                        // Update last login
-                        await window.firebaseApp.firestore.setDoc(userRef, {
-                            lastLogin: window.firebaseApp.firestore.serverTimestamp(),
-                            updatedAt: window.firebaseApp.firestore.serverTimestamp()
-                        }, { merge: true });
+                    const userData = {
+                        email: user.email,
+                        displayName: user.displayName || user.email.split('@')[0],
+                        photoURL: user.photoURL || '',
+                        lastLogin: window.firebaseApp.firestore.serverTimestamp(),
+                        updatedAt: window.firebaseApp.firestore.serverTimestamp()
+                    };
+                    
+                    if (!userDoc.exists()) {
+                        userData.createdAt = window.firebaseApp.firestore.serverTimestamp();
+                        await window.firebaseApp.firestore.setDoc(userRef, userData);
                     } else {
-                        // Create new user document
-                        await window.firebaseApp.firestore.setDoc(userRef, {
-                            uid: user.uid,
-                            email: user.email,
-                            displayName: user.displayName || user.email.split('@')[0],
-                            createdAt: window.firebaseApp.firestore.serverTimestamp(),
-                            lastLogin: window.firebaseApp.firestore.serverTimestamp(),
-                            loginMethod: 'password',
-                            emailVerified: user.emailVerified
-                        });
+                        await window.firebaseApp.firestore.setDoc(userRef, userData, { merge: true });
                     }
                     
-                    console.log('User document updated successfully');
                 } catch (error) {
                     console.error('Error updating user document:', error);
-                }
-            }
-
-            async logLoginActivity(user, method) {
-                try {
-                    const activityRef = window.firebaseApp.firestore.collection(
-                        window.firebaseApp.db,
-                        "loginActivities"
-                    );
-                    
-                    await window.firebaseApp.firestore.addDoc(activityRef, {
-                        userId: user.uid,
-                        email: user.email,
-                        method: method,
-                        timestamp: window.firebaseApp.firestore.serverTimestamp(),
-                        ipAddress: await this.getClientIP(),
-                        userAgent: navigator.userAgent
-                    });
-                    
-                    console.log('Login activity logged successfully');
-                } catch (error) {
-                    console.error('Error logging login activity:', error);
-                }
-            }
-
-            async getClientIP() {
-                try {
-                    const response = await fetch('https://api.ipify.org?format=json');
-                    const data = await response.json();
-                    return data.ip;
-                } catch (error) {
-                    return 'unknown';
                 }
             }
 
@@ -988,11 +644,9 @@
                     const email = document.getElementById('email').value.trim();
                     const password = document.getElementById('password').value;
                     
-                    // Clear previous errors
                     this.clearFieldError('email');
                     this.clearFieldError('password');
                     
-                    // Validate fields
                     let isValid = true;
                     
                     if (!email) {
@@ -1001,45 +655,15 @@
                     } else if (!this.validateEmail(email)) {
                         this.showFieldError('email', 'Please enter a valid email address');
                         isValid = false;
-                    } else {
-                        this.showFieldSuccess('email');
                     }
                     
                     if (!password) {
                         this.showFieldError('password', 'Password is required');
                         isValid = false;
-                    } else if (!this.validatePassword(password)) {
-                        this.showFieldError('password', 'Password must be at least 6 characters');
-                        isValid = false;
-                    } else {
-                        this.showFieldSuccess('password');
                     }
                     
                     if (isValid) {
                         await this.loginWithEmailPassword(email, password);
-                    }
-                });
-
-                // Real-time field validation
-                document.getElementById('email').addEventListener('input', (e) => {
-                    const email = e.target.value.trim();
-                    this.clearFieldError('email');
-                    
-                    if (email && !this.validateEmail(email)) {
-                        this.showFieldError('email', 'Please enter a valid email address');
-                    } else if (email) {
-                        this.showFieldSuccess('email');
-                    }
-                });
-
-                document.getElementById('password').addEventListener('input', (e) => {
-                    const password = e.target.value;
-                    this.clearFieldError('password');
-                    
-                    if (password && !this.validatePassword(password)) {
-                        this.showFieldError('password', 'Password must be at least 6 characters');
-                    } else if (password) {
-                        this.showFieldSuccess('password');
                     }
                 });
 
@@ -1057,187 +681,62 @@
                     }
                 });
 
-                // Google Login
-                document.getElementById('googleLogin').addEventListener('click', async () => {
-                    if (!this.isConnected) {
-                        this.showMessage('Firebase not connected. Please try again.', 'error');
-                        return;
-                    }
-
-                    if (this.isRateLimited) {
-                        const remainingTime = this.lockoutTime - (Date.now() - this.lastFailedAttempt);
-                        this.showRateLimitMessage(remainingTime);
-                        return;
-                    }
-
-                    try {
-                        this.setLoadingState(true, 'Connecting Google...');
-                        
-                        const provider = new window.firebaseApp.authFunctions.GoogleAuthProvider();
-                        provider.addScope('email');
-                        provider.addScope('profile');
-                        
-                        const result = await window.firebaseApp.authFunctions.signInWithPopup(
-                            window.firebaseApp.auth, 
-                            provider
-                        );
-                        
-                        const user = result.user;
-                        console.log('Google login successful:', user.email);
-                        
-                        // Clear failed attempts
-                        this.clearFailedAttempts();
-                        
-                        // Store login information
-                        localStorage.setItem('loginMethod', 'google');
-                        localStorage.setItem('lastLogin', new Date().toISOString());
-                        localStorage.setItem('userEmail', user.email);
-                        localStorage.setItem('userId', user.uid);
-                        localStorage.setItem('userDisplayName', user.displayName);
-                        
-                        // Create or update user document
-                        await this.createOrUpdateUserDocument(user);
-                        
-                        // Log login activity
-                        await this.logLoginActivity(user, 'google');
-                        
-                        this.setLoadingState(false, 'Success!');
-                        this.showMessage('Google login successful! Redirecting...', 'success');
-                        
-                        // Track successful Google login
-                        if (window.firebaseApp.analyticsFunctions) {
-                            window.firebaseApp.analyticsFunctions.logEvent(
-                                window.firebaseApp.analytics, 
-                                'login_success',
-                                { method: 'google' }
-                            );
-                        }
-                        
-                        setTimeout(() => {
-                            window.location.href = 'profile.html';
-                        }, 1500);
-                        
-                    } catch (error) {
-                        this.setLoadingState(false, 'Sign In');
-                        console.error('Google login error:', error);
-                        
-                        // Record failed attempt
-                        this.recordFailedAttempt();
-                        
-                        let errorMessage = 'Google login failed. Please try again.';
-                        
-                        if (error.code === 'auth/popup-closed-by-user') {
-                            errorMessage = 'Google login was cancelled.';
-                        } else if (error.code === 'auth/popup-blocked') {
-                            errorMessage = 'Popup was blocked. Please allow popups for this site.';
-                        } else if (error.code === 'auth/network-request-failed') {
-                            errorMessage = 'Network error. Please check your internet connection.';
-                        }
-                        
-                        this.showMessage(errorMessage, 'error');
-                    }
+                // Google login
+                document.getElementById('googleLogin').addEventListener('click', () => {
+                    this.loginWithGoogle();
                 });
 
-                // Apple Login (placeholder)
+                // Apple login placeholder
                 document.getElementById('appleLogin').addEventListener('click', () => {
                     this.showMessage('Apple login is not yet implemented.', 'error');
                 });
 
-                // Keyboard shortcuts
-                document.addEventListener('keydown', (e) => {
-                    // Ctrl+Enter to submit form
-                    if (e.ctrlKey && e.key === 'Enter') {
-                        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
-                    }
-                    
-                    // Escape to clear form
-                    if (e.key === 'Escape') {
-                        document.getElementById('loginForm').reset();
-                        this.clearFieldError('email');
-                        this.clearFieldError('password');
-                        document.getElementById('messageContainer').innerHTML = '';
-                    }
-                });
-
-                // Auto-focus email field on page load
+                // Auto-focus email field
                 document.getElementById('email').focus();
-
-                console.log('✅ Event listeners setup complete');
             }
 
             loadUserPreferences() {
-                try {
-                    const rememberMe = localStorage.getItem('rememberMe') === 'true';
-                    const savedEmail = localStorage.getItem('savedEmail');
-                    
-                    if (rememberMe && savedEmail) {
-                        document.getElementById('email').value = savedEmail;
-                        document.getElementById('remember-me').checked = true;
-                        document.getElementById('password').focus();
-                    }
-                } catch (error) {
-                    console.error('Error loading user preferences:', error);
+                const savedEmail = localStorage.getItem('savedEmail');
+                const rememberMe = localStorage.getItem('rememberMe') === 'true';
+                
+                if (rememberMe && savedEmail) {
+                    document.getElementById('email').value = savedEmail;
+                    document.getElementById('remember-me').checked = true;
                 }
             }
 
-            saveUserPreferences() {
-                try {
-                    const rememberMe = document.getElementById('remember-me').checked;
-                    const email = document.getElementById('email').value.trim();
-                    
-                    if (rememberMe && email) {
-                        localStorage.setItem('rememberMe', 'true');
-                        localStorage.setItem('savedEmail', email);
-                    } else {
-                        localStorage.removeItem('rememberMe');
-                        localStorage.removeItem('savedEmail');
-                    }
-                } catch (error) {
-                    console.error('Error saving user preferences:', error);
-                }
+            checkRateLimitStatus() {
+                // Rate limiting logic would go here
             }
         }
 
-        // Global initialization function
-        window.initLogin = function() {
+        // Global function to initialize login
+        window.initLoginApp = function() {
             window.loginApp = new LoginApplication();
             window.loginApp.initialize();
         };
 
-        // Initialize when DOM is loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', window.initLogin);
-        } else {
-            window.initLogin();
-        }
-
-        // Global functions
+        // Back button function
         function goBack() {
             window.location.href = 'index.html';
         }
 
-        // Handle page visibility changes
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden && window.loginApp) {
-                window.loginApp.checkRateLimitStatus();
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.firebaseApp) {
+                window.initLoginApp();
+            } else {
+                // Wait for Firebase to initialize
+                const checkFirebase = setInterval(() => {
+                    if (window.firebaseApp) {
+                        clearInterval(checkFirebase);
+                        window.initLoginApp();
+                    }
+                }, 100);
             }
         });
 
-        // Handle online/offline events
-        window.addEventListener('online', function() {
-            if (window.loginApp && !window.loginApp.isConnected) {
-                window.loginApp.initialize().catch(console.error);
-            }
-        });
-
-        window.addEventListener('offline', function() {
-            if (window.loginApp) {
-                window.loginApp.updateConnectionStatus('disconnected');
-                window.loginApp.showMessage('You are currently offline. Please check your internet connection.', 'error');
-            }
-        });
-
-        console.log('🚀 Login application script loaded successfully');
+        console.log('🚀 Login application script loaded');
     </script>
 </body>
 </html>

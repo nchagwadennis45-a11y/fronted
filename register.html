@@ -3,68 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - ConnectSphere ID</title>
+    <title>Register - Uniconnect ID</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Firebase SDK (Modular Version) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
-            authDomain: "uniconnect-ee95c.firebaseapp.com",
-            projectId: "uniconnect-ee95c",
-            storageBucket: "uniconnect-ee95c.appspot.com",
-            messagingSenderId: "1003264444309",
-            appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const analytics = getAnalytics(app);
-
-        // Make Firebase available globally
-        window.firebaseApp = {
-            app,
-            db,
-            auth,
-            analytics,
-            authFunctions: {
-                createUserWithEmailAndPassword,
-                sendEmailVerification,
-                updateProfile
-            },
-            firestore: {
-                doc,
-                setDoc,
-                serverTimestamp
-            },
-            analyticsFunctions: {
-                logEvent
-            }
-        };
-
-        console.log('🔥 Firebase initialized successfully for registration!');
-        
-        // Track registration page view
-        logEvent(analytics, 'page_view', {
-            page_title: 'Registration Page',
-            page_location: window.location.href
-        });
-        
-        // Initialize registration functionality
-        if (window.initRegistration) {
-            window.initRegistration();
-        }
-    </script>
-
     <style>
         .glass-effect {
             background: rgba(255, 255, 255, 0.1);
@@ -76,6 +18,11 @@
         }
         .quantum-glow {
             box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+        }
+        .neon-text {
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.7),
+                         0 0 20px rgba(59, 130, 246, 0.5),
+                         0 0 30px rgba(59, 130, 246, 0.3);
         }
         .error-message {
             background: rgba(239, 68, 68, 0.1);
@@ -181,26 +128,13 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .form-input:focus {
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        .input-error {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
         }
-        .floating-label {
-            position: absolute;
-            top: 50%;
-            left: 3rem;
-            transform: translateY(-50%);
-            color: #93c5fd;
-            transition: all 0.3s ease;
-            pointer-events: none;
-        }
-        .form-input:focus + .floating-label,
-        .form-input:not(:placeholder-shown) + .floating-label {
-            top: -10px;
-            left: 0.75rem;
-            font-size: 0.75rem;
-            background: rgba(30, 41, 59, 0.9);
-            padding: 0 0.5rem;
-            border-radius: 4px;
+        .input-success {
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
         }
     </style>
 </head>
@@ -216,8 +150,6 @@
         <div class="absolute w-2 h-2 bg-blue-400 rounded-full animate-pulse" style="top: 20%; left: 10%;"></div>
         <div class="absolute w-1 h-1 bg-purple-400 rounded-full animate-pulse" style="top: 60%; left: 80%; animation-delay: 1s;"></div>
         <div class="absolute w-3 h-3 bg-cyan-400 rounded-full animate-pulse" style="top: 40%; left: 50%; animation-delay: 2s;"></div>
-        <div class="absolute w-1 h-1 bg-green-400 rounded-full animate-pulse" style="top: 80%; left: 20%; animation-delay: 1.5s;"></div>
-        <div class="absolute w-2 h-2 bg-pink-400 rounded-full animate-pulse" style="top: 30%; left: 90%; animation-delay: 0.5s;"></div>
     </div>
 
     <!-- Back Button -->
@@ -233,8 +165,8 @@
                     <div class="w-12 h-12 cyber-gradient rounded-xl flex items-center justify-center quantum-glow">
                         <i class="fas fa-user-plus text-white text-xl"></i>
                     </div>
-                    <span class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                        ConnectSphere ID
+                    <span class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 neon-text">
+                        Uniconnect ID
                     </span>
                 </div>
                 <h2 class="text-4xl font-bold text-white mb-2">Create Account</h2>
@@ -253,63 +185,75 @@
             <div class="space-y-6">
                 <form class="space-y-6" id="registerForm">
                     <div>
-                        <label for="firstName" class="block text-sm font-medium text-cyan-400 mb-2">Full Name</label>
+                        <label for="displayName" class="block text-sm font-medium text-cyan-400 mb-2">
+                            Display Name
+                            <span class="text-red-400 ml-1">*</span>
+                        </label>
                         <div class="relative">
-                            <input id="firstName" name="firstName" type="text" autocomplete="given-name" required 
-                                   class="form-input glass-effect appearance-none block w-full px-4 py-3 border border-blue-700 rounded-xl placeholder-transparent focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-white pl-12"
-                                   placeholder="Enter your first name">
-                            <span class="floating-label">First Name</span>
+                            <input id="displayName" name="displayName" type="text" autocomplete="name" required 
+                                   class="glass-effect appearance-none block w-full px-4 py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-white pl-12 transition"
+                                   placeholder="Enter your display name">
                             <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
                                 <i class="fas fa-user"></i>
                             </div>
                         </div>
+                        <div id="displayNameError" class="text-red-400 text-sm mt-1 hidden"></div>
                     </div>
 
                     <div>
-                        <label for="email" class="block text-sm font-medium text-cyan-400 mb-2">Email address</label>
+                        <label for="email" class="block text-sm font-medium text-cyan-400 mb-2">
+                            Email address
+                            <span class="text-red-400 ml-1">*</span>
+                        </label>
                         <div class="relative">
                             <input id="email" name="email" type="email" autocomplete="email" required 
-                                   class="form-input glass-effect appearance-none block w-full px-4 py-3 border border-blue-700 rounded-xl placeholder-transparent focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-white pl-12"
+                                   class="glass-effect appearance-none block w-full px-4 py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-white pl-12 transition"
                                    placeholder="Enter your email">
-                            <span class="floating-label">Email Address</span>
                             <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
                                 <i class="fas fa-envelope"></i>
                             </div>
                         </div>
+                        <div id="emailError" class="text-red-400 text-sm mt-1 hidden"></div>
                     </div>
 
                     <div>
-                        <label for="password" class="block text-sm font-medium text-blue-400 mb-2">Password</label>
+                        <label for="password" class="block text-sm font-medium text-blue-400 mb-2">
+                            Password
+                            <span class="text-red-400 ml-1">*</span>
+                        </label>
                         <div class="relative">
                             <input id="password" name="password" type="password" autocomplete="new-password" required 
-                                   class="form-input glass-effect appearance-none block w-full px-4 py-3 border border-blue-700 rounded-xl placeholder-transparent focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-white pl-12 pr-12"
+                                   class="glass-effect appearance-none block w-full px-4 py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-white pl-12 pr-12 transition"
                                    placeholder="Create a password">
-                            <span class="floating-label">Password</span>
                             <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
                                 <i class="fas fa-lock"></i>
                             </div>
-                            <button type="button" id="togglePassword" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-400 hover:text-blue-300">
+                            <button type="button" id="togglePassword" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-400 hover:text-cyan-400 transition">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
                         <div id="passwordStrength" class="password-strength weak"></div>
-                        <p id="passwordFeedback" class="text-sm text-blue-300 mt-1">Password must be at least 8 characters with uppercase, lowercase, number, and special character</p>
+                        <p id="passwordFeedback" class="text-sm text-blue-300 mt-1">Password must be at least 8 characters</p>
+                        <div id="passwordError" class="text-red-400 text-sm mt-1 hidden"></div>
                     </div>
 
                     <div>
-                        <label for="confirmPassword" class="block text-sm font-medium text-purple-400 mb-2">Confirm Password</label>
+                        <label for="confirmPassword" class="block text-sm font-medium text-purple-400 mb-2">
+                            Confirm Password
+                            <span class="text-red-400 ml-1">*</span>
+                        </label>
                         <div class="relative">
                             <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required 
-                                   class="form-input glass-effect appearance-none block w-full px-4 py-3 border border-blue-700 rounded-xl placeholder-transparent focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 text-white pl-12 pr-12"
+                                   class="glass-effect appearance-none block w-full px-4 py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 text-white pl-12 pr-12 transition"
                                    placeholder="Confirm your password">
-                            <span class="floating-label">Confirm Password</span>
                             <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
                                 <i class="fas fa-lock"></i>
                             </div>
-                            <button type="button" id="toggleConfirmPassword" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-400 hover:text-blue-300">
+                            <button type="button" id="toggleConfirmPassword" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-400 hover:text-cyan-400 transition">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
+                        <div id="confirmPasswordError" class="text-red-400 text-sm mt-1 hidden"></div>
                     </div>
 
                     <div class="flex items-start space-x-3">
@@ -317,24 +261,16 @@
                                class="h-5 w-5 text-cyan-400 focus:ring-cyan-400 border-blue-700 rounded glass-effect mt-1">
                         <label for="agree-terms" class="block text-sm text-blue-300">
                             I agree to the{' '}
-                            <a href="legal.html" class="text-purple-400 hover:text-purple-300 transition" target="_blank">Terms of Service</a>
+                            <a href="#" class="text-purple-400 hover:text-purple-300 transition">Terms of Service</a>
                             {' '}and{' '}
-                            <a href="legal.html" class="text-purple-400 hover:text-purple-300 transition" target="_blank">Privacy Policy</a>
-                            . I understand that my data will be processed in accordance with ConnectSphere's data protection policies.
+                            <a href="#" class="text-purple-400 hover:text-purple-300 transition">Privacy Policy</a>
                         </label>
                     </div>
-
-                    <div class="flex items-start space-x-3">
-                        <input id="marketing-consent" name="marketing-consent" type="checkbox"
-                               class="h-5 w-5 text-cyan-400 focus:ring-cyan-400 border-blue-700 rounded glass-effect mt-1">
-                        <label for="marketing-consent" class="block text-sm text-blue-300">
-                            I would like to receive product updates, security alerts, and marketing communications from ConnectSphere. I can unsubscribe at any time.
-                        </label>
-                    </div>
+                    <div id="termsError" class="text-red-400 text-sm mt-1 hidden"></div>
 
                     <div>
                         <button type="submit" id="registerBtn"
-                                class="w-full cyber-gradient text-white py-3 px-4 rounded-xl text-lg font-semibold hover:scale-105 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 quantum-glow disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                                class="w-full cyber-gradient text-white py-3 px-4 rounded-xl text-lg font-semibold hover:scale-105 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 quantum-glow disabled:opacity-50 disabled:cursor-not-allowed">
                             <span id="registerBtnText">Create Account</span>
                             <div id="registerSpinner" class="loading-spinner hidden"></div>
                         </button>
@@ -348,39 +284,66 @@
                 <ul class="text-sm text-blue-400 space-y-2">
                     <li class="flex items-center">
                         <i class="fas fa-shield-alt text-green-400 mr-2"></i>
-                        <span>Military-grade encryption (AES-256)</span>
+                        <span>End-to-end encryption</span>
                     </li>
                     <li class="flex items-center">
                         <i class="fas fa-user-check text-cyan-400 mr-2"></i>
-                        <span>Email verification required</span>
+                        <span>Email verification</span>
                     </li>
                     <li class="flex items-center">
                         <i class="fas fa-bolt text-purple-400 mr-2"></i>
-                        <span>Fast and secure authentication</span>
-                    </li>
-                    <li class="flex items-center">
-                        <i class="fas fa-database text-blue-400 mr-2"></i>
-                        <span>Secure cloud storage with Firebase</span>
+                        <span>Fast authentication</span>
                     </li>
                 </ul>
             </div>
-
-            <!-- Trust Indicators -->
-            <div class="text-center text-sm text-blue-300 mt-6">
-                <p>Trusted by thousands of users worldwide</p>
-                <div class="flex justify-center space-x-6 mt-3">
-                    <div class="flex items-center">
-                        <i class="fas fa-check-circle text-green-400 mr-1"></i>
-                        <span>ISO 27001 Certified</span>
-                    </div>
-                    <div class="flex items-center">
-                        <i class="fas fa-shield-check text-cyan-400 mr-1"></i>
-                        <span>GDPR Compliant</span>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
+
+    <!-- Firebase and App Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
+            authDomain: "uniconnect-ee95c.firebaseapp.com",
+            projectId: "uniconnect-ee95c",
+            storageBucket: "uniconnect-ee95c.appspot.com",
+            messagingSenderId: "1003264444309",
+            appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Make Firebase available globally
+        window.firebaseApp = {
+            app,
+            db,
+            auth,
+            authFunctions: {
+                createUserWithEmailAndPassword,
+                sendEmailVerification,
+                updateProfile
+            },
+            firestore: {
+                doc,
+                setDoc,
+                serverTimestamp
+            }
+        };
+
+        console.log('🔥 Firebase initialized successfully for registration!');
+
+        // Initialize registration app after Firebase is ready
+        if (window.initRegistrationApp) {
+            window.initRegistrationApp();
+        }
+    </script>
 
     <script>
         // Registration Application Class
@@ -396,18 +359,10 @@
                     this.setupEventListeners();
                     this.updateConnectionStatus('connected');
                     console.log('✅ Registration app initialized successfully');
-                    
-                    // Track registration page load
-                    if (window.firebaseApp && window.firebaseApp.analyticsFunctions) {
-                        window.firebaseApp.analyticsFunctions.logEvent(
-                            window.firebaseApp.analytics, 
-                            'registration_page_loaded'
-                        );
-                    }
                 } catch (error) {
                     console.error('❌ Registration app initialization failed:', error);
                     this.updateConnectionStatus('disconnected');
-                    this.showMessage('Firebase connection failed. Please check your connection and try again.', 'error');
+                    this.showMessage('Firebase connection failed. Please check your connection.', 'error');
                 }
             }
 
@@ -415,27 +370,8 @@
                 if (!window.firebaseApp) {
                     throw new Error('Firebase not available');
                 }
-
-                this.updateConnectionStatus('connecting');
-                
-                try {
-                    // Test Firestore connection by attempting to write a test document
-                    const testDocRef = window.firebaseApp.firestore.doc(
-                        window.firebaseApp.db, 
-                        "connectionTests", 
-                        "registrationTest"
-                    );
-                    
-                    // Just test the reference creation - don't actually write
-                    console.log("✅ Firebase connected successfully for registration");
-                    
-                    this.isConnected = true;
-                    this.updateConnectionStatus('connected');
-                    
-                } catch (error) {
-                    console.error('❌ Firebase connection failed:', error);
-                    throw error;
-                }
+                this.isConnected = true;
+                this.updateConnectionStatus('connected');
             }
 
             updateConnectionStatus(status) {
@@ -462,22 +398,17 @@
 
             showMessage(message, type = 'error') {
                 const messageContainer = document.getElementById('messageContainer');
-                const messageClass = type === 'error' ? 'error-message' : 
-                                   type === 'success' ? 'success-message' : 'info-message';
+                const messageClass = type === 'error' ? 'error-message' : 'success-message';
                 
                 messageContainer.innerHTML = `
                     <div class="${messageClass}">
                         <div class="flex items-center">
-                            <i class="fas ${
-                                type === 'error' ? 'fa-exclamation-triangle' : 
-                                type === 'success' ? 'fa-check-circle' : 'fa-info-circle'
-                            } mr-2"></i>
+                            <i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : 'fa-check-circle'} mr-2"></i>
                             <span>${message}</span>
                         </div>
                     </div>
                 `;
                 
-                // Auto-hide success messages after 5 seconds
                 if (type === 'success') {
                     setTimeout(() => {
                         if (messageContainer.innerHTML.includes(message)) {
@@ -487,8 +418,34 @@
                 }
             }
 
-            clearMessages() {
-                document.getElementById('messageContainer').innerHTML = '';
+            clearFieldError(fieldId) {
+                const errorElement = document.getElementById(fieldId + 'Error');
+                const field = document.getElementById(fieldId);
+                
+                if (errorElement) errorElement.classList.add('hidden');
+                if (field) {
+                    field.classList.remove('input-error');
+                    field.classList.remove('input-success');
+                }
+            }
+
+            showFieldError(fieldId, message) {
+                const field = document.getElementById(fieldId);
+                const errorElement = document.getElementById(fieldId + 'Error');
+                
+                field.classList.add('input-error');
+                field.classList.remove('input-success');
+                if (errorElement) {
+                    errorElement.textContent = message;
+                    errorElement.classList.remove('hidden');
+                }
+            }
+
+            showFieldSuccess(fieldId) {
+                const field = document.getElementById(fieldId);
+                field.classList.add('input-success');
+                field.classList.remove('input-error');
+                this.clearFieldError(fieldId);
             }
 
             validatePassword(password) {
@@ -507,8 +464,8 @@
                 const strengthBar = document.getElementById('passwordStrength');
                 const feedback = document.getElementById('passwordFeedback');
                 
-                let strengthText = '';
                 let strengthClass = '';
+                let strengthText = '';
 
                 switch(strength) {
                     case 0:
@@ -545,159 +502,6 @@
                 return requirements;
             }
 
-            async registerWithEmailPassword(userData) {
-                if (!this.isConnected || !window.firebaseApp) {
-                    this.showMessage('Firebase not connected. Please try again.', 'error');
-                    return false;
-                }
-
-                try {
-                    // Show loading state
-                    this.setLoadingState(true);
-
-                    console.log('Registering user:', userData.email);
-
-                    // Track registration attempt
-                    if (window.firebaseApp.analyticsFunctions) {
-                        window.firebaseApp.analyticsFunctions.logEvent(
-                            window.firebaseApp.analytics, 
-                            'registration_attempt',
-                            { email: userData.email }
-                        );
-                    }
-
-                    // Create user with Firebase Auth
-                    const userCredential = await window.firebaseApp.authFunctions.createUserWithEmailAndPassword(
-                        window.firebaseApp.auth, 
-                        userData.email, 
-                        userData.password
-                    );
-
-                    const user = userCredential.user;
-                    console.log('✅ User created successfully:', user.email);
-
-                    // Update user profile with display name
-                    if (userData.firstName) {
-                        await window.firebaseApp.authFunctions.updateProfile(user, {
-                            displayName: userData.firstName
-                        });
-                    }
-
-                    // Send email verification
-                    await window.firebaseApp.authFunctions.sendEmailVerification(user);
-                    console.log('✅ Verification email sent');
-
-                    // Store user data in Firestore
-                    try {
-                        await window.firebaseApp.firestore.setDoc(
-                            window.firebaseApp.firestore.doc(window.firebaseApp.db, 'users', user.uid),
-                            {
-                                email: user.email,
-                                displayName: userData.firstName || '',
-                                firstName: userData.firstName || '',
-                                emailVerified: false,
-                                profileComplete: false,
-                                marketingConsent: userData.marketingConsent || false,
-                                settings: {
-                                    theme: 'blue-theme',
-                                    darkMode: true,
-                                    notifications: true
-                                },
-                                createdAt: window.firebaseApp.firestore.serverTimestamp(),
-                                lastLogin: window.firebaseApp.firestore.serverTimestamp(),
-                                registrationSource: 'web'
-                            }
-                        );
-                        console.log('✅ User data saved to Firestore');
-                    } catch (firestoreError) {
-                        console.warn('⚠️ Firestore save warning:', firestoreError);
-                        // Continue even if Firestore fails - auth is what matters
-                    }
-
-                    // Track successful registration
-                    if (window.firebaseApp.analyticsFunctions) {
-                        window.firebaseApp.analyticsFunctions.logEvent(
-                            window.firebaseApp.analytics, 
-                            'registration_success',
-                            { 
-                                email: user.email,
-                                user_id: user.uid 
-                            }
-                        );
-                    }
-
-                    // Show success message
-                    this.showMessage(
-                        `Account created successfully! A verification email has been sent to ${user.email}. Please check your inbox and verify your email address.`,
-                        'success'
-                    );
-
-                    // Update button state
-                    this.setLoadingState(false, 'Account Created!');
-
-                    // Store registration data in localStorage
-                    localStorage.setItem('userEmail', user.email);
-                    localStorage.setItem('userId', user.uid);
-                    localStorage.setItem('userDisplayName', userData.firstName || '');
-                    localStorage.setItem('registrationComplete', 'true');
-                    localStorage.setItem('emailVerificationSent', 'true');
-
-                    // Redirect to login after delay
-                    setTimeout(() => {
-                        window.location.href = 'login.html?message=registration_success';
-                    }, 4000);
-
-                    return true;
-
-                } catch (error) {
-                    console.error('❌ Registration error:', error);
-                    
-                    // Track registration failure
-                    if (window.firebaseApp.analyticsFunctions) {
-                        window.firebaseApp.analyticsFunctions.logEvent(
-                            window.firebaseApp.analytics, 
-                            'registration_failed',
-                            { 
-                                error_code: error.code,
-                                error_message: error.message 
-                            }
-                        );
-                    }
-
-                    // Reset button state
-                    this.setLoadingState(false, 'Create Account');
-
-                    // Handle specific errors
-                    let errorMessage = 'Registration failed. Please try again.';
-
-                    switch (error.code) {
-                        case 'auth/email-already-in-use':
-                            errorMessage = 'This email is already registered. Please sign in instead or use a different email address.';
-                            break;
-                        case 'auth/invalid-email':
-                            errorMessage = 'Invalid email address format. Please check your email and try again.';
-                            break;
-                        case 'auth/weak-password':
-                            errorMessage = 'Password is too weak. Please use a stronger password with at least 8 characters including uppercase, lowercase, numbers, and special characters.';
-                            break;
-                        case 'auth/operation-not-allowed':
-                            errorMessage = 'Email/password accounts are not enabled. Please contact support.';
-                            break;
-                        case 'auth/network-request-failed':
-                            errorMessage = 'Network error. Please check your internet connection and try again.';
-                            break;
-                        case 'auth/too-many-requests':
-                            errorMessage = 'Too many registration attempts. Please try again later.';
-                            break;
-                        default:
-                            errorMessage = `Registration error: ${error.message}`;
-                    }
-
-                    this.showMessage(errorMessage, 'error');
-                    return false;
-                }
-            }
-
             setLoadingState(isLoading, buttonText = 'Create Account') {
                 const registerBtn = document.getElementById('registerBtn');
                 const registerBtnText = document.getElementById('registerBtnText');
@@ -714,37 +518,139 @@
                 }
             }
 
+            async registerWithEmailPassword(userData) {
+                if (!this.isConnected || !window.firebaseApp) {
+                    this.showMessage('Firebase not connected. Please try again.', 'error');
+                    return false;
+                }
+
+                try {
+                    this.setLoadingState(true);
+
+                    console.log('Registering user:', userData.email);
+
+                    // Create user with Firebase Auth
+                    const userCredential = await window.firebaseApp.authFunctions.createUserWithEmailAndPassword(
+                        window.firebaseApp.auth, 
+                        userData.email, 
+                        userData.password
+                    );
+
+                    const user = userCredential.user;
+                    console.log('✅ User created successfully:', user.email);
+
+                    // Update user profile with display name
+                    if (userData.displayName) {
+                        await window.firebaseApp.authFunctions.updateProfile(user, {
+                            displayName: userData.displayName
+                        });
+                    }
+
+                    // Send email verification
+                    await window.firebaseApp.authFunctions.sendEmailVerification(user);
+                    console.log('✅ Verification email sent');
+
+                    // Store user data in Firestore
+                    try {
+                        await window.firebaseApp.firestore.setDoc(
+                            window.firebaseApp.firestore.doc(window.firebaseApp.db, 'users', user.uid),
+                            {
+                                uid: user.uid,
+                                email: user.email,
+                                displayName: userData.displayName || '',
+                                emailVerified: false,
+                                profileComplete: false,
+                                createdAt: window.firebaseApp.firestore.serverTimestamp(),
+                                lastLogin: window.firebaseApp.firestore.serverTimestamp(),
+                                registrationSource: 'web'
+                            }
+                        );
+                        console.log('✅ User data saved to Firestore');
+                    } catch (firestoreError) {
+                        console.warn('⚠️ Firestore save warning:', firestoreError);
+                    }
+
+                    // Show success message
+                    this.showMessage(
+                        `Account created successfully! Verification email sent to ${user.email}.`,
+                        'success'
+                    );
+
+                    // Update button state
+                    this.setLoadingState(false, 'Account Created!');
+
+                    // Store registration data
+                    localStorage.setItem('userEmail', user.email);
+                    localStorage.setItem('userId', user.uid);
+                    localStorage.setItem('userDisplayName', userData.displayName || '');
+
+                    // Redirect to login after delay
+                    setTimeout(() => {
+                        window.location.href = 'login.html?message=registration_success';
+                    }, 3000);
+
+                    return true;
+
+                } catch (error) {
+                    console.error('❌ Registration error:', error);
+                    
+                    // Reset button state
+                    this.setLoadingState(false, 'Create Account');
+
+                    // Handle specific errors
+                    let errorMessage = 'Registration failed. Please try again.';
+
+                    switch (error.code) {
+                        case 'auth/email-already-in-use':
+                            errorMessage = 'This email is already registered. Please sign in instead.';
+                            break;
+                        case 'auth/invalid-email':
+                            errorMessage = 'Invalid email address format.';
+                            break;
+                        case 'auth/weak-password':
+                            errorMessage = 'Password is too weak. Please use a stronger password.';
+                            break;
+                        case 'auth/network-request-failed':
+                            errorMessage = 'Network error. Please check your internet connection.';
+                            break;
+                    }
+
+                    this.showMessage(errorMessage, 'error');
+                    return false;
+                }
+            }
+
             validateFormData(formData) {
                 const errors = [];
 
-                // Name validation
-                if (!formData.firstName || formData.firstName.trim().length < 2) {
-                    errors.push('Please enter a valid first name (at least 2 characters)');
+                // Display name validation
+                if (!formData.displayName || formData.displayName.trim().length < 2) {
+                    errors.push({ field: 'displayName', message: 'Display name must be at least 2 characters' });
                 }
 
                 // Email validation
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!formData.email || !emailRegex.test(formData.email)) {
-                    errors.push('Please enter a valid email address');
+                    errors.push({ field: 'email', message: 'Please enter a valid email address' });
                 }
 
                 // Password validation
                 if (!formData.password) {
-                    errors.push('Please enter a password');
+                    errors.push({ field: 'password', message: 'Password is required' });
                 } else if (formData.password.length < 8) {
-                    errors.push('Password must be at least 8 characters long');
+                    errors.push({ field: 'password', message: 'Password must be at least 8 characters' });
                 } else if (this.passwordStrength < 3) {
-                    errors.push('Please use a stronger password');
+                    errors.push({ field: 'password', message: 'Please use a stronger password' });
                 }
 
                 // Password confirmation
                 if (formData.password !== formData.confirmPassword) {
-                    errors.push('Passwords do not match');
+                    errors.push({ field: 'confirmPassword', message: 'Passwords do not match' });
                 }
 
                 // Terms agreement
                 if (!formData.agreeTerms) {
-                    errors.push('You must agree to the Terms of Service and Privacy Policy');
+                    errors.push({ field: 'terms', message: 'You must agree to the Terms of Service' });
                 }
 
                 return errors;
@@ -754,21 +660,32 @@
                 // Form submission
                 document.getElementById('registerForm').addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    this.clearMessages();
                     
+                    // Clear previous errors
+                    this.clearFieldError('displayName');
+                    this.clearFieldError('email');
+                    this.clearFieldError('password');
+                    this.clearFieldError('confirmPassword');
+                    this.clearFieldError('terms');
+
                     const formData = {
-                        firstName: document.getElementById('firstName').value.trim(),
+                        displayName: document.getElementById('displayName').value.trim(),
                         email: document.getElementById('email').value.trim().toLowerCase(),
                         password: document.getElementById('password').value,
                         confirmPassword: document.getElementById('confirmPassword').value,
-                        agreeTerms: document.getElementById('agree-terms').checked,
-                        marketingConsent: document.getElementById('marketing-consent').checked
+                        agreeTerms: document.getElementById('agree-terms').checked
                     };
 
                     // Validate form data
                     const errors = this.validateFormData(formData);
                     if (errors.length > 0) {
-                        this.showMessage(errors[0], 'error');
+                        errors.forEach(error => {
+                            if (error.field === 'terms') {
+                                this.showFieldError('terms', error.message);
+                            } else {
+                                this.showFieldError(error.field, error.message);
+                            }
+                        });
                         return;
                     }
 
@@ -776,9 +693,38 @@
                     await this.registerWithEmailPassword(formData);
                 });
 
-                // Password strength checking
+                // Real-time validation
+                document.getElementById('displayName').addEventListener('input', (e) => {
+                    const value = e.target.value.trim();
+                    this.clearFieldError('displayName');
+                    if (value && value.length >= 2) {
+                        this.showFieldSuccess('displayName');
+                    }
+                });
+
+                document.getElementById('email').addEventListener('input', (e) => {
+                    const email = e.target.value.trim();
+                    this.clearFieldError('email');
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (email && emailRegex.test(email)) {
+                        this.showFieldSuccess('email');
+                    }
+                });
+
                 document.getElementById('password').addEventListener('input', (e) => {
                     this.validatePassword(e.target.value);
+                    this.clearFieldError('password');
+                    if (e.target.value && e.target.value.length >= 8) {
+                        this.showFieldSuccess('password');
+                    }
+                });
+
+                document.getElementById('confirmPassword').addEventListener('input', (e) => {
+                    const password = document.getElementById('password').value;
+                    this.clearFieldError('confirmPassword');
+                    if (e.target.value && e.target.value === password) {
+                        this.showFieldSuccess('confirmPassword');
+                    }
                 });
 
                 // Password visibility toggle
@@ -795,7 +741,6 @@
                     }
                 });
 
-                // Confirm password visibility toggle
                 document.getElementById('toggleConfirmPassword').addEventListener('click', () => {
                     const confirmInput = document.getElementById('confirmPassword');
                     const icon = document.getElementById('toggleConfirmPassword').querySelector('i');
@@ -809,62 +754,38 @@
                     }
                 });
 
-                // Real-time password confirmation validation
-                document.getElementById('confirmPassword').addEventListener('input', (e) => {
-                    const password = document.getElementById('password').value;
-                    const confirmPassword = e.target.value;
-                    
-                    if (confirmPassword && password !== confirmPassword) {
-                        e.target.classList.add('border-red-500');
-                        e.target.classList.remove('border-blue-700');
-                    } else {
-                        e.target.classList.remove('border-red-500');
-                        e.target.classList.add('border-blue-700');
-                    }
-                });
-
-                // Enter key support for form submission
-                document.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !document.getElementById('registerBtn').disabled) {
-                        document.getElementById('registerForm').dispatchEvent(new Event('submit'));
-                    }
-                });
-
-                console.log('✅ Event listeners setup complete');
+                // Auto-focus first field
+                document.getElementById('displayName').focus();
             }
         }
 
-        // Navigation
+        // Global function to initialize registration
+        window.initRegistrationApp = function() {
+            window.registrationApp = new RegistrationApplication();
+            window.registrationApp.initialize();
+        };
+
+        // Back button function
         function goBack() {
-            // Track back button click
-            if (window.firebaseApp && window.firebaseApp.analyticsFunctions) {
-                window.firebaseApp.analyticsFunctions.logEvent(
-                    window.firebaseApp.analytics, 
-                    'registration_back_click'
-                );
-            }
             window.location.href = 'index.html';
         }
 
-        // Initialize the application
-        function initRegistration() {
-            window.registrationApp = new RegistrationApplication();
-            window.registrationApp.initialize().catch(error => {
-                console.error('❌ Failed to initialize registration app:', error);
-            });
-        }
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.firebaseApp) {
+                window.initRegistrationApp();
+            } else {
+                // Wait for Firebase to initialize
+                const checkFirebase = setInterval(() => {
+                    if (window.firebaseApp) {
+                        clearInterval(checkFirebase);
+                        window.initRegistrationApp();
+                    }
+                }, 100);
+            }
+        });
 
-        // Make it available globally for Firebase initialization
-        window.initRegistration = initRegistration;
-
-        // Initialize when ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initRegistration);
-        } else {
-            initRegistration();
-        }
-
-        console.log('📝 Registration page loaded with modular Firebase');
+        console.log('🚀 Registration application script loaded');
     </script>
 </body>
 </html>
