@@ -1,93 +1,96 @@
-const express = require('express');
-const path = require('path');
+/**
+ * UniConnectSphere Server
+ * -----------------------
+ * Runs an Express server that serves static HTML pages
+ * and adds security + CSP headers for Firebase and Tailwind.
+ */
+
+const express = require("express");
+const path = require("path");
+const compression = require("compression");
+const helmet = require("helmet");
+const cors = require("cors");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
-// ✅ Allow external CDNs for Firebase, Tailwind, and Font Awesome
+
+// --- MIDDLEWARE SETUP ---
+
+// Basic security headers (disable Helmet's default CSP because we set our own)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  })
+);
+
+// Enable CORS and gzip compression
+app.use(cors());
+app.use(compression());
+
+// --- CUSTOM CONTENT SECURITY POLICY (CSP) ---
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self' data: https:; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://www.gstatic.com https://www.googleapis.com; " +
-    "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://fonts.googleapis.com; " +
-    "connect-src 'self' https://firestore.googleapis.com https://www.googleapis.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasestorage.googleapis.com https://firebaseinstallations.googleapis.com https://firebase.googleapis.com https://accounts.google.com https://apis.google.com; " +
-    "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; " +
-    "img-src 'self' data: https:;"
+    [
+      "default-src 'self' data: blob: https:;",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://www.gstatic.com https://www.googleapis.com;",
+      "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://cdnjs.cloudflare.com;",
+      "connect-src 'self' https://firestore.googleapis.com https://www.googleapis.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasestorage.googleapis.com https://firebaseinstallations.googleapis.com https://firebase.googleapis.com https://accounts.google.com https://apis.google.com;",
+      "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;",
+      "img-src 'self' data: blob: https:;",
+    ].join(" ")
   );
   next();
 });
-// Serve static files from the same directory
-app.use(express.static(__dirname));
 
-// Parse JSON and URL-encoded bodies
+// --- EXPRESS CONFIG ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Security headers
-app.use((req, res, next) => {
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    next();
+// Serve static files (HTML, CSS, JS)
+app.use(express.static(__dirname));
+
+// --- ROUTES ---
+const pages = [
+  "index",
+  "legal",
+  "platform",
+  "support",
+  "login",
+  "register",
+  "dashboard",
+  "profile",
+];
+
+pages.forEach((page) => {
+  app.get('/${page === "index" ? "" : page}', (req, res) => {
+    res.sendFile(path.join(__dirname, '${page}.html'));
+  });
 });
 
-// Routes for all your HTML pages
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// Health-check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    message: "UniConnectSphere server running fine",
+  });
 });
 
-app.get('/legal', (req, res) => {
-    res.sendFile(path.join(__dirname, 'legal.html'));
-});
-
-app.get('/platform', (req, res) => {
-    res.sendFile(path.join(__dirname, 'platform.html'));
-});
-
-app.get('/support', (req, res) => {
-    res.sendFile(path.join(__dirname, 'support.html'));
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'login.html'));
-});
-
-app.get('/register', (req, res) => {
-    res.sendFile(path.join(__dirname, 'register.html'));
-});
-
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dashboard.html'));
-});
-
-app.get('/profile', (req, res) => {
-    res.sendFile(path.join(__dirname, 'profile.html'));
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.status(200).json({ 
-        status: 'OK', 
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        message: 'UniConnect server is running smoothly'
-    });
-});
-
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`
+// --- START SERVER ---
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`
 🚀 UniConnect Server Started!
 📍 Port: ${PORT}
-🌐 Environment: ${process.env.NODE_ENV || 'development'}
+🌐 Environment: ${process.env.NODE_ENV || "development"}
 
 📄 Available Pages:
-   • Home: http://localhost:${PORT}/
-   • Legal: http://localhost:${PORT}/legal
-   • Platform: http://localhost:${PORT}/platform
-   • Support: http://localhost:${PORT}/support
+   • Home:      http://localhost:${PORT}/
+   • Legal:     http://localhost:${PORT}/legal
+   • Platform:  http://localhost:${PORT}/platform
+   • Support:   http://localhost:${PORT}/support
 
-❤️  Health Check: http://localhost:${PORT}/health
-    `);
+❤  Health Check: http://localhost:${PORT}/health
+`);
 });
-
-module.exports = app;

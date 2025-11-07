@@ -1,7 +1,7 @@
 {
   "name": "uniconnectsphere",
-  "version": "1.0.1",
-  "description": "UniConnectSphere — a social and creative chat platform built with Node.js, Express, Firebase, Cloudinary, and TailwindCSS.",
+  "version": "1.0.2",
+  "description": "UniConnectSphere — social media and chat app built with Node.js, Express, Firebase, and Cloudinary.",
   "type": "commonjs",
   "main": "server.js",
   "scripts": {
@@ -9,17 +9,6 @@
     "dev": "nodemon server.js",
     "prod": "NODE_ENV=production node server.js"
   },
-  "keywords": [
-    "firebase",
-    "express",
-    "cloudinary",
-    "chat",
-    "social-media",
-    "tailwindcss",
-    "nodejs"
-  ],
-  "author": "Dennis Nchagwa",
-  "license": "MIT",
   "dependencies": {
     "cloudinary": "^1.41.3",
     "compression": "^1.8.1",
@@ -36,13 +25,5 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nchagwadennis45-a11y/connectsphere.git"
-  },
-  "bugs": {
-    "url": "https://github.com/nchagwadennis45-a11y/connectsphere/issues"
-  },
-  "homepage": "https://github.com/nchagwadennis45-a11y/connectsphere#readme"
+  }
 }
