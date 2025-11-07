@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: uniconnectsphere
-    env: node
-    plan: free
-    buildCommand: npm install
-    startCommand: node server.js
-    autoDeploy: true
-  
