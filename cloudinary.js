@@ -18,7 +18,7 @@ const uploadToCloudinary = async (filePath) => {
     }
 
     const result = await cloudinary.uploader.upload(filePath, {
-      folder: 'uniconnectsphere', // optional: specify a folder in Cloudinary
+      folder: 'kynectasphere', // optional: specify a folder in Cloudinary
       resource_type: 'auto' // automatically detect file type (image, video, raw)
     });
     
@@ -41,7 +41,7 @@ const uploadFromBuffer = async (buffer, originalname) => {
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          folder: 'uniconnectsphere',
+          folder: 'kynectasphere',
           resource_type: 'auto'
         },
         (error, result) => {

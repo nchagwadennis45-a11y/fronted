@@ -730,7 +730,7 @@
                     console.log(`✅ Setting saved: ${key} = ${value}`);
                     
                     // Also save to localStorage as backup
-                    localStorage.setItem('uniconnectSettings', JSON.stringify(this.userSettings));
+                    localStorage.setItem('kynectaSettings', JSON.stringify(this.userSettings));
                 } catch (error) {
                     console.error('❌ Error saving setting:', error);
                     this.showNotification('Failed to save setting. Please try again.', 'error');
@@ -1058,7 +1058,7 @@
 
             async loadUserSettings() {
                 // Load settings from localStorage as fallback
-                const savedSettings = localStorage.getItem('uniconnectSettings');
+                const savedSettings = localStorage.getItem('kynectaSettings');
                 if (savedSettings) {
                     this.userSettings = { ...this.userSettings, ...JSON.parse(savedSettings) };
                     this.applySettingsToUI();

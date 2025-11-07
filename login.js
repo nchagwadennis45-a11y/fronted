@@ -1,27 +1,29 @@
 // login.js - User Login with Firebase Auth
 console.log('🔐 Login script loaded');
 
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
-    authDomain: "uniconnect-ee95c.firebaseapp.com",
-    projectId: "uniconnect-ee95c",
-    storageBucket: "uniconnect-ee95c.firebasestorage.app",
-    messagingSenderId: "1003264444309",
-    appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
-};
+// Firebase configuration will be set via environment variables in production
+let auth, db;
 
 // Initialize Firebase
-let auth, db;
 try {
     if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+        // Check if Firebase config is available (set via environment variables or config file)
+        if (typeof firebaseConfig !== 'undefined') {
+            firebase.initializeApp(firebaseConfig);
+            console.log('✅ Firebase initialized with provided config');
+        } else {
+            // Try to get config from environment or use default (for development)
+            const config = getFirebaseConfig();
+            firebase.initializeApp(config);
+            console.log('✅ Firebase initialized with environment config');
+        }
     }
     auth = firebase.auth();
     db = firebase.firestore();
-    console.log('✅ Firebase initialized successfully');
+    console.log('✅ Firebase services initialized successfully');
 } catch (error) {
     console.error('❌ Firebase initialization error:', error);
+    handleFirebaseError(error, 'initialize Firebase');
 }
 
 // DOM Elements
@@ -65,6 +67,25 @@ document.addEventListener('DOMContentLoaded', function() {
     checkAuthState();
 });
 
+// Get Firebase configuration from environment
+function getFirebaseConfig() {
+    // In production, these should be set as environment variables
+    // For development, you can create a config.js file that sets window.firebaseConfig
+    if (typeof window !== 'undefined' && window.firebaseConfig) {
+        return window.firebaseConfig;
+    }
+    
+    // Fallback for development (will be overridden by environment variables in production)
+    return {
+        apiKey: process.env.FIREBASE_API_KEY || "demo-key",
+        authDomain: process.env.FIREBASE_AUTH_DOMAIN || "uniconnect-dev.firebaseapp.com",
+        projectId: process.env.FIREBASE_PROJECT_ID || "uniconnect-dev",
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "uniconnect-dev.appspot.com",
+        messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "123456789",
+        appId: process.env.FIREBASE_APP_ID || "1:123456789:web:abcdef123456"
+    };
+}
+
 // Clear cached authentication data
 function clearAuthCache() {
     // Clear any stored authentication data
@@ -83,7 +104,10 @@ function clearAuthCache() {
 
 // Check authentication state and redirect if already logged in
 function checkAuthState() {
-    if (!auth) return;
+    if (!auth) {
+        showStatus('Authentication service not available', 'error');
+        return;
+    }
     
     auth.onAuthStateChanged(async (user) => {
         if (user && window.location.pathname.includes('login.html')) {
@@ -108,15 +132,23 @@ function checkAuthState() {
                 }
             } catch (error) {
                 console.error('❌ Error checking user document:', error);
-                showStatus('Authentication error. Please login again.', 'error');
+                handleFirebaseError(error, 'check user authentication');
             }
         }
+    }, (error) => {
+        console.error('❌ Auth state change error:', error);
+        handleFirebaseError(error, 'monitor authentication state');
     });
 }
 
 // Handle user login
 async function handleLogin(event) {
     event.preventDefault();
+    
+    if (!auth) {
+        showStatus('Authentication service not available', 'error');
+        return;
+    }
     
     const email = emailInput.value.trim();
     const password = passwordInput.value;
@@ -162,34 +194,17 @@ async function handleLogin(event) {
     } catch (error) {
         console.error('❌ Login error:', error);
         setFormLoading(false);
-        
-        let errorMessage = 'Login failed. ';
-        switch (error.code) {
-            case 'auth/user-not-found':
-                errorMessage += 'No account found with this email.';
-                break;
-            case 'auth/wrong-password':
-                errorMessage += 'Incorrect password.';
-                break;
-            case 'auth/invalid-email':
-                errorMessage += 'Invalid email address.';
-                break;
-            case 'auth/user-disabled':
-                errorMessage += 'This account has been disabled.';
-                break;
-            case 'auth/too-many-requests':
-                errorMessage += 'Too many failed attempts. Please try again later.';
-                break;
-            default:
-                errorMessage += error.message;
-        }
-        
-        showStatus(errorMessage, 'error');
+        handleFirebaseError(error, 'user login');
     }
 }
 
 // Handle guest login (anonymous authentication)
 async function handleGuestLogin() {
+    if (!auth) {
+        showStatus('Authentication service not available', 'error');
+        return;
+    }
+
     try {
         showStatus('Creating guest account...', 'info');
         setFormLoading(true);
@@ -212,12 +227,17 @@ async function handleGuestLogin() {
     } catch (error) {
         console.error('❌ Guest login error:', error);
         setFormLoading(false);
-        showStatus(`Guest login failed: ${error.message}`, 'error');
+        handleFirebaseError(error, 'guest login');
     }
 }
 
 // Handle Google login
 async function handleGoogleLogin() {
+    if (!auth) {
+        showStatus('Authentication service not available', 'error');
+        return;
+    }
+
     try {
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.addScope('profile');
@@ -251,17 +271,17 @@ async function handleGoogleLogin() {
     } catch (error) {
         console.error('❌ Google login error:', error);
         setFormLoading(false);
-        
-        if (error.code === 'auth/popup-closed-by-user') {
-            showStatus('Google login was cancelled', 'info');
-        } else {
-            showStatus(`Google login failed: ${error.message}`, 'error');
-        }
+        handleFirebaseError(error, 'Google login');
     }
 }
 
 // Handle Facebook login
 async function handleFacebookLogin() {
+    if (!auth) {
+        showStatus('Authentication service not available', 'error');
+        return;
+    }
+
     try {
         const provider = new firebase.auth.FacebookAuthProvider();
         provider.addScope('email');
@@ -295,18 +315,18 @@ async function handleFacebookLogin() {
     } catch (error) {
         console.error('❌ Facebook login error:', error);
         setFormLoading(false);
-        
-        if (error.code === 'auth/popup-closed-by-user') {
-            showStatus('Facebook login was cancelled', 'info');
-        } else {
-            showStatus(`Facebook login failed: ${error.message}`, 'error');
-        }
+        handleFirebaseError(error, 'Facebook login');
     }
 }
 
 // Handle forgot password
 async function handleForgotPassword(event) {
     event.preventDefault();
+    
+    if (!auth) {
+        showStatus('Authentication service not available', 'error');
+        return;
+    }
     
     const email = prompt('Please enter your email address to reset your password:');
     
@@ -328,21 +348,90 @@ async function handleForgotPassword(event) {
         
     } catch (error) {
         console.error('❌ Password reset error:', error);
-        
-        let errorMessage = 'Failed to send reset email. ';
+        handleFirebaseError(error, 'send password reset');
+    }
+}
+
+// Enhanced Firebase error handling
+function handleFirebaseError(error, context = 'operation') {
+    let userMessage = 'An unexpected error occurred';
+    
+    if (error.code) {
         switch (error.code) {
+            // Authentication errors
             case 'auth/user-not-found':
-                errorMessage += 'No account found with this email.';
+                userMessage = 'No account found with this email address';
+                break;
+            case 'auth/wrong-password':
+                userMessage = 'Incorrect password. Please try again';
                 break;
             case 'auth/invalid-email':
-                errorMessage += 'Invalid email address.';
+                userMessage = 'Invalid email address format';
                 break;
+            case 'auth/user-disabled':
+                userMessage = 'This account has been disabled. Please contact support';
+                break;
+            case 'auth/too-many-requests':
+                userMessage = 'Too many failed attempts. Please try again later';
+                break;
+            case 'auth/email-already-in-use':
+                userMessage = 'This email is already associated with an account';
+                break;
+            case 'auth/weak-password':
+                userMessage = 'Password is too weak. Please use a stronger password';
+                break;
+            case 'auth/operation-not-allowed':
+                userMessage = 'This login method is not enabled';
+                break;
+            case 'auth/requires-recent-login':
+                userMessage = 'Please log in again to perform this action';
+                break;
+                
+            // Social login errors
+            case 'auth/popup-closed-by-user':
+                userMessage = 'Login was cancelled';
+                return; // Don't show error for cancelled popups
+            case 'auth/popup-blocked':
+                userMessage = 'Login popup was blocked. Please allow popups for this site';
+                break;
+            case 'auth/unauthorized-domain':
+                userMessage = 'This domain is not authorized for login';
+                break;
+                
+            // Network and system errors
+            case 'auth/network-request-failed':
+                userMessage = 'Network error. Please check your internet connection';
+                break;
+            case 'auth/internal-error':
+                userMessage = 'Internal server error. Please try again later';
+                break;
+            case 'auth/app-not-authorized':
+                userMessage = 'Application not authorized to use Firebase Authentication';
+                break;
+                
+            // Firestore errors
+            case 'permission-denied':
+                userMessage = 'You do not have permission to perform this action';
+                break;
+            case 'not-found':
+                userMessage = 'The requested resource was not found';
+                break;
+            case 'unavailable':
+                userMessage = 'Service is temporarily unavailable. Please try again later';
+                break;
+            case 'failed-precondition':
+                userMessage = 'Operation cannot be completed in the current state';
+                break;
+                
             default:
-                errorMessage += error.message;
+                userMessage = `Error during ${context}: ${error.message || 'Please try again'}`;
         }
-        
-        showStatus(errorMessage, 'error');
+    } else {
+        userMessage = `Error during ${context}: ${error.message || 'Unknown error occurred'}`;
     }
+    
+    console.error(`❌ Firebase error in ${context}:`, error.code, error.message);
+    showStatus(userMessage, 'error');
 }
 
 // Create guest user document in Firestore
@@ -388,6 +477,7 @@ async function createGuestUserDocument(uid) {
         
     } catch (error) {
         console.error('❌ Error creating guest user document:', error);
+        handleFirebaseError(error, 'create guest user');
         throw error;
     }
 }
@@ -435,6 +525,7 @@ async function createUserDocument(user) {
         
     } catch (error) {
         console.error('❌ Error creating user document:', error);
+        handleFirebaseError(error, 'create user document');
         throw error;
     }
 }
@@ -483,6 +574,7 @@ async function createSocialUserDocument(user, provider) {
         
     } catch (error) {
         console.error(`❌ Error creating ${provider} user document:`, error);
+        handleFirebaseError(error, `create ${provider} user document`);
         throw error;
     }
 }
@@ -499,6 +591,7 @@ async function updateUserLastSeen(uid) {
         console.log('✅ User last seen updated');
     } catch (error) {
         console.error('❌ Error updating last seen:', error);
+        handleFirebaseError(error, 'update user status');
     }
 }
 
@@ -577,6 +670,7 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         validateEmail,
         getDefaultAvatar,
-        clearAuthCache
+        clearAuthCache,
+        handleFirebaseError
     };
 }

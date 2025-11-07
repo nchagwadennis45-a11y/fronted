@@ -6,7 +6,8 @@
       "**/.*",
       "**/node_modules/**",
       "**/README.md",
-      "**/.github/**"
+      "**/.github/**",
+      "**/deploy-config.js"
     ],
     "rewrites": [
       {
@@ -21,7 +22,7 @@
         "type": 301
       },
       {
-        "source": "/campus",
+        "source": "/campus", 
         "destination": "/marketplace.html",
         "type": 302
       }
@@ -51,8 +52,8 @@
             "value": "strict-origin-when-cross-origin"
           },
           {
-            "key": "X-Project-ID",
-            "value": "uniconnect-ee95c"
+            "key": "X-Environment",
+            "value": "{{ENVIRONMENT}}"
           }
         ]
       },
@@ -62,6 +63,15 @@
           {
             "key": "Cache-Control",
             "value": "max-age=31536000"
+          }
+        ]
+      },
+      {
+        "source": "**/*.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=86400"
           }
         ]
       },

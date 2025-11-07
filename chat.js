@@ -1,5 +1,4 @@
 // Professional Chat System JavaScript - Firebase Integrated Version
-import { collection, query, orderBy, limit, onSnapshot, where, addDoc, updateDoc, doc, getDocs, getDoc, serverTimestamp, arrayUnion, arrayRemove } from "firebase/firestore";
 
 class ProfessionalChatSystem {
     constructor() {
@@ -20,46 +19,153 @@ class ProfessionalChatSystem {
         this.usersListener = null;
         this.lastSent = 0; // Rate limiting
         
-        // Firebase configuration
-        this.firebaseConfig = {
-            apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
-            authDomain: "uniconnect-ee95c.firebaseapp.com",
-            projectId: "uniconnect-ee95c",
-            storageBucket: "uniconnect-ee95c.firebasestorage.app",
-            messagingSenderId: "1003264444309",
-            appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
-        };
+        // Firebase configuration - will be loaded dynamically
+        this.firebaseConfig = null;
+        this.environment = 'production';
         
         this.init();
     }
     
     async init() {
         try {
+            await this.loadFirebaseConfig();
             await this.initializeFirebase();
             await this.setupAuthStateListener();
             this.setupEventListeners();
-            console.log('🚀 Professional Chat System Initialized with Firebase');
+            console.log(`🚀 Professional Chat System Initialized with Firebase (${this.environment})`);
         } catch (error) {
             console.error('Error initializing chat system:', error);
             this.showNotification('Error initializing chat system', 'error');
         }
     }
     
-    async initializeFirebase() {
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(this.firebaseConfig);
+    async loadFirebaseConfig() {
+        // Priority 1: Check for deployment-generated config
+        if (window.firebaseConfig && window.appEnvironment) {
+            this.firebaseConfig = window.firebaseConfig;
+            this.environment = window.appEnvironment;
+            console.log(`🔥 Firebase config loaded for ${this.environment} environment`);
+            return;
         }
+
+        // Priority 2: Try to load deploy-config.js (generated during deployment)
+        try {
+            console.log('📁 Loading deployment configuration...');
+            const response = await fetch('/deploy-config.js');
+            if (response.ok) {
+                // Load the config script dynamically
+                await this.loadScript('/deploy-config.js');
+                if (window.firebaseConfig) {
+                    this.firebaseConfig = window.firebaseConfig;
+                    this.environment = window.appEnvironment || 'production';
+                    console.log(`✅ Loaded ${this.environment} configuration from deploy-config.js`);
+                    return;
+                }
+            }
+        } catch (error) {
+            console.warn('Could not load deploy-config.js:', error.message);
+        }
+
+        // Priority 3: Fallback to environment detection from hostname
+        this.environment = this.detectEnvironmentFromHostname(window.location.hostname);
+        this.firebaseConfig = this.getConfigForEnvironment(this.environment);
         
-        this.auth = firebase.auth();
-        this.firestore = firebase.firestore();
-        this.storage = firebase.storage();
+        console.log(`🌐 Detected ${this.environment} environment from hostname`);
+        console.log('🔥 Using Firebase project:', this.firebaseConfig.projectId);
+    }
+
+    loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    detectEnvironmentFromHostname(hostname) {
+        if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+            return 'development';
+        }
+        if (hostname.includes('-dev.') || hostname.includes('.dev.')) {
+            return 'development';
+        }
+        if (hostname.includes('-staging.') || hostname.includes('.staging.')) {
+            return 'staging';
+        }
+        return 'production';
+    }
+
+    getConfigForEnvironment(environment) {
+        const configs = {
+            development: {
+                apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
+                authDomain: "uniconnect-ee95c-dev.firebaseapp.com",
+                projectId: "uniconnect-ee95c-dev",
+                storageBucket: "uniconnect-ee95c-dev.firebasestorage.app",
+                messagingSenderId: "1003264444309",
+                appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
+            },
+            staging: {
+                apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
+                authDomain: "uniconnect-ee95c-staging.firebaseapp.com",
+                projectId: "uniconnect-ee95c-staging",
+                storageBucket: "uniconnect-ee95c-staging.firebasestorage.app",
+                messagingSenderId: "1003264444309",
+                appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
+            },
+            production: {
+                apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
+                authDomain: "uniconnect-ee95c.firebaseapp.com",
+                projectId: "uniconnect-ee95c",
+                storageBucket: "uniconnect-ee95c.firebasestorage.app",
+                messagingSenderId: "1003264444309",
+                appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
+            }
+        };
         
-        // Enable offline persistence
-        await this.firestore.enablePersistence()
-            .catch((err) => {
-                console.error('Firebase persistence failed:', err);
-            });
+        return configs[environment] || configs.production;
+    }
+    
+    async initializeFirebase() {
+        // Check if Firebase is already initialized
+        if (firebase.apps.length > 0) {
+            this.auth = firebase.auth();
+            this.firestore = firebase.firestore();
+            this.storage = firebase.storage();
+            console.log('✅ Firebase already initialized');
+            return;
+        }
+
+        // Validate configuration
+        if (!this.firebaseConfig?.apiKey || !this.firebaseConfig?.projectId) {
+            throw new Error('Firebase configuration is incomplete. Please check your configuration.');
+        }
+
+        // Initialize Firebase with dynamic config
+        try {
+            firebase.initializeApp(this.firebaseConfig);
+            this.auth = firebase.auth();
+            this.firestore = firebase.firestore();
+            this.storage = firebase.storage();
+            
+            // Enable offline persistence with error handling
+            try {
+                await this.firestore.enablePersistence({
+                    synchronizeTabs: true
+                });
+                console.log('✅ Firebase persistence enabled');
+            } catch (persistenceError) {
+                console.warn('⚠️ Firebase persistence failed:', persistenceError);
+                // Continue without persistence - app will still work
+            }
+
+            console.log(`✅ Firebase initialized for project: ${this.firebaseConfig.projectId}`);
+        } catch (error) {
+            console.error('❌ Firebase initialization error:', error);
+            throw new Error('Failed to initialize Firebase. Please check your configuration.');
+        }
     }
     
     setupAuthStateListener() {
@@ -69,6 +175,9 @@ class ProfessionalChatSystem {
             } else {
                 this.handleUserSignedOut();
             }
+        }, (error) => {
+            console.error('Auth state listener error:', error);
+            this.showNotification('Authentication error occurred', 'error');
         });
     }
     
@@ -95,11 +204,18 @@ class ProfessionalChatSystem {
                     streak: 0,
                     connectcoins: 0,
                     level: 1,
-                    xp: 0
+                    xp: 0,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 
                 await this.firestore.collection('users').doc(user.uid).set(this.currentUser);
             }
+            
+            // Update user online status
+            await this.firestore.collection('users').doc(user.uid).update({
+                online: true,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            });
             
             // Initialize gamification
             this.gamification = new GamificationSystem(this.currentUser);
@@ -118,11 +234,32 @@ class ProfessionalChatSystem {
         }
     }
     
-    handleUserSignedOut() {
+    async handleUserSignedOut() {
+        // Update user offline status
+        if (this.currentUser) {
+            try {
+                await this.firestore.collection('users').doc(this.currentUser.id).update({
+                    online: false,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Error updating user offline status:', error);
+            }
+        }
+
         // Clean up listeners
-        if (this.messageListener) this.messageListener();
-        if (this.chatsListener) this.chatsListener();
-        if (this.usersListener) this.usersListener();
+        if (this.messageListener) {
+            this.messageListener();
+            this.messageListener = null;
+        }
+        if (this.chatsListener) {
+            this.chatsListener();
+            this.chatsListener = null;
+        }
+        if (this.usersListener) {
+            this.usersListener();
+            this.usersListener = null;
+        }
         
         this.currentUser = null;
         this.chats = [];
@@ -165,36 +302,50 @@ class ProfessionalChatSystem {
                     // Load members data
                     const membersData = await Promise.all(
                         chatData.members.map(async memberId => {
-                            const memberDoc = await this.firestore.collection('users').doc(memberId).get();
-                            return {
-                                id: memberId,
-                                ...memberDoc.data()
-                            };
+                            try {
+                                const memberDoc = await this.firestore.collection('users').doc(memberId).get();
+                                return {
+                                    id: memberId,
+                                    ...memberDoc.data()
+                                };
+                            } catch (error) {
+                                console.error(`Error loading member ${memberId}:`, error);
+                                return {
+                                    id: memberId,
+                                    name: 'Unknown User',
+                                    avatar: 'UU',
+                                    role: 'user'
+                                };
+                            }
                         })
                     );
                     
-                    // Load messages using modular SDK
-                    const messagesRef = collection(this.firestore, 'chats', doc.id, 'messages');
-                    const q = query(messagesRef, orderBy('timestamp', 'asc'), limit(100));
-                    const messagesSnapshot = await getDocs(q);
-                    
-                    const messages = messagesSnapshot.docs.map(msgDoc => {
-                        const msgData = msgDoc.data();
-                        const sender = membersData.find(m => m.id === msgData.senderId) || this.currentUser;
-                        return {
-                            id: msgDoc.id,
-                            sender: sender,
-                            content: msgData.content,
-                            time: this.formatTime(msgData.timestamp?.toDate()),
-                            type: msgData.type || 'normal',
-                            status: msgData.status || 'sent',
-                            timestamp: msgData.timestamp,
-                            emotion: msgData.emotion,
-                            mediaUrl: msgData.mediaUrl,
-                            mediaType: msgData.mediaType,
-                            isWhisper: msgData.isWhisper
-                        };
-                    });
+                    // Load messages
+                    let messages = [];
+                    try {
+                        const messagesRef = this.firestore.collection('chats').doc(doc.id).collection('messages');
+                        const messagesSnapshot = await messagesRef.orderBy('timestamp', 'asc').limit(100).get();
+                        
+                        messages = messagesSnapshot.docs.map(msgDoc => {
+                            const msgData = msgDoc.data();
+                            const sender = membersData.find(m => m.id === msgData.senderId) || this.currentUser;
+                            return {
+                                id: msgDoc.id,
+                                sender: sender,
+                                content: msgData.content,
+                                time: this.formatTime(msgData.timestamp?.toDate()),
+                                type: msgData.type || 'normal',
+                                status: msgData.status || 'sent',
+                                timestamp: msgData.timestamp,
+                                emotion: msgData.emotion,
+                                mediaUrl: msgData.mediaUrl,
+                                mediaType: msgData.mediaType,
+                                isWhisper: msgData.isWhisper
+                            };
+                        });
+                    } catch (messageError) {
+                        console.error(`Error loading messages for chat ${doc.id}:`, messageError);
+                    }
                     
                     return {
                         id: doc.id,
@@ -210,53 +361,64 @@ class ProfessionalChatSystem {
             
         } catch (error) {
             console.error('Error loading chats:', error);
+            this.showNotification('Error loading conversations', 'error');
         }
     }
     
-    // Enhanced real-time listeners using modular SDK
+    // Enhanced real-time listeners with better error handling
     setupRealtimeMessageListener(chatId) {
         if (this.messageListener) {
             this.messageListener(); // Unsubscribe from previous listener
         }
         
-        const messagesRef = collection(this.firestore, 'chats', chatId, 'messages');
-        const q = query(messagesRef, orderBy("timestamp", "asc"), limit(100));
-        
-        this.messageListener = onSnapshot(q, (snapshot) => {
-            const messages = [];
-            snapshot.forEach((doc) => {
-                messages.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
-            });
+        try {
+            const messagesRef = this.firestore.collection('chats').doc(chatId).collection('messages');
+            const q = messagesRef.orderBy("timestamp", "asc").limit(100);
             
-            // Update the current chat's messages
-            const chatIndex = this.chats.findIndex(chat => chat.id === chatId);
-            if (chatIndex >= 0) {
-                // Convert Firestore timestamps and enrich with sender data
-                this.chats[chatIndex].messages = messages.map(msg => {
-                    const sender = this.chats[chatIndex].members.find(m => m.id === msg.senderId) || this.currentUser;
-                    return {
-                        ...msg,
-                        sender: sender,
-                        time: this.formatTime(msg.timestamp?.toDate()),
-                        timestamp: msg.timestamp
-                    };
+            this.messageListener = q.onSnapshot((snapshot) => {
+                const messages = [];
+                snapshot.forEach((doc) => {
+                    messages.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
                 });
                 
-                // Re-render messages if this is the active chat
-                if (this.currentChatId === chatId) {
-                    this.renderMessages(chatId);
-                    this.scrollToBottom();
+                // Update the current chat's messages
+                const chatIndex = this.chats.findIndex(chat => chat.id === chatId);
+                if (chatIndex >= 0) {
+                    // Convert Firestore timestamps and enrich with sender data
+                    this.chats[chatIndex].messages = messages.map(msg => {
+                        const sender = this.chats[chatIndex].members.find(m => m.id === msg.senderId) || this.currentUser;
+                        return {
+                            ...msg,
+                            sender: sender,
+                            time: this.formatTime(msg.timestamp?.toDate()),
+                            timestamp: msg.timestamp
+                        };
+                    });
                     
-                    // Mark as read
-                    this.markAsRead(chatId);
+                    // Re-render messages if this is the active chat
+                    if (this.currentChatId === chatId) {
+                        this.renderMessages(chatId);
+                        this.scrollToBottom();
+                        
+                        // Mark as read
+                        this.markAsRead(chatId);
+                    }
                 }
-            }
-        }, (error) => {
-            console.error('Error in real-time message listener:', error);
-        });
+            }, (error) => {
+                console.error('Error in real-time message listener:', error);
+                // Attempt to reconnect after delay
+                setTimeout(() => {
+                    if (this.currentChatId === chatId) {
+                        this.setupRealtimeMessageListener(chatId);
+                    }
+                }, 5000);
+            });
+        } catch (error) {
+            console.error('Error setting up message listener:', error);
+        }
     }
     
     setupRealtimeChatsListener() {
@@ -264,24 +426,26 @@ class ProfessionalChatSystem {
             this.chatsListener(); // Unsubscribe from previous listener
         }
         
-        const chatsRef = collection(this.firestore, 'chats');
-        const q = query(
-            chatsRef, 
-            where('members', 'array-contains', this.currentUser.id),
-            orderBy('lastMessageTime', 'desc')
-        );
-        
-        this.chatsListener = onSnapshot(q, async (snapshot) => {
-            for (const change of snapshot.docChanges()) {
-                if (change.type === 'added' || change.type === 'modified') {
-                    await this.updateChatFromSnapshot(change.doc);
-                } else if (change.type === 'removed') {
-                    this.removeChat(change.doc.id);
+        try {
+            const chatsRef = this.firestore.collection('chats');
+            const q = chatsRef
+                .where('members', 'array-contains', this.currentUser.id)
+                .orderBy('lastMessageTime', 'desc');
+            
+            this.chatsListener = q.onSnapshot(async (snapshot) => {
+                for (const change of snapshot.docChanges()) {
+                    if (change.type === 'added' || change.type === 'modified') {
+                        await this.updateChatFromSnapshot(change.doc);
+                    } else if (change.type === 'removed') {
+                        this.removeChat(change.doc.id);
+                    }
                 }
-            }
-        }, (error) => {
-            console.error('Error in real-time chats listener:', error);
-        });
+            }, (error) => {
+                console.error('Error in real-time chats listener:', error);
+            });
+        } catch (error) {
+            console.error('Error setting up chats listener:', error);
+        }
     }
     
     setupRealtimeUsersListener() {
@@ -289,18 +453,22 @@ class ProfessionalChatSystem {
             this.usersListener(); // Unsubscribe from previous listener
         }
         
-        const usersRef = collection(this.firestore, 'users');
-        const q = query(usersRef, where('id', '!=', this.currentUser.id));
-        
-        this.usersListener = onSnapshot(q, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'modified' || change.type === 'added') {
-                    this.updateUserFromSnapshot(change.doc);
-                }
+        try {
+            const usersRef = this.firestore.collection('users');
+            const q = usersRef.where('id', '!=', this.currentUser.id);
+            
+            this.usersListener = q.onSnapshot((snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'modified' || change.type === 'added') {
+                        this.updateUserFromSnapshot(change.doc);
+                    }
+                });
+            }, (error) => {
+                console.error('Error in real-time users listener:', error);
             });
-        }, (error) => {
-            console.error('Error in real-time users listener:', error);
-        });
+        } catch (error) {
+            console.error('Error setting up users listener:', error);
+        }
     }
     
     setupRealtimeListeners() {
@@ -320,38 +488,51 @@ class ProfessionalChatSystem {
         // Load members data
         const membersData = await Promise.all(
             chatData.members.map(async memberId => {
-                const memberDoc = await this.firestore.collection('users').doc(memberId).get();
-                return {
-                    id: memberId,
-                    ...memberDoc.data()
-                };
+                try {
+                    const memberDoc = await this.firestore.collection('users').doc(memberId).get();
+                    return {
+                        id: memberId,
+                        ...memberDoc.data()
+                    };
+                } catch (error) {
+                    console.error(`Error loading member ${memberId}:`, error);
+                    return {
+                        id: memberId,
+                        name: 'Unknown User',
+                        avatar: 'UU',
+                        role: 'user'
+                    };
+                }
             })
         );
         
         // Load messages if this is the active chat
         let messages = [];
         if (doc.id === this.currentChatId) {
-            const messagesRef = collection(this.firestore, 'chats', doc.id, 'messages');
-            const q = query(messagesRef, orderBy('timestamp', 'asc'), limit(100));
-            const messagesSnapshot = await getDocs(q);
-            
-            messages = messagesSnapshot.docs.map(msgDoc => {
-                const msgData = msgDoc.data();
-                const sender = membersData.find(m => m.id === msgData.senderId) || this.currentUser;
-                return {
-                    id: msgDoc.id,
-                    sender: sender,
-                    content: msgData.content,
-                    time: this.formatTime(msgData.timestamp?.toDate()),
-                    type: msgData.type || 'normal',
-                    status: msgData.status || 'sent',
-                    timestamp: msgData.timestamp,
-                    emotion: msgData.emotion,
-                    mediaUrl: msgData.mediaUrl,
-                    mediaType: msgData.mediaType,
-                    isWhisper: msgData.isWhisper
-                };
-            });
+            try {
+                const messagesRef = this.firestore.collection('chats').doc(doc.id).collection('messages');
+                const messagesSnapshot = await messagesRef.orderBy('timestamp', 'asc').limit(100).get();
+                
+                messages = messagesSnapshot.docs.map(msgDoc => {
+                    const msgData = msgDoc.data();
+                    const sender = membersData.find(m => m.id === msgData.senderId) || this.currentUser;
+                    return {
+                        id: msgDoc.id,
+                        sender: sender,
+                        content: msgData.content,
+                        time: this.formatTime(msgData.timestamp?.toDate()),
+                        type: msgData.type || 'normal',
+                        status: msgData.status || 'sent',
+                        timestamp: msgData.timestamp,
+                        emotion: msgData.emotion,
+                        mediaUrl: msgData.mediaUrl,
+                        mediaType: msgData.mediaType,
+                        isWhisper: msgData.isWhisper
+                    };
+                });
+            } catch (error) {
+                console.error(`Error loading messages for chat ${doc.id}:`, error);
+            }
         }
         
         const updatedChat = {
@@ -424,10 +605,10 @@ class ProfessionalChatSystem {
     // Enhanced message sending function
     async sendMessage(text = null, imageUrl = null) {
         const input = document.getElementById('message-input');
-        const messageType = document.getElementById('message-type').value;
+        const messageType = document.getElementById('message-type')?.value || 'normal';
         
         // Use provided text or get from input
-        const content = text || input.value.trim();
+        const content = text || input?.value.trim();
         
         if (!content && !imageUrl && !this.currentMediaFile) {
             this.showNotification('Please enter a message or attach a file', 'warning');
@@ -464,29 +645,29 @@ class ProfessionalChatSystem {
             
             const messageData = {
                 senderId: this.currentUser.id,
-                content: content,
+                content: content || '',
                 type: messageType,
                 emotion: emotion,
                 status: 'sent',
-                timestamp: serverTimestamp(),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 mediaUrl: mediaUrl,
                 mediaType: mediaType,
                 isWhisper: this.whisperMode
             };
             
-            // Add message to Firestore using modular SDK
-            const messagesRef = collection(this.firestore, 'chats', this.currentChatId, 'messages');
-            await addDoc(messagesRef, messageData);
+            // Add message to Firestore
+            const messagesRef = this.firestore.collection('chats').doc(this.currentChatId).collection('messages');
+            await messagesRef.add(messageData);
             
-            // Update chat last message using modular SDK
-            const chatRef = doc(this.firestore, 'chats', this.currentChatId);
-            await updateDoc(chatRef, {
+            // Update chat last message
+            const chatRef = this.firestore.collection('chats').doc(this.currentChatId);
+            await chatRef.update({
                 lastMessage: content || (mediaUrl ? '📎 Media shared' : 'Message sent'),
-                lastMessageTime: serverTimestamp()
+                lastMessageTime: firebase.firestore.FieldValue.serverTimestamp()
             });
             
             // Clear input and reset if not using direct call
-            if (!text && !imageUrl) {
+            if (!text && !imageUrl && input) {
                 input.value = '';
                 input.style.height = 'auto';
                 this.clearMediaPreview();
@@ -498,8 +679,6 @@ class ProfessionalChatSystem {
                 this.gamification.addConnectcoins(2);
                 this.gamification.addXP(1);
             }
-            
-            this.showNotification('Message sent successfully', 'success');
             
         } catch (error) {
             console.error('Error sending message:', error);
@@ -513,142 +692,103 @@ class ProfessionalChatSystem {
     }
 
     setupEventListeners() {
+        // Safe event listener setup with null checks
+        const safeAddEventListener = (id, event, handler) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener(event, handler);
+            }
+        };
+
         // Chat list interactions
-        document.getElementById('chat-search').addEventListener('input', (e) => {
+        safeAddEventListener('chat-search', 'input', (e) => {
             this.filterChats(e.target.value);
         });
         
-        // Chat type filters
-        document.querySelectorAll('.chat-type-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.chat-type-btn').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                this.currentChatTypeFilter = e.target.getAttribute('data-type');
-                this.filterChats();
-            });
-        });
-        
         // Message sending with rate limiting
-        document.getElementById('send-btn').addEventListener('click', () => this.sendMessage());
-        document.getElementById('message-input').addEventListener('keypress', (e) => {
+        safeAddEventListener('send-btn', 'click', () => this.sendMessage());
+        safeAddEventListener('message-input', 'keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 this.sendMessage();
             }
         });
-        
+
         // Auto-resize textarea
-        document.getElementById('message-input').addEventListener('input', function() {
+        safeAddEventListener('message-input', 'input', function() {
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight) + 'px';
         });
         
         // Back button
-        document.getElementById('back-to-list').addEventListener('click', () => this.showChatList());
+        safeAddEventListener('back-to-list', 'click', () => this.showChatList());
         
         // New chat button
-        document.getElementById('new-chat-btn').addEventListener('click', () => {
+        safeAddEventListener('new-chat-btn', 'click', () => {
             this.showModal('new-chat-modal');
         });
-        
-        // Chat options
-        document.querySelectorAll('.chat-option').forEach(option => {
-            option.addEventListener('click', (e) => {
-                const type = e.currentTarget.getAttribute('data-type');
-                this.handleChatTypeSelection(type);
-            });
-        });
-        
-        // Group creation
-        document.getElementById('create-group-form').addEventListener('submit', (e) => this.createGroup(e));
-        
-        // Group info button
-        document.getElementById('group-info-btn').addEventListener('click', () => {
-            if (this.currentChatId) {
-                this.showGroupInfoModal(this.currentChatId);
-            }
-        });
-        
-        // Leave group button
-        document.getElementById('leave-group-btn').addEventListener('click', () => this.leaveGroup());
-        
-        // Modal close buttons
-        document.querySelectorAll('.close-modal').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.target.closest('.modal').style.display = 'none';
-            });
-        });
-        
-        // Close modals when clicking outside
-        window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
-                this.closeAllModals();
-            }
-        });
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.closeAllModals();
-            }
-        });
-        
-        // Responsive sidebar toggle
-        window.addEventListener('resize', () => this.handleResize());
 
         // Logout button
-        document.getElementById('logout-btn')?.addEventListener('click', () => this.logout());
+        safeAddEventListener('logout-btn', 'click', () => this.logout());
 
         // Enhanced Features Event Listeners
         this.setupEnhancedEventListeners();
     }
 
     setupEnhancedEventListeners() {
+        const safeAddEventListener = (id, event, handler) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener(event, handler);
+            }
+        };
+
         // Emotion Analysis
-        document.getElementById('emotionAnalysisBtn')?.addEventListener('click', () => this.showEmotionAnalysis());
-        document.getElementById('closeEmotionModal')?.addEventListener('click', () => this.hideEmotionAnalysis());
+        safeAddEventListener('emotionAnalysisBtn', 'click', () => this.showEmotionAnalysis());
+        safeAddEventListener('closeEmotionModal', 'click', () => this.hideEmotionAnalysis());
 
         // DNA Test
-        document.getElementById('dnaTestBtn')?.addEventListener('click', () => this.showDNATest());
-        document.getElementById('closeDnaModal')?.addEventListener('click', () => this.hideDNATest());
+        safeAddEventListener('dnaTestBtn', 'click', () => this.showDNATest());
+        safeAddEventListener('closeDnaModal', 'click', () => this.hideDNATest());
 
         // Time Capsule
-        document.getElementById('timeCapsuleBtn')?.addEventListener('click', () => this.showTimeCapsule());
-        document.getElementById('timeCapsuleMenuBtn')?.addEventListener('click', () => this.showTimeCapsule());
-        document.getElementById('createCapsuleBtn')?.addEventListener('click', () => this.createTimeCapsule());
-        document.getElementById('closeTimeCapsuleModal')?.addEventListener('click', () => this.hideTimeCapsule());
+        safeAddEventListener('timeCapsuleBtn', 'click', () => this.showTimeCapsule());
+        safeAddEventListener('timeCapsuleMenuBtn', 'click', () => this.showTimeCapsule());
+        safeAddEventListener('createCapsuleBtn', 'click', () => this.createTimeCapsule());
+        safeAddEventListener('closeTimeCapsuleModal', 'click', () => this.hideTimeCapsule());
 
         // Collaboration Room
-        document.getElementById('collabRoomBtn')?.addEventListener('click', () => this.showCollabRoom());
-        document.getElementById('createCollabRoomBtn')?.addEventListener('click', () => this.showCollabRoom());
-        document.getElementById('closeCollabModal')?.addEventListener('click', () => this.hideCollabRoom());
+        safeAddEventListener('collabRoomBtn', 'click', () => this.showCollabRoom());
+        safeAddEventListener('createCollabRoomBtn', 'click', () => this.showCollabRoom());
+        safeAddEventListener('closeCollabModal', 'click', () => this.hideCollabRoom());
 
         // Nearby Pulse
-        document.getElementById('nearbyPulseBtn')?.addEventListener('click', () => this.showNearbyPulse());
-        document.getElementById('closePulseModal')?.addEventListener('click', () => this.hideNearbyPulse());
+        safeAddEventListener('nearbyPulseBtn', 'click', () => this.showNearbyPulse());
+        safeAddEventListener('closePulseModal', 'click', () => this.hideNearbyPulse());
 
         // Challenges
-        document.getElementById('viewChallenges')?.addEventListener('click', () => this.showChallenges());
-        document.getElementById('closeChallengesModal')?.addEventListener('click', () => this.hideChallenges());
+        safeAddEventListener('viewChallenges', 'click', () => this.showChallenges());
+        safeAddEventListener('closeChallengesModal', 'click', () => this.hideChallenges());
 
         // Media Attachment
-        document.getElementById('attachImageBtn')?.addEventListener('click', () => this.attachMedia('image'));
-        document.getElementById('attachVideoBtn')?.addEventListener('click', () => this.attachMedia('video'));
-        document.getElementById('attachAudioBtn')?.addEventListener('click', () => this.attachMedia('audio'));
+        safeAddEventListener('attachImageBtn', 'click', () => this.attachMedia('image'));
+        safeAddEventListener('attachVideoBtn', 'click', () => this.attachMedia('video'));
+        safeAddEventListener('attachAudioBtn', 'click', () => this.attachMedia('audio'));
 
-        // Quick image send (example for direct image sending)
-        document.getElementById('quickImageBtn')?.addEventListener('click', () => {
+        // Quick image send
+        safeAddEventListener('quickImageBtn', 'click', () => {
             this.quickSend('Check out this image!', 'https://example.com/image.jpg');
         });
 
         // Whisper Mode
-        document.getElementById('whisperButton')?.addEventListener('click', () => this.toggleWhisperMode());
+        safeAddEventListener('whisperButton', 'click', () => this.toggleWhisperMode());
 
         // Emoji Picker
-        document.getElementById('emojiButton')?.addEventListener('click', () => this.toggleEmojiPicker());
+        safeAddEventListener('emojiButton', 'click', () => this.toggleEmojiPicker());
         document.addEventListener('click', (e) => {
             if (!e.target.closest('#emojiPicker') && !e.target.closest('#emojiButton')) {
-                document.getElementById('emojiPicker').classList.add('hidden');
+                const picker = document.getElementById('emojiPicker');
+                if (picker) picker.classList.add('hidden');
             }
         });
 
@@ -656,40 +796,57 @@ class ProfessionalChatSystem {
         this.initializeEmojiPicker();
 
         // Video Call
-        document.getElementById('videoCallBtn')?.addEventListener('click', () => this.startVideoCall());
+        safeAddEventListener('videoCallBtn', 'click', () => this.startVideoCall());
 
         // Voice Message
-        document.getElementById('voiceMessageBtn')?.addEventListener('click', () => this.startVoiceMessage());
+        safeAddEventListener('voiceMessageBtn', 'click', () => this.startVoiceMessage());
 
         // File Share
-        document.getElementById('fileShareBtn')?.addEventListener('click', () => this.shareFile());
+        safeAddEventListener('fileShareBtn', 'click', () => this.shareFile());
 
         // Search Messages
-        document.getElementById('searchMenuItem')?.addEventListener('click', () => this.searchMessages());
+        safeAddEventListener('searchMenuItem', 'click', () => this.searchMessages());
 
         // Add Friend
-        document.getElementById('addFriendBtn')?.addEventListener('click', () => this.showAddFriendModal());
-        document.getElementById('searchFriendBtn')?.addEventListener('click', () => this.searchFriends());
-        document.getElementById('closeAddFriendModal')?.addEventListener('click', () => this.hideAddFriendModal());
+        safeAddEventListener('addFriendBtn', 'click', () => this.showAddFriendModal());
+        safeAddEventListener('searchFriendBtn', 'click', () => this.searchFriends());
+        safeAddEventListener('closeAddFriendModal', 'click', () => this.hideAddFriendModal());
 
         // Create Group
-        document.getElementById('createGroupBtn')?.addEventListener('click', () => this.showCreateGroupModal());
-        document.getElementById('createGroupBtnConfirm')?.addEventListener('click', () => this.createGroupChat());
-        document.getElementById('closeCreateGroupModal')?.addEventListener('click', () => this.hideCreateGroupModal());
+        safeAddEventListener('createGroupBtn', 'click', () => this.showCreateGroupModal());
+        safeAddEventListener('createGroupBtnConfirm', 'click', () => this.createGroupChat());
+        safeAddEventListener('closeCreateGroupModal', 'click', () => this.hideCreateGroupModal());
     }
     
     async logout() {
         try {
+            // Update user offline status
+            if (this.currentUser) {
+                await this.firestore.collection('users').doc(this.currentUser.id).update({
+                    online: false,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+
+            // Clean up listeners
+            if (this.messageListener) this.messageListener();
+            if (this.chatsListener) this.chatsListener();
+            if (this.usersListener) this.usersListener();
+
+            // Sign out
             await this.auth.signOut();
+            
             this.showNotification('Logged out successfully', 'info');
             window.location.href = 'index.html';
         } catch (error) {
             console.error('Logout error:', error);
+            this.showNotification('Error during logout', 'error');
         }
     }
     
     renderChatList() {
         const chatList = document.getElementById('chat-list');
+        if (!chatList) return;
         
         if (this.filteredChats.length === 0) {
             chatList.innerHTML = `
@@ -780,13 +937,19 @@ class ProfessionalChatSystem {
         await this.loadChatMessages(chatId);
         
         // Update UI
-        document.getElementById('chat-title').textContent = chat.name;
-        document.getElementById('chat-members').textContent = `${chat.members.length} members • ${chat.type} chat`;
-        document.getElementById('chat-avatar-text').textContent = chat.avatarText || chat.name.substring(0, 2).toUpperCase();
+        const chatTitle = document.getElementById('chat-title');
+        const chatMembers = document.getElementById('chat-members');
+        const chatAvatar = document.getElementById('chat-avatar-text');
+        
+        if (chatTitle) chatTitle.textContent = chat.name;
+        if (chatMembers) chatMembers.textContent = `${chat.members.length} members • ${chat.type} chat`;
+        if (chatAvatar) chatAvatar.textContent = chat.avatarText || chat.name.substring(0, 2).toUpperCase();
         
         // Show active chat view
-        document.getElementById('no-chat-view').style.display = 'none';
-        document.getElementById('active-chat-view').style.display = 'flex';
+        const noChatView = document.getElementById('no-chat-view');
+        const activeChatView = document.getElementById('active-chat-view');
+        if (noChatView) noChatView.style.display = 'none';
+        if (activeChatView) activeChatView.style.display = 'flex';
         
         // Render messages
         this.renderMessages(chatId);
@@ -805,9 +968,8 @@ class ProfessionalChatSystem {
     
     async loadChatMessages(chatId) {
         try {
-            const messagesRef = collection(this.firestore, 'chats', chatId, 'messages');
-            const q = query(messagesRef, orderBy('timestamp', 'asc'), limit(100));
-            const messagesSnapshot = await getDocs(q);
+            const messagesRef = this.firestore.collection('chats').doc(chatId).collection('messages');
+            const messagesSnapshot = await messagesRef.orderBy('timestamp', 'asc').limit(100).get();
             
             const chat = this.chats.find(c => c.id === chatId);
             if (!chat) return;
@@ -837,6 +999,8 @@ class ProfessionalChatSystem {
     
     renderMessages(chatId) {
         const container = document.getElementById('messages-container');
+        if (!container) return;
+        
         const chat = this.chats.find(c => c.id === chatId);
         const messages = chat?.messages || [];
         
@@ -945,8 +1109,12 @@ class ProfessionalChatSystem {
                     reject(error);
                 },
                 async () => {
-                    const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                    resolve(downloadURL);
+                    try {
+                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                        resolve(downloadURL);
+                    } catch (urlError) {
+                        reject(urlError);
+                    }
                 }
             );
         });
@@ -975,21 +1143,23 @@ class ProfessionalChatSystem {
         const previewAudio = document.getElementById('previewAudio');
         const uploadProgress = document.getElementById('uploadProgress');
 
+        if (!previewContainer) return;
+
         // Hide all previews first
-        previewImage.classList.add('hidden');
-        previewVideo.classList.add('hidden');
-        previewAudio.classList.add('hidden');
-        uploadProgress.classList.remove('hidden');
+        if (previewImage) previewImage.classList.add('hidden');
+        if (previewVideo) previewVideo.classList.add('hidden');
+        if (previewAudio) previewAudio.classList.add('hidden');
+        if (uploadProgress) uploadProgress.classList.remove('hidden');
 
         const objectUrl = URL.createObjectURL(file);
 
-        if (type === 'image') {
+        if (type === 'image' && previewImage) {
             previewImage.src = objectUrl;
             previewImage.classList.remove('hidden');
-        } else if (type === 'video') {
+        } else if (type === 'video' && previewVideo) {
             previewVideo.src = objectUrl;
             previewVideo.classList.remove('hidden');
-        } else if (type === 'audio') {
+        } else if (type === 'audio' && previewAudio) {
             previewAudio.src = objectUrl;
             previewAudio.classList.remove('hidden');
         }
@@ -999,29 +1169,37 @@ class ProfessionalChatSystem {
 
     clearMediaPreview() {
         const previewContainer = document.getElementById('mediaPreview');
-        previewContainer.classList.add('hidden');
-        document.getElementById('uploadProgress').classList.add('hidden');
-        document.getElementById('uploadProgressBar').style.width = '0%';
+        if (previewContainer) {
+            previewContainer.classList.add('hidden');
+        }
+        const uploadProgress = document.getElementById('uploadProgress');
+        if (uploadProgress) uploadProgress.classList.add('hidden');
+        const progressBar = document.getElementById('uploadProgressBar');
+        if (progressBar) progressBar.style.width = '0%';
     }
 
     toggleWhisperMode() {
         this.whisperMode = !this.whisperMode;
         const whisperBtn = document.getElementById('whisperButton');
         
-        if (this.whisperMode) {
-            whisperBtn.classList.add('text-yellow-400');
-            whisperBtn.classList.remove('text-blue-400');
-            this.showNotification('Whisper mode activated - messages will self-destruct after 24 hours', 'info');
-        } else {
-            whisperBtn.classList.remove('text-yellow-400');
-            whisperBtn.classList.add('text-blue-400');
-            this.showNotification('Whisper mode deactivated', 'info');
+        if (whisperBtn) {
+            if (this.whisperMode) {
+                whisperBtn.classList.add('text-yellow-400');
+                whisperBtn.classList.remove('text-blue-400');
+                this.showNotification('Whisper mode activated - messages will self-destruct after 24 hours', 'info');
+            } else {
+                whisperBtn.classList.remove('text-yellow-400');
+                whisperBtn.classList.add('text-blue-400');
+                this.showNotification('Whisper mode deactivated', 'info');
+            }
         }
     }
 
     toggleEmojiPicker() {
         const picker = document.getElementById('emojiPicker');
-        picker.classList.toggle('hidden');
+        if (picker) {
+            picker.classList.toggle('hidden');
+        }
     }
 
     initializeEmojiPicker() {
@@ -1031,8 +1209,10 @@ class ProfessionalChatSystem {
         emojiGrid.addEventListener('click', (e) => {
             if (e.target.classList.contains('emoji')) {
                 const input = document.getElementById('message-input');
-                input.value += e.target.textContent;
-                input.focus();
+                if (input) {
+                    input.value += e.target.textContent;
+                    input.focus();
+                }
             }
         });
     }
@@ -1045,14 +1225,12 @@ class ProfessionalChatSystem {
         const messageArea = document.getElementById('messageInputArea');
         
         // Remove previous emotion classes
-        body.className = body.className.replace(/emotion-\w+/g, '');
+        if (body) {
+            body.className = body.className.replace(/emotion-\w+/g, '');
+            body.classList.add(`emotion-${emotion}`);
+        }
         if (messageArea) {
             messageArea.className = messageArea.className.replace(/emotion-border-\w+/g, '');
-        }
-        
-        // Add new emotion classes
-        body.classList.add(`emotion-${emotion}`);
-        if (messageArea) {
             messageArea.classList.add(`emotion-border-${emotion}`);
         }
         
@@ -1087,14 +1265,19 @@ class ProfessionalChatSystem {
         }
         
         this.currentChatId = null;
-        document.getElementById('no-chat-view').style.display = 'flex';
-        document.getElementById('active-chat-view').style.display = 'none';
+        const noChatView = document.getElementById('no-chat-view');
+        const activeChatView = document.getElementById('active-chat-view');
+        if (noChatView) noChatView.style.display = 'flex';
+        if (activeChatView) activeChatView.style.display = 'none';
         this.renderChatList();
     }
     
     showModal(modalId) {
         this.closeAllModals();
-        document.getElementById(modalId).style.display = 'flex';
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'flex';
+        }
     }
     
     closeAllModals() {
@@ -1110,16 +1293,20 @@ class ProfessionalChatSystem {
     
     showCreateGroupModal(type) {
         const modalTitle = document.getElementById('group-modal-title');
-        modalTitle.textContent = `Create ${type.charAt(0).toUpperCase() + type.slice(1)} Group`;
+        if (modalTitle) {
+            modalTitle.textContent = `Create ${type.charAt(0).toUpperCase() + type.slice(1)} Group`;
+        }
         
-        document.getElementById('group-type').value = type;
+        const groupType = document.getElementById('group-type');
+        if (groupType) groupType.value = type;
+        
         this.loadAvailableMembers();
-        
         this.showModal('create-group-modal');
     }
     
     loadAvailableMembers() {
         const container = document.getElementById('available-members');
+        if (!container) return;
         
         const membersHTML = this.users.map(user => `
             <div class="member-item">
@@ -1139,8 +1326,13 @@ class ProfessionalChatSystem {
     async createGroup(e) {
         e.preventDefault();
         
-        const groupName = document.getElementById('group-name').value;
-        const groupType = document.getElementById('group-type').value;
+        const groupNameInput = document.getElementById('group-name');
+        const groupTypeInput = document.getElementById('group-type');
+        
+        if (!groupNameInput || !groupTypeInput) return;
+        
+        const groupName = groupNameInput.value;
+        const groupType = groupTypeInput.value;
         
         if (!groupName.trim()) {
             this.showNotification('Please enter a group name', 'warning');
@@ -1169,15 +1361,14 @@ class ProfessionalChatSystem {
                 createdBy: this.currentUser.id,
                 avatarText: groupName.substring(0, 2).toUpperCase(),
                 lastMessage: 'Group created',
-                lastMessageTime: serverTimestamp(),
+                lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
                 lastRead: {
-                    [this.currentUser.id]: serverTimestamp()
+                    [this.currentUser.id]: firebase.firestore.FieldValue.serverTimestamp()
                 }
             };
             
-            // Create new chat in Firestore using modular SDK
-            const chatsRef = collection(this.firestore, 'chats');
-            await addDoc(chatsRef, chatData);
+            // Create new chat in Firestore
+            await this.firestore.collection('chats').add(chatData);
             
             // Close modal and show chat list
             this.closeAllModals();
@@ -1196,36 +1387,43 @@ class ProfessionalChatSystem {
         
         if (!chat) return;
         
-        document.getElementById('group-avatar-large').textContent = chat.avatarText || chat.name.substring(0, 2).toUpperCase();
-        document.getElementById('info-group-name').textContent = chat.name;
-        document.getElementById('info-group-type').textContent = `${chat.type.charAt(0).toUpperCase() + chat.type.slice(1)} Group`;
-        document.getElementById('info-member-count').textContent = `${chat.members.length} members`;
-        
+        const groupAvatar = document.getElementById('group-avatar-large');
+        const groupName = document.getElementById('info-group-name');
+        const groupType = document.getElementById('info-group-type');
+        const memberCount = document.getElementById('info-member-count');
         const membersList = document.getElementById('group-members-list');
-        membersList.innerHTML = '';
         
-        chat.members.forEach(member => {
-            const memberItem = document.createElement('div');
-            memberItem.className = 'member-item';
-            memberItem.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <div class="chat-avatar" style="width: 35px; height: 35px; font-size: 0.8rem;">
-                            <span>${member.avatar}</span>
+        if (groupAvatar) groupAvatar.textContent = chat.avatarText || chat.name.substring(0, 2).toUpperCase();
+        if (groupName) groupName.textContent = chat.name;
+        if (groupType) groupType.textContent = `${chat.type.charAt(0).toUpperCase() + chat.type.slice(1)} Group`;
+        if (memberCount) memberCount.textContent = `${chat.members.length} members`;
+        
+        if (membersList) {
+            membersList.innerHTML = '';
+            
+            chat.members.forEach(member => {
+                const memberItem = document.createElement('div');
+                memberItem.className = 'member-item';
+                memberItem.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div class="chat-avatar" style="width: 35px; height: 35px; font-size: 0.8rem;">
+                                <span>${member.avatar}</span>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; color: #2c3e50;">${member.name}</div>
+                                <div style="font-size: 0.8rem; color: #7f8c8d;">${member.role}</div>
+                            </div>
                         </div>
-                        <div>
-                            <div style="font-weight: 600; color: #2c3e50;">${member.name}</div>
-                            <div style="font-size: 0.8rem; color: #7f8c8d;">${member.role}</div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: ${member.online ? '#27ae60' : '#bdc3c7'}"></div>
+                            ${member.id === this.currentUser.id ? '<span style="color: #3498db; font-size: 0.8rem; font-weight: 600;">You</span>' : ''}
                         </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${member.online ? '#27ae60' : '#bdc3c7'}"></div>
-                        ${member.id === this.currentUser.id ? '<span style="color: #3498db; font-size: 0.8rem; font-weight: 600;">You</span>' : ''}
-                    </div>
-                </div>
-            `;
-            membersList.appendChild(memberItem);
-        });
+                `;
+                membersList.appendChild(memberItem);
+            });
+        }
         
         this.showModal('group-info-modal');
     }
@@ -1235,14 +1433,14 @@ class ProfessionalChatSystem {
         
         if (confirm('Are you sure you want to leave this group? This action cannot be undone.')) {
             try {
-                const chatRef = doc(this.firestore, 'chats', this.currentChatId);
-                const chat = await getDoc(chatRef);
+                const chatRef = this.firestore.collection('chats').doc(this.currentChatId);
+                const chat = await chatRef.get();
                 
                 if (chat.exists) {
                     const members = chat.data().members;
                     const updatedMembers = members.filter(memberId => memberId !== this.currentUser.id);
                     
-                    await updateDoc(chatRef, {
+                    await chatRef.update({
                         members: updatedMembers
                     });
                     
@@ -1260,9 +1458,9 @@ class ProfessionalChatSystem {
     
     async markAsRead(chatId) {
         try {
-            const chatRef = doc(this.firestore, 'chats', chatId);
-            await updateDoc(chatRef, {
-                [`lastRead.${this.currentUser.id}`]: serverTimestamp()
+            const chatRef = this.firestore.collection('chats').doc(chatId);
+            await chatRef.update({
+                [`lastRead.${this.currentUser.id}`]: firebase.firestore.FieldValue.serverTimestamp()
             });
         } catch (error) {
             console.error('Error marking as read:', error);
@@ -1360,6 +1558,8 @@ class ProfessionalChatSystem {
     // Stub implementations for enhanced features
     async analyzeChatEmotions() {
         const resultsDiv = document.getElementById('emotionAnalysisResults');
+        if (!resultsDiv) return;
+        
         resultsDiv.innerHTML = `
             <div class="text-center py-8">
                 <i class="fas fa-brain text-4xl text-blue-400 mb-4"></i>
@@ -1385,6 +1585,8 @@ class ProfessionalChatSystem {
 
     async runFriendshipDNATest() {
         const resultsDiv = document.getElementById('dnaTestResults');
+        if (!resultsDiv) return;
+        
         resultsDiv.innerHTML = `
             <div class="text-center py-8">
                 <div class="dna-helix mb-4">
@@ -1420,9 +1622,9 @@ class ProfessionalChatSystem {
     }
 
     async createTimeCapsule() {
-        const message = document.getElementById('capsuleMessage').value;
-        const date = document.getElementById('capsuleDate').value;
-        const time = document.getElementById('capsuleTime').value;
+        const message = document.getElementById('capsuleMessage')?.value;
+        const date = document.getElementById('capsuleDate')?.value;
+        const time = document.getElementById('capsuleTime')?.value;
 
         if (!message || !date || !time) {
             this.showNotification('Please fill all fields', 'error');
@@ -1435,6 +1637,8 @@ class ProfessionalChatSystem {
 
     async loadNearbyPulse() {
         const contentDiv = document.getElementById('nearbyPulseContent');
+        if (!contentDiv) return;
+        
         contentDiv.innerHTML = `
             <div class="space-y-4">
                 <div class="glass-effect rounded-lg p-4">
@@ -1461,6 +1665,8 @@ class ProfessionalChatSystem {
         ];
 
         const container = document.getElementById('challengesList');
+        if (!container) return;
+
         container.innerHTML = challenges.map(challenge => `
             <div class="glass-effect rounded-lg p-4">
                 <div class="flex justify-between items-center mb-2">
@@ -1473,8 +1679,10 @@ class ProfessionalChatSystem {
     }
 
     async searchFriends() {
-        const query = document.getElementById('friendSearchInput').value;
+        const query = document.getElementById('friendSearchInput')?.value;
         const resultsDiv = document.getElementById('friendSearchResults');
+        
+        if (!resultsDiv) return;
         
         if (!query) {
             resultsDiv.innerHTML = '<p class="text-center text-blue-300 py-4">Enter a name to search</p>';
@@ -1497,8 +1705,8 @@ class ProfessionalChatSystem {
     }
 
     async createGroupChat() {
-        const groupName = document.getElementById('groupNameInput').value;
-        const description = document.getElementById('groupDescription').value;
+        const groupName = document.getElementById('groupNameInput')?.value;
+        const description = document.getElementById('groupDescription')?.value;
 
         if (!groupName) {
             this.showNotification('Please enter a group name', 'error');
@@ -1526,11 +1734,23 @@ class ProfessionalChatSystem {
     }
 
     closeModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+        }
     }
     
     showNotification(message, type = 'info') {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.chat-notification');
+        existingNotifications.forEach(notification => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        });
+
         const notification = document.createElement('div');
+        notification.className = 'chat-notification';
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -1542,25 +1762,37 @@ class ProfessionalChatSystem {
             z-index: 1000;
             font-family: Arial, sans-serif;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 300px;
+            word-wrap: break-word;
         `;
         notification.textContent = message;
         
         document.body.appendChild(notification);
         
         setTimeout(() => {
-            notification.remove();
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
         }, 4000);
     }
     
     updateCurrentUser() {
         if (this.currentUser) {
-            document.getElementById('current-user-name').textContent = this.currentUser.name;
-            document.getElementById('streakCount').textContent = this.currentUser.streak || 0;
-            document.getElementById('connectcoinsCount').textContent = this.currentUser.connectcoins || 0;
-            document.getElementById('userLevel').textContent = this.currentUser.level || 1;
+            const userName = document.getElementById('current-user-name');
+            const streakCount = document.getElementById('streakCount');
+            const connectcoinsCount = document.getElementById('connectcoinsCount');
+            const userLevel = document.getElementById('userLevel');
+            const chatApp = document.getElementById('chat-app');
+            const loadingState = document.getElementById('loadingState');
+
+            if (userName) userName.textContent = this.currentUser.name;
+            if (streakCount) streakCount.textContent = this.currentUser.streak || 0;
+            if (connectcoinsCount) connectcoinsCount.textContent = this.currentUser.connectcoins || 0;
+            if (userLevel) userLevel.textContent = this.currentUser.level || 1;
+            
             // Show chat app content
-            document.getElementById('chat-app').style.display = 'flex';
-            document.getElementById('loadingState').style.display = 'none';
+            if (chatApp) chatApp.style.display = 'flex';
+            if (loadingState) loadingState.style.display = 'none';
         }
     }
     
@@ -1671,7 +1903,10 @@ class GamificationSystem {
         }
         this.user.connectcoins += amount;
         
-        document.getElementById('connectcoinsCount').textContent = this.user.connectcoins;
+        const coinsElement = document.getElementById('connectcoinsCount');
+        if (coinsElement) {
+            coinsElement.textContent = this.user.connectcoins;
+        }
         
         this.saveUserProgress();
     }
@@ -1696,10 +1931,13 @@ class GamificationSystem {
         const levelBonus = this.user.level * 50;
         this.addConnectcoins(levelBonus);
         
-        document.getElementById('userLevel').classList.add('level-up-flash');
-        setTimeout(() => {
-            document.getElementById('userLevel').classList.remove('level-up-flash');
-        }, 500);
+        const levelElement = document.getElementById('userLevel');
+        if (levelElement) {
+            levelElement.classList.add('level-up-flash');
+            setTimeout(() => {
+                levelElement.classList.remove('level-up-flash');
+            }, 500);
+        }
         
         if (window.chatSystem) {
             window.chatSystem.showNotification(`🎉 Level Up! You reached level ${this.user.level} (+${levelBonus} ConnectCoins)`, 'success');
@@ -1711,52 +1949,85 @@ class GamificationSystem {
     }
 }
 
-// Initialize the chat system when DOM is loaded
+// Initialize the chat system with better error handling
 document.addEventListener('DOMContentLoaded', function() {
-    try {
-        if (typeof firebase === 'undefined') {
-            const firebaseScript = document.createElement('script');
-            firebaseScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
-            document.head.appendChild(firebaseScript);
-            
-            const firestoreScript = document.createElement('script');
-            firestoreScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js';
-            document.head.appendChild(firestoreScript);
-            
-            const authScript = document.createElement('script');
-            authScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js';
-            document.head.appendChild(authScript);
-            
-            const storageScript = document.createElement('script');
-            storageScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js';
-            document.head.appendChild(storageScript);
-            
-            firebaseScript.onload = () => {
-                window.chatSystem = new ProfessionalChatSystem();
-            };
-        } else {
-            window.chatSystem = new ProfessionalChatSystem();
-        }
-        
-    } catch (error) {
-        console.error('❌ Error initializing chat system:', error);
-        
-        const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: #e74c3c;
-            color: white;
-            padding: 1rem;
-            text-align: center;
-            z-index: 10000;
-            font-family: Arial, sans-serif;
-        `;
-        errorDiv.textContent = 'Error loading chat system. Please refresh the page.';
-        document.body.appendChild(errorDiv);
+    // Check if we're on a chat page
+    const chatApp = document.getElementById('chat-app');
+    if (!chatApp) {
+        console.log('Chat app container not found, skipping initialization');
+        return;
     }
+
+    const initChatSystem = async () => {
+        try {
+            // Wait for Firebase to be available
+            if (typeof firebase === 'undefined') {
+                console.log('Firebase not loaded, loading from CDN...');
+                
+                // Load Firebase from CDN
+                const firebaseScript = document.createElement('script');
+                firebaseScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
+                
+                const firestoreScript = document.createElement('script');
+                firestoreScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js';
+                
+                const authScript = document.createElement('script');
+                authScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js';
+                
+                const storageScript = document.createElement('script');
+                storageScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js';
+
+                // Load scripts sequentially
+                firebaseScript.onload = () => {
+                    firestoreScript.onload = () => {
+                        authScript.onload = () => {
+                            storageScript.onload = () => {
+                                console.log('✅ All Firebase scripts loaded');
+                                window.chatSystem = new ProfessionalChatSystem();
+                            };
+                            document.head.appendChild(storageScript);
+                        };
+                        document.head.appendChild(authScript);
+                    };
+                    document.head.appendChild(firestoreScript);
+                };
+                
+                document.head.appendChild(firebaseScript);
+
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    if (typeof firebase === 'undefined') {
+                        console.error('❌ Firebase failed to load within timeout period');
+                        throw new Error('Firebase failed to load');
+                    }
+                }, 10000);
+            } else {
+                console.log('✅ Firebase already available');
+                window.chatSystem = new ProfessionalChatSystem();
+            }
+            
+        } catch (error) {
+            console.error('❌ Error initializing chat system:', error);
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                background: #e74c3c;
+                color: white;
+                padding: 1rem;
+                text-align: center;
+                z-index: 10000;
+                font-family: Arial, sans-serif;
+            `;
+            errorDiv.textContent = 'Error loading chat system. Please refresh the page.';
+            document.body.appendChild(errorDiv);
+        }
+    };
+
+    initChatSystem();
 });
 
 if (typeof module !== 'undefined' && module.exports) {

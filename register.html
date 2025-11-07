@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Uniconnect ID</title>
+    <title>Register - ConnectSphere ID</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Firebase SDK (Using v9 Compat for wider browser support) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -67,6 +67,22 @@
         .toast.success { background-color: #10B981; }
         .toast.error { background-color: #EF4444; }
         .toast.warning { background-color: #F59E0B; }
+        
+        .loading-spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 2px solid #3B82F6;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="h-full flex items-center justify-center p-4">
@@ -110,8 +126,9 @@
                 </div>
 
                 <button type="submit" id="submitBtn"
-                        class="w-full py-3 rounded-xl text-white font-bold text-lg cyber-gradient shadow-lg quantum-glow disabled:opacity-50 disabled:cursor-not-allowed">
-                    Create Account
+                        class="w-full py-3 rounded-xl text-white font-bold text-lg cyber-gradient shadow-lg quantum-glow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                    <span id="submitBtnText">Create Account</span>
+                    <div id="submitSpinner" class="loading-spinner hidden"></div>
                 </button>
             </form>
 
@@ -123,7 +140,7 @@
     </div>
 
     <script>
-        // --- FIREBASE CONFIGURATION & INITIALIZATION ---
+        // Firebase configuration - Load from external config or environment
         const firebaseConfig = {
             apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
             authDomain: "uniconnect-ee95c.firebaseapp.com",
@@ -133,12 +150,71 @@
             appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
         };
 
+        // Initialize Firebase
         if (!firebase.apps.length) {
-            window.firebaseApp = firebase.initializeApp(firebaseConfig);
+            firebase.initializeApp(firebaseConfig);
         }
         const auth = firebase.auth();
-        const db = firebase.firestore(); // CRITICAL: Need Firestore for profile creation
-        // --- END FIREBASE INIT ---
+        const db = firebase.firestore();
+
+        // Enhanced Firebase error handling
+        function handleFirebaseError(error, context = 'operation') {
+            let userMessage = 'An unexpected error occurred';
+            
+            if (error.code) {
+                switch (error.code) {
+                    // Authentication errors
+                    case 'auth/email-already-in-use':
+                        userMessage = 'This email is already registered. Please try logging in.';
+                        break;
+                    case 'auth/weak-password':
+                        userMessage = 'Password must be at least 6 characters. Please use a stronger password.';
+                        break;
+                    case 'auth/invalid-email':
+                        userMessage = 'The email address is not valid.';
+                        break;
+                    case 'auth/operation-not-allowed':
+                        userMessage = 'Email/password accounts are not enabled. Please contact support.';
+                        break;
+                    case 'auth/network-request-failed':
+                        userMessage = 'Network error. Please check your internet connection.';
+                        break;
+                    case 'auth/user-disabled':
+                        userMessage = 'This account has been disabled. Please contact support.';
+                        break;
+                    case 'auth/too-many-requests':
+                        userMessage = 'Too many failed attempts. Please try again later.';
+                        break;
+                        
+                    // Firestore errors
+                    case 'permission-denied':
+                        userMessage = 'You do not have permission to perform this action.';
+                        break;
+                    case 'unavailable':
+                        userMessage = 'Service is temporarily unavailable. Please try again later.';
+                        break;
+                    case 'failed-precondition':
+                        userMessage = 'Operation cannot be completed in the current state.';
+                        break;
+                        
+                    // Network and system errors
+                    case 'auth/internal-error':
+                        userMessage = 'Internal server error. Please try again later.';
+                        break;
+                    case 'auth/app-not-authorized':
+                        userMessage = 'Application not authorized to use Firebase Authentication.';
+                        break;
+                        
+                    default:
+                        userMessage = `Error during ${context}: ${error.message || 'Please try again'}`;
+                }
+            } else {
+                userMessage = `Error during ${context}: ${error.message || 'Unknown error occurred'}`;
+            }
+            
+            console.error(`❌ Firebase error in ${context}:`, error.code, error.message);
+            return userMessage;
+        }
 
         function showToast(message, type = 'info') {
             const toastContainer = document.getElementById('toastContainer');
@@ -171,6 +247,8 @@
             constructor() {
                 this.form = document.getElementById('registration-form');
                 this.submitBtn = document.getElementById('submitBtn');
+                this.submitBtnText = document.getElementById('submitBtnText');
+                this.submitSpinner = document.getElementById('submitSpinner');
                 this.initialize();
             }
 
@@ -183,12 +261,14 @@
             
             showLoading() {
                 this.submitBtn.disabled = true;
-                this.submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Registering...';
+                this.submitBtnText.textContent = 'Creating Account...';
+                this.submitSpinner.classList.remove('hidden');
             }
 
             hideLoading() {
                 this.submitBtn.disabled = false;
-                this.submitBtn.innerHTML = 'Create Account';
+                this.submitBtnText.textContent = 'Create Account';
+                this.submitSpinner.classList.add('hidden');
             }
 
             setupShowPasswordToggle() {
@@ -207,7 +287,6 @@
                 toggle('toggleConfirmPassword', 'confirmPassword');
             }
             
-            // --- THE FIXED ASYNC REGISTRATION FUNCTION ---
             async handleRegistration(e) {
                 e.preventDefault();
                 this.showLoading();
@@ -217,6 +296,7 @@
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
 
+                // Validation
                 if (password !== confirmPassword) {
                     this.hideLoading();
                     showToast('Passwords do not match.', 'error');
@@ -227,61 +307,103 @@
                     showToast('Password must be at least 6 characters.', 'error');
                     return;
                 }
+                if (!displayName) {
+                    this.hideLoading();
+                    showToast('Display name is required.', 'error');
+                    return;
+                }
+                if (!email) {
+                    this.hideLoading();
+                    showToast('Email is required.', 'error');
+                    return;
+                }
 
                 try {
-                    // 1. AWAIT user creation
+                    console.log('🔄 Starting user registration...');
+                    
+                    // Create user with email and password
                     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                     const user = userCredential.user;
 
-                    // 2. AWAIT setting the display name
-                    await user.updateProfile({ displayName: displayName });
-
-                    // 3. CRITICAL: AWAIT creating the initial Firestore user profile
-                    await db.collection('users').doc(user.uid).set({
-                        username: displayName,
-                        email: email,
-                        currentMood: 'calm', // Default mood
-                        bio: 'New ConnectSphere member!',
-                        photoURL: user.photoURL || 'https://via.placeholder.com/40',
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    console.log('✅ User created, updating profile...');
+                    
+                    // Update user profile
+                    await user.updateProfile({ 
+                        displayName: displayName 
                     });
 
-                    // 4. Success: Redirect
+                    console.log('✅ Profile updated, creating Firestore document...');
+                    
+                    // Create comprehensive user document in Firestore
+                    await db.collection('users').doc(user.uid).set({
+                        uid: user.uid,
+                        displayName: displayName,
+                        email: email,
+                        avatar: this.getDefaultAvatar(displayName),
+                        status: 'Online',
+                        statusType: 'online',
+                        streak: 1,
+                        unicoins: 100,
+                        level: 1,
+                        experience: 0,
+                        posts: 0,
+                        followers: 0,
+                        following: 0,
+                        isAnonymous: false,
+                        isGuest: false,
+                        authProvider: 'email',
+                        emailVerified: user.emailVerified,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                        preferences: {
+                            theme: 'dark',
+                            notifications: true,
+                            language: 'en'
+                        },
+                        gameStats: {
+                            gamesPlayed: 0,
+                            totalCoinsEarned: 0,
+                            favoriteGame: null
+                        }
+                    });
+
+                    console.log('✅ Firestore document created');
+                    
+                    // Store user info in localStorage
+                    localStorage.setItem('uniconnect-user', JSON.stringify({
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: displayName,
+                        isNewUser: true
+                    }));
+
                     this.hideLoading();
                     showToast('Registration successful! Welcome!', 'success');
+                    
                     setTimeout(() => {
-                        window.location.href = 'home.html'; 
-                    }, 500);
+                        window.location.href = 'profile.html';
+                    }, 1500);
 
                 } catch (error) {
-                    // 5. Failure: Handle the error
                     this.hideLoading();
-                    
-                    let message = 'Registration failed.';
-                    switch (error.code) {
-                        case 'auth/email-already-in-use':
-                            message = 'This email is already registered.';
-                            break;
-                        case 'auth/weak-password':
-                            message = 'Password must be at least 6 characters.';
-                            break;
-                        case 'auth/invalid-email':
-                            message = 'The email address is not valid.';
-                            break;
-                        default:
-                            message = 'Registration failed: ' + error.message;
-                    }
-                    showToast(message, 'error');
+                    const errorMessage = handleFirebaseError(error, 'user registration');
+                    showToast(errorMessage, 'error');
                     console.error("Registration Error:", error.code, error.message);
                 }
+            }
+
+            getDefaultAvatar(name) {
+                const colors = ['6366f1', 'ef4444', '10b981', 'f59e0b', '8b5cf6'];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${randomColor}&color=fff&size=150&bold=true`;
             }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             window.registrationApp = new RegistrationApplication();
+            console.log('🚀 Registration application initialized');
         });
-
-        console.log('🚀 Registration application script loaded');
     </script>
 </body>
 </html>

@@ -15,6 +15,8 @@ const firebaseConfig = {
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
+
+// Firebase v9.22.1 compat imports
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -78,6 +80,7 @@ async function loadUserData(uid) {
         }
     } catch (error) {
         console.error('❌ Error loading user data for marketplace:', error);
+        handleFirebaseError(error, 'load user data');
     }
 }
 
@@ -121,11 +124,12 @@ function loadMarketplaceListings() {
             }
         }, (error) => {
             console.error('❌ Error loading marketplace listings:', error);
-            showNotification('Error loading listings', 'error');
+            handleFirebaseError(error, 'load listings');
         });
         
     } catch (error) {
         console.error('❌ Error setting up marketplace listener:', error);
+        handleFirebaseError(error, 'set up marketplace listener');
     }
 }
 
@@ -161,10 +165,14 @@ function loadUserListings(uid) {
                 // Add management listeners
                 setTimeout(addUserListingInteractionListeners, 100);
             }
+        }, (error) => {
+            console.error('❌ Error loading user listings:', error);
+            handleFirebaseError(error, 'load user listings');
         });
         
     } catch (error) {
         console.error('❌ Error loading user listings:', error);
+        handleFirebaseError(error, 'load user listings');
     }
 }
 
@@ -355,7 +363,7 @@ async function handleDeleteListing(event) {
             showNotification('Listing deleted successfully', 'success');
         } catch (error) {
             console.error('❌ Error deleting listing:', error);
-            showNotification('Error deleting listing', 'error');
+            handleFirebaseError(error, 'delete listing');
         }
     }
 }
@@ -367,7 +375,66 @@ function setupRealtimeListeners() {
         if (doc.exists) {
             userData = doc.data();
         }
+    }, (error) => {
+        console.error('❌ Error in real-time user listener:', error);
+        handleFirebaseError(error, 'set up real-time listener');
     });
+}
+
+// Enhanced Firebase error handling
+function handleFirebaseError(error, context = 'operation') {
+    let userMessage = 'An unexpected error occurred';
+    
+    if (error.code) {
+        switch (error.code) {
+            case 'permission-denied':
+                userMessage = 'You do not have permission to perform this action';
+                break;
+            case 'unauthenticated':
+                userMessage = 'Please log in to continue';
+                break;
+            case 'not-found':
+                userMessage = 'The requested item was not found';
+                break;
+            case 'already-exists':
+                userMessage = 'This item already exists';
+                break;
+            case 'resource-exhausted':
+                userMessage = 'Service temporarily unavailable. Please try again later';
+                break;
+            case 'failed-precondition':
+                userMessage = 'Operation cannot be completed in current state';
+                break;
+            case 'aborted':
+                userMessage = 'Operation was aborted';
+                break;
+            case 'invalid-argument':
+                userMessage = 'Invalid input provided';
+                break;
+            case 'deadline-exceeded':
+                userMessage = 'Operation timed out. Please try again';
+                break;
+            case 'internal':
+                userMessage = 'Internal server error. Please try again later';
+                break;
+            case 'unavailable':
+                userMessage = 'Service unavailable. Please check your connection';
+                break;
+            case 'data-loss':
+                userMessage = 'Data loss occurred. Please refresh the page';
+                break;
+            case 'network-error':
+                userMessage = 'Network error. Please check your internet connection';
+                break;
+            default:
+                userMessage = `Error during ${context}: ${error.message || 'Unknown error'}`;
+        }
+    } else {
+        userMessage = `Error during ${context}: ${error.message || 'Unknown error'}`;
+    }
+    
+    console.error(`❌ Firebase error in ${context}:`, error.code, error.message);
+    showNotification(userMessage, 'error');
 }
 
 // Utility Functions
@@ -414,3 +481,6 @@ window.openImageModal = function(imageUrl) {
     console.log('Opening image modal for:', imageUrl);
     // Implement image modal functionality
 };
+
+// Global error handler for Firebase operations
+window.handleFirebaseError = handleFirebaseError;

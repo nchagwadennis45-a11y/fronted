@@ -7,11 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <!-- Firebase SDK 9.22.1 -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     
     <style>
         .glass-effect {
@@ -902,726 +902,475 @@
         const noMessagesMessage = document.getElementById('noMessagesMessage');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
-        const typingIndicator = document.getElementById('typingIndicator');
-        const typingUsers = document.getElementById('typingUsers');
-        const userProfilePic = document.getElementById('userProfilePic');
-        const userDisplayName = document.getElementById('userDisplayName');
         const chatHeaderName = document.getElementById('chatHeaderName');
         const chatHeaderStatus = document.getElementById('chatHeaderStatus');
         const chatHeaderAvatar = document.getElementById('chatHeaderAvatar');
-        const logoutBtn = document.getElementById('logout-btn');
-        const createGroupBtn = document.getElementById('createGroupBtn');
-        const videoCallBtn = document.getElementById('videoCallBtn');
-        const voiceCallBtn = document.getElementById('voiceCallBtn');
-        const quantumMessageBtn = document.getElementById('quantumMessageBtn');
+        const userProfilePic = document.getElementById('userProfilePic');
+        const userDisplayName = document.getElementById('userDisplayName');
+        const logoutBtn = document.getElementById('logoutBtn');
         const emojiBtn = document.getElementById('emojiBtn');
         const emojiPicker = document.getElementById('emojiPicker');
         const emojiGrid = document.getElementById('emojiGrid');
-        const attachmentBtn = document.getElementById('attachmentBtn');
-        const gifBtn = document.getElementById('gifBtn');
-        const gifPicker = document.getElementById('gifPicker');
-        const gifGrid = document.getElementById('gifGrid');
         const stickerBtn = document.getElementById('stickerBtn');
         const stickerPicker = document.getElementById('stickerPicker');
         const stickerGrid = document.getElementById('stickerGrid');
+        const gifBtn = document.getElementById('gifBtn');
+        const gifPicker = document.getElementById('gifPicker');
+        const gifGrid = document.getElementById('gifGrid');
+        const attachmentBtn = document.getElementById('attachmentBtn');
         const uploadProgress = document.getElementById('uploadProgress');
         const uploadProgressBar = document.getElementById('uploadProgressBar');
-        const createGroupModal = document.getElementById('createGroupModal');
-        const quantumMessageModal = document.getElementById('quantumMessageModal');
-        const groupName = document.getElementById('groupName');
-        const groupFriendsList = document.getElementById('groupFriendsList');
-        const confirmCreateGroup = document.getElementById('confirmCreateGroup');
-        const cancelCreateGroup = document.getElementById('cancelCreateGroup');
-        const quantumMessageText = document.getElementById('quantumMessageText');
-        const confirmQuantumMessage = document.getElementById('confirmQuantumMessage');
-        const cancelQuantumMessage = document.getElementById('cancelQuantumMessage');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const typingUsers = document.getElementById('typingUsers');
+        const videoCallBtn = document.getElementById('videoCallBtn');
+        const voiceCallBtn = document.getElementById('voiceCallBtn');
+        const quantumMessageBtn = document.getElementById('quantumMessageBtn');
         const videoCallContainer = document.getElementById('videoCallContainer');
         const localVideo = document.getElementById('localVideo');
         const remoteVideo = document.getElementById('remoteVideo');
         const muteBtn = document.getElementById('muteBtn');
         const videoToggleBtn = document.getElementById('videoToggleBtn');
         const endCallBtn = document.getElementById('endCallBtn');
+        const createGroupBtn = document.getElementById('createGroupBtn');
+        const createGroupModal = document.getElementById('createGroupModal');
+        const cancelCreateGroup = document.getElementById('cancelCreateGroup');
+        const confirmCreateGroup = document.getElementById('confirmCreateGroup');
+        const groupName = document.getElementById('groupName');
+        const groupFriendsList = document.getElementById('groupFriendsList');
+        const quantumMessageModal = document.getElementById('quantumMessageModal');
+        const cancelQuantumMessage = document.getElementById('cancelQuantumMessage');
+        const confirmQuantumMessage = document.getElementById('confirmQuantumMessage');
+        const quantumMessageText = document.getElementById('quantumMessageText');
         const thoughtBubble = document.getElementById('thoughtBubble');
         const memoryLane = document.getElementById('memoryLane');
 
-        // Emoji list
-        const emojis = ['😀', '😂', '🥰', '😎', '😍', '🤔', '😴', '😭', '😡', '👍', '👎', '❤️', '🔥', '✨', '🎉', '💯'];
-        
-        // Sticker list
-        const stickers = ['😺', '🐶', '🐼', '🦊', '🐸', '🐨', '🦁', '🐯', '🐻', '🐰', '🐭', '🐹'];
-        
-        // GIF URLs
-        const gifs = [
-            'https://media.giphy.com/media/3o7aCTPPm4OHfRLSH6/giphy.gif',
-            'https://media.giphy.com/media/l0HlOBZcl7sbV6LnO/giphy.gif',
-            'https://media.giphy.com/media/3o72FfM5HJydzafgUE/giphy.gif',
-            'https://media.giphy.com/media/xT5LMHxhOfscxPfIfm/giphy.gif'
-        ];
-
-        // Initialize application
+        // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
-            initializeApp();
-            setupEventListeners();
-            populateEmojiPicker();
-            populateStickerPicker();
-            populateGifPicker();
-        });
-
-        // Initialize Firebase and check auth state
-        function initializeApp() {
-            updateConnectionStatus('connecting');
-            
+            // Check authentication state
             auth.onAuthStateChanged(user => {
                 if (user) {
                     currentUser = user;
-                    initializeUser();
-                    setupRealTimeListeners();
-                    loadFriendsFromProfile();
+                    authRequired.classList.add('hidden');
+                    chatApp.classList.remove('hidden');
+                    loadUserProfile();
+                    loadFriends();
+                    loadChats();
                     updateConnectionStatus('connected');
-                    showChatApp();
                 } else {
-                    updateConnectionStatus('disconnected');
-                    showAuthRequired();
+                    currentUser = null;
+                    authRequired.classList.remove('hidden');
+                    chatApp.classList.add('hidden');
+                }
+            });
+
+            // Set up event listeners
+            setupEventListeners();
+            initializeEmojiPicker();
+            initializeStickerPicker();
+            initializeGifPicker();
+        });
+
+        function setupEventListeners() {
+            // Message sending
+            messageInput.addEventListener('input', handleMessageInput);
+            messageInput.addEventListener('keypress', e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            sendBtn.addEventListener('click', sendMessage);
+
+            // Typing indicators
+            messageInput.addEventListener('focus', startTyping);
+            messageInput.addEventListener('blur', stopTyping);
+
+            // UI interactions
+            emojiBtn.addEventListener('click', toggleEmojiPicker);
+            stickerBtn.addEventListener('click', toggleStickerPicker);
+            gifBtn.addEventListener('click', toggleGifPicker);
+            attachmentBtn.addEventListener('click', handleAttachment);
+            logoutBtn.addEventListener('click', handleLogout);
+            
+            // Video call
+            videoCallBtn.addEventListener('click', startVideoCall);
+            voiceCallBtn.addEventListener('click', startVoiceCall);
+            quantumMessageBtn.addEventListener('click', showQuantumMessageModal);
+            endCallBtn.addEventListener('click', endCall);
+            muteBtn.addEventListener('click', toggleMute);
+            videoToggleBtn.addEventListener('click', toggleVideo);
+            
+            // Group creation
+            createGroupBtn.addEventListener('click', showCreateGroupModal);
+            cancelCreateGroup.addEventListener('click', hideCreateGroupModal);
+            confirmCreateGroup.addEventListener('click', createGroup);
+            
+            // Quantum message
+            cancelQuantumMessage.addEventListener('click', hideQuantumMessageModal);
+            confirmQuantumMessage.addEventListener('click', sendQuantumMessage);
+            
+            // Close modals when clicking outside
+            document.addEventListener('click', e => {
+                if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+                    emojiPicker.classList.add('hidden');
+                }
+                if (!stickerPicker.contains(e.target) && e.target !== stickerBtn) {
+                    stickerPicker.classList.add('hidden');
+                }
+                if (!gifPicker.contains(e.target) && e.target !== gifBtn) {
+                    gifPicker.classList.add('hidden');
+                }
+                if (e.target === createGroupModal) {
+                    hideCreateGroupModal();
+                }
+                if (e.target === quantumMessageModal) {
+                    hideQuantumMessageModal();
                 }
             });
         }
 
-        // Initialize user data
-        function initializeUser() {
-            userDisplayName.textContent = currentUser.displayName || currentUser.email;
-            userProfilePic.src = currentUser.photoURL || 'https://via.placeholder.com/40?text=' + (currentUser.displayName ? currentUser.displayName.charAt(0) : 'U');
-            
-            // Ensure user document exists
-            db.collection('users').doc(currentUser.uid).set({
-                uid: currentUser.uid,
-                displayName: currentUser.displayName || currentUser.email,
-                email: currentUser.email,
-                photoURL: currentUser.photoURL || '',
-                status: 'online',
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true }).catch(error => {
-                console.error('Error creating user document:', error);
-            });
-        }
-
-        // Load friends from profile data
-        function loadFriendsFromProfile() {
-            // Get friends from user's friends subcollection
-            db.collection('users').doc(currentUser.uid).collection('friends')
-                .onSnapshot(snapshot => {
-                    friendsList.innerHTML = '';
-                    groupFriendsList.innerHTML = '';
-                    
-                    if (snapshot.empty) {
-                        friendsList.innerHTML = '<p class="text-sm text-blue-400 text-center py-4">No friends yet</p>';
-                        return;
-                    }
-                    
-                    snapshot.forEach(doc => {
-                        const friend = doc.data();
-                        createFriendListItem(friend, friendsList);
-                        createFriendListItem(friend, groupFriendsList, true);
-                    });
-                }, error => {
-                    console.error('Error loading friends:', error);
-                });
-        }
-
-        // Create friend list item
-        function createFriendListItem(friend, container, isCheckbox = false) {
-            const friendItem = document.createElement('div');
-            friendItem.className = 'flex items-center space-x-3 p-2 rounded-lg hover:bg-blue-800/30 cursor-pointer transition-colors';
-            friendItem.dataset.friendId = friend.uid;
-            
-            if (isCheckbox) {
-                friendItem.innerHTML = `
-                    <input type="checkbox" value="${friend.uid}" class="rounded text-blue-600 friend-checkbox">
-                    <img src="${friend.photoURL || 'https://via.placeholder.com/30'}" alt="${friend.displayName}" class="profile-pic w-8 h-8">
-                    <span class="text-sm flex-1">${friend.displayName}</span>
-                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                `;
-            } else {
-                friendItem.innerHTML = `
-                    <img src="${friend.photoURL || 'https://via.placeholder.com/30'}" alt="${friend.displayName}" class="profile-pic w-8 h-8">
-                    <span class="text-sm flex-1">${friend.displayName}</span>
-                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <button class="text-blue-400 hover:text-blue-300 start-chat-btn">
-                        <i class="fas fa-comment"></i>
-                    </button>
-                `;
-                
-                // Add click event to start chat
-                friendItem.querySelector('.start-chat-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    startChatWithFriend(friend);
-                });
+        function updateConnectionStatus(status) {
+            connectionStatus.className = 'connection-status ' + status;
+            switch(status) {
+                case 'connected':
+                    connectionStatus.innerHTML = '<i class="fas fa-check-circle"></i><span>Connected to Firebase</span>';
+                    break;
+                case 'connecting':
+                    connectionStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i><span>Connecting to Firebase...</span>';
+                    break;
+                case 'disconnected':
+                    connectionStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Disconnected from Firebase</span>';
+                    break;
             }
+        }
+
+        function loadUserProfile() {
+            if (!currentUser) return;
             
-            friendItem.addEventListener('click', function() {
-                if (!isCheckbox) {
-                    startChatWithFriend(friend);
-                }
+            // Set user display name
+            userDisplayName.textContent = currentUser.displayName || 'User';
+            
+            // Set user profile picture
+            if (currentUser.photoURL) {
+                userProfilePic.src = currentUser.photoURL;
+            } else {
+                // Generate a default avatar based on user initials
+                const initials = currentUser.displayName ? 
+                    currentUser.displayName.split(' ').map(n => n[0]).join('').toUpperCase() : 
+                    'U';
+                userProfilePic.src = `https://ui-avatars.com/api/?name=${initials}&background=3B82F6&color=fff&size=40`;
+            }
+        }
+
+        function loadFriends() {
+            // In a real app, this would fetch from Firestore
+            // For demo purposes, we'll use mock data
+            const mockFriends = [
+                { id: 'friend1', name: 'Alex Johnson', status: 'Online', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
+                { id: 'friend2', name: 'Sam Smith', status: 'Online', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
+                { id: 'friend3', name: 'Jordan Lee', status: 'Away', avatar: 'https://randomuser.me/api/portraits/men/22.jpg' },
+                { id: 'friend4', name: 'Taylor Swift', status: 'Offline', avatar: 'https://randomuser.me/api/portraits/women/68.jpg' }
+            ];
+            
+            friendsList.innerHTML = '';
+            mockFriends.forEach(friend => {
+                const friendElement = document.createElement('div');
+                friendElement.className = 'flex items-center space-x-3 p-2 rounded-lg hover:bg-blue-800/50 cursor-pointer';
+                friendElement.innerHTML = `
+                    <div class="relative">
+                        <img src="${friend.avatar}" alt="${friend.name}" class="w-8 h-8 rounded-full">
+                        <div class="absolute bottom-0 right-0 w-2 h-2 ${friend.status === 'Online' ? 'bg-green-500' : friend.status === 'Away' ? 'bg-yellow-500' : 'bg-gray-500'} rounded-full border border-white"></div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate">${friend.name}</p>
+                        <p class="text-xs text-blue-300">${friend.status}</p>
+                    </div>
+                `;
+                friendElement.addEventListener('click', () => startChatWithFriend(friend));
+                friendsList.appendChild(friendElement);
             });
+        }
+
+        function loadChats() {
+            // In a real app, this would fetch from Firestore
+            // For demo purposes, we'll use mock data
+            const mockChats = [
+                { 
+                    id: 'chat1', 
+                    name: 'Alex Johnson', 
+                    lastMessage: 'Hey, how are you doing?', 
+                    timestamp: new Date(Date.now() - 5 * 60000), 
+                    unread: 2, 
+                    type: 'personal',
+                    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+                    participants: ['user1', 'friend1']
+                },
+                { 
+                    id: 'chat2', 
+                    name: 'Quantum Study Group', 
+                    lastMessage: 'Sam: Did anyone finish the homework?', 
+                    timestamp: new Date(Date.now() - 2 * 3600000), 
+                    unread: 0, 
+                    type: 'group',
+                    avatar: null,
+                    participants: ['user1', 'friend1', 'friend2', 'friend3']
+                },
+                { 
+                    id: 'chat3', 
+                    name: 'Sam Smith', 
+                    lastMessage: 'Thanks for your help yesterday!', 
+                    timestamp: new Date(Date.now() - 24 * 3600000), 
+                    unread: 0, 
+                    type: 'personal',
+                    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+                    participants: ['user1', 'friend2']
+                }
+            ];
             
-            container.appendChild(friendItem);
-        }
-
-        // Start chat with friend
-        function startChatWithFriend(friend) {
-            // Check if chat already exists
-            db.collection('chats')
-                .where('participants', 'array-contains', currentUser.uid)
-                .where('type', '==', 'personal')
-                .get()
-                .then(snapshot => {
-                    let existingChat = null;
-                    snapshot.forEach(doc => {
-                        const chat = doc.data();
-                        if (chat.participants.includes(friend.uid)) {
-                            existingChat = { id: doc.id, ...chat };
-                        }
-                    });
-                    
-                    if (existingChat) {
-                        selectChat(existingChat.id, existingChat);
-                    } else {
-                        // Create new chat
-                        const chatData = {
-                            type: 'personal',
-                            participants: [currentUser.uid, friend.uid],
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            lastMessage: {
-                                text: 'Chat started',
-                                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                                senderId: currentUser.uid
-                            },
-                            unreadCount: {
-                                [currentUser.uid]: 0,
-                                [friend.uid]: 1
-                            }
-                        };
-                        
-                        db.collection('chats').add(chatData)
-                            .then(docRef => {
-                                selectChat(docRef.id, chatData);
-                                showNotification(`Started chat with ${friend.displayName}`, 'success');
-                            })
-                            .catch(error => {
-                                console.error('Error creating chat:', error);
-                                showNotification('Failed to start chat', 'error');
-                            });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking existing chats:', error);
-                });
-        }
-
-        // Set up real-time listeners
-        function setupRealTimeListeners() {
-            // Listen for user's chats
-            chatsListener = db.collection('chats')
-                .where('participants', 'array-contains', currentUser.uid)
-                .orderBy('lastMessage.timestamp', 'desc')
-                .onSnapshot(snapshot => {
-                    updateChatList(snapshot);
-                }, error => {
-                    console.error('Error getting chats:', error);
-                    showNotification('Error loading chats', 'error');
-                });
-        }
-
-        // Update chat list UI
-        function updateChatList(snapshot) {
             chatList.innerHTML = '';
             
-            if (snapshot.empty) {
+            if (mockChats.length === 0) {
                 noChatsMessage.classList.remove('hidden');
                 return;
             }
             
             noChatsMessage.classList.add('hidden');
             
-            snapshot.forEach(doc => {
-                const chat = doc.data();
-                const chatId = doc.id;
-                createChatListItem(chat, chatId);
+            mockChats.forEach(chat => {
+                const chatElement = document.createElement('div');
+                chatElement.className = 'chat-item';
+                chatElement.dataset.chatId = chat.id;
+                
+                const timeString = formatTime(chat.timestamp);
+                const avatarUrl = chat.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chat.name)}&background=8B5CF6&color=fff&size=40`;
+                
+                chatElement.innerHTML = `
+                    <div class="chat-avatar">
+                        ${!chat.avatar ? chat.name.split(' ').map(n => n[0]).join('').toUpperCase() : ''}
+                    </div>
+                    <div class="chat-item-info">
+                        <div class="chat-item-header">
+                            <span class="chat-item-name">${chat.name}</span>
+                            <span class="chat-item-time">${timeString}</span>
+                        </div>
+                        <div class="chat-item-preview">${chat.lastMessage}</div>
+                        <div class="chat-item-meta">
+                            <span class="chat-type-indicator ${chat.type === 'group' ? 'type-group' : 'type-personal'}">${chat.type === 'group' ? 'Group' : 'Personal'}</span>
+                            ${chat.unread > 0 ? `<span class="chat-badge">${chat.unread}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                if (chat.avatar) {
+                    const avatarImg = chatElement.querySelector('.chat-avatar');
+                    avatarImg.innerHTML = '';
+                    const img = document.createElement('img');
+                    img.src = chat.avatar;
+                    img.alt = chat.name;
+                    img.className = 'profile-pic';
+                    avatarImg.appendChild(img);
+                }
+                
+                chatElement.addEventListener('click', () => selectChat(chat));
+                chatList.appendChild(chatElement);
             });
         }
 
-        // Create chat list item
-        function createChatListItem(chat, chatId) {
-            const chatItem = document.createElement('div');
-            chatItem.className = 'chat-item';
-            chatItem.dataset.chatId = chatId;
-            
-            const otherParticipants = chat.participants.filter(uid => uid !== currentUser.uid);
-            let chatName = chat.name;
-            let chatAvatar = chat.avatar;
-            
-            if (!chatName && chat.type === 'personal' && otherParticipants.length === 1) {
-                // Get the other user's data
-                db.collection('users').doc(otherParticipants[0]).get().then(doc => {
-                    if (doc.exists) {
-                        const userData = doc.data();
-                        updateChatItemUI(chatItem, userData.displayName, userData.photoURL, chat);
-                    }
-                });
-            }
-            
-            chatItem.innerHTML = `
-                <div class="chat-avatar">
-                    <img src="${chatAvatar || 'https://via.placeholder.com/40'}" alt="${chatName || 'Chat'}" class="profile-pic">
-                </div>
-                <div class="chat-item-info">
-                    <div class="chat-item-header">
-                        <div class="chat-item-name">${chatName || 'Loading...'}</div>
-                        <div class="chat-item-time">${formatTime(chat.lastMessage?.timestamp)}</div>
-                    </div>
-                    <div class="chat-item-preview">${chat.lastMessage?.text || 'No messages yet'}</div>
-                    <div class="chat-item-meta">
-                        <div class="chat-type-indicator ${chat.type === 'group' ? 'type-group' : 'type-personal'}">${chat.type === 'group' ? 'Group' : 'Personal'}</div>
-                        ${chat.unreadCount && chat.unreadCount[currentUser.uid] > 0 ? 
-                            `<div class="chat-badge">${chat.unreadCount[currentUser.uid]}</div>` : ''}
-                    </div>
-                </div>
-            `;
-            
-            chatItem.addEventListener('click', () => {
-                selectChat(chatId, chat);
-            });
-            
-            chatList.appendChild(chatItem);
-        }
-
-        // Update chat item UI
-        function updateChatItemUI(chatItem, name, avatar, chat) {
-            const nameEl = chatItem.querySelector('.chat-item-name');
-            const avatarEl = chatItem.querySelector('.profile-pic');
-            
-            if (nameEl) nameEl.textContent = name;
-            if (avatarEl && avatar) avatarEl.src = avatar;
-        }
-
-        // Select a chat
-        function selectChat(chatId, chat) {
+        function selectChat(chat) {
+            // Remove active class from all chats
             document.querySelectorAll('.chat-item').forEach(item => {
                 item.classList.remove('active');
             });
             
-            document.querySelector(`.chat-item[data-chat-id="${chatId}"]`).classList.add('active');
+            // Add active class to selected chat
+            const selectedChat = document.querySelector(`[data-chat-id="${chat.id}"]`);
+            if (selectedChat) {
+                selectedChat.classList.add('active');
+            }
             
-            currentChatId = chatId;
-            updateChatHeader(chat);
+            // Update chat header
+            chatHeaderName.textContent = chat.name;
+            chatHeaderStatus.textContent = chat.type === 'group' ? `${chat.participants.length} members` : 'Online';
             
+            // Set chat avatar
+            if (chat.avatar) {
+                chatHeaderAvatar.src = chat.avatar;
+            } else {
+                // Generate a default avatar
+                const initials = chat.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                chatHeaderAvatar.src = `https://ui-avatars.com/api/?name=${initials}&background=8B5CF6&color=fff&size=40`;
+            }
+            
+            // Enable message input
             messageInput.disabled = false;
-            messageInput.placeholder = "Type a message...";
+            messageInput.placeholder = `Message ${chat.name}...`;
             sendBtn.disabled = false;
             
+            // Hide no messages message
+            noMessagesMessage.classList.add('hidden');
+            
+            // Set current chat
+            currentChatId = chat.id;
+            
+            // Load messages for this chat
+            loadMessages(chat.id);
+            
+            // Show quantum features occasionally
+            showQuantumFeatures();
+        }
+
+        function loadMessages(chatId) {
+            // Clear existing messages
             messagesContainer.innerHTML = '';
-            noMessagesMessage.classList.remove('hidden');
             
-            // Show quantum features
-            thoughtBubble.classList.remove('hidden');
-            memoryLane.classList.remove('hidden');
-            
-            setupMessagesListener(chatId);
-            setupTypingListener(chatId);
-            markMessagesAsRead(chatId);
-        }
-
-        // Update chat header
-        function updateChatHeader(chat) {
-            if (chat.type === 'group') {
-                chatHeaderName.textContent = chat.name;
-                chatHeaderAvatar.src = chat.avatar || 'https://via.placeholder.com/45';
-                chatHeaderStatus.textContent = `${chat.participants.length} members • Group chat`;
-            } else {
-                const otherParticipant = chat.participants.find(uid => uid !== currentUser.uid);
-                if (otherParticipant) {
-                    db.collection('users').doc(otherParticipant).get().then(doc => {
-                        if (doc.exists) {
-                            const userData = doc.data();
-                            chatHeaderName.textContent = userData.displayName;
-                            chatHeaderAvatar.src = userData.photoURL || 'https://via.placeholder.com/45';
-                            chatHeaderStatus.textContent = userData.status || 'online';
-                        }
-                    });
+            // In a real app, this would fetch from Firestore
+            // For demo purposes, we'll use mock data
+            const mockMessages = [
+                {
+                    id: 'msg1',
+                    senderId: 'friend1',
+                    senderName: 'Alex Johnson',
+                    content: 'Hey there! How are you doing?',
+                    timestamp: new Date(Date.now() - 30 * 60000),
+                    type: 'text'
+                },
+                {
+                    id: 'msg2',
+                    senderId: currentUser.uid,
+                    senderName: currentUser.displayName,
+                    content: "I'm good! Just working on the quantum chat project.",
+                    timestamp: new Date(Date.now() - 25 * 60000),
+                    type: 'text'
+                },
+                {
+                    id: 'msg3',
+                    senderId: 'friend1',
+                    senderName: 'Alex Johnson',
+                    content: 'That sounds interesting! How is it going?',
+                    timestamp: new Date(Date.now() - 20 * 60000),
+                    type: 'text'
+                },
+                {
+                    id: 'msg4',
+                    senderId: currentUser.uid,
+                    senderName: currentUser.displayName,
+                    content: 'Pretty well! Just added Firebase 9.22.1 with compat mode.',
+                    timestamp: new Date(Date.now() - 15 * 60000),
+                    type: 'text'
+                },
+                {
+                    id: 'msg5',
+                    senderId: 'friend1',
+                    senderName: 'Alex Johnson',
+                    content: 'Awesome! The quantum features look really cool.',
+                    timestamp: new Date(Date.now() - 10 * 60000),
+                    type: 'text'
                 }
-            }
+            ];
+            
+            // Display messages
+            mockMessages.forEach(message => {
+                displayMessage(message);
+            });
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        // Set up real-time messages listener
-        function setupMessagesListener(chatId) {
-            if (messagesListener) {
-                messagesListener();
-            }
+        function displayMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.senderId === currentUser.uid ? 'sent' : 'received'}`;
             
-            messagesListener = db.collection('chats').doc(chatId).collection('messages')
-                .orderBy('timestamp', 'asc')
-                .onSnapshot(snapshot => {
-                    noMessagesMessage.classList.add('hidden');
-                    
-                    snapshot.docChanges().forEach(change => {
-                        if (change.type === 'added') {
-                            addMessageToUI(change.doc.data(), change.doc.id);
-                        }
-                    });
-                    
-                    scrollToBottom();
-                }, error => {
-                    console.error('Error getting messages:', error);
-                });
-        }
-
-        // Set up typing indicator listener
-        function setupTypingListener(chatId) {
-            if (typingListener) {
-                typingListener();
-            }
+            const timeString = formatTime(message.timestamp);
             
-            typingListener = db.collection('chats').doc(chatId).collection('typing')
-                .onSnapshot(snapshot => {
-                    const typingUserIds = [];
-                    snapshot.forEach(doc => {
-                        if (doc.id !== currentUser.uid) {
-                            typingUserIds.push(doc.id);
-                        }
-                    });
-                    
-                    updateTypingIndicator(typingUserIds);
-                }, error => {
-                    console.error('Error getting typing indicators:', error);
-                });
-        }
-
-        // Update typing indicator
-        function updateTypingIndicator(userIds) {
-            if (userIds.length > 0) {
-                Promise.all(userIds.map(uid => 
-                    db.collection('users').doc(uid).get().then(doc => doc.data().displayName)
-                )).then(names => {
-                    typingUsers.textContent = `${names.join(', ')} ${names.length > 1 ? 'are' : 'is'} typing...`;
-                    typingIndicator.classList.remove('hidden');
-                });
-            } else {
-                typingIndicator.classList.add('hidden');
-            }
-        }
-
-        // Add message to UI
-        function addMessageToUI(message, messageId) {
-            const messageElement = document.createElement('div');
-            messageElement.className = `message ${message.senderId === currentUser.uid ? 'sent' : 'received'}`;
-            messageElement.dataset.messageId = messageId;
-            
-            const bubbleClass = message.senderId === currentUser.uid ? 'message-sent' : 'message-received';
-            
-            let messageContent = '';
-            if (message.type === 'text') {
-                messageContent = formatMessageText(message.text);
-            } else if (message.type === 'image') {
-                messageContent = `<img src="${message.content}" alt="Shared image" class="media-preview">`;
-            } else if (message.type === 'gif') {
-                messageContent = `<img src="${message.content}" alt="GIF" class="media-preview">`;
-            } else if (message.type === 'sticker') {
-                messageContent = `<div class="text-4xl text-center">${message.content}</div>`;
-            } else if (message.type === 'quantum') {
-                messageContent = `
-                    <div class="quantum-state-message">
-                        <div class="text-xs text-blue-400 mb-1">Quantum Message</div>
-                        <div class="text-sm">${message.text}</div>
-                    </div>
-                `;
-            }
-            
-            let replySection = '';
-            if (message.replyTo) {
-                replySection = `
-                    <div class="reply-container">
-                        <div class="reply-sender">Replying to ${message.replyTo.senderName}</div>
-                        <div class="reply-content">${message.replyTo.text}</div>
-                    </div>
-                `;
-            }
-            
-            messageElement.innerHTML = `
-                <div class="message-bubble ${bubbleClass}">
+            messageDiv.innerHTML = `
+                <div class="message-bubble ${message.senderId === currentUser.uid ? 'message-sent' : 'message-received'}">
                     ${message.senderId !== currentUser.uid ? `<div class="message-sender">${message.senderName}</div>` : ''}
-                    ${replySection}
-                    <div class="message-content">${messageContent}</div>
+                    <div class="message-content">${message.content}</div>
                     <div class="message-meta">
-                        <div class="message-time">${formatTime(message.timestamp)}</div>
-                        ${message.senderId === currentUser.uid ? `
-                            <div class="message-status">
-                                ${message.status === 'seen' ? '<i class="fas fa-check-double text-blue-300"></i>' : 
-                                  message.status === 'delivered' ? '<i class="fas fa-check-double"></i>' : 
-                                  '<i class="fas fa-check"></i>'}
-                            </div>
-                        ` : ''}
+                        <span class="message-time">${timeString}</span>
+                        ${message.senderId === currentUser.uid ? `<span class="message-status"><i class="fas fa-check-double"></i></span>` : ''}
                     </div>
                 </div>
             `;
             
-            messagesContainer.appendChild(messageElement);
+            messagesContainer.appendChild(messageDiv);
         }
 
-        // Format message text
-        function formatMessageText(text) {
-            let formattedText = text
-                .replace(/:smile:/g, '😀')
-                .replace(/:laughing:/g, '😂')
-                .replace(/:heart:/g, '❤️')
-                .replace(/:fire:/g, '🔥')
-                .replace(/:thumbsup:/g, '👍');
-            
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            formattedText = formattedText.replace(urlRegex, url => {
-                return `<a href="${url}" target="_blank" class="text-blue-300 underline">${url}</a>`;
-            });
-            
-            return formattedText;
+        function handleMessageInput() {
+            if (messageInput.value.trim() !== '') {
+                sendBtn.disabled = false;
+            } else {
+                sendBtn.disabled = true;
+            }
         }
 
-        // Send message
         function sendMessage() {
-            const text = messageInput.value.trim();
-            if (!text || !currentChatId) return;
+            const content = messageInput.value.trim();
+            if (!content || !currentChatId) return;
             
+            // Create message object
             const message = {
-                text: text,
+                id: generateId(),
                 senderId: currentUser.uid,
-                senderName: currentUser.displayName || currentUser.email,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                type: 'text',
-                status: 'sent'
+                senderName: currentUser.displayName,
+                content: content,
+                timestamp: new Date(),
+                type: 'text'
             };
             
-            db.collection('chats').doc(currentChatId).collection('messages').add(message)
-                .then(() => {
-                    messageInput.value = '';
-                    updateLastMessage(currentChatId, text);
-                    
-                    setTimeout(() => {
-                        updateMessageStatus(currentChatId, 'delivered');
-                    }, 1000);
-                })
-                .catch(error => {
-                    console.error('Error sending message:', error);
-                    showNotification('Failed to send message', 'error');
-                });
-        }
-
-        // Send quantum message
-        function sendQuantumMessage() {
-            const text = quantumMessageText.value.trim();
-            if (!text || !currentChatId) return;
+            // Display message immediately (optimistic update)
+            displayMessage(message);
             
-            const message = {
-                text: text,
-                senderId: currentUser.uid,
-                senderName: currentUser.displayName || currentUser.email,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                type: 'quantum',
-                status: 'sent',
-                isQuantum: true,
-                superposition: document.getElementById('superposition').checked
-            };
+            // Clear input
+            messageInput.value = '';
+            sendBtn.disabled = true;
             
-            db.collection('chats').doc(currentChatId).collection('messages').add(message)
-                .then(() => {
-                    quantumMessageText.value = '';
-                    quantumMessageModal.classList.add('hidden');
-                    updateLastMessage(currentChatId, 'Sent a quantum message');
-                    showNotification('Quantum message sent!', 'success');
-                })
-                .catch(error => {
-                    console.error('Error sending quantum message:', error);
-                    showNotification('Failed to send quantum message', 'error');
-                });
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // In a real app, this would save to Firestore
+            console.log('Message sent:', message);
+            
+            // Show notification
+            showNotification('Message sent');
         }
 
-        // Update last message in chat
-        function updateLastMessage(chatId, text) {
-            db.collection('chats').doc(chatId).update({
-                'lastMessage.text': text,
-                'lastMessage.timestamp': firebase.firestore.FieldValue.serverTimestamp(),
-                'lastMessage.senderId': currentUser.uid
-            }).catch(error => {
-                console.error('Error updating last message:', error);
-            });
-        }
-
-        // Update message status
-        function updateMessageStatus(chatId, status) {
-            db.collection('chats').doc(chatId).collection('messages')
-                .orderBy('timestamp', 'desc')
-                .limit(1)
-                .get()
-                .then(snapshot => {
-                    if (!snapshot.empty) {
-                        const messageDoc = snapshot.docs[0];
-                        if (messageDoc.data().senderId === currentUser.uid) {
-                            messageDoc.ref.update({ status: status });
-                        }
-                    }
-                });
-        }
-
-        // Mark messages as read
-        function markMessagesAsRead(chatId) {
-            db.collection('chats').doc(chatId).update({
-                [`unreadCount.${currentUser.uid}`]: 0
-            }).catch(error => {
-                console.error('Error marking messages as read:', error);
-            });
-        }
-
-        // Handle typing
-        function handleTyping() {
+        function startTyping() {
             if (!currentChatId) return;
             
-            db.collection('chats').doc(currentChatId).collection('typing').doc(currentUser.uid).set({
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).catch(error => {
-                console.error('Error setting typing indicator:', error);
-            });
-            
-            if (typingTimeout) {
-                clearTimeout(typingTimeout);
-            }
-            
-            typingTimeout = setTimeout(() => {
-                db.collection('chats').doc(currentChatId).collection('typing').doc(currentUser.uid).delete()
-                    .catch(error => {
-                        console.error('Error removing typing indicator:', error);
-                    });
-            }, 2000);
+            // In a real app, this would update a typing indicator in Firestore
+            console.log('User started typing');
         }
 
-        // Upload file
-        function uploadFile(file, type) {
+        function stopTyping() {
             if (!currentChatId) return;
             
-            uploadProgress.classList.remove('hidden');
-            uploadProgressBar.style.width = '0%';
-            
-            const storageRef = storage.ref();
-            const fileRef = storageRef.child(`chats/${currentChatId}/${Date.now()}_${file.name}`);
-            
-            const uploadTask = fileRef.put(file);
-            
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    uploadProgressBar.style.width = `${progress}%`;
-                },
-                (error) => {
-                    console.error('Upload error:', error);
-                    uploadProgress.classList.add('hidden');
-                    showNotification('Failed to upload file', 'error');
-                },
-                () => {
-                    uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                        const message = {
-                            content: downloadURL,
-                            senderId: currentUser.uid,
-                            senderName: currentUser.displayName || currentUser.email,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                            type: type,
-                            status: 'sent'
-                        };
-                        
-                        db.collection('chats').doc(currentChatId).collection('messages').add(message)
-                            .then(() => {
-                                updateLastMessage(currentChatId, type === 'image' ? 'Sent an image' : 'Sent a file');
-                                uploadProgress.classList.add('hidden');
-                            })
-                            .catch(error => {
-                                console.error('Error sending message:', error);
-                                uploadProgress.classList.add('hidden');
-                                showNotification('Failed to send message', 'error');
-                            });
-                    });
-                }
-            );
+            // In a real app, this would clear the typing indicator in Firestore
+            console.log('User stopped typing');
         }
 
-        // Create group
-        function createGroup() {
-            const name = groupName.value.trim();
-            if (!name) return;
-            
-            const selectedFriends = Array.from(groupFriendsList.querySelectorAll('.friend-checkbox:checked')).map(input => input.value);
-            
-            if (selectedFriends.length === 0) {
-                showNotification('Please select at least one friend', 'error');
-                return;
-            }
-            
-            const participants = [currentUser.uid, ...selectedFriends];
-            
-            const chatData = {
-                type: 'group',
-                name: name,
-                participants: participants,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastMessage: {
-                    text: 'Group created',
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    senderId: currentUser.uid
-                },
-                unreadCount: {}
-            };
-            
-            participants.forEach(uid => {
-                chatData.unreadCount[uid] = uid === currentUser.uid ? 0 : 1;
-            });
-            
-            db.collection('chats').add(chatData)
-                .then(() => {
-                    showNotification('Quantum group created successfully', 'success');
-                    createGroupModal.classList.add('hidden');
-                    groupName.value = '';
-                    
-                    groupFriendsList.querySelectorAll('.friend-checkbox').forEach(input => {
-                        input.checked = false;
-                    });
-                })
-                .catch(error => {
-                    console.error('Error creating group:', error);
-                    showNotification('Failed to create group', 'error');
-                });
+        function toggleEmojiPicker() {
+            emojiPicker.classList.toggle('hidden');
+            stickerPicker.classList.add('hidden');
+            gifPicker.classList.add('hidden');
         }
 
-        // Video call functions
-        async function startVideoCall() {
-            if (!currentChatId) return;
+        function toggleStickerPicker() {
+            stickerPicker.classList.toggle('hidden');
+            emojiPicker.classList.add('hidden');
+            gifPicker.classList.add('hidden');
+        }
+
+        function toggleGifPicker() {
+            gifPicker.classList.toggle('hidden');
+            emojiPicker.classList.add('hidden');
+            stickerPicker.classList.add('hidden');
+        }
+
+        function initializeEmojiPicker() {
+            const emojis = ['😀', '😂', '🥰', '😎', '🤔', '😮', '👍', '❤️', '🔥', '🎉', '🙏', '💯'];
             
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localVideo.srcObject = localStream;
-                videoCallContainer.style.display = 'block';
-                
-                // In a real app, you would set up WebRTC peer connection here
-                showNotification('Video call started', 'success');
-            } catch (error) {
-                console.error('Error starting video call:', error);
-                showNotification('Failed to start video call', 'error');
-            }
-        }
-
-        function endVideoCall() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            videoCallContainer.style.display = 'none';
-            showNotification('Video call ended', 'info');
-        }
-
-        // Populate pickers
-        function populateEmojiPicker() {
             emojis.forEach(emoji => {
                 const emojiElement = document.createElement('div');
                 emojiElement.className = 'emoji';
@@ -1635,31 +1384,44 @@
             });
         }
 
-        function populateStickerPicker() {
+        function initializeStickerPicker() {
+            const stickers = ['😺', '🐶', '🐼', '🦊', '🐨', '🐯', '🦁', '🐮'];
+            
             stickers.forEach(sticker => {
                 const stickerElement = document.createElement('div');
                 stickerElement.className = 'sticker';
                 stickerElement.textContent = sticker;
                 stickerElement.addEventListener('click', () => {
-                    sendSticker(sticker);
+                    // In a real app, this would send a sticker message
+                    showNotification('Sticker sent: ' + sticker);
                     stickerPicker.classList.add('hidden');
                 });
                 stickerGrid.appendChild(stickerElement);
             });
         }
 
-        function populateGifPicker() {
-            gifs.forEach(gifUrl => {
+        function initializeGifPicker() {
+            // In a real app, this would fetch from a GIF API
+            // For demo purposes, we'll use placeholder images
+            const gifUrls = [
+                'https://media.giphy.com/media/3o7aCTPPm4OHfRLSH6/giphy.gif',
+                'https://media.giphy.com/media/l0HlBO7eyRzqkJgMw/giphy.gif',
+                'https://media.giphy.com/media/3o72FfM5HJydzafgUE/giphy.gif',
+                'https://media.giphy.com/media/xT5LMHxhOfscxPfIfm/giphy.gif'
+            ];
+            
+            gifUrls.forEach(url => {
                 const gifElement = document.createElement('div');
                 gifElement.className = 'gif-item';
                 
                 const img = document.createElement('img');
-                img.src = gifUrl;
+                img.src = url;
                 img.alt = 'GIF';
                 
                 gifElement.appendChild(img);
                 gifElement.addEventListener('click', () => {
-                    sendGif(gifUrl);
+                    // In a real app, this would send a GIF message
+                    showNotification('GIF sent');
                     gifPicker.classList.add('hidden');
                 });
                 
@@ -1667,85 +1429,298 @@
             });
         }
 
-        // Send sticker
-        function sendSticker(sticker) {
+        function handleAttachment() {
+            // Create a file input element
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*, video/*, audio/*, .pdf, .doc, .docx';
+            fileInput.style.display = 'none';
+            
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    uploadFile(file);
+                }
+            });
+            
+            document.body.appendChild(fileInput);
+            fileInput.click();
+            document.body.removeChild(fileInput);
+        }
+
+        function uploadFile(file) {
             if (!currentChatId) return;
             
-            const message = {
-                content: sticker,
-                senderId: currentUser.uid,
-                senderName: currentUser.displayName || currentUser.email,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                type: 'sticker',
-                status: 'sent'
-            };
+            // Show upload progress
+            uploadProgress.classList.remove('hidden');
+            uploadProgressBar.style.width = '0%';
             
-            db.collection('chats').doc(currentChatId).collection('messages').add(message)
-                .then(() => {
-                    updateLastMessage(currentChatId, 'Sent a sticker');
-                })
-                .catch(error => {
-                    console.error('Error sending sticker:', error);
-                    showNotification('Failed to send sticker', 'error');
-                });
+            // In a real app, this would upload to Firebase Storage
+            // For demo purposes, we'll simulate upload progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 5;
+                uploadProgressBar.style.width = `${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    
+                    // Hide progress bar after a delay
+                    setTimeout(() => {
+                        uploadProgress.classList.add('hidden');
+                    }, 1000);
+                    
+                    // Show notification
+                    showNotification(`File "${file.name}" uploaded successfully`);
+                    
+                    // Create and send a file message
+                    const message = {
+                        id: generateId(),
+                        senderId: currentUser.uid,
+                        senderName: currentUser.displayName,
+                        content: `Sent a file: ${file.name}`,
+                        timestamp: new Date(),
+                        type: 'file',
+                        file: {
+                            name: file.name,
+                            url: URL.createObjectURL(file), // In real app, this would be the Firebase Storage URL
+                            type: file.type
+                        }
+                    };
+                    
+                    // Display message
+                    displayMessage(message);
+                    
+                    // Scroll to bottom
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            }, 100);
         }
 
-        // Send GIF
-        function sendGif(gifUrl) {
-            if (!currentChatId) return;
+        function startVideoCall() {
+            if (!currentChatId) {
+                showNotification('Please select a chat first');
+                return;
+            }
             
-            const message = {
-                content: gifUrl,
-                senderId: currentUser.uid,
-                senderName: currentUser.displayName || currentUser.email,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                type: 'gif',
-                status: 'sent'
-            };
+            // Show video call container
+            videoCallContainer.style.display = 'block';
             
-            db.collection('chats').doc(currentChatId).collection('messages').add(message)
-                .then(() => {
-                    updateLastMessage(currentChatId, 'Sent a GIF');
-                })
-                .catch(error => {
-                    console.error('Error sending GIF:', error);
-                    showNotification('Failed to send GIF', 'error');
-                });
+            // In a real app, this would initialize WebRTC
+            // For demo purposes, we'll just show the UI
+            showNotification('Starting video call...');
         }
 
-        // UI management
-        function showAuthRequired() {
-            authRequired.classList.remove('hidden');
-            chatApp.classList.add('hidden');
-        }
-
-        function showChatApp() {
-            authRequired.classList.add('hidden');
-            chatApp.classList.remove('hidden');
-        }
-
-        function updateConnectionStatus(status) {
-            connectionStatus.className = `connection-status ${status}`;
+        function startVoiceCall() {
+            if (!currentChatId) {
+                showNotification('Please select a chat first');
+                return;
+            }
             
-            if (status === 'connected') {
-                connectionStatus.innerHTML = '<i class="fas fa-check-circle"></i><span>Connected</span>';
-            } else if (status === 'connecting') {
-                connectionStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i><span>Connecting...</span>';
-            } else if (status === 'disconnected') {
-                connectionStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Disconnected</span>';
+            // In a real app, this would initialize a voice call
+            showNotification('Starting voice call...');
+        }
+
+        function endCall() {
+            // Hide video call container
+            videoCallContainer.style.display = 'none';
+            
+            // In a real app, this would end the call and clean up resources
+            showNotification('Call ended');
+        }
+
+        function toggleMute() {
+            const icon = muteBtn.querySelector('i');
+            if (icon.classList.contains('fa-microphone')) {
+                icon.classList.remove('fa-microphone');
+                icon.classList.add('fa-microphone-slash');
+                showNotification('Microphone muted');
+            } else {
+                icon.classList.remove('fa-microphone-slash');
+                icon.classList.add('fa-microphone');
+                showNotification('Microphone unmuted');
             }
         }
 
-        function showNotification(message, type) {
+        function toggleVideo() {
+            const icon = videoToggleBtn.querySelector('i');
+            if (icon.classList.contains('fa-video')) {
+                icon.classList.remove('fa-video');
+                icon.classList.add('fa-video-slash');
+                showNotification('Video turned off');
+            } else {
+                icon.classList.remove('fa-video-slash');
+                icon.classList.add('fa-video');
+                showNotification('Video turned on');
+            }
+        }
+
+        function showCreateGroupModal() {
+            createGroupModal.style.display = 'flex';
+            
+            // Populate friends list for group creation
+            groupFriendsList.innerHTML = '';
+            const friends = friendsList.querySelectorAll('.flex.items-center');
+            
+            friends.forEach(friend => {
+                const friendClone = friend.cloneNode(true);
+                friendClone.classList.add('group-friend');
+                
+                // Add checkbox
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'mr-2 rounded text-blue-600';
+                friendClone.insertBefore(checkbox, friendClone.firstChild);
+                
+                groupFriendsList.appendChild(friendClone);
+            });
+        }
+
+        function hideCreateGroupModal() {
+            createGroupModal.style.display = 'none';
+            groupName.value = '';
+        }
+
+        function createGroup() {
+            const name = groupName.value.trim();
+            if (!name) {
+                showNotification('Please enter a group name');
+                return;
+            }
+            
+            // Get selected friends
+            const selectedFriends = groupFriendsList.querySelectorAll('input:checked');
+            if (selectedFriends.length === 0) {
+                showNotification('Please select at least one friend');
+                return;
+            }
+            
+            // In a real app, this would create a group in Firestore
+            showNotification(`Group "${name}" created successfully`);
+            hideCreateGroupModal();
+            
+            // Add the new group to the chat list
+            const newChat = {
+                id: generateId(),
+                name: name,
+                lastMessage: 'Group created',
+                timestamp: new Date(),
+                unread: 0,
+                type: 'group',
+                avatar: null,
+                participants: ['user1', ...Array.from(selectedFriends).map(f => f.parentElement.querySelector('p').textContent)]
+            };
+            
+            // Reload chats to include the new group
+            loadChats();
+        }
+
+        function showQuantumMessageModal() {
+            if (!currentChatId) {
+                showNotification('Please select a chat first');
+                return;
+            }
+            
+            quantumMessageModal.style.display = 'flex';
+        }
+
+        function hideQuantumMessageModal() {
+            quantumMessageModal.style.display = 'none';
+            quantumMessageText.value = '';
+        }
+
+        function sendQuantumMessage() {
+            const content = quantumMessageText.value.trim();
+            if (!content) {
+                showNotification('Please enter a quantum message');
+                return;
+            }
+            
+            // Create quantum message
+            const message = {
+                id: generateId(),
+                senderId: currentUser.uid,
+                senderName: currentUser.displayName,
+                content: content,
+                timestamp: new Date(),
+                type: 'quantum',
+                superposition: document.getElementById('superposition').checked
+            };
+            
+            // Display message
+            displayMessage(message);
+            
+            // Hide modal
+            hideQuantumMessageModal();
+            
+            // Show notification
+            showNotification('Quantum message sent!');
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showQuantumFeatures() {
+            // Randomly show quantum features
+            if (Math.random() > 0.7) {
+                thoughtBubble.classList.remove('hidden');
+            } else {
+                thoughtBubble.classList.add('hidden');
+            }
+            
+            if (Math.random() > 0.8) {
+                memoryLane.classList.remove('hidden');
+            } else {
+                memoryLane.classList.add('hidden');
+            }
+        }
+
+        function startChatWithFriend(friend) {
+            // Check if a chat already exists with this friend
+            const existingChat = document.querySelector(`[data-chat-name="${friend.name}"]`);
+            
+            if (existingChat) {
+                // Select the existing chat
+                existingChat.click();
+            } else {
+                // Create a new chat
+                const newChat = {
+                    id: generateId(),
+                    name: friend.name,
+                    lastMessage: 'Chat started',
+                    timestamp: new Date(),
+                    unread: 0,
+                    type: 'personal',
+                    avatar: friend.avatar,
+                    participants: [currentUser.uid, friend.id]
+                };
+                
+                // Add to chat list and select it
+                loadChats(); // This would normally add the new chat to Firestore first
+                selectChat(newChat);
+                
+                // Show notification
+                showNotification(`Started chat with ${friend.name}`);
+            }
+        }
+
+        function handleLogout() {
+            auth.signOut().then(() => {
+                showNotification('Signed out successfully');
+            }).catch(error => {
+                console.error('Logout error:', error);
+                showNotification('Error signing out');
+            });
+        }
+
+        function redirectToLogin() {
+            window.location.href = 'login.html';
+        }
+
+        function showNotification(message) {
             const notification = document.createElement('div');
             notification.className = 'notification';
             notification.textContent = message;
-            
-            if (type === 'error') {
-                notification.style.background = 'rgba(239, 68, 68, 0.9)';
-            } else if (type === 'info') {
-                notification.style.background = 'rgba(59, 130, 246, 0.9)';
-            }
             
             document.body.appendChild(notification);
             
@@ -1754,145 +1729,28 @@
             }, 3000);
         }
 
-        function formatTime(timestamp) {
-            if (!timestamp) return '';
-            
-            const date = timestamp.toDate();
+        function formatTime(date) {
             const now = new Date();
-            const diff = now.getTime() - date.getTime();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
             
-            if (diff < 60000) {
+            if (diffMins < 1) {
                 return 'Just now';
-            } else if (diff < 3600000) {
-                return `${Math.floor(diff / 60000)}m ago`;
-            } else if (diff < 86400000) {
-                return `${Math.floor(diff / 3600000)}h ago`;
+            } else if (diffMins < 60) {
+                return `${diffMins}m ago`;
+            } else if (diffHours < 24) {
+                return `${diffHours}h ago`;
+            } else if (diffDays < 7) {
+                return `${diffDays}d ago`;
             } else {
                 return date.toLocaleDateString();
             }
         }
 
-        function scrollToBottom() {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function logout() {
-            if (chatsListener) chatsListener();
-            if (messagesListener) messagesListener();
-            if (typingListener) typingListener();
-            
-            auth.signOut().then(() => {
-                localStorage.clear();
-                sessionStorage.clear();
-                showNotification('Logged out successfully', 'success');
-            }).catch(error => {
-                console.error('Error signing out:', error);
-            });
-        }
-
-        function redirectToLogin() {
-            window.location.href = '/login';
-        }
-
-        // Set up event listeners
-        function setupEventListeners() {
-            sendBtn.addEventListener('click', sendMessage);
-            
-            messageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    sendMessage();
-                }
-            });
-            
-            messageInput.addEventListener('input', handleTyping);
-            
-            emojiBtn.addEventListener('click', () => {
-                emojiPicker.classList.toggle('hidden');
-                gifPicker.classList.add('hidden');
-                stickerPicker.classList.add('hidden');
-            });
-            
-            stickerBtn.addEventListener('click', () => {
-                stickerPicker.classList.toggle('hidden');
-                emojiPicker.classList.add('hidden');
-                gifPicker.classList.add('hidden');
-            });
-            
-            gifBtn.addEventListener('click', () => {
-                gifPicker.classList.toggle('hidden');
-                emojiPicker.classList.add('hidden');
-                stickerPicker.classList.add('hidden');
-            });
-            
-            attachmentBtn.addEventListener('click', () => {
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.accept = 'image/*,video/*';
-                
-                fileInput.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const type = file.type.startsWith('image/') ? 'image' : 'video';
-                        uploadFile(file, type);
-                    }
-                });
-                
-                fileInput.click();
-            });
-            
-            logoutBtn.addEventListener('click', logout);
-            
-            createGroupBtn.addEventListener('click', () => {
-                createGroupModal.classList.remove('hidden');
-            });
-            
-            videoCallBtn.addEventListener('click', startVideoCall);
-            
-            quantumMessageBtn.addEventListener('click', () => {
-                quantumMessageModal.classList.remove('hidden');
-            });
-            
-            confirmCreateGroup.addEventListener('click', createGroup);
-            cancelCreateGroup.addEventListener('click', () => {
-                createGroupModal.classList.add('hidden');
-                groupName.value = '';
-            });
-            
-            confirmQuantumMessage.addEventListener('click', sendQuantumMessage);
-            cancelQuantumMessage.addEventListener('click', () => {
-                quantumMessageModal.classList.add('hidden');
-                quantumMessageText.value = '';
-            });
-            
-            endCallBtn.addEventListener('click', endVideoCall);
-            
-            // Close modals and pickers when clicking outside
-            document.addEventListener('click', (e) => {
-                if (e.target.classList.contains('modal')) {
-                    e.target.classList.add('hidden');
-                }
-                
-                if (!e.target.closest('#emojiBtn') && !e.target.closest('#emojiPicker')) {
-                    emojiPicker.classList.add('hidden');
-                }
-                
-                if (!e.target.closest('#stickerBtn') && !e.target.closest('#stickerPicker')) {
-                    stickerPicker.classList.add('hidden');
-                }
-                
-                if (!e.target.closest('#gifBtn') && !e.target.closest('#gifPicker')) {
-                    gifPicker.classList.add('hidden');
-                }
-            });
-            
-            // Handle online/offline events
-            window.addEventListener('online', () => {
-                updateConnectionStatus('connected');
-            });
-            
-            window.addEventListener('offline', () => {
-                updateConnectionStatus('disconnected');
-            });
+        function generateId() {
+            return 'id_' + Math.random().toString(36).substr(2, 9);
         }
     </script>
 </body>
