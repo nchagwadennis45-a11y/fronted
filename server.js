@@ -10,12 +10,12 @@ import path from "path";
 import compression from "compression";
 import helmet from "helmet";
 import cors from "cors";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Fix for __dirname in ES modules
+// ✅ Correct fix for __dirname and __filename in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const _dirname = path.dirname(_filename);
 
@@ -35,7 +35,7 @@ app.use(compression());
 // --- CUSTOM CONTENT SECURITY POLICY (CSP) ---
 app.use((req, res, next) => {
   res.setHeader(
-    "Content-Scurity-Policy",
+    "Content-Security-Policy", // ✅ fixed typo ("Content-Scurity-Policy" → correct spelling)
     [
       "default-src 'self' data: blob: https:;",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://www.gstatic.com https://www.googleapis.com;",
@@ -52,7 +52,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files (HTML, CSS, JS)
+// ✅ Serve static files (HTML, CSS, JS) from the current directory
 app.use(express.static(__dirname));
 
 // --- ROUTES ---
@@ -68,8 +68,8 @@ const pages = [
 ];
 
 pages.forEach((page) => {
-  app.get('/${page === "index" ? "" : page}', (req, res) => {
-    res.sendFile(path.join(__dirname, '${page}.html'));
+  app.get(`/${page === "index" ? "" : page}`, (req, res) => {
+    res.sendFile(path.join(__dirname, `${page}.html`));
   });
 });
 
@@ -86,7 +86,7 @@ app.get("/health", (req, res) => {
 // --- START SERVER ---
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`
-🚀 UniConnect Server Started!
+🚀 UniConnectSphere Server Started!
 📍 Port: ${PORT}
 🌐 Environment: ${process.env.NODE_ENV || "development"}
 
