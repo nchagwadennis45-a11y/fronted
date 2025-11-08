@@ -350,6 +350,55 @@
         .mood-chill { background: linear-gradient(135deg, #059669, #10B981); }
         .mood-romantic { background: linear-gradient(135deg, #DB2777, #BE185D); }
         .mood-default { background: linear-gradient(135deg, #6B7280, #4B5563); }
+        
+        /* Forgot Password Modal Styles */
+        .forgot-password-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .forgot-password-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .forgot-password-content {
+            width: 90%;
+            max-width: 500px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .forgot-password-modal.show .forgot-password-content {
+            transform: translateY(0);
+        }
+        
+        .recovery-option-card {
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .recovery-option-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border-color: #3b82f6;
+        }
     </style>
 </head>
 <body class="h-full dashboard-container bg-grid-pattern theme-calm">
@@ -386,7 +435,7 @@
                     <h3 class="text-xl font-bold mb-2">🍪 We Value Your Privacy</h3>
                     <p class="text-blue-200">
                         We use cookies to enhance your experience, analyze traffic, and personalize content. 
-                        By continuing to use UniConnect, you agree to our use of cookies and our Privacy Policy.
+                        By continuing to use kynecta, you agree to our use of cookies and our Privacy Policy.
                     </p>
                 </div>
                 <div class="flex space-x-4">
@@ -398,6 +447,123 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="forgot-password-modal">
+        <div class="forgot-password-content">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-lock text-2xl text-blue-400"></i>
+                    <h2 class="text-2xl font-bold text-white">Account Recovery</h2>
+                </div>
+                <button id="closeForgotPassword" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Step 1: Email/Identifier Input -->
+            <div id="forgot-step-1-email" class="">
+                <p class="text-gray-300 mb-6">
+                    Please enter your registered email to find your account.
+                </p>
+                <form id="forgotEmailForm">
+                    <div class="mb-6">
+                        <label for="forgotIdentifier" class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+                        <input type="email" id="forgotIdentifier" name="identifier" required placeholder="name@example.com"
+                               class="w-full p-3 rounded-xl glass-effect border border-blue-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-white">
+                    </div>
+                    <button type="submit" id="forgotSubmitBtn"
+                            class="w-full cyber-gradient text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-blue-500/50 transition duration-300 transform hover:scale-[1.01] flex items-center justify-center">
+                        <i class="fas fa-search mr-2"></i> Find Account
+                    </button>
+                </form>
+            </div>
+
+            <!-- Step 2: Method Selection (Hidden initially) -->
+            <div id="forgot-step-2-methods" class="hidden">
+                <h2 class="text-xl font-semibold mb-4 text-gray-100">Choose Recovery Method</h2>
+                <p class="text-gray-300 mb-6">
+                    Select how you'd like to receive your password reset instructions.
+                </p>
+                <div class="space-y-4">
+                    
+                    <!-- Option 1: Email Link (Firebase Default) -->
+                    <div onclick="selectRecoveryMethod('email')" class="recovery-option-card glass-effect p-4 rounded-xl flex items-center space-x-4">
+                        <i class="fas fa-envelope text-2xl text-green-400"></i>
+                        <div>
+                            <h3 class="font-bold text-lg">Email Link</h3>
+                            <p class="text-sm text-gray-400">Send a password reset link to your registered email.</p>
+                        </div>
+                    </div>
+
+                    <!-- Option 2: Phone Number (Code) -->
+                    <div onclick="selectRecoveryMethod('phone')" class="recovery-option-card glass-effect p-4 rounded-xl flex items-center space-x-4">
+                        <i class="fas fa-mobile-alt text-2xl text-yellow-400"></i>
+                        <div>
+                            <h3 class="font-bold text-lg">Phone Number (SMS Code)</h3>
+                            <p class="text-sm text-gray-400">Receive a one-time code via SMS to reset your password.</p>
+                        </div>
+                    </div>
+
+                    <!-- Option 3: Voice Call -->
+                    <div onclick="selectRecoveryMethod('voice')" class="recovery-option-card glass-effect p-4 rounded-xl flex items-center space-x-4">
+                        <i class="fas fa-phone-volume text-2xl text-red-400"></i>
+                        <div>
+                            <h3 class="font-bold text-lg">Voice Call</h3>
+                            <p class="text-sm text-gray-400">Receive an automated voice call with a verification code.</p>
+                        </div>
+                    </div>
+
+                    <!-- Option 4: Secret Text (Security Question) -->
+                    <div onclick="selectRecoveryMethod('secret')" class="recovery-option-card glass-effect p-4 rounded-xl flex items-center space-x-4">
+                        <i class="fas fa-user-secret text-2xl text-purple-400"></i>
+                        <div>
+                            <h3 class="font-bold text-lg">Secret Text / Security Question</h3>
+                            <p class="text-sm text-gray-400">Answer your security question for direct reset access.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 3: Specific Recovery Form (Secret Text example) -->
+            <div id="forgot-step-3-secret-reset" class="hidden">
+                <h2 class="text-xl font-semibold mb-4 text-gray-100">Secret Text Recovery</h2>
+                <p class="text-gray-300 mb-6">
+                    To confirm your identity, please answer your secret question.
+                </p>
+                <form id="forgotSecretForm">
+                    <div class="mb-4">
+                        <label for="forgotSecurityQuestion" class="block text-sm font-medium text-gray-300 mb-2">Security Question</label>
+                        <p id="forgotSecurityQuestion" class="p-3 rounded-xl glass-effect border border-blue-700">
+                            What was the name of your first pet? (Simulated)
+                        </p>
+                    </div>
+                    <div class="mb-6">
+                        <label for="forgotSecurityAnswer" class="block text-sm font-medium text-gray-300 mb-2">Your Answer</label>
+                        <input type="text" id="forgotSecurityAnswer" name="securityAnswer" required
+                               class="w-full p-3 rounded-xl glass-effect border border-blue-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-white">
+                    </div>
+                    
+                    <button type="submit" id="forgotSecretSubmitBtn"
+                            class="w-full cyber-gradient text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-blue-500/50 transition duration-300 transform hover:scale-[1.01] flex items-center justify-center">
+                        <i class="fas fa-check-circle mr-2"></i> Verify & Reset
+                    </button>
+                </form>
+                <button onclick="changeRecoveryMethod()"
+                        class="w-full mt-4 text-gray-400 py-3 rounded-xl font-semibold hover:text-gray-100 transition duration-200">
+                    Change Recovery Method
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+        <div class="flex flex-col items-center p-8 rounded-xl glass-effect">
+            <i class="fas fa-spinner fa-spin text-4xl text-blue-400 mb-4"></i>
+            <p class="text-lg font-medium text-gray-100" id="loadingText">Processing...</p>
         </div>
     </div>
 
@@ -483,7 +649,7 @@
                                     <span class="text-white font-bold">S</span>
                                 </div>
                                 <div>
-                                    <p class="text-white font-semibold">"Found my business partner in Japan! UniConnect made global networking effortless."</p>
+                                    <p class="text-white font-semibold">"Found my business partner in Japan! kynecta made global networking effortless."</p>
                                     <p class="text-blue-300 text-sm">- Sarah, Entrepreneur from USA</p>
                                 </div>
                             </div>
@@ -653,7 +819,7 @@
                                         <label for="remember-me" class="ml-2 block text-sm text-blue-300">Remember me</label>
                                     </div>
                                     <div class="text-sm">
-                                        <button type="button" class="font-medium text-purple-400 hover:text-purple-300 transition">Forgot password?</button>
+                                        <button type="button" id="forgotPasswordBtn" class="font-medium text-purple-400 hover:text-purple-300 transition">Forgot password?</button>
                                     </div>
                                 </div>
 
@@ -914,8 +1080,8 @@
                     `;
                     
                     // Show error message
-                    if (window.uniConnectApp) {
-                        window.uniConnectApp.showMessage('Firebase connection failed. Please check your connection.', 'error');
+                    if (window.kynectaApp) {
+                        window.kynectaApp.showMessage('Firebase connection failed. Please check your connection.', 'error');
                     }
                 }
             }
@@ -942,14 +1108,14 @@
                         email: user.email,
                         displayName: displayName,
                         photoURL: '',
-                        bio: 'New UniConnect member!',
+                        bio: 'New kynecta member!',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
                         emailVerified: false
                     });
                     
                     // Store user info in localStorage
-                    localStorage.setItem('uniconnect-user', JSON.stringify({
+                    localStorage.setItem('kynecta-user', JSON.stringify({
                         uid: user.uid,
                         email: user.email,
                         displayName: displayName,
@@ -1006,7 +1172,7 @@
                     });
                     
                     // Store user info in localStorage
-                    localStorage.setItem('uniconnect-user', JSON.stringify({
+                    localStorage.setItem('kynecta-user', JSON.stringify({
                         uid: user.uid,
                         email: user.email,
                         displayName: user.displayName || user.email.split('@')[0],
@@ -1049,6 +1215,41 @@
                 }
             }
 
+            async sendPasswordResetEmail(email) {
+                if (!this.isInitialized) {
+                    throw new Error('Firebase not initialized. Please try again.');
+                }
+
+                try {
+                    await this.auth.sendPasswordResetEmail(email);
+                    console.log('✅ Password reset email sent successfully');
+                    return true;
+                } catch (error) {
+                    console.error('❌ Password reset failed:', error);
+                    
+                    let errorMessage = 'Password reset failed. Please try again.';
+                    
+                    switch (error.code) {
+                        case 'auth/user-not-found':
+                            errorMessage = 'No account found with this email address.';
+                            break;
+                        case 'auth/invalid-email':
+                            errorMessage = 'Invalid email address. Please check your email.';
+                            break;
+                        case 'auth/too-many-requests':
+                            errorMessage = 'Too many attempts. Please try again later.';
+                            break;
+                        case 'auth/network-request-failed':
+                            errorMessage = 'Network error. Please check your internet connection.';
+                            break;
+                        default:
+                            errorMessage = `Password reset failed: ${error.message}`;
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+            }
+
             updateConnectionStatus(status, message) {
                 const statusElement = document.getElementById('connectionStatus');
                 const textElement = document.getElementById('connectionText');
@@ -1075,17 +1276,23 @@
     <!-- Application Script -->
     <script>
         /**
-         * UniConnect - Main Application Script
+         * kynecta - Main Application Script
          * Handles section transitions, cookies, mood themes, and UI interactions
          */
 
-        class UniConnectApp {
+        class kynectaApp {
             constructor() {
                 this.currentSection = 'landing';
                 this.isTransitioning = false;
                 this.cookiesAccepted = false;
                 this.showingCookieBanner = false;
                 this.currentTheme = 'calm';
+                
+                // Forgot password modal state
+                this.forgotPasswordStep = 1;
+                this.forgotPasswordIdentifier = '';
+                this.forgotPasswordMethod = '';
+                
                 this.init();
             }
 
@@ -1149,6 +1356,9 @@
                 
                 // Mood theme selector
                 this.setupMoodSelector();
+                
+                // Forgot password functionality
+                this.setupForgotPassword();
             }
 
             /**
@@ -1178,6 +1388,32 @@
                         this.togglePasswordVisibility('confirmPassword', 'toggleConfirmPassword');
                     });
                 }
+            }
+
+            /**
+             * Sets up forgot password functionality
+             */
+            setupForgotPassword() {
+                // Forgot password button in login form
+                document.getElementById('forgotPasswordBtn').addEventListener('click', () => {
+                    this.showForgotPasswordModal();
+                });
+                
+                // Close forgot password modal
+                document.getElementById('closeForgotPassword').addEventListener('click', () => {
+                    this.hideForgotPasswordModal();
+                });
+                
+                // Forgot password form submissions
+                document.getElementById('forgotEmailForm').addEventListener('submit', (e) => this.handleForgotPasswordStep1(e));
+                document.getElementById('forgotSecretForm').addEventListener('submit', (e) => this.handleForgotPasswordStep3(e));
+                
+                // Close modal when clicking outside
+                document.getElementById('forgotPasswordModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'forgotPasswordModal') {
+                        this.hideForgotPasswordModal();
+                    }
+                });
             }
 
             /**
@@ -1338,6 +1574,126 @@
                     banner.classList.remove('show');
                 }
                 this.showingCookieBanner = false;
+            }
+
+            /**
+             * Shows the forgot password modal
+             */
+            showForgotPasswordModal() {
+                const modal = document.getElementById('forgotPasswordModal');
+                modal.classList.add('show');
+                
+                // Reset to step 1
+                this.setForgotPasswordStep(1);
+                
+                // Pre-fill with email from login form if available
+                const loginEmail = document.getElementById('loginEmail').value;
+                if (loginEmail) {
+                    document.getElementById('forgotIdentifier').value = loginEmail;
+                }
+            }
+
+            /**
+             * Hides the forgot password modal
+             */
+            hideForgotPasswordModal() {
+                const modal = document.getElementById('forgotPasswordModal');
+                modal.classList.remove('show');
+                
+                // Reset state
+                this.forgotPasswordStep = 1;
+                this.forgotPasswordIdentifier = '';
+                this.forgotPasswordMethod = '';
+            }
+
+            /**
+             * Sets the current step in the forgot password flow
+             */
+            setForgotPasswordStep(step) {
+                this.forgotPasswordStep = step;
+                
+                // Hide all steps
+                document.getElementById('forgot-step-1-email').classList.add('hidden');
+                document.getElementById('forgot-step-2-methods').classList.add('hidden');
+                document.getElementById('forgot-step-3-secret-reset').classList.add('hidden');
+                
+                // Show current step
+                if (step === 1) {
+                    document.getElementById('forgot-step-1-email').classList.remove('hidden');
+                } else if (step === 2) {
+                    document.getElementById('forgot-step-2-methods').classList.remove('hidden');
+                } else if (step === 3) {
+                    document.getElementById('forgot-step-3-secret-reset').classList.remove('hidden');
+                }
+            }
+
+            /**
+             * Handles step 1 of forgot password (email input)
+             */
+            async handleForgotPasswordStep1(e) {
+                e.preventDefault();
+                
+                const identifier = document.getElementById('forgotIdentifier').value.trim();
+                
+                if (!identifier) {
+                    this.showToast('Please enter your email address.', 'error');
+                    return;
+                }
+                
+                if (!this.validateEmail(identifier)) {
+                    this.showToast('Please enter a valid email address.', 'error');
+                    return;
+                }
+                
+                this.showLoading('Locating account...');
+                
+                try {
+                    // Simulate account lookup
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
+                    this.forgotPasswordIdentifier = identifier;
+                    this.setForgotPasswordStep(2);
+                    this.hideLoading();
+                    
+                } catch (error) {
+                    this.hideLoading();
+                    this.showToast('Error locating account. Please try again.', 'error');
+                }
+            }
+
+            /**
+             * Handles step 3 of forgot password (secret question)
+             */
+            async handleForgotPasswordStep3(e) {
+                e.preventDefault();
+                
+                const answer = document.getElementById('forgotSecurityAnswer').value.trim();
+                
+                if (!answer) {
+                    this.showToast('Please provide an answer.', 'error');
+                    return;
+                }
+                
+                this.showLoading('Verifying your answer...');
+                
+                try {
+                    // Simulate verification
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    // Mock correct answer
+                    if (answer.toLowerCase() === 'sparky') {
+                        this.hideLoading();
+                        this.showToast('Security question verified! You can now set a new password (Simulated).', 'success');
+                        this.hideForgotPasswordModal();
+                    } else {
+                        this.hideLoading();
+                        this.showToast('Incorrect answer. Please try again.', 'error');
+                    }
+                    
+                } catch (error) {
+                    this.hideLoading();
+                    this.showToast('Error verifying answer. Please try again.', 'error');
+                }
             }
 
             /**
@@ -1700,11 +2056,34 @@
             }
 
             /**
+             * Shows loading modal
+             */
+            showLoading(text = 'Processing...') {
+                const loadingModal = document.getElementById('loadingModal');
+                const loadingText = document.getElementById('loadingText');
+                
+                if (loadingModal && loadingText) {
+                    loadingText.textContent = text;
+                    loadingModal.classList.remove('hidden');
+                }
+            }
+
+            /**
+             * Hides loading modal
+             */
+            hideLoading() {
+                const loadingModal = document.getElementById('loadingModal');
+                if (loadingModal) {
+                    loadingModal.classList.add('hidden');
+                }
+            }
+
+            /**
              * Loads user preferences from localStorage
              */
             loadUserPreferences() {
-                const savedEmail = localStorage.getItem('uniconnect-email');
-                const rememberMe = localStorage.getItem('uniconnect-remember') === 'true';
+                const savedEmail = localStorage.getItem('kynecta-email');
+                const rememberMe = localStorage.getItem('kynecta-remember') === 'true';
                 
                 if (savedEmail && rememberMe) {
                     const loginEmail = document.getElementById('loginEmail');
@@ -1722,11 +2101,11 @@
                 const rememberMe = document.getElementById('remember-me').checked;
                 
                 if (rememberMe && email) {
-                    localStorage.setItem('uniconnect-email', email);
-                    localStorage.setItem('uniconnect-remember', 'true');
+                    localStorage.setItem('kynecta-email', email);
+                    localStorage.setItem('kynecta-remember', 'true');
                 } else {
-                    localStorage.removeItem('uniconnect-email');
-                    localStorage.removeItem('uniconnect-remember');
+                    localStorage.removeItem('kynecta-email');
+                    localStorage.removeItem('kynecta-remember');
                 }
             }
 
@@ -1754,9 +2133,57 @@
             }
         }
 
+        // Global functions for forgot password modal
+        function selectRecoveryMethod(method) {
+            if (window.kynectaApp) {
+                window.kynectaApp.forgotPasswordMethod = method;
+                
+                if (method === 'email') {
+                    executeRecovery('email');
+                } else if (method === 'phone' || method === 'voice') {
+                    executeRecovery(method);
+                } else if (method === 'secret') {
+                    window.kynectaApp.setForgotPasswordStep(3);
+                }
+            }
+        }
+
+        async function executeRecovery(method) {
+            if (!window.kynectaApp) return;
+            
+            const { forgotPasswordIdentifier } = window.kynectaApp;
+            
+            window.kynectaApp.showLoading(`Initiating ${method} recovery...`);
+            
+            if (method === 'email') {
+                try {
+                    await window.firebaseAuth.sendPasswordResetEmail(forgotPasswordIdentifier);
+                    window.kynectaApp.hideLoading();
+                    window.kynectaApp.showToast('Recovery email sent successfully! Please check your inbox (and spam folder) for the link.', 'success');
+                    window.kynectaApp.hideForgotPasswordModal();
+                } catch (error) {
+                    window.kynectaApp.hideLoading();
+                    window.kynectaApp.showToast(`Email reset failed: ${error.message}`, 'error');
+                }
+            } else if (method === 'phone' || method === 'voice') {
+                // Simulated Phone/Voice Call Recovery
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                window.kynectaApp.hideLoading();
+                const action = method === 'phone' ? 'SMS code' : 'voice call';
+                window.kynectaApp.showToast(`A simulated ${action} has been initiated for ${forgotPasswordIdentifier}. Please check your phone for a code to complete the process.`, 'info');
+                window.kynectaApp.hideForgotPasswordModal();
+            }
+        }
+
+        function changeRecoveryMethod() {
+            if (window.kynectaApp) {
+                window.kynectaApp.setForgotPasswordStep(2);
+            }
+        }
+
         // Initialize the app when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
-            window.uniConnectApp = new UniConnectApp();
+            window.kynectaApp = new kynectaApp();
             
             // Check Firebase status after a delay
             setTimeout(() => {

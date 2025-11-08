@@ -1,585 +1,538 @@
-/* responsive.css - Kynecta Responsive Design */
-/* Mobile First Approach */
+/* responsive.css - Universal Kynecta Responsive Design */
+/* Mobile First Approach - Works for ALL pages */
 
-/* Base responsive settings */
-:root {
-  --mobile-breakpoint: 768px;
-  --tablet-breakpoint: 1024px;
-  --desktop-breakpoint: 1200px;
+/* ===== RESET & BASE STYLES ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-/* Utility classes for responsive display */
-.mobile-only {
-  display: none !important;
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
-.desktop-only {
+body {
+  position: relative;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: #0F172A;
+  color: white;
+  line-height: 1.5;
+}
+
+/* ===== UNIVERSAL UTILITY CLASSES ===== */
+.mobile-only { display: none !important; }
+.desktop-only { display: block !important; }
+.tablet-only { display: none !important; }
+.hidden-mobile { display: none !important; }
+.visible-mobile { display: block !important; }
+
+.prevent-overflow { 
+  max-width: 100vw !important; 
+  overflow-x: hidden !important; 
+}
+.flex-mobile { 
+  display: flex !important; 
+  flex-direction: column !important; 
+}
+.full-width { width: 100% !important; }
+.full-height { height: 100% !important; }
+.text-center-mobile { text-align: center !important; }
+
+/* ===== UNIVERSAL LAYOUT CONTAINERS ===== */
+.app-container, .page-container, .main-container {
+  width: 100vw !important;
+  min-height: 100vh !important;
+  position: relative !important;
+}
+
+/* ===== UNIVERSAL HEADER ===== */
+header, .page-header, .app-header {
+  padding: 1rem !important;
+  min-height: 70px !important;
+  background: rgba(30, 30, 60, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.3) !important;
+  position: relative !important;
+  z-index: 100 !important;
+}
+
+.header-title, .page-title {
+  font-size: 1.2rem !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+}
+
+/* ===== UNIVERSAL NAVIGATION ===== */
+.main-nav, .bottom-nav, .mobile-nav {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  background: rgba(30, 30, 60, 0.98) !important;
+  backdrop-filter: blur(30px) !important;
+  border-top: 1px solid rgba(59, 130, 246, 0.3) !important;
+  padding: 0.5rem !important;
+  z-index: 1000 !important;
+  display: flex !important;
+  justify-content: space-around !important;
+}
+
+.nav-item, .nav-btn {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 0.5rem !important;
+  border-radius: 12px !important;
+  color: #94A3B8 !important;
+  font-size: 0.75rem !important;
+  min-height: 60px !important;
+  min-width: 60px !important;
+  justify-content: center !important;
+  text-decoration: none !important;
+  transition: all 0.3s ease !important;
+}
+
+.nav-item.active, .nav-btn.active {
+  color: #3B82F6 !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* ===== MAIN CONTENT AREA (All Pages) ===== */
+.main-content, .content-area, .page-content {
+  width: 100% !important;
+  min-height: calc(100vh - 140px) !important;
+  padding: 1rem !important;
+  padding-bottom: 80px !important; /* Space for bottom nav */
+  overflow-y: auto !important;
+}
+
+/* ===== CARD COMPONENTS (Marketplace, Feed, Games) ===== */
+.card, .game-card, .product-card, .feed-card {
+  width: 100% !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 16px !important;
+  padding: 1rem !important;
+  margin-bottom: 1rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.card-image, .game-image, .product-image {
+  width: 100% !important;
+  height: 200px !important;
+  object-fit: cover !important;
+  border-radius: 12px !important;
+  margin-bottom: 1rem !important;
+}
+
+.card-title, .game-title, .product-title {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.card-description, .game-description {
+  font-size: 0.9rem !important;
+  opacity: 0.8 !important;
+  margin-bottom: 1rem !important;
+  line-height: 1.4 !important;
+}
+
+/* ===== BUTTONS (All Pages) ===== */
+.btn, .action-btn, .primary-btn {
+  width: 100% !important;
+  padding: 1rem !important;
+  background: linear-gradient(135deg, #3B82F6, #8B5CF6) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  color: white !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  min-height: 50px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ===== FORM ELEMENTS (Payment, Settings, Auth) ===== */
+.form-group, .input-group {
+  width: 100% !important;
+  margin-bottom: 1rem !important;
+}
+
+.form-label {
   display: block !important;
+  margin-bottom: 0.5rem !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
 }
 
-.tablet-only {
-  display: none !important;
+.form-input, .text-input, .payment-input {
+  width: 100% !important;
+  padding: 1rem !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  color: white !important;
+  font-size: 1rem !important;
 }
 
-/* Mobile Styles (default - mobile first) */
+.form-input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* ===== GRID LAYOUTS (Marketplace, Games, Feed) ===== */
+.grid, .cards-grid, .games-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 1rem !important;
+  width: 100% !important;
+}
+
+/* ===== CHAT SPECIFIC (Backward Compatible) ===== */
+#mainContainer {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+.w-80 {
+  width: 100% !important;
+  height: 40vh !important;
+  border-right: none !important;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+.flex-1 {
+  width: 100% !important;
+  height: 60vh !important;
+}
+
+#messagesContainer {
+  height: calc(60vh - 140px) !important;
+}
+
+/* ===== PAYMENT SPECIFIC ===== */
+.payment-methods, .payment-options {
+  width: 100% !important;
+}
+
+.payment-method {
+  width: 100% !important;
+  padding: 1rem !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 12px !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* ===== GAMES SPECIFIC ===== */
+.game-container {
+  width: 100% !important;
+  height: 60vh !important;
+}
+
+.game-controls {
+  position: fixed !important;
+  bottom: 80px !important;
+  left: 0 !important;
+  right: 0 !important;
+  padding: 1rem !important;
+  background: rgba(30, 30, 60, 0.9) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+/* ===== FEED SPECIFIC ===== */
+.feed-container {
+  width: 100% !important;
+}
+
+.post-card {
+  width: 100% !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.post-actions {
+  display: flex !important;
+  justify-content: space-around !important;
+  padding: 1rem 0 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ===== MARKETPLACE SPECIFIC ===== */
+.marketplace-filters {
+  position: sticky !important;
+  top: 0 !important;
+  background: rgba(30, 30, 60, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  padding: 1rem !important;
+  z-index: 50 !important;
+}
+
+.filter-options {
+  display: flex !important;
+  gap: 0.5rem !important;
+  overflow-x: auto !important;
+  padding-bottom: 0.5rem !important;
+}
+
+.filter-chip {
+  padding: 0.5rem 1rem !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 20px !important;
+  font-size: 0.8rem !important;
+  white-space: nowrap !important;
+}
+
+/* ===== MODALS & OVERLAYS (All Pages) ===== */
+.modal, .overlay, .dialog {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  z-index: 2000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1rem !important;
+}
+
+.modal-content {
+  width: 100% !important;
+  max-width: 400px !important;
+  background: rgba(30, 30, 60, 0.95) !important;
+  border-radius: 20px !important;
+  padding: 1.5rem !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+/* ===== CONNECTION STATUS (All Pages) ===== */
+.connection-status {
+  position: fixed !important;
+  top: 10px !important;
+  right: 10px !important;
+  padding: 8px 16px !important;
+  background: rgba(30, 30, 60, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  font-size: 0.75rem !important;
+  z-index: 1001 !important;
+}
+
+/* ===== MOBILE FIRST STYLES (Default - up to 767px) ===== */
 @media (max-width: 767px) {
-  .mobile-only {
-    display: block !important;
-  }
-  
-  .desktop-only {
-    display: none !important;
-  }
-  
-  .tablet-only {
+  .mobile-only { display: block !important; }
+  .desktop-only { display: none !important; }
+  .hidden-mobile { display: none !important; }
+  .visible-mobile { display: block !important; }
+
+  /* Universal mobile adjustments */
+  .sidebar, .desktop-sidebar {
     display: none !important;
   }
 
-  /* Layout adjustments */
+  .main-content {
+    padding-bottom: 100px !important;
+  }
+
+  /* Typography scaling */
+  h1 { font-size: 1.5rem !important; }
+  h2 { font-size: 1.3rem !important; }
+  h3 { font-size: 1.1rem !important; }
+  
+  /* Card adjustments */
+  .card { padding: 0.875rem !important; }
+}
+
+/* ===== LANDSCAPE MOBILE ===== */
+@media (max-width: 767px) and (orientation: landscape) {
+  .main-content {
+    padding-bottom: 70px !important;
+  }
+
+  .mobile-nav {
+    padding: 0.25rem !important;
+  }
+
+  .nav-item {
+    min-height: 50px !important;
+    min-width: 50px !important;
+    font-size: 0.65rem !important;
+  }
+
+  /* Chat specific landscape */
+  .w-80 {
+    height: 35vh !important;
+  }
+
+  .flex-1 {
+    height: 65vh !important;
+  }
+}
+
+/* ===== TABLET STYLES (768px - 1023px) ===== */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mobile-only { display: none !important; }
+  .tablet-only { display: block !important; }
+  .desktop-only { display: block !important; }
+
+  .main-nav {
+    position: relative !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border-top: none !important;
+    padding: 1rem !important;
+  }
+
+  .grid, .cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Chat tablet layout */
   #mainContainer {
-    flex-direction: column;
-    height: 100vh;
+    flex-direction: row !important;
   }
 
   .w-80 {
-    width: 100% !important;
-    height: auto !important;
-    max-height: 40vh;
-    border-right: none !important;
-    border-bottom: 1px solid rgba(59, 130, 246, 0.3) !important;
+    width: 300px !important;
+    height: 100vh !important;
+    border-right: 1px solid rgba(59, 130, 246, 0.3) !important;
+    border-bottom: none !important;
   }
 
-  /* Header adjustments */
-  .glass-effect.border-b {
-    padding: 0.5rem !important;
+  .flex-1 {
+    width: calc(100vw - 300px) !important;
+    height: 100vh !important;
   }
+}
 
-  .text-xl {
-    font-size: 1.1rem !important;
-  }
+/* ===== DESKTOP STYLES (1024px and above) ===== */
+@media (min-width: 1024px) {
+  .mobile-only { display: none !important; }
+  .desktop-only { display: block !important; }
+  .tablet-only { display: none !important; }
 
-  .quantum-entanglement {
-    padding: 0.5rem !important;
-  }
-
-  .quantum-entanglement span {
-    font-size: 0.6rem !important;
-  }
-
-  /* Chat list adjustments */
-  .chat-item {
-    padding: 0.75rem !important;
-    margin-bottom: 0.5rem !important;
-  }
-
-  .chat-avatar {
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 0.8rem !important;
-  }
-
-  .chat-item-name {
-    font-size: 0.8rem !important;
-  }
-
-  .chat-item-preview {
-    font-size: 0.7rem !important;
-  }
-
-  .chat-item-time {
-    font-size: 0.65rem !important;
-  }
-
-  /* Message area adjustments */
-  .message-bubble {
-    max-width: 85% !important;
-    padding: 0.75rem 1rem !important;
-  }
-
-  .message-sender {
-    font-size: 0.7rem !important;
-  }
-
-  .message-content {
-    font-size: 0.9rem !important;
-  }
-
-  .message-meta {
-    font-size: 0.65rem !important;
-  }
-
-  /* Input area adjustments */
-  .glass-effect.border-t {
-    padding: 0.75rem !important;
-  }
-
-  #messageInput {
-    padding: 0.75rem 1rem !important;
-    font-size: 0.9rem !important;
-  }
-
-  /* Modal adjustments */
-  .modal-container {
-    width: 95% !important;
-    margin: 1rem !important;
-    padding: 1.25rem !important;
-  }
-
-  /* Video call adjustments */
-  .local-video {
-    width: 120px !important;
-    height: 90px !important;
-    bottom: 10px !important;
-    right: 10px !important;
-  }
-
-  .call-btn {
-    width: 50px !important;
-    height: 50px !important;
-    font-size: 1.25rem !important;
-  }
-
-  .call-controls {
-    bottom: 10px !important;
-    gap: 10px !important;
-  }
-
-  /* Connection status */
-  .connection-status {
-    top: 5px !important;
-    right: 5px !important;
-    padding: 6px 12px !important;
-    font-size: 0.7rem !important;
-  }
-
-  /* Hide some elements on mobile */
-  #chatActions .hidden-mobile {
+  .main-nav {
     display: none !important;
   }
 
-  /* Mobile navigation */
-  .mobile-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(30, 30, 60, 0.95);
-    backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(59, 130, 246, 0.3);
-    padding: 0.5rem;
-    z-index: 1000;
-  }
-
-  .mobile-nav-buttons {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-  }
-
-  .mobile-nav-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0.5rem;
-    border-radius: 8px;
-    transition: all 0.3s;
-    color: #94A3B8;
-    font-size: 0.7rem;
-  }
-
-  .mobile-nav-btn.active {
-    color: #3B82F6;
-    background: rgba(59, 130, 246, 0.1);
-  }
-
-  .mobile-nav-btn i {
-    font-size: 1.25rem;
-    margin-bottom: 0.25rem;
-  }
-
-  /* Mobile chat header */
-  .mobile-chat-header {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem;
-    background: rgba(30, 30, 60, 0.95);
-    border-bottom: 1px solid rgba(59, 130, 246, 0.3);
-  }
-
-  .back-button {
-    margin-right: 0.75rem;
-    color: #3B82F6;
-  }
-
-  /* Emoji/Sticker/GIF pickers */
-  .emoji-picker,
-  .sticker-picker,
-  .gif-picker {
-    width: 90vw !important;
-    right: 5vw !important;
-    bottom: 80px !important;
-  }
-
-  .emoji-grid {
-    grid-template-columns: repeat(6, 1fr) !important;
-  }
-
-  .sticker-grid {
+  .grid, .cards-grid, .games-grid {
     grid-template-columns: repeat(3, 1fr) !important;
   }
 
-  .gif-grid {
-    grid-template-columns: repeat(1, 1fr) !important;
+  .app-container {
+    display: flex !important;
   }
-}
 
-/* Tablet Styles */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .mobile-only {
-    display: none !important;
-  }
-  
-  .desktop-only {
+  .sidebar {
     display: block !important;
-  }
-  
-  .tablet-only {
-    display: block !important;
-  }
-
-  /* Layout adjustments */
-  .w-80 {
-    width: 280px !important;
+    width: 250px !important;
+    height: 100vh !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
   }
 
-  /* Chat list adjustments */
-  .chat-item {
-    padding: 0.875rem !important;
+  .main-content {
+    margin-left: 250px !important;
+    width: calc(100vw - 250px) !important;
+    padding-bottom: 2rem !important;
   }
 
-  .chat-avatar {
-    width: 36px !important;
-    height: 36px !important;
-  }
-
-  /* Message area adjustments */
-  .message-bubble {
-    max-width: 75% !important;
-  }
-
-  /* Modal adjustments */
-  .modal-container {
-    width: 85% !important;
-    max-width: 450px !important;
-  }
-
-  /* Video call adjustments */
-  .local-video {
-    width: 160px !important;
-    height: 120px !important;
-  }
-
-  /* Connection status */
-  .connection-status {
-    font-size: 0.75rem !important;
-  }
-}
-
-/* Desktop Styles */
-@media (min-width: 1024px) {
-  .mobile-only {
-    display: none !important;
-  }
-  
-  .desktop-only {
-    display: block !important;
-  }
-  
-  .tablet-only {
-    display: none !important;
-  }
-
-  /* Ensure proper desktop layout */
+  /* Chat desktop layout */
   #mainContainer {
     flex-direction: row !important;
   }
 
   .w-80 {
     width: 320px !important;
+    height: 100vh !important;
   }
 
-  /* Optimize for larger screens */
-  .message-bubble {
-    max-width: 65% !important;
-  }
-
-  /* Modal adjustments */
-  .modal-container {
-    max-width: 500px !important;
+  .flex-1 {
+    width: calc(100vw - 320px) !important;
+    height: 100vh !important;
   }
 }
 
-/* Large Desktop Styles */
+/* ===== LARGE DESKTOP (1440px and above) ===== */
 @media (min-width: 1440px) {
-  .w-80 {
-    width: 360px !important;
+  .grid, .cards-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
   }
 
-  .message-bubble {
-    max-width: 60% !important;
+  .sidebar {
+    width: 280px !important;
   }
 
-  /* Increase font sizes for better readability on large screens */
-  .chat-item-name {
-    font-size: 1rem !important;
-  }
-
-  .message-content {
-    font-size: 1.05rem !important;
+  .main-content {
+    margin-left: 280px !important;
+    width: calc(100vw - 280px) !important;
   }
 }
 
-/* Ultra-wide screens */
-@media (min-width: 1920px) {
-  .container-wide {
-    max-width: 1800px;
-    margin: 0 auto;
+/* ===== ACCESSIBILITY & TOUCH OPTIMIZATIONS ===== */
+@media (hover: none) and (pointer: coarse) {
+  button, .btn, .nav-item {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  .card, .game-card {
+    padding: 1rem !important;
   }
 }
 
-/* Orientation-specific styles */
-@media (max-width: 767px) and (orientation: landscape) {
-  .w-80 {
-    max-height: 30vh !important;
-  }
-
-  #messagesContainer {
-    max-height: calc(70vh - 140px) !important;
-  }
-
-  .mobile-nav {
-    padding: 0.25rem !important;
-  }
-
-  .mobile-nav-btn {
-    padding: 0.25rem !important;
-    font-size: 0.6rem !important;
-  }
-
-  .mobile-nav-btn i {
-    font-size: 1rem !important;
-    margin-bottom: 0.125rem !important;
-  }
+/* Focus styles */
+button:focus, input:focus, textarea:focus {
+  outline: 2px solid #3B82F6 !important;
+  outline-offset: 2px !important;
 }
 
-/* High DPI screens */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .glass-effect {
-    backdrop-filter: blur(40px);
-  }
-}
-
-/* Reduced motion for accessibility */
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-
-  .quantum-entanglement::before,
-  .hologram-effect::before,
-  .quantum-tunnel::before {
-    animation: none !important;
-  }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  /* Ensure proper contrast in dark mode */
-  .cosmic-background {
-    background: 
-      radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-      linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%) !important;
-  }
-}
-
-/* Print styles */
-@media print {
-  #auth-required,
-  .connection-status,
-  .mobile-nav,
-  #chatActions,
-  .glass-effect.border-t {
-    display: none !important;
-  }
-
-  #chat-app {
-    display: block !important;
-  }
-
-  .cosmic-background {
-    background: white !important;
-  }
-
-  .text-white {
-    color: black !important;
-  }
-
-  .glass-effect {
-    background: white !important;
-    backdrop-filter: none !important;
-    border: 1px solid #ddd !important;
-  }
-}
-
-/* Touch device optimizations */
-@media (hover: none) and (pointer: coarse) {
-  /* Larger touch targets */
-  .chat-item {
-    padding: 1rem !important;
-    min-height: 60px;
-  }
-
-  .call-btn {
-    min-width: 60px;
-    min-height: 60px;
-  }
-
-  .mobile-nav-btn {
-    min-height: 60px;
-    min-width: 60px;
-  }
-
-  /* Remove hover effects */
-  .chat-item:hover {
-    background: inherit !important;
-  }
-
-  .message-bubble:hover {
-    transform: none !important;
-  }
-
-  /* Better scrolling on iOS */
-  #messagesContainer {
-    -webkit-overflow-scrolling: touch;
-  }
-}
-
-/* Very small screens (old phones) */
-@media (max-width: 320px) {
-  .chat-item {
-    padding: 0.5rem !important;
-  }
-
-  .chat-avatar {
-    width: 28px !important;
-    height: 28px !important;
-  }
-
-  .chat-item-name {
-    font-size: 0.75rem !important;
-  }
-
-  #messageInput {
-    padding: 0.5rem 0.75rem !important;
-    font-size: 0.8rem !important;
-  }
-
-  .modal-container {
-    padding: 1rem !important;
-  }
-}
-
-/* Foldable devices */
-@media (max-width: 767px) and (min-aspect-ratio: 1/1) {
-  /* Optimize for square/foldable screens */
-  .w-80 {
-    max-height: 35vh !important;
-  }
-
-  #messagesContainer {
-    max-height: calc(65vh - 120px) !important;
-  }
-}
-
-/* JavaScript helper classes */
-.sidebar-hidden {
-  transform: translateX(-100%);
-}
-
-.sidebar-visible {
-  transform: translateX(0);
-}
-
-.chat-fullscreen {
-  width: 100% !important;
-}
-
-/* Smooth transitions for responsive changes */
-#mainContainer,
-.w-80,
-.chat-item,
-.message-bubble,
-.modal-container {
-  transition: all 0.3s ease-in-out;
-}
-
-/* Focus styles for better accessibility */
-@media (max-width: 767px) {
-  button:focus,
-  input:focus,
-  textarea:focus {
-    outline: 2px solid #3B82F6;
-    outline-offset: 2px;
-  }
-}
-
-/* Loading states for better UX */
+/* ===== LOADING STATES ===== */
 .loading-skeleton {
   background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
+  border-radius: 8px !important;
 }
 
 @keyframes loading {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-/* Emergency responsive fixes */
-.overflow-fix {
-  -webkit-overflow-scrolling: touch;
-  overflow-scrolling: touch;
-}
-
-.no-scroll {
-  overflow: hidden !important;
-}
-
-.flex-mobile {
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-/* Ensure images are responsive */
-img {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Video elements responsive */
-video {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Custom scrollbar for webkit browsers */
+/* ===== CUSTOM SCROLLBAR ===== */
 @media (min-width: 768px) {
   ::-webkit-scrollbar {
     width: 6px;
@@ -593,8 +546,11 @@ video {
     background: rgba(59, 130, 246, 0.5);
     border-radius: 3px;
   }
+}
 
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(59, 130, 246, 0.7);
+/* ===== PRINT STYLES ===== */
+@media print {
+  .main-nav, .mobile-nav, .connection-status {
+    display: none !important;
   }
 }
