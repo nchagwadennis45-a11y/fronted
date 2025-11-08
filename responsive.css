@@ -1,0 +1,600 @@
+/* responsive.css - Kynecta Responsive Design */
+/* Mobile First Approach */
+
+/* Base responsive settings */
+:root {
+  --mobile-breakpoint: 768px;
+  --tablet-breakpoint: 1024px;
+  --desktop-breakpoint: 1200px;
+}
+
+/* Utility classes for responsive display */
+.mobile-only {
+  display: none !important;
+}
+
+.desktop-only {
+  display: block !important;
+}
+
+.tablet-only {
+  display: none !important;
+}
+
+/* Mobile Styles (default - mobile first) */
+@media (max-width: 767px) {
+  .mobile-only {
+    display: block !important;
+  }
+  
+  .desktop-only {
+    display: none !important;
+  }
+  
+  .tablet-only {
+    display: none !important;
+  }
+
+  /* Layout adjustments */
+  #mainContainer {
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .w-80 {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 40vh;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.3) !important;
+  }
+
+  /* Header adjustments */
+  .glass-effect.border-b {
+    padding: 0.5rem !important;
+  }
+
+  .text-xl {
+    font-size: 1.1rem !important;
+  }
+
+  .quantum-entanglement {
+    padding: 0.5rem !important;
+  }
+
+  .quantum-entanglement span {
+    font-size: 0.6rem !important;
+  }
+
+  /* Chat list adjustments */
+  .chat-item {
+    padding: 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .chat-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .chat-item-name {
+    font-size: 0.8rem !important;
+  }
+
+  .chat-item-preview {
+    font-size: 0.7rem !important;
+  }
+
+  .chat-item-time {
+    font-size: 0.65rem !important;
+  }
+
+  /* Message area adjustments */
+  .message-bubble {
+    max-width: 85% !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  .message-sender {
+    font-size: 0.7rem !important;
+  }
+
+  .message-content {
+    font-size: 0.9rem !important;
+  }
+
+  .message-meta {
+    font-size: 0.65rem !important;
+  }
+
+  /* Input area adjustments */
+  .glass-effect.border-t {
+    padding: 0.75rem !important;
+  }
+
+  #messageInput {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Modal adjustments */
+  .modal-container {
+    width: 95% !important;
+    margin: 1rem !important;
+    padding: 1.25rem !important;
+  }
+
+  /* Video call adjustments */
+  .local-video {
+    width: 120px !important;
+    height: 90px !important;
+    bottom: 10px !important;
+    right: 10px !important;
+  }
+
+  .call-btn {
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 1.25rem !important;
+  }
+
+  .call-controls {
+    bottom: 10px !important;
+    gap: 10px !important;
+  }
+
+  /* Connection status */
+  .connection-status {
+    top: 5px !important;
+    right: 5px !important;
+    padding: 6px 12px !important;
+    font-size: 0.7rem !important;
+  }
+
+  /* Hide some elements on mobile */
+  #chatActions .hidden-mobile {
+    display: none !important;
+  }
+
+  /* Mobile navigation */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(30, 30, 60, 0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 0.5rem;
+    z-index: 1000;
+  }
+
+  .mobile-nav-buttons {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.3s;
+    color: #94A3B8;
+    font-size: 0.7rem;
+  }
+
+  .mobile-nav-btn.active {
+    color: #3B82F6;
+    background: rgba(59, 130, 246, 0.1);
+  }
+
+  .mobile-nav-btn i {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  /* Mobile chat header */
+  .mobile-chat-header {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(30, 30, 60, 0.95);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+  }
+
+  .back-button {
+    margin-right: 0.75rem;
+    color: #3B82F6;
+  }
+
+  /* Emoji/Sticker/GIF pickers */
+  .emoji-picker,
+  .sticker-picker,
+  .gif-picker {
+    width: 90vw !important;
+    right: 5vw !important;
+    bottom: 80px !important;
+  }
+
+  .emoji-grid {
+    grid-template-columns: repeat(6, 1fr) !important;
+  }
+
+  .sticker-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .gif-grid {
+    grid-template-columns: repeat(1, 1fr) !important;
+  }
+}
+
+/* Tablet Styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mobile-only {
+    display: none !important;
+  }
+  
+  .desktop-only {
+    display: block !important;
+  }
+  
+  .tablet-only {
+    display: block !important;
+  }
+
+  /* Layout adjustments */
+  .w-80 {
+    width: 280px !important;
+  }
+
+  /* Chat list adjustments */
+  .chat-item {
+    padding: 0.875rem !important;
+  }
+
+  .chat-avatar {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  /* Message area adjustments */
+  .message-bubble {
+    max-width: 75% !important;
+  }
+
+  /* Modal adjustments */
+  .modal-container {
+    width: 85% !important;
+    max-width: 450px !important;
+  }
+
+  /* Video call adjustments */
+  .local-video {
+    width: 160px !important;
+    height: 120px !important;
+  }
+
+  /* Connection status */
+  .connection-status {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Desktop Styles */
+@media (min-width: 1024px) {
+  .mobile-only {
+    display: none !important;
+  }
+  
+  .desktop-only {
+    display: block !important;
+  }
+  
+  .tablet-only {
+    display: none !important;
+  }
+
+  /* Ensure proper desktop layout */
+  #mainContainer {
+    flex-direction: row !important;
+  }
+
+  .w-80 {
+    width: 320px !important;
+  }
+
+  /* Optimize for larger screens */
+  .message-bubble {
+    max-width: 65% !important;
+  }
+
+  /* Modal adjustments */
+  .modal-container {
+    max-width: 500px !important;
+  }
+}
+
+/* Large Desktop Styles */
+@media (min-width: 1440px) {
+  .w-80 {
+    width: 360px !important;
+  }
+
+  .message-bubble {
+    max-width: 60% !important;
+  }
+
+  /* Increase font sizes for better readability on large screens */
+  .chat-item-name {
+    font-size: 1rem !important;
+  }
+
+  .message-content {
+    font-size: 1.05rem !important;
+  }
+}
+
+/* Ultra-wide screens */
+@media (min-width: 1920px) {
+  .container-wide {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+}
+
+/* Orientation-specific styles */
+@media (max-width: 767px) and (orientation: landscape) {
+  .w-80 {
+    max-height: 30vh !important;
+  }
+
+  #messagesContainer {
+    max-height: calc(70vh - 140px) !important;
+  }
+
+  .mobile-nav {
+    padding: 0.25rem !important;
+  }
+
+  .mobile-nav-btn {
+    padding: 0.25rem !important;
+    font-size: 0.6rem !important;
+  }
+
+  .mobile-nav-btn i {
+    font-size: 1rem !important;
+    margin-bottom: 0.125rem !important;
+  }
+}
+
+/* High DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .glass-effect {
+    backdrop-filter: blur(40px);
+  }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .quantum-entanglement::before,
+  .hologram-effect::before,
+  .quantum-tunnel::before {
+    animation: none !important;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  /* Ensure proper contrast in dark mode */
+  .cosmic-background {
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+      linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%) !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  #auth-required,
+  .connection-status,
+  .mobile-nav,
+  #chatActions,
+  .glass-effect.border-t {
+    display: none !important;
+  }
+
+  #chat-app {
+    display: block !important;
+  }
+
+  .cosmic-background {
+    background: white !important;
+  }
+
+  .text-white {
+    color: black !important;
+  }
+
+  .glass-effect {
+    background: white !important;
+    backdrop-filter: none !important;
+    border: 1px solid #ddd !important;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets */
+  .chat-item {
+    padding: 1rem !important;
+    min-height: 60px;
+  }
+
+  .call-btn {
+    min-width: 60px;
+    min-height: 60px;
+  }
+
+  .mobile-nav-btn {
+    min-height: 60px;
+    min-width: 60px;
+  }
+
+  /* Remove hover effects */
+  .chat-item:hover {
+    background: inherit !important;
+  }
+
+  .message-bubble:hover {
+    transform: none !important;
+  }
+
+  /* Better scrolling on iOS */
+  #messagesContainer {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Very small screens (old phones) */
+@media (max-width: 320px) {
+  .chat-item {
+    padding: 0.5rem !important;
+  }
+
+  .chat-avatar {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .chat-item-name {
+    font-size: 0.75rem !important;
+  }
+
+  #messageInput {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .modal-container {
+    padding: 1rem !important;
+  }
+}
+
+/* Foldable devices */
+@media (max-width: 767px) and (min-aspect-ratio: 1/1) {
+  /* Optimize for square/foldable screens */
+  .w-80 {
+    max-height: 35vh !important;
+  }
+
+  #messagesContainer {
+    max-height: calc(65vh - 120px) !important;
+  }
+}
+
+/* JavaScript helper classes */
+.sidebar-hidden {
+  transform: translateX(-100%);
+}
+
+.sidebar-visible {
+  transform: translateX(0);
+}
+
+.chat-fullscreen {
+  width: 100% !important;
+}
+
+/* Smooth transitions for responsive changes */
+#mainContainer,
+.w-80,
+.chat-item,
+.message-bubble,
+.modal-container {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Focus styles for better accessibility */
+@media (max-width: 767px) {
+  button:focus,
+  input:focus,
+  textarea:focus {
+    outline: 2px solid #3B82F6;
+    outline-offset: 2px;
+  }
+}
+
+/* Loading states for better UX */
+.loading-skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Emergency responsive fixes */
+.overflow-fix {
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+}
+
+.no-scroll {
+  overflow: hidden !important;
+}
+
+.flex-mobile {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Ensure images are responsive */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Video elements responsive */
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Custom scrollbar for webkit browsers */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.5);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.7);
+  }
+}
