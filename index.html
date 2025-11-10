@@ -812,6 +812,64 @@
                             </div>
                         </div>
 
+                        <!-- Mobile Feature Highlights -->
+                        <div class="lg:hidden mt-6 md:mt-8">
+                            <h3 class="text-lg md:text-xl font-bold text-center text-white mb-4">Discover kynecta</h3>
+                            <div class="grid grid-cols-2 gap-3 md:gap-4">
+                                <div class="feature-highlight rounded-xl p-3 md:p-4 text-center">
+                                    <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <i class="fas fa-comments text-white text-lg md:text-xl"></i>
+                                    </div>
+                                    <h4 class="text-sm md:text-base font-bold text-white mb-1">Global Chat</h4>
+                                    <p class="text-blue-300 text-xs">Connect with people worldwide</p>
+                                </div>
+                                
+                                <div class="feature-highlight rounded-xl p-3 md:p-4 text-center">
+                                    <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <i class="fas fa-shopping-cart text-white text-lg md:text-xl"></i>
+                                    </div>
+                                    <h4 class="text-sm md:text-base font-bold text-white mb-1">Marketplace</h4>
+                                    <p class="text-blue-300 text-xs">Buy & sell globally</p>
+                                </div>
+                                
+                                <div class="feature-highlight rounded-xl p-3 md:p-4 text-center">
+                                    <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <i class="fas fa-gamepad text-white text-lg md:text-xl"></i>
+                                    </div>
+                                    <h4 class="text-sm md:text-base font-bold text-white mb-1">Games</h4>
+                                    <p class="text-blue-300 text-xs">Play with friends worldwide</p>
+                                </div>
+                                
+                                <div class="feature-highlight rounded-xl p-3 md:p-4 text-center">
+                                    <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <i class="fas fa-newspaper text-white text-lg md:text-xl"></i>
+                                    </div>
+                                    <h4 class="text-sm md:text-base font-bold text-white mb-1">Feed</h4>
+                                    <p class="text-blue-300 text-xs">Discover trending content</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Mobile Stats -->
+                            <div class="mt-4 md:mt-6 grid grid-cols-4 gap-2 md:gap-4">
+                                <div class="text-center">
+                                    <div class="text-lg md:text-xl font-bold text-blue-400">500K+</div>
+                                    <div class="text-blue-300 text-xs">Users</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-lg md:text-xl font-bold text-blue-400">190+</div>
+                                    <div class="text-blue-300 text-xs">Countries</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-lg md:text-xl font-bold text-blue-400">50+</div>
+                                    <div class="text-blue-300 text-xs">Languages</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-lg md:text-xl font-bold text-blue-400">10K+</div>
+                                    <div class="text-blue-300 text-xs">Communities</div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Security Features -->
                         <div class="glass-effect border border-blue-700 rounded-2xl p-4 md:p-6 mt-6 md:mt-8">
                             <h3 class="text-xs md:text-sm font-medium text-cyan-400 mb-2 md:mb-3">Why Choose kynecta?</h3>
@@ -1062,7 +1120,7 @@
             async init() {
                 try {
                     console.log('🔄 Starting Firebase initialization...');
-                    this.updateConnectionStatus('connecting', 'Connecting to firebase...');
+                    this.updateConnectionStatus('connecting', 'Connecting to kynecta...');
                     
                     // Check if Firebase is available
                     if (typeof firebase === 'undefined') {
@@ -1095,7 +1153,7 @@
                     });
                     
                     this.isInitialized = true;
-                    this.updateConnectionStatus('connected', 'Secure Connection Established');
+                    this.updateConnectionStatus('connected', 'KYNECTA');
                     
                     // Show security status with checkmark
                     const securityStatus = document.getElementById('securityStatus');
@@ -1119,6 +1177,11 @@
                             </div>
                         </div>
                     `;
+                    
+                    // Auto-hide security status after 2 seconds
+                    setTimeout(() => {
+                        securityStatus.classList.add('hidden');
+                    }, 2000);
                     
                     console.log('✅ Firebase initialized successfully!');
                     
@@ -1148,7 +1211,7 @@
                     
                     // Show error message
                     if (window.kynectaApp) {
-                        window.kynectaApp.showMessage('Firebase connection failed. Please check your connection.', 'error');
+                        window.kynectaApp.showMessage(' connection failed. Please check your connection.', 'error');
                     }
                 }
             }

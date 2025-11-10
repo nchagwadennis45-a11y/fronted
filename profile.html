@@ -2617,8 +2617,6 @@
                 }
             }
 
-            // ... (Previous methods for profile management, tabs, etc. remain the same)
-
             updateProfileUI(profile) {
                 // Update basic profile information
                 document.getElementById('profileName').textContent = profile.displayName || 'User';
@@ -3647,8 +3645,6 @@
                 });
             }
 
-            // ... (Other methods like openEditProfileModal, saveProfileChanges, etc. remain the same)
-
             async loadProfileOnce(uid) {
                 try {
                     const userRef = window.firebaseApp.firestore.doc(window.firebaseApp.db, "users", uid);
@@ -4162,22 +4158,18 @@
 
             updateConnectionStatus(status) {
                 const statusElement = document.getElementById('connectionStatus');
-                const textElement = document.getElementById('connectionText');
                 
                 statusElement.className = 'connection-status ' + status;
                 
                 switch(status) {
                     case 'connected':
-                        textElement.textContent = 'Connected to Kynecta';
-                        statusElement.innerHTML = '<i class="fas fa-wifi mr-2"></i><span id="connectionText">Connected to Kynecta</span>';
+                        statusElement.innerHTML = '<i class="fas fa-check mr-2"></i>';
                         break;
                     case 'connecting':
-                        textElement.textContent = 'Connecting to Kynecta...';
-                        statusElement.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i><span id="connectionText">Connecting to Kynecta...</span>';
+                        statusElement.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>';
                         break;
                     case 'error':
-                        textElement.textContent = 'Connection Error';
-                        statusElement.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i><span id="connectionText">Connection Error</span>';
+                        statusElement.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>';
                         break;
                 }
             }
