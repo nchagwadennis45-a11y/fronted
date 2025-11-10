@@ -11,6 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     
     <style>
+        /* Keep existing styles but add responsive improvements */
         .glass-effect {
             background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(25px);
@@ -57,30 +58,44 @@
         }
 
         .profile-cover {
-            height: 280px;
+            height: 200px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             position: relative;
             border-radius: 20px 20px 0 0;
             overflow: hidden;
         }
+        @media (min-width: 768px) {
+            .profile-cover {
+                height: 280px;
+            }
+        }
         .profile-avatar {
-            width: 140px;
-            height: 140px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             border: 4px solid rgba(255, 255, 255, 0.3);
             position: absolute;
-            bottom: -70px;
-            left: 40px;
+            bottom: -50px;
+            left: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 48px;
+            font-size: 36px;
             background-size: cover;
             background-position: center;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
+        }
+        @media (min-width: 768px) {
+            .profile-avatar {
+                width: 140px;
+                height: 140px;
+                bottom: -70px;
+                left: 40px;
+                font-size: 48px;
+            }
         }
 
         .profile-stats {
@@ -88,24 +103,33 @@
             justify-content: space-around;
             margin: 30px 0;
             text-align: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .stat-item {
             padding: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
             border-radius: 15px;
+            flex: 1;
+            min-width: 120px;
         }
         .stat-item:hover {
             background: rgba(255, 255, 255, 0.05);
             transform: translateY(-5px);
         }
         .stat-value {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             background: linear-gradient(135deg, #667eea, #764ba2);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+        @media (min-width: 768px) {
+            .stat-value {
+                font-size: 28px;
+            }
         }
 
         .profile-tabs {
@@ -113,9 +137,10 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             margin-bottom: 25px;
             overflow-x: auto;
+            flex-wrap: nowrap;
         }
         .profile-tab {
-            padding: 18px 25px;
+            padding: 14px 16px;
             cursor: pointer;
             border-bottom: 3px solid transparent;
             transition: all 0.3s ease;
@@ -123,6 +148,13 @@
             position: relative;
             color: #93C5FD;
             font-weight: 500;
+            font-size: 0.9rem;
+        }
+        @media (min-width: 768px) {
+            .profile-tab {
+                padding: 18px 25px;
+                font-size: 1rem;
+            }
         }
         .profile-tab.active {
             border-bottom: 3px solid #667eea;
@@ -133,13 +165,20 @@
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 12px 24px;
+            padding: 10px 20px;
             border-radius: 15px;
             border: none;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            font-size: 0.9rem;
+        }
+        @media (min-width: 768px) {
+            .btn-primary {
+                padding: 12px 24px;
+                font-size: 1rem;
+            }
         }
         .btn-primary:hover {
             transform: translateY(-3px);
@@ -149,9 +188,14 @@
         .feature-card {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 20px;
-            padding: 25px;
+            padding: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
+        }
+        @media (min-width: 768px) {
+            .feature-card {
+                padding: 25px;
+            }
         }
         .feature-card:hover {
             transform: translateY(-8px);
@@ -183,21 +227,29 @@
 
         .social-media-icons {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
         .social-icon {
-            width: 45px;
-            height: 45px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 20px;
+            font-size: 18px;
             transition: all 0.3s ease;
             cursor: pointer;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+        @media (min-width: 768px) {
+            .social-icon {
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+            }
         }
         .social-icon:hover {
             transform: translateY(-5px) scale(1.1);
@@ -207,17 +259,30 @@
         .mood-selector {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
-            padding: 15px;
+            padding: 12px;
             margin: 10px 0;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+        @media (min-width: 768px) {
+            .mood-selector {
+                padding: 15px;
+            }
+        }
         .mood-option {
-            padding: 10px 15px;
+            padding: 8px 12px;
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin: 5px;
+            margin: 4px;
             border: 1px solid transparent;
+            font-size: 0.9rem;
+        }
+        @media (min-width: 768px) {
+            .mood-option {
+                padding: 10px 15px;
+                margin: 5px;
+                font-size: 1rem;
+            }
         }
         .mood-option:hover, .mood-option.active {
             border-color: #667eea;
@@ -227,11 +292,18 @@
             display: inline-block;
             background: rgba(102, 126, 234, 0.2);
             color: #93C5FD;
-            padding: 8px 15px;
+            padding: 6px 12px;
             border-radius: 20px;
-            margin: 5px;
-            font-size: 0.9rem;
+            margin: 4px;
+            font-size: 0.85rem;
             border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+        @media (min-width: 768px) {
+            .skill-tag {
+                padding: 8px 15px;
+                margin: 5px;
+                font-size: 0.9rem;
+            }
         }
         .online-status {
             width: 12px;
@@ -239,19 +311,32 @@
             border-radius: 50%;
             background: #10B981;
             position: absolute;
-            bottom: 10px;
-            right: 10px;
+            bottom: 8px;
+            right: 8px;
             border: 2px solid white;
+        }
+        @media (min-width: 768px) {
+            .online-status {
+                bottom: 10px;
+                right: 10px;
+            }
         }
         .interest-bubble {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 25px;
-            margin: 5px;
+            margin: 4px;
             display: inline-block;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        @media (min-width: 768px) {
+            .interest-bubble {
+                padding: 10px 20px;
+                margin: 5px;
+                font-size: 0.9rem;
+            }
         }
         
         .completion-bar {
@@ -299,10 +384,17 @@
             align-items: center;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 20px;
-            padding: 5px 12px;
-            margin: 0 5px 5px 0;
-            font-size: 0.8rem;
+            padding: 4px 10px;
+            margin: 0 4px 4px 0;
+            font-size: 0.75rem;
             border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        @media (min-width: 768px) {
+            .badge {
+                padding: 5px 12px;
+                margin: 0 5px 5px 0;
+                font-size: 0.8rem;
+            }
         }
         .badge.verified {
             background: rgba(34, 197, 94, 0.2);
@@ -317,9 +409,15 @@
         
         .media-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
             margin-top: 15px;
+        }
+        @media (min-width: 768px) {
+            .media-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 10px;
+            }
         }
         .media-item {
             aspect-ratio: 1;
@@ -392,19 +490,32 @@
         .diary-entry {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 15px;
+            padding: 16px;
+            margin-bottom: 12px;
             border-left: 4px solid #667eea;
+        }
+        @media (min-width: 768px) {
+            .diary-entry {
+                padding: 20px;
+                margin-bottom: 15px;
+            }
         }
         
         .color-option {
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
-            margin: 5px;
+            margin: 4px;
             cursor: pointer;
             border: 2px solid transparent;
             transition: all 0.3s ease;
+        }
+        @media (min-width: 768px) {
+            .color-option {
+                width: 30px;
+                height: 30px;
+                margin: 5px;
+            }
         }
         .color-option.active {
             border-color: white;
@@ -412,12 +523,18 @@
         }
         
         .privacy-option {
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin: 5px 0;
+            margin: 4px 0;
             border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        @media (min-width: 768px) {
+            .privacy-option {
+                padding: 12px 16px;
+                margin: 5px 0;
+            }
         }
         .privacy-option.active {
             border-color: #667eea;
@@ -427,8 +544,14 @@
         .music-player {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
-            padding: 15px;
-            margin: 10px 0;
+            padding: 12px;
+            margin: 8px 0;
+        }
+        @media (min-width: 768px) {
+            .music-player {
+                padding: 15px;
+                margin: 10px 0;
+            }
         }
         
         .engagement-bar {
@@ -485,18 +608,30 @@
         }
 
         .friends-sidebar {
-            width: 350px;
+            width: 100%;
             background: rgba(255, 255, 255, 0.05);
             border-left: 1px solid rgba(255, 255, 255, 0.1);
             overflow-y: auto;
+            max-height: 400px;
+        }
+        @media (min-width: 1024px) {
+            .friends-sidebar {
+                width: 350px;
+                max-height: none;
+            }
         }
         .friend-item {
             display: flex;
             align-items: center;
-            padding: 12px 16px;
+            padding: 10px 14px;
             cursor: pointer;
             transition: all 0.3s ease;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        @media (min-width: 768px) {
+            .friend-item {
+                padding: 12px 16px;
+            }
         }
         .friend-item:hover {
             background: rgba(255, 255, 255, 0.08);
@@ -506,8 +641,8 @@
             border-left: 3px solid #667eea;
         }
         .friend-avatar {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea, #764ba2);
             display: flex;
@@ -515,9 +650,16 @@
             justify-content: center;
             color: white;
             font-weight: bold;
-            margin-right: 12px;
+            margin-right: 10px;
             background-size: cover;
             background-position: center;
+        }
+        @media (min-width: 768px) {
+            .friend-avatar {
+                width: 40px;
+                height: 40px;
+                margin-right: 12px;
+            }
         }
         .friend-info {
             flex: 1;
@@ -525,10 +667,21 @@
         .friend-name {
             font-weight: 600;
             color: white;
+            font-size: 0.9rem;
+        }
+        @media (min-width: 768px) {
+            .friend-name {
+                font-size: 1rem;
+            }
         }
         .friend-status {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #93C5FD;
+        }
+        @media (min-width: 768px) {
+            .friend-status {
+                font-size: 0.8rem;
+            }
         }
         .friend-online {
             width: 8px;
@@ -552,17 +705,28 @@
             background: rgba(255, 255, 255, 0.05);
             border-radius: 16px;
             overflow: hidden;
+            max-height: 400px;
+        }
+        @media (min-width: 1024px) {
+            .chat-window {
+                max-height: none;
+            }
         }
         .chat-header {
-            padding: 16px 20px;
+            padding: 14px 18px;
             background: rgba(255, 255, 255, 0.08);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
         }
+        @media (min-width: 768px) {
+            .chat-header {
+                padding: 16px 20px;
+            }
+        }
         .chat-avatar {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea, #764ba2);
             display: flex;
@@ -570,31 +734,64 @@
             justify-content: center;
             color: white;
             font-weight: bold;
-            margin-right: 12px;
+            margin-right: 10px;
+        }
+        @media (min-width: 768px) {
+            .chat-avatar {
+                width: 36px;
+                height: 36px;
+                margin-right: 12px;
+            }
         }
         .chat-name {
             font-weight: 600;
             color: white;
+            font-size: 0.9rem;
+        }
+        @media (min-width: 768px) {
+            .chat-name {
+                font-size: 1rem;
+            }
         }
         .chat-status {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #93C5FD;
             margin-left: auto;
         }
+        @media (min-width: 768px) {
+            .chat-status {
+                font-size: 0.8rem;
+            margin-left: auto;
+            }
+        }
         .chat-messages {
             flex: 1;
-            padding: 20px;
+            padding: 16px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
+        }
+        @media (min-width: 768px) {
+            .chat-messages {
+                padding: 20px;
+                gap: 16px;
+            }
         }
         .message {
-            max-width: 70%;
-            padding: 12px 16px;
+            max-width: 85%;
+            padding: 10px 14px;
             border-radius: 18px;
             position: relative;
             word-wrap: break-word;
+            font-size: 0.9rem;
+        }
+        @media (min-width: 768px) {
+            .message {
+                max-width: 70%;
+                padding: 12px 16px;
+                font-size: 1rem;
+            }
         }
         .message.sent {
             align-self: flex-end;
@@ -609,38 +806,61 @@
             border-bottom-left-radius: 4px;
         }
         .message-sender {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             margin-bottom: 4px;
             opacity: 0.8;
         }
+        @media (min-width: 768px) {
+            .message-sender {
+                font-size: 0.8rem;
+            }
+        }
         .message-time {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             opacity: 0.6;
             margin-top: 4px;
             text-align: right;
         }
+        @media (min-width: 768px) {
+            .message-time {
+                font-size: 0.7rem;
+            }
+        }
         .chat-input-container {
-            padding: 16px 20px;
+            padding: 14px 18px;
             background: rgba(255, 255, 255, 0.08);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
-            gap: 12px;
+            gap: 10px;
+        }
+        @media (min-width: 768px) {
+            .chat-input-container {
+                padding: 16px 20px;
+                gap: 12px;
+            }
         }
         .chat-input {
             flex: 1;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 24px;
-            padding: 12px 20px;
+            padding: 10px 18px;
             color: white;
             outline: none;
+            font-size: 0.9rem;
+        }
+        @media (min-width: 768px) {
+            .chat-input {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
         }
         .chat-input:focus {
             border-color: #667eea;
         }
         .send-button {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea, #764ba2);
             border: none;
@@ -650,6 +870,12 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.3s ease;
+        }
+        @media (min-width: 768px) {
+            .send-button {
+                width: 44px;
+                height: 44px;
+            }
         }
         .send-button:hover {
             transform: scale(1.05);
@@ -668,73 +894,129 @@
             height: 100%;
             color: #93C5FD;
             text-align: center;
-            padding: 40px;
+            padding: 30px;
+        }
+        @media (min-width: 768px) {
+            .no-chat-selected {
+                padding: 40px;
+            }
         }
         .no-chat-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
+            font-size: 48px;
+            margin-bottom: 14px;
             opacity: 0.5;
+        }
+        @media (min-width: 768px) {
+            .no-chat-icon {
+                font-size: 64px;
+                margin-bottom: 16px;
+            }
         }
 
         .friend-request-item {
             display: flex;
             align-items: center;
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        @media (min-width: 768px) {
+            .friend-request-item {
+                padding: 12px 16px;
+            }
         }
         .request-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             margin-left: auto;
+        }
+        @media (min-width: 768px) {
+            .request-actions {
+                gap: 8px;
+            }
         }
         .accept-btn {
             background: linear-gradient(135deg, #10B981, #059669);
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
+        }
+        @media (min-width: 768px) {
+            .accept-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
         }
         .reject-btn {
             background: rgba(239, 68, 68, 0.2);
             color: #EF4444;
             border: 1px solid rgba(239, 68, 68, 0.3);
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
+        }
+        @media (min-width: 768px) {
+            .reject-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
         }
 
         .suggestion-item {
             display: flex;
             align-items: center;
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        @media (min-width: 768px) {
+            .suggestion-item {
+                padding: 12px 16px;
+            }
         }
         .add-friend-btn {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             margin-left: auto;
+        }
+        @media (min-width: 768px) {
+            .add-friend-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
         }
 
         .search-container {
-            padding: 16px;
+            padding: 14px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        @media (min-width: 768px) {
+            .search-container {
+                padding: 16px;
+            }
         }
         .search-input {
             width: 100%;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 12px;
-            padding: 10px 16px;
+            padding: 8px 14px;
             color: white;
             outline: none;
+            font-size: 0.9rem;
+        }
+        @media (min-width: 768px) {
+            .search-input {
+                padding: 10px 16px;
+                font-size: 1rem;
+            }
         }
         .search-input:focus {
             border-color: #667eea;
@@ -743,9 +1025,60 @@
             max-height: 300px;
             overflow-y: auto;
         }
+
+        /* Mobile hamburger menu */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .mobile-menu.active {
+            display: flex;
+        }
+        .mobile-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+        .mobile-nav a {
+            color: white;
+            font-size: 1.5rem;
+            padding: 10px 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .mobile-nav a:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            gap: 4px;
+        }
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        @media (max-width: 1023px) {
+            .hamburger {
+                display: flex;
+            }
+        }
     </style>
 </head>
-<body class="h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white">
+<body class="h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white overflow-x-hidden">
     <!-- Floating Particles -->
     <div class="particles" id="particles"></div>
 
@@ -757,22 +1090,22 @@
 
     <!-- Loading Spinner -->
     <div class="loading-spinner" id="loadingSpinner">
-        <div class="glass-effect rounded-2xl p-8 border border-blue-700 flex items-center space-x-4">
+        <div class="glass-effect rounded-2xl p-6 md:p-8 border border-blue-700 flex items-center space-x-4">
             <div class="spinner"></div>
-            <span class="text-blue-300 text-lg">Loading your profile...</span>
+            <span class="text-blue-300 text-base md:text-lg">Loading your profile...</span>
         </div>
     </div>
 
     <!-- Image Cropper Modal -->
     <div class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50" id="cropperModal">
-        <div class="bg-gray-800 rounded-2xl p-6 max-w-2xl w-full mx-4">
-            <h3 class="text-xl font-bold text-blue-300 mb-4 text-center" id="cropperTitle">Crop Image</h3>
-            <img id="cropperImage" class="w-full max-h-96 object-contain mb-4">
+        <div class="bg-gray-800 rounded-2xl p-4 md:p-6 max-w-2xl w-full mx-4">
+            <h3 class="text-lg md:text-xl font-bold text-blue-300 mb-4 text-center" id="cropperTitle">Crop Image</h3>
+            <img id="cropperImage" class="w-full max-h-80 md:max-h-96 object-contain mb-4">
             <div class="flex justify-center space-x-4">
-                <button id="cancelCrop" class="px-6 py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 transition">
+                <button id="cancelCrop" class="px-4 md:px-6 py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 transition">
                     Cancel
                 </button>
-                <button id="applyCrop" class="px-6 py-2 primary-gradient text-white rounded-xl hover:scale-105 transition">
+                <button id="applyCrop" class="px-4 md:px-6 py-2 primary-gradient text-white rounded-xl hover:scale-105 transition">
                     Apply Crop
                 </button>
             </div>
@@ -781,8 +1114,8 @@
 
     <!-- Edit Profile Modal -->
     <div class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50" id="editProfileModal">
-        <div class="bg-gray-800 rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 class="text-xl font-bold text-blue-300 mb-4 text-center">Edit Profile</h3>
+        <div class="bg-gray-800 rounded-2xl p-4 md:p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg md:text-xl font-bold text-blue-300 mb-4 text-center">Edit Profile</h3>
             <div class="space-y-4">
                 <div>
                     <label class="block text-blue-300 mb-2">Display Name</label>
@@ -899,10 +1232,10 @@
                 </div>
             </div>
             <div class="flex justify-center space-x-4 mt-6">
-                <button id="cancelEdit" class="px-6 py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 transition">
+                <button id="cancelEdit" class="px-4 md:px-6 py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 transition">
                     Cancel
                 </button>
-                <button id="saveProfile" class="px-6 py-2 primary-gradient text-white rounded-xl hover:scale-105 transition">
+                <button id="saveProfile" class="px-4 md:px-6 py-2 primary-gradient text-white rounded-xl hover:scale-105 transition">
                     Save Changes
                 </button>
             </div>
@@ -911,8 +1244,8 @@
 
     <!-- Diary Entry Modal -->
     <div class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50" id="diaryModal">
-        <div class="bg-gray-800 rounded-2xl p-6 max-w-2xl w-full mx-4">
-            <h3 class="text-xl font-bold text-blue-300 mb-4 text-center">Add Diary Entry</h3>
+        <div class="bg-gray-800 rounded-2xl p-4 md:p-6 max-w-2xl w-full mx-4">
+            <h3 class="text-lg md:text-xl font-bold text-blue-300 mb-4 text-center">Add Diary Entry</h3>
             <div class="space-y-4">
                 <div>
                     <label class="block text-blue-300 mb-2">Title</label>
@@ -924,16 +1257,16 @@
                 </div>
                 <div>
                     <label class="block text-blue-300 mb-2">Mood</label>
-                    <div class="flex space-x-2" id="diaryMoodOptions">
-                        <button class="mood-option flex-1" data-mood="happy">
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2" id="diaryMoodOptions">
+                        <button class="mood-option" data-mood="happy">
                             <i class="fas fa-smile text-yellow-400 mr-2"></i>
                             Happy
                         </button>
-                        <button class="mood-option flex-1" data-mood="productive">
+                        <button class="mood-option" data-mood="productive">
                             <i class="fas fa-rocket text-green-400 mr-2"></i>
                             Productive
                         </button>
-                        <button class="mood-option flex-1" data-mood="creative">
+                        <button class="mood-option" data-mood="creative">
                             <i class="fas fa-palette text-purple-400 mr-2"></i>
                             Creative
                         </button>
@@ -949,10 +1282,10 @@
                 </div>
             </div>
             <div class="flex justify-center space-x-4 mt-6">
-                <button id="cancelDiary" class="px-6 py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 transition">
+                <button id="cancelDiary" class="px-4 md:px-6 py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 transition">
                     Cancel
                 </button>
-                <button id="saveDiary" class="px-6 py-2 primary-gradient text-white rounded-xl hover:scale-105 transition">
+                <button id="saveDiary" class="px-4 md:px-6 py-2 primary-gradient text-white rounded-xl hover:scale-105 transition">
                     Save Entry
                 </button>
             </div>
@@ -961,8 +1294,8 @@
 
     <!-- Find Friends Modal -->
     <div class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50" id="findFriendsModal">
-        <div class="bg-gray-800 rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <h3 class="text-xl font-bold text-blue-300 mb-4 text-center">Find Friends</h3>
+        <div class="bg-gray-800 rounded-2xl p-4 md:p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h3 class="text-lg md:text-xl font-bold text-blue-300 mb-4 text-center">Find Friends</h3>
             <div class="space-y-4">
                 <div class="search-container">
                     <input type="text" id="friendSearchInput" placeholder="Search by name, email, or phone..." class="search-input">
@@ -971,57 +1304,87 @@
                     <!-- Search results will appear here -->
                 </div>
                 <div>
-                    <h4 class="text-lg font-bold text-blue-300 mb-3">People You May Know</h4>
+                    <h4 class="text-base md:text-lg font-bold text-blue-300 mb-3">People You May Know</h4>
                     <div id="peopleYouMayKnow">
                         <!-- Suggestions will appear here -->
                     </div>
                 </div>
             </div>
             <div class="flex justify-center mt-6">
-                <button id="closeFindFriends" class="px-6 py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 transition">
+                <button id="closeFindFriends" class="px-4 md:px-6 py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 transition">
                     Close
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-nav">
+            <a href="home.html">
+                <i class="fas fa-home mr-2"></i>
+                Feed
+            </a>
+            <a href="chat.html">
+                <i class="fas fa-comment-dots mr-2"></i>
+                Chat
+            </a>
+            <a href="notifications.html">
+                <i class="fas fa-bell mr-2"></i>
+                Notifications
+            </a>
+            <a href="profile.html" class="bg-blue-900/30 text-cyan-400">
+                <i class="fas fa-user-astronaut mr-2"></i>
+                Profile
+            </a>
+            <a href="settings.html">
+                <i class="fas fa-cog mr-2"></i>
+                Settings
+            </a>
+            <button id="mobileLogoutBtn" class="px-4 py-2 primary-gradient text-white rounded-2xl hover:scale-105 font-medium transition mt-4">
+                <i class="fas fa-sign-out-alt mr-2"></i>
+                Logout
+            </button>
+        </div>
+    </div>
+
     <!-- Profile Layout -->
     <div class="flex h-full hidden" id="profileLayout">
         <!-- Navigation Sidebar -->
-        <div class="w-20 lg:w-64 glass-effect border-r border-blue-800 flex flex-col">
+        <div class="w-0 lg:w-20 xl:w-64 glass-effect border-r border-blue-800 flex-col hidden lg:flex">
             <div class="p-4">
                 <a href="integration.html" class="flex items-center space-x-3">
                     <div class="w-10 h-10 cyber-gradient rounded-2xl flex items-center justify-center neon-glow">
                         <i class="fas fa-brain text-white"></i>
                     </div>
-                    <span class="hidden lg:block text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+                    <span class="hidden xl:block text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
                         Kynecta
                     </span>
                 </a>
             </div>
 
-            <nav class="flex-1 px-2 lg:px-4 space-y-2">
+            <nav class="flex-1 px-2 xl:px-4 space-y-2">
                 <a href="home.html" class="flex items-center space-x-3 p-3 rounded-xl text-blue-300 hover:bg-blue-900/30 hover:text-cyan-400 transition">
                     <i class="fas fa-home w-6"></i>
-                    <span class="hidden lg:block">Feed</span>
+                    <span class="hidden xl:block">Feed</span>
                 </a>
                 <a href="chat.html" class="flex items-center space-x-3 p-3 rounded-xl text-blue-300 hover:bg-blue-900/30 hover:text-cyan-400 transition">
                     <i class="fas fa-comment-dots w-6"></i>
-                    <span class="hidden lg:block">Chat</span>
+                    <span class="hidden xl:block">Chat</span>
                 </a>
                 <a href="notifications.html" class="flex items-center space-x-3 p-3 rounded-xl text-blue-300 hover:bg-blue-900/30 hover:text-cyan-400 transition">
                     <i class="fas fa-bell w-6"></i>
-                    <span class="hidden lg:block">Notifications</span>
+                    <span class="hidden xl:block">Notifications</span>
                 </a>
                 <a href="profile.html" class="flex items-center space-x-3 p-3 rounded-xl bg-blue-900/30 text-cyan-400 border border-cyan-500/50">
                     <i class="fas fa-user-astronaut w-6"></i>
-                    <span class="hidden lg:block">Profile</span>
+                    <span class="hidden xl:block">Profile</span>
                 </a>
             </nav>
 
             <!-- Theme Toggle -->
             <div class="p-4 border-t border-blue-800 flex items-center justify-between">
-                <div class="hidden lg:flex items-center space-x-2 text-blue-300">
+                <div class="hidden xl:flex items-center space-x-2 text-blue-300">
                     <i class="fas fa-moon"></i>
                     <span>Dark Mode</span>
                 </div>
@@ -1030,7 +1393,7 @@
 
             <!-- Quick User Info -->
             <div class="p-4 border-t border-blue-800">
-                <div class="hidden lg:flex items-center space-x-3">
+                <div class="hidden xl:flex items-center space-x-3">
                     <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm" id="sidebarAvatar">
                         <!-- Dynamically filled -->
                     </div>
@@ -1043,36 +1406,44 @@
         </div>
 
         <!-- Main Profile Area -->
-        <div class="flex-1 flex flex-col overflow-y-auto">
+        <div class="flex-1 flex flex-col overflow-y-auto w-full">
             <!-- Profile Header -->
-            <div class="glass-effect border-b border-blue-800 px-6 py-4">
+            <div class="glass-effect border-b border-blue-800 px-4 md:px-6 py-4">
                 <div class="flex items-center justify-between">
-                    <h1 class="text-2xl font-bold text-blue-300">My Profile</h1>
-                    <div class="flex items-center space-x-4">
-                        <a href="notifications.html" class="px-4 py-2 glass-effect text-blue-400 rounded-2xl hover:bg-blue-800/30 border border-blue-700 transition relative">
-                            <i class="fas fa-bell mr-2"></i>
-                            Notifications
+                    <div class="flex items-center">
+                        <!-- Hamburger Menu for Mobile -->
+                        <div class="hamburger mr-4 lg:hidden" id="hamburgerMenu">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <h1 class="text-xl md:text-2xl font-bold text-blue-300">My Profile</h1>
+                    </div>
+                    <div class="flex items-center space-x-2 md:space-x-4">
+                        <a href="notifications.html" class="px-3 py-2 md:px-4 md:py-2 glass-effect text-blue-400 rounded-2xl hover:bg-blue-800/30 border border-blue-700 transition relative">
+                            <i class="fas fa-bell"></i>
+                            <span class="hidden md:inline ml-2">Notifications</span>
                             <span class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hidden" id="notificationBadge">0</span>
                         </a>
-                        <a href="settings.html" class="px-4 py-2 glass-effect text-blue-400 rounded-2xl hover:bg-blue-800/30 border border-blue-700 transition">
+                        <a href="settings.html" class="px-3 py-2 md:px-4 md:py-2 glass-effect text-blue-400 rounded-2xl hover:bg-blue-800/30 border border-blue-700 transition hidden md:inline-flex">
                             <i class="fas fa-cog mr-2"></i>
                             Settings
                         </a>
-                        <button id="logoutBtn" class="px-4 py-2 primary-gradient text-white rounded-2xl hover:scale-105 font-medium transition">
+                        <button id="logoutBtn" class="px-3 py-2 md:px-4 md:py-2 primary-gradient text-white rounded-2xl hover:scale-105 font-medium transition">
                             <i class="fas fa-sign-out-alt mr-2"></i>
-                            Logout
+                            <span class="hidden md:inline">Logout</span>
                         </button>
                     </div>
                 </div>
             </div>
 
             <!-- Profile Content -->
-            <div class="flex-1 overflow-y-auto p-6">
+            <div class="flex-1 overflow-y-auto p-4 md:p-6">
                 <!-- Profile Card -->
                 <div class="glass-effect rounded-2xl border border-blue-700 overflow-hidden mb-6 holographic">
                     <!-- Profile Cover -->
                     <div class="profile-cover" id="profileCover">
-                        <button class="edit-cover-btn absolute top-6 right-6 glass-effect text-blue-400 rounded-xl px-4 py-2 hover:bg-blue-800/30 transition">
+                        <button class="edit-cover-btn absolute top-4 right-4 md:top-6 md:right-6 glass-effect text-blue-400 rounded-xl px-3 py-1 md:px-4 md:py-2 hover:bg-blue-800/30 transition text-sm md:text-base">
                             <i class="fas fa-camera mr-2"></i>
                             Edit Cover
                         </button>
@@ -1083,19 +1454,19 @@
                     <div class="profile-avatar" id="profileAvatar">
                         <div id="avatarIcon"></div>
                         <div class="online-status" id="onlineStatus"></div>
-                        <button class="edit-avatar-btn absolute bottom-3 right-3 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition">
+                        <button class="edit-avatar-btn absolute bottom-2 right-2 md:bottom-3 md:right-3 w-7 h-7 md:w-8 md:h-8 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition">
                             <i class="fas fa-camera text-xs"></i>
                         </button>
                         <input type="file" id="avatarInput" class="hidden" accept="image/*">
                     </div>
                     
                     <!-- Profile Info -->
-                    <div class="profile-info pt-20 px-6">
-                        <div class="flex justify-between items-start">
+                    <div class="profile-info pt-16 md:pt-20 px-4 md:px-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start">
                             <div class="flex-1">
-                                <div class="flex items-center flex-wrap gap-4 mb-4">
+                                <div class="flex items-center flex-wrap gap-3 md:gap-4 mb-4">
                                     <div class="fade-in">
-                                        <h1 class="text-3xl font-bold text-white" id="profileName">Loading...</h1>
+                                        <h1 class="text-2xl md:text-3xl font-bold text-white" id="profileName">Loading...</h1>
                                     </div>
                                     <div class="flex items-center space-x-2">
                                         <div class="mood-selector inline-flex items-center space-x-2 glass-effect px-3 py-1 rounded-full cursor-pointer" id="currentMood">
@@ -1108,7 +1479,7 @@
                                     </div>
                                 </div>
                                 <div class="fade-in" style="animation-delay: 0.2s;">
-                                    <p class="text-blue-300 text-lg mb-2" id="profileUsername">@username</p>
+                                    <p class="text-blue-300 text-base md:text-lg mb-2" id="profileUsername">@username</p>
                                     <p class="text-blue-300 mb-2 flex items-center" id="profileLocation">
                                         <i class="fas fa-map-marker-alt mr-2"></i>
                                         <span>Location not set</span>
@@ -1145,16 +1516,16 @@
                                 </div>
                             </div>
                             
-                            <div class="flex space-x-3 ml-6">
-                                <button id="editProfileBtn" class="px-4 py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 border border-blue-700 transition">
+                            <div class="flex flex-wrap gap-2 mt-4 md:mt-0 md:space-x-3 md:ml-6">
+                                <button id="editProfileBtn" class="px-3 py-2 md:px-4 md:py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 border border-blue-700 transition">
                                     <i class="fas fa-edit mr-2"></i>
                                     Edit Profile
                                 </button>
-                                <button id="findFriendsBtn" class="px-4 py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 border border-blue-700 transition">
+                                <button id="findFriendsBtn" class="px-3 py-2 md:px-4 md:py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 border border-blue-700 transition">
                                     <i class="fas fa-user-plus mr-2"></i>
                                     Find Friends
                                 </button>
-                                <button id="shareProfileBtn" class="px-4 py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 border border-blue-700 transition">
+                                <button id="shareProfileBtn" class="px-3 py-2 md:px-4 md:py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 border border-blue-700 transition">
                                     <i class="fas fa-share-alt mr-2"></i>
                                     Share Profile
                                 </button>
@@ -1184,7 +1555,7 @@
                 </div>
                 
                 <!-- Profile Tabs and Chat Area -->
-                <div class="flex gap-6">
+                <div class="flex flex-col lg:flex-row gap-6">
                     <!-- Left Column: Profile Tabs -->
                     <div class="flex-1">
                         <div class="glass-effect rounded-2xl border border-blue-700 overflow-hidden cyber-grid">
@@ -1216,7 +1587,7 @@
                             </div>
                             
                             <!-- Tab Content -->
-                            <div class="p-6">
+                            <div class="p-4 md:p-6">
                                 <!-- Posts Tab -->
                                 <div class="tab-content active" id="postsTab">
                                     <div class="text-center py-8" id="postsContent">
@@ -1259,8 +1630,8 @@
                                 
                                 <!-- Diary Tab -->
                                 <div class="tab-content hidden" id="diaryTab">
-                                    <div class="flex justify-between items-center mb-6">
-                                        <h3 class="text-xl font-bold text-blue-300">Personal Diary</h3>
+                                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                                        <h3 class="text-lg md:text-xl font-bold text-blue-300 mb-4 md:mb-0">Personal Diary</h3>
                                         <button id="addDiaryEntry" class="px-4 py-2 primary-gradient text-white rounded-xl hover:scale-105 transition">
                                             <i class="fas fa-plus mr-2"></i>
                                             New Entry
@@ -1276,12 +1647,12 @@
                     </div>
                     
                     <!-- Right Column: Friends Sidebar and Chat -->
-                    <div class="w-80 flex flex-col gap-6">
+                    <div class="w-full lg:w-80 flex flex-col gap-6">
                         <!-- Friends Sidebar -->
                         <div class="friends-sidebar rounded-2xl">
                             <div class="p-4 border-b border-blue-800">
                                 <div class="flex justify-between items-center">
-                                    <h3 class="text-lg font-bold text-blue-300 flex items-center">
+                                    <h3 class="text-base md:text-lg font-bold text-blue-300 flex items-center">
                                         <i class="fas fa-user-friends mr-2"></i>
                                         Friends
                                         <span class="ml-2 text-sm bg-blue-500 text-white rounded-full px-2 py-1" id="friendsCount">0</span>
@@ -1296,7 +1667,7 @@
                             <!-- Friend Requests Section -->
                             <div class="hidden" id="friendRequestsSection">
                                 <div class="p-3 border-b border-blue-800 bg-blue-900/20">
-                                    <h4 class="text-md font-semibold text-blue-300">Friend Requests</h4>
+                                    <h4 class="text-sm md:text-md font-semibold text-blue-300">Friend Requests</h4>
                                 </div>
                                 <div id="friendRequestsList">
                                     <!-- Friend requests will appear here -->
@@ -1318,7 +1689,7 @@
                                 <div class="no-chat-icon">
                                     <i class="fas fa-comments"></i>
                                 </div>
-                                <h3 class="text-xl font-bold text-blue-300 mb-2">No Chat Selected</h3>
+                                <h3 class="text-lg md:text-xl font-bold text-blue-300 mb-2">No Chat Selected</h3>
                                 <p class="text-blue-300">Select a friend from the list to start chatting</p>
                             </div>
                             
@@ -2674,7 +3045,7 @@
                     let mediaHTML = `
                         <div class="mb-6">
                             <h3 class="text-xl font-bold text-white mb-4">Your Media Gallery</h3>
-                            <div class="flex space-x-4 mb-6">
+                            <div class="flex flex-wrap gap-2 mb-6">
                                 <button class="px-4 py-2 glass-effect text-blue-400 rounded-xl hover:bg-blue-800/30 border border-blue-700 transition active">
                                     <i class="fas fa-image mr-2"></i>
                                     Photos
@@ -2955,10 +3326,31 @@
                     'teal-cyan': 'from-gray-900 via-teal-900 to-cyan-900'
                 };
                 
-                body.className = `h-full bg-gradient-to-br ${gradients[theme] || gradients['blue-purple']} text-white`;
+                body.className = `h-full bg-gradient-to-br ${gradients[theme] || gradients['blue-purple']} text-white overflow-x-hidden`;
             }
 
             setupEventListeners() {
+                // Mobile hamburger menu
+                document.getElementById('hamburgerMenu').addEventListener('click', () => {
+                    document.getElementById('mobileMenu').classList.toggle('active');
+                });
+
+                // Mobile logout button
+                document.getElementById('mobileLogoutBtn').addEventListener('click', () => {
+                    this.logout();
+                });
+
+                // Close mobile menu when clicking outside
+                document.addEventListener('click', (e) => {
+                    const mobileMenu = document.getElementById('mobileMenu');
+                    const hamburgerMenu = document.getElementById('hamburgerMenu');
+                    if (mobileMenu.classList.contains('active') && 
+                        !mobileMenu.contains(e.target) && 
+                        !hamburgerMenu.contains(e.target)) {
+                        mobileMenu.classList.remove('active');
+                    }
+                });
+
                 // Tab switching
                 document.querySelectorAll('.profile-tab').forEach(tab => {
                     tab.addEventListener('click', () => {
@@ -3732,10 +4124,10 @@
                 
                 if (this.isDarkMode) {
                     themeToggle.classList.add('dark');
-                    document.body.className = 'h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white';
+                    document.body.className = 'h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white overflow-x-hidden';
                 } else {
                     themeToggle.classList.remove('dark');
-                    document.body.className = 'h-full bg-gradient-to-br from-blue-50 via-white to-purple-50 text-gray-800';
+                    document.body.className = 'h-full bg-gradient-to-br from-blue-50 via-white to-purple-50 text-gray-800 overflow-x-hidden';
                 }
                 
                 this.showNotification(`${this.isDarkMode ? 'Dark' : 'Light'} mode activated`, 'success');

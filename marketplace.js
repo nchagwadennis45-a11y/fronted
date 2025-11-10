@@ -1,464 +1,1301 @@
-// marketplace.js - Marketplace with User-specific Listings
-console.log('🛒 Marketplace script loaded');
+// market.js - kynecta Marketplace JavaScript Logic
 
-// Firebase configuration (to be configured before deployment)
+// Firebase Configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
-  authDomain: "uniconnect-ee95c.firebaseapp.com",
-  projectId: "uniconnect-ee95c",
-  storageBucket: "uniconnect-ee95c.firebasestorage.app",
-  messagingSenderId: "1003264444309",
-  appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
+    apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
+    authDomain: "uniconnect-ee95c.firebaseapp.com",
+    projectId: "uniconnect-ee95c",
+    storageBucket: "uniconnect-ee95c.firebasestorage.app",
+    messagingSenderId: "1003264444309",
+    appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
 };
 
+// Clear cached data
+localStorage.removeItem('marketplaceListings');
+sessionStorage.clear();
+
 // Initialize Firebase
-if (!firebase.apps.length) {
+try {
     firebase.initializeApp(firebaseConfig);
+    console.log("✅ Firebase initialized successfully");
+} catch (error) {
+    console.error("❌ Firebase initialization error:", error);
 }
 
-// Firebase v9.22.1 compat imports
+// Firebase services
 const auth = firebase.auth();
 const db = firebase.firestore();
+const storage = firebase.storage();
 
 // Global variables
 let currentUser = null;
 let userData = null;
+let selectedImages = [];
+let currentView = 'grid';
+let currentCategory = 'all';
+let currentSort = 'newest';
+let allListings = [];
+let filteredListings = [];
+let displayedCount = 0;
+const listingsPerPage = 12;
+let lastVisible = null;
+let hasMoreListings = true;
 
 // DOM Elements
 const listingsContainer = document.getElementById('listingsContainer');
-const userListingsContainer = document.getElementById('userListingsContainer');
+const trendingItemsContainer = document.getElementById('trendingItemsContainer');
+const recommendedContainer = document.getElementById('recommendedContainer');
 const createListingBtn = document.getElementById('createListingBtn');
+const createListingModal = document.getElementById('createListingModal');
+const closeCreateModal = document.getElementById('closeCreateModal');
+const cancelCreateListing = document.getElementById('cancelCreateListing');
+const createListingForm = document.getElementById('createListingForm');
+const browseImagesBtn = document.getElementById('browseImagesBtn');
+const listingImages = document.getElementById('listingImages');
+const imagePreview = document.getElementById('imagePreview');
+const imageUploadArea = document.getElementById('imageUploadArea');
 const searchInput = document.getElementById('searchInput');
-const categoryFilter = document.getElementById('categoryFilter');
+const mobileSearchInput = document.getElementById('mobileSearchInput');
+const searchSuggestions = document.getElementById('searchSuggestions');
+const gridViewBtn = document.getElementById('gridViewBtn');
+const listViewBtn = document.getElementById('listViewBtn');
+const sortFilter = document.getElementById('sortFilter');
+const minPrice = document.getElementById('minPrice');
+const maxPrice = document.getElementById('maxPrice');
+const sellerRatingFilter = document.getElementById('sellerRatingFilter');
+const locationFilter = document.getElementById('locationFilter');
+const applyFilters = document.getElementById('applyFilters');
+const clearFilters = document.getElementById('clearFilters');
+const loadMoreBtn = document.getElementById('loadMoreBtn');
+const themeToggle = document.getElementById('themeToggle');
+const userAvatar = document.getElementById('userAvatar');
+const mobileUserAvatar = document.getElementById('mobileUserAvatar');
+const userName = document.getElementById('userName');
+const mobileUserName = document.getElementById('mobileUserName');
+const userStatus = document.getElementById('userStatus');
+const mobileUserStatus = document.getElementById('mobileUserStatus');
+const activeListingsCount = document.getElementById('activeListingsCount');
+const totalUsersCount = document.getElementById('totalUsersCount');
+const successfulSalesCount = document.getElementById('successfulSalesCount');
+const averageRatingCount = document.getElementById('averageRatingCount');
+const flashSaleTimer = document.getElementById('flashSaleTimer');
+const tagSuggestions = document.getElementById('tagSuggestions');
+const listingTitle = document.getElementById('listingTitle');
+const listingTags = document.getElementById('listingTags');
+const cartBtn = document.getElementById('cartBtn');
+const cartModal = document.getElementById('cartModal');
+const closeCartModal = document.getElementById('closeCartModal');
+const cartContent = document.getElementById('cartContent');
+const cartCount = document.getElementById('cartCount');
+const notificationBtn = document.getElementById('notificationBtn');
+const notificationsModal = document.getElementById('notificationsModal');
+const closeNotificationsModal = document.getElementById('closeNotificationsModal');
+const notificationsContent = document.getElementById('notificationsContent');
+const notificationCount = document.getElementById('notificationCount');
+const notificationToast = document.getElementById('notificationToast');
+const closeNotificationToast = document.getElementById('closeNotificationToast');
+const notificationToastTitle = document.getElementById('notificationToastTitle');
+const notificationToastMessage = document.getElementById('notificationToastMessage');
+const createListingBtnText = document.getElementById('createListingBtnText');
+const createListingSpinner = document.getElementById('createListingSpinner');
+const discoverLink = document.getElementById('discoverLink');
+const categoriesLink = document.getElementById('categoriesLink');
+const sellersLink = document.getElementById('sellersLink');
+const mobileDiscoverLink = document.getElementById('mobileDiscoverLink');
+const mobileCategoriesLink = document.getElementById('mobileCategoriesLink');
+const mobileSellersLink = document.getElementById('mobileSellersLink');
+const hamburgerMenu = document.getElementById('hamburgerMenu');
+const mobileMenu = document.getElementById('mobileMenu');
+const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+const closeMobileMenu = document.getElementById('closeMobileMenu');
+const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
 
-// Cloudinary configuration (to be configured before deployment)
-const CLOUDINARY_UPLOAD_URL = '/upload';
-
-// Event Listeners
+// Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🏠 Marketplace page loaded');
+    console.log('🏪 kynecta Marketplace loaded');
     
     // Check authentication
     auth.onAuthStateChanged(handleAuthStateChange);
     
     // Setup event listeners
-    if (createListingBtn) {
-        createListingBtn.addEventListener('click', openCreateListingModal);
-    }
+    setupEventListeners();
     
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(handleSearch, 300));
-    }
+    // Initialize carousel
+    initCarousel();
     
-    if (categoryFilter) {
-        categoryFilter.addEventListener('change', handleCategoryFilter);
-    }
+    // Initialize theme
+    initTheme();
+    
+    // Start flash sale timer
+    startFlashSaleTimer();
 });
 
 // Handle authentication state changes
-function handleAuthStateChange(user) {
+async function handleAuthStateChange(user) {
     if (user) {
         currentUser = user;
-        console.log('✅ User authenticated for marketplace:', user.uid);
-        loadUserData(user.uid);
-        loadMarketplaceListings();
-        loadUserListings(user.uid);
-        setupRealtimeListeners();
+        console.log('✅ User authenticated:', user.uid);
+        await loadUserData(user.uid);
+        await loadMarketplaceData();
+        updateUserUI();
+        loadCartCount();
+        loadNotificationCount();
     } else {
-        console.log('❌ No user signed in for marketplace');
-        showNotification('Please log in to view marketplace', 'warning');
+        console.log('❌ No user signed in');
+        window.location.href = 'index.html';
     }
 }
 
-// Load current user's data
+// Load current user's data from Firestore
 async function loadUserData(uid) {
     try {
         const userDoc = await db.collection('users').doc(uid).get();
         if (userDoc.exists) {
             userData = userDoc.data();
-            console.log('✅ User data loaded for marketplace');
+            console.log('✅ User data loaded:', userData);
+        } else {
+            // Create user document if it doesn't exist
+            userData = {
+                name: currentUser.displayName || 'User',
+                email: currentUser.email,
+                avatar: currentUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.displayName || 'User')}&background=6366f1&color=fff&size=150`,
+                status: 'student',
+                university: 'Unknown University',
+                joined: new Date(),
+                rating: 5.0,
+                listings: 0,
+                sales: 0,
+                verified: false
+            };
+            await db.collection('users').doc(uid).set(userData);
         }
     } catch (error) {
-        console.error('❌ Error loading user data for marketplace:', error);
-        handleFirebaseError(error, 'load user data');
+        console.error('❌ Error loading user data:', error);
+        showToast('Error loading user data', 'error');
     }
 }
 
-// Load marketplace listings
-function loadMarketplaceListings() {
-    console.log('📥 Loading marketplace listings...');
-    
+// Load marketplace data
+async function loadMarketplaceData() {
     try {
-        const listingsQuery = db.collection('marketplace')
+        await loadStats();
+        await loadListings();
+        await loadTrendingItems();
+        await loadRecommendedItems();
+    } catch (error) {
+        console.error('❌ Error loading marketplace data:', error);
+        showToast('Error loading marketplace data', 'error');
+    }
+}
+
+// Load marketplace stats
+async function loadStats() {
+    try {
+        // Active listings count
+        const activeListingsQuery = await db.collection('listings')
+            .where('status', '==', 'active')
+            .get();
+        activeListingsCount.textContent = activeListingsQuery.size;
+        
+        // Total users count
+        const usersQuery = await db.collection('users').get();
+        totalUsersCount.textContent = usersQuery.size;
+        
+        // Successful sales count
+        const salesQuery = await db.collection('transactions')
+            .where('status', '==', 'completed')
+            .get();
+        successfulSalesCount.textContent = salesQuery.size;
+        
+        // Average rating (calculate from users)
+        let totalRating = 0;
+        let userCount = 0;
+        usersQuery.forEach(doc => {
+            const user = doc.data();
+            if (user.rating) {
+                totalRating += user.rating;
+                userCount++;
+            }
+        });
+        const avgRating = userCount > 0 ? (totalRating / userCount).toFixed(1) : '0.0';
+        averageRatingCount.textContent = avgRating;
+        
+    } catch (error) {
+        console.error('❌ Error loading stats:', error);
+    }
+}
+
+// Load listings from Firestore
+async function loadListings() {
+    try {
+        listingsContainer.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <div class="loading-spinner mx-auto mb-4" style="width: 40px; height: 40px;"></div>
+                <p class="text-gray-500 dark:text-gray-400">Loading listings...</p>
+            </div>
+        `;
+
+        const query = db.collection('listings')
             .where('status', '==', 'active')
             .orderBy('createdAt', 'desc')
-            .limit(20);
+            .limit(listingsPerPage);
+
+        const querySnapshot = await query.get();
         
-        listingsQuery.onSnapshot((snapshot) => {
-            if (listingsContainer) {
-                if (snapshot.empty) {
-                    listingsContainer.innerHTML = `
-                        <div class="text-center py-12 glass rounded-2xl">
-                            <i class="fas fa-store-slash text-5xl text-theme-secondary mb-4"></i>
-                            <h3 class="text-xl font-bold text-theme-accent mb-2">No listings yet</h3>
-                            <p class="text-theme-secondary mb-4">Be the first to create a listing!</p>
-                            <button class="bg-theme-accent text-white px-6 py-2 rounded-2xl font-semibold hover:scale-105 transition">
-                                Create First Listing
-                            </button>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                let listingsHTML = '';
-                snapshot.forEach(doc => {
-                    const listing = doc.data();
-                    listingsHTML += createListingElement(listing, doc.id);
-                });
-                
-                listingsContainer.innerHTML = listingsHTML;
-                console.log(`✅ Displayed ${snapshot.size} marketplace listings`);
-                
-                // Add interaction listeners
-                setTimeout(addListingInteractionListeners, 100);
-            }
-        }, (error) => {
-            console.error('❌ Error loading marketplace listings:', error);
-            handleFirebaseError(error, 'load listings');
+        allListings = [];
+        querySnapshot.forEach(doc => {
+            const listing = doc.data();
+            listing.id = doc.id;
+            allListings.push(listing);
         });
+
+        lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+        hasMoreListings = querySnapshot.docs.length === listingsPerPage;
+
+        console.log(`✅ Loaded ${allListings.length} listings`);
         
+        filteredListings = [...allListings];
+        displayedCount = 0;
+        displayListings();
+
     } catch (error) {
-        console.error('❌ Error setting up marketplace listener:', error);
-        handleFirebaseError(error, 'set up marketplace listener');
+        console.error('❌ Error loading listings:', error);
+        listingsContainer.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-4"></i>
+                <h3 class="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">Error Loading Listings</h3>
+                <p class="text-gray-500 dark:text-gray-400">Please try refreshing the page</p>
+            </div>
+        `;
     }
 }
 
-// Load user's own listings
-function loadUserListings(uid) {
+// Load more listings
+async function loadMoreListings() {
+    if (!hasMoreListings) return;
+
+    loadMoreBtn.disabled = true;
+    loadMoreBtn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+
     try {
-        const userListingsQuery = db.collection('marketplace')
-            .where('sellerId', '==', uid)
-            .orderBy('createdAt', 'desc');
+        const query = db.collection('listings')
+            .where('status', '==', 'active')
+            .orderBy('createdAt', 'desc')
+            .startAfter(lastVisible)
+            .limit(listingsPerPage);
+
+        const querySnapshot = await query.get();
         
-        userListingsQuery.onSnapshot((snapshot) => {
-            if (userListingsContainer) {
-                if (snapshot.empty) {
-                    userListingsContainer.innerHTML = `
-                        <div class="text-center py-8 glass rounded-2xl">
-                            <i class="fas fa-box-open text-4xl text-theme-secondary mb-4"></i>
-                            <h3 class="text-lg font-bold text-theme-accent mb-2">No listings yet</h3>
-                            <p class="text-theme-secondary">Create your first listing to get started!</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                let listingsHTML = '';
-                snapshot.forEach(doc => {
-                    const listing = doc.data();
-                    listingsHTML += createUserListingElement(listing, doc.id);
-                });
-                
-                userListingsContainer.innerHTML = listingsHTML;
-                console.log(`✅ Displayed ${snapshot.size} user listings`);
-                
-                // Add management listeners
-                setTimeout(addUserListingInteractionListeners, 100);
-            }
-        }, (error) => {
-            console.error('❌ Error loading user listings:', error);
-            handleFirebaseError(error, 'load user listings');
+        const newListings = [];
+        querySnapshot.forEach(doc => {
+            const listing = doc.data();
+            listing.id = doc.id;
+            newListings.push(listing);
         });
-        
+
+        allListings = [...allListings, ...newListings];
+        lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+        hasMoreListings = querySnapshot.docs.length === listingsPerPage;
+
+        filteredListings = [...allListings];
+        displayListings(true);
+
     } catch (error) {
-        console.error('❌ Error loading user listings:', error);
-        handleFirebaseError(error, 'load user listings');
+        console.error('❌ Error loading more listings:', error);
+        showToast('Error loading more listings', 'error');
+    }
+
+    loadMoreBtn.disabled = false;
+    loadMoreBtn.textContent = 'Load More Listings';
+}
+
+// Load trending items (most viewed listings)
+async function loadTrendingItems() {
+    try {
+        const querySnapshot = await db.collection('listings')
+            .where('status', '==', 'active')
+            .orderBy('views', 'desc')
+            .limit(4)
+            .get();
+
+        trendingItemsContainer.innerHTML = '';
+
+        if (querySnapshot.empty) {
+            trendingItemsContainer.innerHTML = `
+                <div class="col-span-full text-center py-8">
+                    <i class="fas fa-chart-line text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-500 dark:text-gray-400">No trending items yet</p>
+                </div>
+            `;
+            return;
+        }
+
+        querySnapshot.forEach(doc => {
+            const listing = doc.data();
+            listing.id = doc.id;
+            const productCard = createProductCard(listing, true);
+            trendingItemsContainer.appendChild(productCard);
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading trending items:', error);
+        trendingItemsContainer.innerHTML = `
+            <div class="col-span-full text-center py-8">
+                <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-4"></i>
+                <p class="text-gray-500 dark:text-gray-400">Error loading trending items</p>
+            </div>
+        `;
     }
 }
 
-// Create marketplace listing element
-function createListingElement(listing, listingId) {
-    const isOwnListing = listing.sellerId === currentUser.uid;
-    const listingDate = listing.createdAt ? listing.createdAt.toDate().toLocaleDateString() : 'Recently';
+// Load recommended items (based on user preferences)
+async function loadRecommendedItems() {
+    try {
+        // For now, show random active listings
+        const querySnapshot = await db.collection('listings')
+            .where('status', '==', 'active')
+            .limit(4)
+            .get();
+
+        recommendedContainer.innerHTML = '';
+
+        if (querySnapshot.empty) {
+            recommendedContainer.innerHTML = `
+                <div class="col-span-full text-center py-8">
+                    <i class="fas fa-star text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-500 dark:text-gray-400">No recommendations available</p>
+                </div>
+            `;
+            return;
+        }
+
+        const listings = [];
+        querySnapshot.forEach(doc => {
+            const listing = doc.data();
+            listing.id = doc.id;
+            listings.push(listing);
+        });
+
+        // Shuffle array for random recommendations
+        const shuffled = listings.sort(() => 0.5 - Math.random());
+        shuffled.slice(0, 4).forEach(listing => {
+            const productCard = createProductCard(listing, true);
+            recommendedContainer.appendChild(productCard);
+        });
+
+    } catch (error) {
+        console.error('❌ Error loading recommended items:', error);
+        recommendedContainer.innerHTML = `
+            <div class="col-span-full text-center py-8">
+                <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-4"></i>
+                <p class="text-gray-500 dark:text-gray-400">Error loading recommendations</p>
+            </div>
+        `;
+    }
+}
+
+// Display listings in the container
+function displayListings(append = false) {
+    const listingsToShow = filteredListings.slice(displayedCount, displayedCount + listingsPerPage);
     
-    return `
-        <div class="glass border border-purple-700 rounded-2xl p-4 mb-6" data-listing-id="${listingId}">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center space-x-3">
-                    <img src="${optimizeImageUrl(listing.sellerAvatar || getDefaultAvatar(listing.sellerName))}" 
-                         alt="${listing.sellerName}" 
-                         class="w-10 h-10 rounded-2xl object-cover">
-                    <div>
-                        <h3 class="font-bold text-theme-accent">${listing.sellerName}</h3>
-                        <p class="text-xs text-theme-secondary">${listingDate}</p>
-                    </div>
-                </div>
-                <span class="tag-pill bg-blue-500/20 border-blue-500/50">${listing.category || 'General'}</span>
+    if (!append) {
+        listingsContainer.innerHTML = '';
+    }
+    
+    if (listingsToShow.length === 0 && !append) {
+        listingsContainer.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-search text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">No listings found</h3>
+                <p class="text-gray-500 dark:text-gray-400">Try adjusting your filters or search terms</p>
+            </div>
+        `;
+        loadMoreBtn.classList.add('hidden');
+        return;
+    }
+    
+    listingsToShow.forEach(listing => {
+        const productCard = createProductCard(listing);
+        listingsContainer.appendChild(productCard);
+    });
+    
+    displayedCount += listingsToShow.length;
+    
+    // Show/hide load more button
+    if (displayedCount >= filteredListings.length || !hasMoreListings) {
+        loadMoreBtn.classList.add('hidden');
+    } else {
+        loadMoreBtn.classList.remove('hidden');
+    }
+}
+
+// Create product card HTML
+function createProductCard(listing, isSmall = false) {
+    const listingDate = listing.createdAt ? new Date(listing.createdAt.seconds * 1000).toLocaleDateString() : 'Recently';
+    const imageUrl = listing.images && listing.images.length > 0 
+        ? listing.images[0] 
+        : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80';
+    
+    const card = document.createElement('div');
+    card.className = `product-card glass-card rounded-xl overflow-hidden hover-lift fade-in ${currentView === 'list' ? 'list-view' : ''}`;
+    card.setAttribute('data-listing-id', listing.id);
+    
+    card.innerHTML = `
+        <div class="relative ${isSmall ? 'h-40' : 'h-48'} overflow-hidden">
+            <img src="${imageUrl}" alt="${listing.title}" class="w-full h-full object-cover primary-image">
+            
+            ${listing.isHotDeal ? `<div class="hot-deal-badge">HOT DEAL</div>` : ''}
+            
+            <div class="quick-actions">
+                <button class="quick-action-btn favorite-btn" data-listing-id="${listing.id}">
+                    <i class="far fa-heart"></i>
+                </button>
+                <button class="quick-action-btn view-btn" data-listing-id="${listing.id}">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-4 product-details">
+            <div class="flex justify-between items-start mb-2">
+                <h3 class="font-semibold text-gray-900 dark:text-white line-clamp-2 flex-1">${listing.title}</h3>
+                <span class="text-indigo-600 dark:text-indigo-400 font-bold ml-2">$${listing.price.toFixed(2)}</span>
             </div>
             
-            ${listing.images && listing.images.length > 0 ? `
-                <img src="${optimizeImageUrl(listing.images[0])}" 
-                     alt="${listing.title}" 
-                     class="w-full h-48 object-cover rounded-2xl mb-4 cursor-pointer"
-                     onclick="openImageModal('${optimizeImageUrl(listing.images[0])}')">
-            ` : ''}
-            
-            <h4 class="text-lg font-bold text-theme-primary mb-2">${listing.title}</h4>
-            <p class="text-theme-secondary mb-4 line-clamp-2">${listing.description}</p>
-            
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <span class="text-xl font-bold text-theme-accent">${formatPrice(listing.price)}</span>
-                    ${listing.originalPrice ? `
-                        <span class="text-sm text-theme-secondary line-through">${formatPrice(listing.originalPrice)}</span>
-                    ` : ''}
-                </div>
-                
-                <div class="flex space-x-2">
-                    ${!isOwnListing ? `
-                        <button class="bg-theme-accent text-white px-4 py-2 rounded-2xl font-semibold hover:scale-105 transition contact-btn" 
-                                data-listing-id="${listingId}">
-                            Contact
-                        </button>
-                        <button class="glass border border-purple-700 px-4 py-2 rounded-2xl font-semibold hover:bg-purple-900/30 transition save-listing-btn" 
-                                data-listing-id="${listingId}">
-                            <i class="far fa-bookmark"></i>
-                        </button>
-                    ` : `
-                        <button class="bg-green-500 text-white px-4 py-2 rounded-2xl font-semibold hover:scale-105 transition edit-listing-btn" 
-                                data-listing-id="${listingId}">
-                            Edit
-                        </button>
-                        <button class="bg-red-500 text-white px-4 py-2 rounded-2xl font-semibold hover:scale-105 transition delete-listing-btn" 
-                                data-listing-id="${listingId}">
-                            Delete
-                        </button>
-                    `}
-                </div>
+            <div class="flex items-center mb-2">
+                <img src="${listing.sellerAvatar || 'https://ui-avatars.com/api/?name=Seller&background=6366f1&color=fff&size=32'}" 
+                     alt="${listing.sellerName}" 
+                     class="w-6 h-6 rounded-full object-cover mr-2">
+                <span class="text-sm text-gray-600 dark:text-gray-400">${listing.sellerName}</span>
+                ${listing.sellerVerified ? '<span class="verified-badge"><i class="fas fa-check mr-1"></i>Verified</span>' : ''}
             </div>
             
-            ${listing.tags && listing.tags.length > 0 ? `
-                <div class="flex flex-wrap gap-2 mt-4">
-                    ${listing.tags.map(tag => `
-                        <span class="tag-pill text-xs">#${tag}</span>
-                    `).join('')}
+            <p class="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">${listing.description || 'No description available'}</p>
+            
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-1">
+                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">${listing.rating || '4.5'}</span>
+                    <span class="text-sm text-gray-400 dark:text-gray-500">(${listing.reviewCount || '0'})</span>
+                </div>
+                <span class="text-xs text-gray-500 dark:text-gray-400">${listingDate}</span>
+            </div>
+            
+            ${!isSmall ? `
+                <div class="flex justify-between mt-4">
+                    <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition flex-1 mr-2 contact-seller-btn" data-listing-id="${listing.id}">
+                        Contact
+                    </button>
+                    <button class="bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-slate-500 transition add-to-cart-btn" data-listing-id="${listing.id}">
+                        <i class="fas fa-shopping-cart"></i>
+                    </button>
                 </div>
             ` : ''}
         </div>
     `;
-}
-
-// Create user's own listing element
-function createUserListingElement(listing, listingId) {
-    const listingDate = listing.createdAt ? listing.createdAt.toDate().toLocaleDateString() : 'Recently';
-    const statusColor = listing.status === 'active' ? 'bg-green-500/20 border-green-500/50' : 'bg-yellow-500/20 border-yellow-500/50';
     
-    return `
-        <div class="glass border border-purple-700 rounded-2xl p-4 mb-4" data-listing-id="${listingId}">
-            <div class="flex items-center justify-between mb-3">
-                <h4 class="font-bold text-theme-primary">${listing.title}</h4>
-                <span class="tag-pill ${statusColor}">${listing.status}</span>
-            </div>
-            
-            ${listing.images && listing.images.length > 0 ? `
-                <img src="${optimizeImageUrl(listing.images[0])}" 
-                     alt="${listing.title}" 
-                     class="w-full h-32 object-cover rounded-2xl mb-3">
-            ` : ''}
-            
-            <p class="text-theme-secondary text-sm mb-3 line-clamp-2">${listing.description}</p>
-            
-            <div class="flex items-center justify-between">
-                <span class="text-lg font-bold text-theme-accent">${formatPrice(listing.price)}</span>
-                <div class="flex space-x-2">
-                    <button class="bg-blue-500 text-white px-3 py-1 rounded-2xl text-sm hover:scale-105 transition edit-listing-btn" 
-                            data-listing-id="${listingId}">
-                        Edit
-                    </button>
-                    <button class="bg-red-500 text-white px-3 py-1 rounded-2xl text-sm hover:scale-105 transition delete-listing-btn" 
-                            data-listing-id="${listingId}">
-                        Delete
-                    </button>
-                </div>
-            </div>
-            
-            <div class="flex justify-between items-center mt-3 text-xs text-theme-secondary">
-                <span>Listed: ${listingDate}</span>
-                <span>Views: ${listing.views || 0}</span>
-            </div>
-        </div>
-    `;
+    // Add event listeners
+    setTimeout(() => {
+        const favoriteBtn = card.querySelector('.favorite-btn');
+        const viewBtn = card.querySelector('.view-btn');
+        const contactBtn = card.querySelector('.contact-seller-btn');
+        const cartBtn = card.querySelector('.add-to-cart-btn');
+        
+        if (favoriteBtn) favoriteBtn.addEventListener('click', () => toggleFavorite(listing.id));
+        if (viewBtn) viewBtn.addEventListener('click', () => viewListing(listing.id));
+        if (contactBtn) contactBtn.addEventListener('click', () => contactSeller(listing.id));
+        if (cartBtn) cartBtn.addEventListener('click', () => addToCart(listing.id));
+    }, 100);
+    
+    return card;
 }
 
-// Open create listing modal
-function openCreateListingModal() {
-    // Implementation for create listing modal
-    showNotification('Create listing feature coming soon!', 'info');
+// Setup event listeners
+function setupEventListeners() {
+    // Create listing modal
+    createListingBtn.addEventListener('click', openCreateListingModal);
+    closeCreateModal.addEventListener('click', closeCreateListingModal);
+    cancelCreateListing.addEventListener('click', closeCreateListingModal);
+    createListingForm.addEventListener('submit', handleCreateListing);
+    
+    // Image upload
+    browseImagesBtn.addEventListener('click', () => listingImages.click());
+    listingImages.addEventListener('change', handleImageSelection);
+    
+    imageUploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+    
+    imageUploadArea.addEventListener('dragleave', function() {
+        this.classList.remove('dragover');
+    });
+    
+    imageUploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        listingImages.files = e.dataTransfer.files;
+        handleImageSelection({ target: listingImages });
+    });
+    
+    // Search
+    searchInput.addEventListener('input', debounce(handleSearch, 300));
+    mobileSearchInput.addEventListener('input', debounce(handleSearch, 300));
+    
+    // View toggle
+    gridViewBtn.addEventListener('click', () => switchView('grid'));
+    listViewBtn.addEventListener('click', () => switchView('list'));
+    
+    // Sorting and filtering
+    sortFilter.addEventListener('change', function() {
+        currentSort = this.value;
+        filterAndDisplayListings();
+    });
+    
+    applyFilters.addEventListener('click', filterAndDisplayListings);
+    clearFilters.addEventListener('click', clearAllFilters);
+    
+    // Load more
+    loadMoreBtn.addEventListener('click', loadMoreListings);
+    
+    // Theme toggle
+    themeToggle.addEventListener('click', toggleTheme);
+    
+    // Category tabs
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+            currentCategory = this.getAttribute('data-category');
+            filterAndDisplayListings();
+        });
+    });
+    
+    // Cart and notifications
+    cartBtn.addEventListener('click', openCartModal);
+    closeCartModal.addEventListener('click', closeCartModalFunc);
+    notificationBtn.addEventListener('click', openNotificationsModal);
+    closeNotificationsModal.addEventListener('click', closeNotificationsModalFunc);
+    closeNotificationToast.addEventListener('click', () => {
+        notificationToast.classList.remove('show');
+    });
+    
+    // Navigation links
+    discoverLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showToast('Discover feature coming soon!', 'info');
+    });
+    
+    categoriesLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showToast('Categories feature coming soon!', 'info');
+    });
+    
+    sellersLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showToast('Sellers directory coming soon!', 'info');
+    });
+    
+    // Mobile navigation links
+    mobileDiscoverLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeMobileMenuFunc();
+        showToast('Discover feature coming soon!', 'info');
+    });
+    
+    mobileCategoriesLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeMobileMenuFunc();
+        showToast('Categories feature coming soon!', 'info');
+    });
+    
+    mobileSellersLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeMobileMenuFunc();
+        showToast('Sellers directory coming soon!', 'info');
+    });
+    
+    // Mobile menu
+    hamburgerMenu.addEventListener('click', openMobileMenu);
+    closeMobileMenu.addEventListener('click', closeMobileMenuFunc);
+    mobileMenuOverlay.addEventListener('click', closeMobileMenuFunc);
+    mobileLogoutBtn.addEventListener('click', handleLogout);
+    
+    // Close modals when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target === createListingModal) closeCreateListingModal();
+        if (e.target === cartModal) closeCartModalFunc();
+        if (e.target === notificationsModal) closeNotificationsModalFunc();
+    });
+}
+
+// Mobile menu functions
+function openMobileMenu() {
+    mobileMenu.classList.add('active');
+    mobileMenuOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeMobileMenuFunc() {
+    mobileMenu.classList.remove('active');
+    mobileMenuOverlay.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+// Logout function
+function handleLogout() {
+    auth.signOut().then(() => {
+        closeMobileMenuFunc();
+        showToast('Logged out successfully', 'success');
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1000);
+    }).catch((error) => {
+        console.error('Logout error:', error);
+        showToast('Error logging out', 'error');
+    });
+}
+
+// Filter and display listings based on current filters
+function filterAndDisplayListings() {
+    // Apply category filter
+    if (currentCategory === 'all') {
+        filteredListings = [...allListings];
+    } else {
+        filteredListings = allListings.filter(listing => listing.category === currentCategory);
+    }
+    
+    // Apply price filter
+    const minPriceValue = parseFloat(minPrice.value) || 0;
+    const maxPriceValue = parseFloat(maxPrice.value) || Infinity;
+    
+    filteredListings = filteredListings.filter(listing => {
+        return listing.price >= minPriceValue && listing.price <= maxPriceValue;
+    });
+    
+    // Apply sort
+    switch (currentSort) {
+        case 'newest':
+            filteredListings.sort((a, b) => b.createdAt - a.createdAt);
+            break;
+        case 'oldest':
+            filteredListings.sort((a, b) => a.createdAt - b.createdAt);
+            break;
+        case 'price-low':
+            filteredListings.sort((a, b) => a.price - b.price);
+            break;
+        case 'price-high':
+            filteredListings.sort((a, b) => b.price - a.price);
+            break;
+        case 'popular':
+            filteredListings.sort((a, b) => (b.views || 0) - (a.views || 0));
+            break;
+    }
+    
+    displayedCount = 0;
+    displayListings();
+}
+
+// Clear all filters
+function clearAllFilters() {
+    minPrice.value = '';
+    maxPrice.value = '';
+    sellerRatingFilter.value = 'any';
+    locationFilter.value = 'any';
+    filterAndDisplayListings();
+}
+
+// Switch between grid and list view
+function switchView(view) {
+    currentView = view;
+    
+    if (view === 'grid') {
+        gridViewBtn.classList.add('bg-indigo-50', 'dark:bg-indigo-900/20');
+        listViewBtn.classList.remove('bg-indigo-50', 'dark:bg-indigo-900/20');
+        listingsContainer.classList.remove('grid-cols-1');
+        listingsContainer.classList.add('grid-cols-1', 'sm:grid-cols-2', 'lg:grid-cols-3', 'xl:grid-cols-4');
+    } else {
+        listViewBtn.classList.add('bg-indigo-50', 'dark:bg-indigo-900/20');
+        gridViewBtn.classList.remove('bg-indigo-50', 'dark:bg-indigo-900/20');
+        listingsContainer.classList.remove('grid-cols-1', 'sm:grid-cols-2', 'lg:grid-cols-3', 'xl:grid-cols-4');
+        listingsContainer.classList.add('grid-cols-1');
+    }
+    
+    displayListings();
 }
 
 // Handle search
 function handleSearch() {
-    const query = searchInput.value.trim();
-    console.log('Searching for:', query);
-    // Implement search functionality
-}
-
-// Handle category filter
-function handleCategoryFilter() {
-    const category = categoryFilter.value;
-    console.log('Filtering by category:', category);
-    // Implement category filtering
-}
-
-// Add listing interaction listeners
-function addListingInteractionListeners() {
-    document.querySelectorAll('.contact-btn').forEach(btn => {
-        btn.addEventListener('click', handleContactSeller);
-    });
+    const searchTerm = searchInput.value.toLowerCase().trim() || mobileSearchInput.value.toLowerCase().trim();
     
-    document.querySelectorAll('.save-listing-btn').forEach(btn => {
-        btn.addEventListener('click', handleSaveListing);
-    });
-}
-
-// Add user listing interaction listeners
-function addUserListingInteractionListeners() {
-    document.querySelectorAll('.edit-listing-btn').forEach(btn => {
-        btn.addEventListener('click', handleEditListing);
-    });
+    if (searchTerm.length === 0) {
+        searchSuggestions.classList.add('hidden');
+        filterAndDisplayListings();
+        return;
+    }
     
-    document.querySelectorAll('.delete-listing-btn').forEach(btn => {
-        btn.addEventListener('click', handleDeleteListing);
+    // Filter listings by search term
+    const searchResults = allListings.filter(listing => 
+        listing.title.toLowerCase().includes(searchTerm) ||
+        listing.description.toLowerCase().includes(searchTerm) ||
+        (listing.tags && listing.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+    );
+    
+    filteredListings = searchResults;
+    displayedCount = 0;
+    displayListings();
+}
+
+// Open create listing modal
+function openCreateListingModal() {
+    if (!currentUser) {
+        showToast('Please log in to create a listing', 'warning');
+        return;
+    }
+    
+    createListingModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+// Close create listing modal
+function closeCreateListingModal() {
+    createListingModal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+    createListingForm.reset();
+    imagePreview.innerHTML = '';
+    selectedImages = [];
+}
+
+// Handle image selection
+function handleImageSelection(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    imagePreview.innerHTML = '';
+    const fileArray = Array.from(files).slice(0, 8);
+    
+    fileArray.forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'image-preview-item';
+            
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            
+            const removeBtn = document.createElement('div');
+            removeBtn.className = 'remove';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.addEventListener('click', function() {
+                previewItem.remove();
+            });
+            
+            previewItem.appendChild(img);
+            previewItem.appendChild(removeBtn);
+            imagePreview.appendChild(previewItem);
+        };
+        reader.readAsDataURL(file);
     });
 }
 
-// Handle contact seller
-function handleContactSeller(event) {
-    const listingId = event.currentTarget.getAttribute('data-listing-id');
-    console.log('Contacting seller for listing:', listingId);
-    showNotification('Contact feature coming soon!', 'info');
-}
-
-// Handle save listing
-function handleSaveListing(event) {
-    const listingId = event.currentTarget.getAttribute('data-listing-id');
-    console.log('Saving listing:', listingId);
-    showNotification('Save listing feature coming soon!', 'info');
-}
-
-// Handle edit listing
-function handleEditListing(event) {
-    const listingId = event.currentTarget.getAttribute('data-listing-id');
-    console.log('Editing listing:', listingId);
-    showNotification('Edit listing feature coming soon!', 'info');
-}
-
-// Handle delete listing
-async function handleDeleteListing(event) {
-    const listingId = event.currentTarget.getAttribute('data-listing-id');
+// Handle create listing form submission
+async function handleCreateListing(e) {
+    e.preventDefault();
     
-    if (confirm('Are you sure you want to delete this listing?')) {
-        try {
-            await db.collection('marketplace').doc(listingId).delete();
-            showNotification('Listing deleted successfully', 'success');
-        } catch (error) {
-            console.error('❌ Error deleting listing:', error);
-            handleFirebaseError(error, 'delete listing');
+    if (!currentUser) {
+        showToast('Please log in to create a listing', 'warning');
+        return;
+    }
+    
+    const title = document.getElementById('listingTitle').value;
+    const description = document.getElementById('listingDescription').value;
+    const price = parseFloat(document.getElementById('listingPrice').value);
+    const category = document.getElementById('listingCategory').value;
+    const condition = document.querySelector('input[name="condition"]:checked').value;
+    const tags = document.getElementById('listingTags').value
+        ? document.getElementById('listingTags').value.split(',').map(tag => tag.trim()).filter(tag => tag)
+        : [];
+    
+    if (!title || !description || isNaN(price)) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    // Set loading state
+    createListingBtnText.textContent = 'Creating...';
+    createListingSpinner.classList.remove('hidden');
+    
+    try {
+        // Upload images if any
+        let imageUrls = [];
+        const files = listingImages.files;
+        
+        if (files && files.length > 0) {
+            for (const file of files) {
+                if (!file.type.startsWith('image/')) continue;
+                
+                const storageRef = storage.ref().child(`marketplace/${currentUser.uid}/${Date.now()}_${file.name}`);
+                const snapshot = await storageRef.put(file);
+                const url = await snapshot.ref.getDownloadURL();
+                imageUrls.push(url);
+            }
         }
+        
+        // Create listing in Firestore
+        const listingData = {
+            title,
+            description,
+            price,
+            category,
+            condition,
+            tags,
+            images: imageUrls,
+            sellerId: currentUser.uid,
+            sellerName: userData.name,
+            sellerAvatar: userData.avatar,
+            sellerVerified: userData.verified || false,
+            status: 'active',
+            views: 0,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+        
+        await db.collection('listings').add(listingData);
+        
+        showToast('Listing created successfully!', 'success');
+        closeCreateListingModal();
+        
+        // Refresh listings
+        loadMarketplaceData();
+        
+    } catch (error) {
+        console.error('❌ Error creating listing:', error);
+        showToast('Error creating listing', 'error');
+    } finally {
+        createListingBtnText.textContent = 'Create Listing';
+        createListingSpinner.classList.add('hidden');
     }
 }
 
-// Setup real-time listeners
-function setupRealtimeListeners() {
-    // Listen for user data updates
-    db.collection('users').doc(currentUser.uid).onSnapshot((doc) => {
-        if (doc.exists) {
-            userData = doc.data();
+// Toggle favorite
+async function toggleFavorite(listingId) {
+    if (!currentUser) {
+        showToast('Please log in to add favorites', 'warning');
+        return;
+    }
+    
+    try {
+        const favoriteRef = db.collection('favorites')
+            .where('userId', '==', currentUser.uid)
+            .where('listingId', '==', listingId);
+        
+        const snapshot = await favoriteRef.get();
+        
+        if (snapshot.empty) {
+            await db.collection('favorites').add({
+                userId: currentUser.uid,
+                listingId: listingId,
+                addedAt: new Date()
+            });
+            showToast('Added to favorites', 'success');
+        } else {
+            const doc = snapshot.docs[0];
+            await db.collection('favorites').doc(doc.id).delete();
+            showToast('Removed from favorites', 'info');
         }
-    }, (error) => {
-        console.error('❌ Error in real-time user listener:', error);
-        handleFirebaseError(error, 'set up real-time listener');
-    });
+    } catch (error) {
+        console.error('❌ Error toggling favorite:', error);
+        showToast('Error updating favorites', 'error');
+    }
 }
 
-// Enhanced Firebase error handling
-function handleFirebaseError(error, context = 'operation') {
-    let userMessage = 'An unexpected error occurred';
+// View listing details
+function viewListing(listingId) {
+    // In a real implementation, this would open a detailed view
+    showToast('Listing details feature coming soon!', 'info');
+}
+
+// Contact seller
+function contactSeller(listingId) {
+    showToast('Contact feature coming soon!', 'info');
+}
+
+// Add to cart
+async function addToCart(listingId) {
+    if (!currentUser) {
+        showToast('Please log in to add items to cart', 'warning');
+        return;
+    }
     
-    if (error.code) {
-        switch (error.code) {
-            case 'permission-denied':
-                userMessage = 'You do not have permission to perform this action';
-                break;
-            case 'unauthenticated':
-                userMessage = 'Please log in to continue';
-                break;
-            case 'not-found':
-                userMessage = 'The requested item was not found';
-                break;
-            case 'already-exists':
-                userMessage = 'This item already exists';
-                break;
-            case 'resource-exhausted':
-                userMessage = 'Service temporarily unavailable. Please try again later';
-                break;
-            case 'failed-precondition':
-                userMessage = 'Operation cannot be completed in current state';
-                break;
-            case 'aborted':
-                userMessage = 'Operation was aborted';
-                break;
-            case 'invalid-argument':
-                userMessage = 'Invalid input provided';
-                break;
-            case 'deadline-exceeded':
-                userMessage = 'Operation timed out. Please try again';
-                break;
-            case 'internal':
-                userMessage = 'Internal server error. Please try again later';
-                break;
-            case 'unavailable':
-                userMessage = 'Service unavailable. Please check your connection';
-                break;
-            case 'data-loss':
-                userMessage = 'Data loss occurred. Please refresh the page';
-                break;
-            case 'network-error':
-                userMessage = 'Network error. Please check your internet connection';
-                break;
-            default:
-                userMessage = `Error during ${context}: ${error.message || 'Unknown error'}`;
+    try {
+        const listingDoc = await db.collection('listings').doc(listingId).get();
+        if (!listingDoc.exists) {
+            showToast('Listing not found', 'error');
+            return;
         }
+        
+        const listing = listingDoc.data();
+        
+        // Add to cart in Firestore
+        await db.collection('cart').add({
+            userId: currentUser.uid,
+            listingId: listingId,
+            title: listing.title,
+            price: listing.price,
+            image: listing.images && listing.images.length > 0 ? listing.images[0] : '',
+            sellerId: listing.sellerId,
+            addedAt: new Date()
+        });
+        
+        showToast('Added to cart!', 'success');
+        loadCartCount();
+        
+    } catch (error) {
+        console.error('❌ Error adding to cart:', error);
+        showToast('Error adding to cart', 'error');
+    }
+}
+
+// Load cart count
+async function loadCartCount() {
+    if (!currentUser) return;
+    
+    try {
+        const cartQuery = await db.collection('cart')
+            .where('userId', '==', currentUser.uid)
+            .get();
+        
+        const count = cartQuery.size;
+        if (count > 0) {
+            cartCount.textContent = count;
+            cartCount.classList.remove('hidden');
+        } else {
+            cartCount.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('❌ Error loading cart count:', error);
+    }
+}
+
+// Load notification count
+async function loadNotificationCount() {
+    if (!currentUser) return;
+    
+    try {
+        const notificationsQuery = await db.collection('notifications')
+            .where('userId', '==', currentUser.uid)
+            .where('read', '==', false)
+            .get();
+        
+        const count = notificationsQuery.size;
+        if (count > 0) {
+            notificationCount.textContent = count;
+            notificationCount.classList.remove('hidden');
+        } else {
+            notificationCount.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('❌ Error loading notification count:', error);
+    }
+}
+
+// Open cart modal
+async function openCartModal() {
+    if (!currentUser) {
+        showToast('Please log in to view cart', 'warning');
+        return;
+    }
+    
+    try {
+        const cartQuery = await db.collection('cart')
+            .where('userId', '==', currentUser.uid)
+            .orderBy('addedAt', 'desc')
+            .get();
+        
+        if (cartQuery.empty) {
+            cartContent.innerHTML = `
+                <div class="text-center py-12">
+                    <i class="fas fa-shopping-cart text-4xl text-gray-400 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">Your cart is empty</h3>
+                    <p class="text-gray-500 dark:text-gray-400">Add some items to get started</p>
+                </div>
+            `;
+        } else {
+            let cartHTML = '<div class="space-y-4">';
+            let total = 0;
+            
+            cartQuery.forEach(doc => {
+                const item = doc.data();
+                total += item.price;
+                
+                cartHTML += `
+                    <div class="flex items-center space-x-4 p-4 border border-gray-200 dark:border-slate-600 rounded-lg">
+                        <img src="${item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80'}" 
+                             alt="${item.title}" 
+                             class="w-16 h-16 object-cover rounded">
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-900 dark:text-white">${item.title}</h4>
+                            <p class="text-indigo-600 dark:text-indigo-400 font-bold">$${item.price.toFixed(2)}</p>
+                        </div>
+                        <button class="remove-from-cart text-red-500 hover:text-red-700" data-id="${doc.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            });
+            
+            cartHTML += `
+                <div class="border-t border-gray-200 dark:border-slate-600 pt-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-lg font-bold text-gray-900 dark:text-white">Total:</span>
+                        <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">$${total.toFixed(2)}</span>
+                    </div>
+                    <button class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">
+                        Checkout
+                    </button>
+                </div>
+            </div>
+            `;
+            
+            cartContent.innerHTML = cartHTML;
+            
+            // Add event listeners for remove buttons
+            cartContent.querySelectorAll('.remove-from-cart').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const itemId = e.currentTarget.getAttribute('data-id');
+                    await removeFromCart(itemId);
+                });
+            });
+        }
+        
+        cartModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+    } catch (error) {
+        console.error('❌ Error loading cart:', error);
+        showToast('Error loading cart', 'error');
+    }
+}
+
+// Close cart modal
+function closeCartModalFunc() {
+    cartModal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+// Remove from cart
+async function removeFromCart(itemId) {
+    try {
+        await db.collection('cart').doc(itemId).delete();
+        showToast('Item removed from cart', 'success');
+        loadCartCount();
+        openCartModal(); // Refresh cart modal
+    } catch (error) {
+        console.error('❌ Error removing from cart:', error);
+        showToast('Error removing item from cart', 'error');
+    }
+}
+
+// Open notifications modal
+async function openNotificationsModal() {
+    if (!currentUser) {
+        showToast('Please log in to view notifications', 'warning');
+        return;
+    }
+    
+    try {
+        const notificationsQuery = await db.collection('notifications')
+            .where('userId', '==', currentUser.uid)
+            .orderBy('createdAt', 'desc')
+            .limit(10)
+            .get();
+        
+        if (notificationsQuery.empty) {
+            notificationsContent.innerHTML = `
+                <div class="text-center py-12">
+                    <i class="far fa-bell text-4xl text-gray-400 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">No notifications</h3>
+                    <p class="text-gray-500 dark:text-gray-400">You're all caught up!</p>
+                </div>
+            `;
+        } else {
+            let notificationsHTML = '<div class="space-y-4">';
+            
+            notificationsQuery.forEach(doc => {
+                const notification = doc.data();
+                const timeAgo = formatTimeAgo(notification.createdAt);
+                
+                notificationsHTML += `
+                    <div class="p-4 border border-gray-200 dark:border-slate-600 rounded-lg ${notification.read ? 'bg-gray-50 dark:bg-slate-800' : 'bg-white dark:bg-slate-700'}">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-semibold text-gray-900 dark:text-white">${notification.title}</h4>
+                                <p class="text-gray-600 dark:text-gray-400 mt-1">${notification.message}</p>
+                            </div>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">${timeAgo}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            notificationsHTML += '</div>';
+            notificationsContent.innerHTML = notificationsHTML;
+        }
+        
+        notificationsModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+    } catch (error) {
+        console.error('❌ Error loading notifications:', error);
+        showToast('Error loading notifications', 'error');
+    }
+}
+
+// Close notifications modal
+function closeNotificationsModalFunc() {
+    notificationsModal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+// Update user UI
+function updateUserUI() {
+    if (userData) {
+        userAvatar.src = userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || 'User')}&background=6366f1&color=fff&size=40`;
+        mobileUserAvatar.src = userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || 'User')}&background=6366f1&color=fff&size=40`;
+        userName.textContent = userData.name || 'User';
+        mobileUserName.textContent = userData.name || 'User';
+        userStatus.textContent = userData.status || 'Student';
+        mobileUserStatus.textContent = userData.status || 'Student';
+    }
+}
+
+// Show toast notification
+function showToast(message, type = 'info') {
+    notificationToastTitle.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+    notificationToastMessage.textContent = message;
+    
+    // Set color based on type
+    if (type === 'error') {
+        notificationToast.style.borderLeft = '4px solid #ef4444';
+    } else if (type === 'success') {
+        notificationToast.style.borderLeft = '4px solid #10b981';
+    } else if (type === 'warning') {
+        notificationToast.style.borderLeft = '4px solid #f59e0b';
     } else {
-        userMessage = `Error during ${context}: ${error.message || 'Unknown error'}`;
+        notificationToast.style.borderLeft = '4px solid #3b82f6';
     }
     
-    console.error(`❌ Firebase error in ${context}:`, error.code, error.message);
-    showNotification(userMessage, 'error');
+    notificationToast.classList.add('show');
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+        notificationToast.classList.remove('show');
+    }, 5000);
 }
 
-// Utility Functions
-function optimizeImageUrl(url) {
-    if (!url) return '';
+// Initialize carousel
+function initCarousel() {
+    const carouselInner = document.querySelector('.carousel-inner');
+    const carouselItems = document.querySelectorAll('.carousel-item');
+    const prevButton = document.querySelector('.carousel-control.prev');
+    const nextButton = document.querySelector('.carousel-control.next');
     
-    if (url.includes('cloudinary.com') && !url.includes('f_auto,q_auto')) {
-        return url.replace('/upload/', '/upload/f_auto,q_auto/');
+    let currentIndex = 0;
+    const totalItems = carouselItems.length;
+    
+    function updateCarousel() {
+        carouselInner.style.transform = `translateX(-${currentIndex * 100}%)`;
     }
     
-    return url;
+    if (prevButton) {
+        prevButton.addEventListener('click', function() {
+            currentIndex = (currentIndex - 1 + totalItems) % totalItems;
+            updateCarousel();
+        });
+    }
+    
+    if (nextButton) {
+        nextButton.addEventListener('click', function() {
+            currentIndex = (currentIndex + 1) % totalItems;
+            updateCarousel();
+        });
+    }
+    
+    // Auto-advance carousel
+    setInterval(function() {
+        currentIndex = (currentIndex + 1) % totalItems;
+        updateCarousel();
+    }, 5000);
 }
 
-function getDefaultAvatar(name) {
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff&size=150`;
+// Initialize theme
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
 }
 
-function formatPrice(price) {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-    }).format(price);
+// Toggle theme
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
 }
 
+// Set theme
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    
+    if (theme === 'dark') {
+        themeToggle.classList.add('active');
+    } else {
+        themeToggle.classList.remove('active');
+    }
+}
+
+// Start flash sale timer
+function startFlashSaleTimer() {
+    let timeLeft = 24 * 60 * 60; // 24 hours in seconds
+    
+    function updateTimer() {
+        const hours = Math.floor(timeLeft / 3600);
+        const minutes = Math.floor((timeLeft % 3600) / 60);
+        const seconds = timeLeft % 60;
+        
+        flashSaleTimer.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (timeLeft > 0) {
+            timeLeft--;
+        } else {
+            timeLeft = 24 * 60 * 60;
+        }
+    }
+    
+    updateTimer();
+    setInterval(updateTimer, 1000);
+}
+
+// Format time ago
+function formatTimeAgo(timestamp) {
+    const now = new Date();
+    const time = timestamp.toDate();
+    const diffMs = now - time;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHrs < 24) return `${diffHrs}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return time.toLocaleDateString();
+}
+
+// Debounce function for search
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -471,26 +1308,18 @@ function debounce(func, wait) {
     };
 }
 
-function showNotification(message, type = 'info') {
-    console.log(`💬 ${type.toUpperCase()}: ${message}`);
-    // Implement your notification system here
+// Contact information
+function showContactInfo() {
+    showToast('Contact kynecta: 0746676627 | nchagwadennis45@gmail.com', 'info');
 }
 
-// Global function for image modal
-window.openImageModal = function(imageUrl) {
-    console.log('Opening image modal for:', imageUrl);
-    // Implement image modal functionality
+// Export functions for global access if needed
+window.marketplace = {
+    loadMarketplaceData,
+    loadListings,
+    loadTrendingItems,
+    loadRecommendedItems,
+    openCreateListingModal,
+    showToast,
+    toggleTheme
 };
-
-// Global error handler for Firebase operations
-window.handleFirebaseError = handleFirebaseError;
-// Register for settings updates
-if (window.settingsApp) {
-    window.settingsApp.addSettingsListener((settings) => {
-        // Apply theme
-        document.body.className = document.body.className.replace(/theme-\w+/g, '') + ' ' + settings.theme;
-        
-        // Apply other settings as needed
-        console.log("Settings updated:", settings);
-    });
-}

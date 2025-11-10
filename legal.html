@@ -2,18 +2,16 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legal - Uniconnect</title>
-    <meta name="description" content="Review Uniconnect's legal policies including Privacy Policy, Terms of Service, Cookie Policy, and GDPR compliance information.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Legal - kynecta</title>
+    <meta name="description" content="Review kynecta's legal policies including Privacy Policy, Terms of Service, Cookie Policy, and GDPR compliance information.">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="responsive.css">
     
-    <!-- Firebase SDK - Updated to v9.22.1 -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     
     <style>
         .glass-effect {
@@ -105,20 +103,99 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Mobile Navigation */
+        .mobile-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+        /* Responsive text sizes */
+        .responsive-text {
+            font-size: clamp(1rem, 4vw, 1.5rem);
+        }
+        
+        .responsive-heading {
+            font-size: clamp(1.5rem, 6vw, 2.5rem);
+        }
+        
+        .responsive-subheading {
+            font-size: clamp(1rem, 3vw, 1.25rem);
+        }
+        /* Better mobile layout */
+        @media (max-width: 767px) {
+            .mobile-padding {
+                padding: 1rem;
+            }
+            
+            .mobile-margin {
+                margin-bottom: 1.5rem;
+            }
+            
+            .mobile-text-center {
+                text-align: center;
+            }
+            
+            .mobile-stack {
+                flex-direction: column;
+            }
+            
+            .mobile-space-y > * + * {
+                margin-top: 1rem;
+            }
+        }
     </style>
 </head>
-<body class="h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white">
+<body class="h-full bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white overflow-x-hidden">
+    <!-- Mobile Navigation Menu -->
+    <div id="mobileMenu" class="mobile-menu fixed inset-0 z-50 bg-gray-900 bg-opacity-95 backdrop-blur-lg md:hidden">
+        <div class="flex flex-col h-full p-6">
+            <div class="flex justify-between items-center mb-8">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 cyber-gradient rounded-lg flex items-center justify-center quantum-glow">
+                        <i class="fas fa-globe-americas text-white" aria-hidden="true"></i>
+                    </div>
+                    <span class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 neon-text">
+                        kynecta
+                    </span>
+                </div>
+                <button id="closeMobileMenu" class="text-white text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <nav class="flex-1">
+                <ul class="space-y-6 text-lg">
+                    <li><a href="index.html" class="block py-2 text-blue-300 hover:text-white transition">Home</a></li>
+                    <li><a href="index.html#features" class="block py-2 text-blue-300 hover:text-white transition">Features</a></li>
+                    <li><a href="index.html#security" class="block py-2 text-blue-300 hover:text-white transition">Security</a></li>
+                    <li><a href="platform.html" class="block py-2 text-blue-300 hover:text-white transition">Platform</a></li>
+                    <li><a href="support.html" class="block py-2 text-blue-300 hover:text-white transition">Support</a></li>
+                    <li><a href="legal.html" class="block py-2 text-white font-semibold">Legal</a></li>
+                </ul>
+            </nav>
+            
+            <div class="pt-8 border-t border-blue-800/50">
+                <div id="mobileAuthButtons" class="space-y-4">
+                    <!-- Dynamic auth buttons will be inserted here -->
+                    <div class="loading-spinner mx-auto"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Navigation -->
     <nav class="relative z-10 glass-effect border-b border-blue-800/50" aria-label="Main navigation">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-3">
-                    <a href="index.html" class="flex items-center space-x-3" aria-label="Uniconnect Home">
+                    <a href="index.html" class="flex items-center space-x-3" aria-label="kynecta Home">
                         <div class="w-10 h-10 cyber-gradient rounded-lg flex items-center justify-center quantum-glow">
-                            <i class="fas fa-id-card-alt text-white" aria-hidden="true"></i>
+                            <i class="fas fa-globe-americas text-white" aria-hidden="true"></i>
                         </div>
                         <span class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 neon-text">
-                            Uniconnect ID
+                            kynecta
                         </span>
                     </a>
                 </div>
@@ -129,30 +206,39 @@
                     <a href="index.html#security" class="text-blue-300 hover:text-white transition">Security</a>
                     <a href="platform.html" class="text-blue-300 hover:text-white transition">Platform</a>
                     <a href="support.html" class="text-blue-300 hover:text-white transition">Support</a>
+                    <a href="legal.html" class="text-white font-semibold">Legal</a>
                 </div>
 
-                <div class="flex items-center space-x-4" id="auth-buttons">
-                    <!-- Dynamic auth buttons will be inserted here -->
-                    <div class="loading-spinner"></div>
+                <div class="flex items-center space-x-4">
+                    <!-- Mobile menu button -->
+                    <button id="mobileMenuButton" class="md:hidden text-blue-300 hover:text-white transition">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    
+                    <!-- Desktop auth buttons -->
+                    <div class="hidden md:flex items-center space-x-4" id="auth-buttons">
+                        <!-- Dynamic auth buttons will be inserted here -->
+                        <div class="loading-spinner"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Legal Header -->
-    <header class="relative py-20 px-4 sm:px-6 lg:px-8">
+    <header class="relative py-12 md:py-20 px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto text-center">
-            <h1 class="text-5xl md:text-6xl font-bold mb-6">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 responsive-heading">
                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 neon-text">
                     Legal
                 </span>
             </h1>
-            <p class="text-xl text-blue-300 mb-8 max-w-3xl mx-auto">
+            <p class="text-lg md:text-xl text-blue-300 mb-6 md:mb-8 max-w-3xl mx-auto responsive-subheading">
                 Review our legal policies and understand your rights and responsibilities
             </p>
             
             <!-- User Status Card (if logged in) -->
-            <div id="user-status-card" class="glass-effect rounded-xl p-4 max-w-md mx-auto mb-8 hidden">
+            <div id="user-status-card" class="glass-effect rounded-xl p-4 max-w-md mx-auto mb-6 md:mb-8 hidden">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 cyber-gradient rounded-full flex items-center justify-center">
@@ -172,25 +258,25 @@
     </header>
 
     <!-- Legal Navigation -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 md:mb-12">
         <div class="glass-effect rounded-2xl p-2 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Legal document sections">
-            <button class="nav-tab px-6 py-3 rounded-xl border border-transparent text-blue-300 hover:text-white hover:border-blue-400 transition active" 
+            <button class="nav-tab px-4 md:px-6 py-2 md:py-3 rounded-xl border border-transparent text-blue-300 hover:text-white hover:border-blue-400 transition active text-sm md:text-base" 
                     data-tab="privacy" role="tab" aria-selected="true" aria-controls="privacy">
                 <i class="fas fa-user-shield mr-2" aria-hidden="true"></i>Privacy Policy
             </button>
-            <button class="nav-tab px-6 py-3 rounded-xl border border-transparent text-blue-300 hover:text-white hover:border-blue-400 transition" 
+            <button class="nav-tab px-4 md:px-6 py-2 md:py-3 rounded-xl border border-transparent text-blue-300 hover:text-white hover:border-blue-400 transition text-sm md:text-base" 
                     data-tab="terms" role="tab" aria-selected="false" aria-controls="terms">
                 <i class="fas fa-file-contract mr-2" aria-hidden="true"></i>Terms of Service
             </button>
-            <button class="nav-tab px-6 py-3 rounded-xl border border-transparent text-blue-300 hover:text-white hover:border-blue-400 transition" 
+            <button class="nav-tab px-4 md:px-6 py-2 md:py-3 rounded-xl border border-transparent text-blue-300 hover:text-white hover:border-blue-400 transition text-sm md:text-base" 
                     data-tab="cookies" role="tab" aria-selected="false" aria-controls="cookies">
                 <i class="fas fa-cookie mr-2" aria-hidden="true"></i>Cookie Policy
             </button>
-            <button class="nav-tab px-6 py-3 rounded-xl border border-transparent text-blue-300 hover:text-white hover:border-blue-400 transition" 
+            <button class="nav-tab px-4 md:px-6 py-2 md:py-3 rounded-xl border border-transparent text-blue-300 hover:text-white hover:border-blue-400 transition text-sm md:text-base" 
                     data-tab="gdpr" role="tab" aria-selected="false" aria-controls="gdpr">
                 <i class="fas fa-shield-alt mr-2" aria-hidden="true"></i>GDPR
             </button>
-            <button class="nav-tab px-6 py-3 rounded-xl border border-transparent text-blue-300 hover:text-white hover:border-blue-400 transition" 
+            <button class="nav-tab px-4 md:px-6 py-2 md:py-3 rounded-xl border border-transparent text-blue-300 hover:text-white hover:border-blue-400 transition text-sm md:text-base" 
                     data-tab="consent" role="tab" aria-selected="false" aria-controls="consent">
                 <i class="fas fa-check-circle mr-2" aria-hidden="true"></i>Consent Manager
             </button>
@@ -198,18 +284,17 @@
     </div>
 
     <!-- Tab Contents -->
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 md:pb-20">
         <!-- Privacy Policy Tab -->
         <section id="privacy" class="tab-content active" role="tabpanel" aria-labelledby="privacy-tab">
-            <div class="glass-effect rounded-2xl p-8 border border-blue-700/50">
-                <h2 class="text-3xl font-bold text-cyan-400 mb-6">Privacy Policy</h2>
-                <p class="text-blue-300 mb-4">Last updated: June 15, 2024</p>
+            <div class="glass-effect rounded-2xl p-4 md:p-8 border border-blue-700/50">
+                <h2 class="text-2xl md:text-3xl font-bold text-cyan-400 mb-4 md:mb-6">Privacy Policy</h2>
+                <p class="text-blue-300 mb-4 text-sm md:text-base">Last updated: June 15, 2024</p>
                 
-                <div class="legal-content text-blue-300 space-y-6">
-                    <!-- Privacy Policy content remains the same as in the original -->
+                <div class="legal-content text-blue-300 space-y-4 md:space-y-6 text-sm md:text-base">
                     <div>
-                        <h3 class="text-xl font-semibold text-purple-400 mb-3">1. Information We Collect</h3>
-                        <p>Uniconnect collects information that identifies, relates to, describes, references, is capable of being associated with, or could reasonably be linked, directly or indirectly, with a particular consumer or device ("personal information"). In particular, we have collected the following categories of personal information from our users within the last twelve (12) months:</p>
+                        <h3 class="text-lg md:text-xl font-semibold text-purple-400 mb-2 md:mb-3">1. Information We Collect</h3>
+                        <p>kynecta collects information that identifies, relates to, describes, references, is capable of being associated with, or could reasonably be linked, directly or indirectly, with a particular consumer or device ("personal information"). In particular, we have collected the following categories of personal information from our users within the last twelve (12) months:</p>
                         <ul class="list-disc list-inside mt-2 space-y-1">
                             <li><strong>Identifiers:</strong> Real name, alias, postal address, unique personal identifier, online identifier, Internet Protocol address, email address, account name, or other similar identifiers.</li>
                             <li><strong>Personal information categories:</strong> Name, signature, Social Security number, physical characteristics or description, address, telephone number, passport number, driver's license or state identification card number, insurance policy number, education, employment, employment history, bank account number, credit card number, debit card number, or any other financial information.</li>
@@ -221,25 +306,61 @@
                         </ul>
                     </div>
 
-                    <!-- Other sections of Privacy Policy -->
-                    <!-- ... -->
+                    <div>
+                        <h3 class="text-lg md:text-xl font-semibold text-purple-400 mb-2 md:mb-3">2. How We Use Your Information</h3>
+                        <p>We use the information we collect for various business purposes, including:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li>Providing, maintaining, and improving our services</li>
+                            <li>Personalizing your experience and delivering content relevant to your interests</li>
+                            <li>Communicating with you about updates, security alerts, and support messages</li>
+                            <li>Detecting, preventing, and addressing technical issues and security vulnerabilities</li>
+                            <li>Complying with legal obligations and enforcing our terms</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg md:text-xl font-semibold text-purple-400 mb-2 md:mb-3">3. Information Sharing and Disclosure</h3>
+                        <p>We do not sell your personal information. We may share your information in the following circumstances:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li>With your consent or at your direction</li>
+                            <li>With service providers who assist in our operations</li>
+                            <li>To comply with legal obligations or protect against legal liability</li>
+                            <li>In connection with a business transfer, such as a merger or acquisition</li>
+                            <li>To protect the rights, property, or safety of kynecta, our users, or the public</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Terms of Service Tab -->
         <section id="terms" class="tab-content" role="tabpanel" aria-labelledby="terms-tab" hidden>
-            <div class="glass-effect rounded-2xl p-8 border border-blue-700/50">
-                <h2 class="text-3xl font-bold text-purple-400 mb-6">Terms of Service</h2>
-                <p class="text-blue-300 mb-4">Last updated: June 15, 2024</p>
+            <div class="glass-effect rounded-2xl p-4 md:p-8 border border-blue-700/50">
+                <h2 class="text-2xl md:text-3xl font-bold text-purple-400 mb-4 md:mb-6">Terms of Service</h2>
+                <p class="text-blue-300 mb-4 text-sm md:text-base">Last updated: June 15, 2024</p>
                 
-                <div class="legal-content text-blue-300 space-y-6">
-                    <!-- Terms of Service content remains the same as in the original -->
+                <div class="legal-content text-blue-300 space-y-4 md:space-y-6 text-sm md:text-base">
                     <div>
-                        <h3 class="text-xl font-semibold text-cyan-400 mb-3">1. Agreement to Terms</h3>
-                        <p>These Terms of Service constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you") and Uniconnect Inc. ("Company," "we," "us," or "our"), concerning your access to and use of the uniconnect.com website as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "Site").</p>
+                        <h3 class="text-lg md:text-xl font-semibold text-cyan-400 mb-2 md:mb-3">1. Agreement to Terms</h3>
+                        <p>These Terms of Service constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you") and kynecta Inc. ("Company," "we," "us," or "our"), concerning your access to and use of the kynecta.com website as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "Site").</p>
                         <p>You agree that by accessing the Site, you have read, understood, and agree to be bound by all of these Terms of Service. If you do not agree with all of these Terms of Service, then you are expressly prohibited from using the Site and you must discontinue use immediately.</p>
-                        <!-- ... -->
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg md:text-xl font-semibold text-cyan-400 mb-2 md:mb-3">2. User Responsibilities</h3>
+                        <p>As a user of kynecta, you agree to:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li>Provide accurate and complete registration information</li>
+                            <li>Maintain the security of your account credentials</li>
+                            <li>Use the service in compliance with all applicable laws</li>
+                            <li>Respect the rights and privacy of other users</li>
+                            <li>Not engage in any activity that disrupts or interferes with our services</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg md:text-xl font-semibold text-cyan-400 mb-2 md:mb-3">3. Intellectual Property</h3>
+                        <p>The kynecta platform, including its original content, features, and functionality, is owned by kynecta Inc. and is protected by international copyright, trademark, patent, trade secret, and other intellectual property or proprietary rights laws.</p>
                     </div>
                 </div>
             </div>
@@ -247,16 +368,30 @@
 
         <!-- Cookie Policy Tab -->
         <section id="cookies" class="tab-content" role="tabpanel" aria-labelledby="cookies-tab" hidden>
-            <div class="glass-effect rounded-2xl p-8 border border-blue-700/50">
-                <h2 class="text-3xl font-bold text-blue-400 mb-6">Cookie Policy</h2>
-                <p class="text-blue-300 mb-4">Last updated: June 15, 2024</p>
+            <div class="glass-effect rounded-2xl p-4 md:p-8 border border-blue-700/50">
+                <h2 class="text-2xl md:text-3xl font-bold text-blue-400 mb-4 md:mb-6">Cookie Policy</h2>
+                <p class="text-blue-300 mb-4 text-sm md:text-base">Last updated: June 15, 2024</p>
                 
-                <div class="legal-content text-blue-300 space-y-6">
-                    <!-- Cookie Policy content remains the same as in the original -->
+                <div class="legal-content text-blue-300 space-y-4 md:space-y-6 text-sm md:text-base">
                     <div>
-                        <h3 class="text-xl font-semibold text-cyan-400 mb-3">1. What Are Cookies</h3>
+                        <h3 class="text-lg md:text-xl font-semibold text-cyan-400 mb-2 md:mb-3">1. What Are Cookies</h3>
                         <p>Cookies are small text files that are placed on your computer or mobile device when you visit our Site. They are widely used to make websites work more efficiently, as well as to provide information to the owners of the site.</p>
-                        <!-- ... -->
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg md:text-xl font-semibold text-cyan-400 mb-2 md:mb-3">2. How We Use Cookies</h3>
+                        <p>kynecta uses cookies for several purposes:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>Essential Cookies:</strong> Required for the website to function properly</li>
+                            <li><strong>Performance Cookies:</strong> Help us understand how visitors interact with our website</li>
+                            <li><strong>Functionality Cookies:</strong> Enable enhanced functionality and personalization</li>
+                            <li><strong>Targeting Cookies:</strong> Used to deliver relevant advertisements</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg md:text-xl font-semibold text-cyan-400 mb-2 md:mb-3">3. Managing Cookies</h3>
+                        <p>You can control and/or delete cookies as you wish. You can delete all cookies that are already on your computer and you can set most browsers to prevent them from being placed. However, if you do this, you may have to manually adjust some preferences every time you visit a site and some services and functionalities may not work.</p>
                     </div>
                 </div>
             </div>
@@ -264,16 +399,32 @@
 
         <!-- GDPR Tab -->
         <section id="gdpr" class="tab-content" role="tabpanel" aria-labelledby="gdpr-tab" hidden>
-            <div class="glass-effect rounded-2xl p-8 border border-blue-700/50">
-                <h2 class="text-3xl font-bold text-cyan-400 mb-6">GDPR Compliance</h2>
-                <p class="text-blue-300 mb-4">Last updated: June 15, 2024</p>
+            <div class="glass-effect rounded-2xl p-4 md:p-8 border border-blue-700/50">
+                <h2 class="text-2xl md:text-3xl font-bold text-cyan-400 mb-4 md:mb-6">GDPR Compliance</h2>
+                <p class="text-blue-300 mb-4 text-sm md:text-base">Last updated: June 15, 2024</p>
                 
-                <div class="legal-content text-blue-300 space-y-6">
-                    <!-- GDPR content remains the same as in the original -->
+                <div class="legal-content text-blue-300 space-y-4 md:space-y-6 text-sm md:text-base">
                     <div>
-                        <h3 class="text-xl font-semibold text-purple-400 mb-3">1. Our Commitment</h3>
-                        <p>Uniconnect is fully committed to complying with the General Data Protection Regulation (GDPR) (Regulation (EU) 2016/679). We recognize the importance of the data protection regulations and have implemented comprehensive measures to ensure we meet the requirements of GDPR.</p>
-                        <!-- ... -->
+                        <h3 class="text-lg md:text-xl font-semibold text-purple-400 mb-2 md:mb-3">1. Our Commitment</h3>
+                        <p>kynecta is fully committed to complying with the General Data Protection Regulation (GDPR) (Regulation (EU) 2016/679). We recognize the importance of the data protection regulations and have implemented comprehensive measures to ensure we meet the requirements of GDPR.</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg md:text-xl font-semibold text-purple-400 mb-2 md:mb-3">2. Your Rights Under GDPR</h3>
+                        <p>Under GDPR, you have the following rights regarding your personal data:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li><strong>Right to Access:</strong> You can request copies of your personal data.</li>
+                            <li><strong>Right to Rectification:</strong> You can request that we correct any information you believe is inaccurate.</li>
+                            <li><strong>Right to Erasure:</strong> You can request that we erase your personal data, under certain conditions.</li>
+                            <li><strong>Right to Restrict Processing:</strong> You can request that we restrict the processing of your personal data.</li>
+                            <li><strong>Right to Data Portability:</strong> You can request that we transfer the data we have collected to another organization.</li>
+                            <li><strong>Right to Object:</strong> You can object to our processing of your personal data.</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg md:text-xl font-semibold text-purple-400 mb-2 md:mb-3">3. Data Protection Officer</h3>
+                        <p>kynecta has appointed a Data Protection Officer (DPO) to oversee compliance with this policy. If you have any questions about this Privacy Policy or how we handle your personal information, please contact our DPO at dpo@kynecta.com.</p>
                     </div>
                 </div>
             </div>
@@ -281,13 +432,13 @@
 
         <!-- Consent Manager Tab -->
         <section id="consent" class="tab-content" role="tabpanel" aria-labelledby="consent-tab" hidden>
-            <div class="glass-effect rounded-2xl p-8 border border-blue-700/50">
-                <h2 class="text-3xl font-bold text-purple-400 mb-6">Consent Manager</h2>
-                <p class="text-blue-300 mb-4">Manage your privacy preferences and data consent settings</p>
+            <div class="glass-effect rounded-2xl p-4 md:p-8 border border-blue-700/50">
+                <h2 class="text-2xl md:text-3xl font-bold text-purple-400 mb-4 md:mb-6">Consent Manager</h2>
+                <p class="text-blue-300 mb-4 text-sm md:text-base">Manage your privacy preferences and data consent settings</p>
                 
-                <div class="legal-content text-blue-300 space-y-6">
+                <div class="legal-content text-blue-300 space-y-4 md:space-y-6 text-sm md:text-base">
                     <div class="bg-blue-900/30 rounded-xl p-4">
-                        <h3 class="text-xl font-semibold text-cyan-400 mb-3">Your Current Consent Status</h3>
+                        <h3 class="text-lg md:text-xl font-semibold text-cyan-400 mb-3">Your Current Consent Status</h3>
                         <div id="consent-status" class="space-y-4">
                             <div class="flex items-center justify-between">
                                 <div>
@@ -326,7 +477,7 @@
                     </div>
 
                     <div>
-                        <h3 class="text-xl font-semibold text-blue-400 mb-3">Data Rights Requests</h3>
+                        <h3 class="text-lg md:text-xl font-semibold text-blue-400 mb-3">Data Rights Requests</h3>
                         <p>Under data protection laws, you have rights regarding your personal data. You can submit requests to exercise these rights:</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <button id="data-export-btn" class="glass-effect p-4 rounded-xl text-left hover:bg-blue-800/30 transition">
@@ -343,7 +494,7 @@
                     </div>
 
                     <div>
-                        <h3 class="text-xl font-semibold text-cyan-400 mb-3">Consent History</h3>
+                        <h3 class="text-lg md:text-xl font-semibold text-cyan-400 mb-3">Consent History</h3>
                         <div id="consent-history" class="bg-blue-900/30 rounded-xl p-4">
                             <p class="text-blue-300 text-center">Your consent history will appear here once you make changes</p>
                         </div>
@@ -354,20 +505,20 @@
     </main>
 
     <!-- Footer -->
-    <footer class="glass-effect border-t border-blue-800/50 py-12">
+    <footer class="glass-effect border-t border-blue-800/50 py-8 md:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
                 <div class="col-span-1">
                     <div class="flex items-center space-x-3 mb-4">
                         <div class="w-10 h-10 cyber-gradient rounded-lg flex items-center justify-center">
-                            <i class="fas fa-id-card-alt text-white" aria-hidden="true"></i>
+                            <i class="fas fa-globe-americas text-white" aria-hidden="true"></i>
                         </div>
                         <span class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                            Uniconnect ID
+                            kynecta
                         </span>
                     </div>
                     <p class="text-blue-300 text-sm">
-                        Your universal identity for the digital world. Secure, private, and always under your control.
+                        Connect globally, create together. Your universal identity for the digital world.
                     </p>
                 </div>
                 
@@ -377,7 +528,6 @@
                         <li><a href="index.html#features" class="text-blue-300 hover:text-white transition text-sm">Features</a></li>
                         <li><a href="index.html#security" class="text-blue-300 hover:text-white transition text-sm">Security</a></li>
                         <li><a href="platform.html" class="text-blue-300 hover:text-white transition text-sm">Platform</a></li>
-                        <li><a href="pricing.html" class="text-blue-300 hover:text-white transition text-sm">Pricing</a></li>
                     </ul>
                 </div>
                 
@@ -410,80 +560,66 @@
                 </div>
             </div>
             
-            <div class="border-t border-blue-800/50 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <div class="border-t border-blue-800/50 mt-6 md:mt-8 pt-6 md:pt-8 flex flex-col md:flex-row justify-between items-center">
                 <p class="text-blue-300 text-sm mb-4 md:mb-0">
-                    © 2024 Uniconnect Inc. All rights reserved.
+                    © 2024 kynecta Inc. All rights reserved.
                 </p>
-                <div class="flex space-x-6">
-                    <a href="privacy.html" class="text-blue-300 hover:text-white transition text-sm">Privacy</a>
-                    <a href="terms.html" class="text-blue-300 hover:text-white transition text-sm">Terms</a>
-                    <a href="cookies.html" class="text-blue-300 hover:text-white transition text-sm">Cookies</a>
+                <div class="flex space-x-4 md:space-x-6">
+                    <a href="legal.html#privacy" class="text-blue-300 hover:text-white transition text-sm">Privacy</a>
+                    <a href="legal.html#terms" class="text-blue-300 hover:text-white transition text-sm">Terms</a>
+                    <a href="legal.html#cookies" class="text-blue-300 hover:text-white transition text-sm">Cookies</a>
                 </div>
             </div>
         </div>
     </footer>
 
     <script>
-        // Firebase configuration - Replace with your actual Firebase project config
+        // Firebase configuration
         const firebaseConfig = {
-            apiKey: "YOUR_ACTUAL_API_KEY",
-            authDomain: "your-project.firebaseapp.com",
-            projectId: "your-actual-project-id",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "your-actual-app-id"
+            apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
+            authDomain: "uniconnect-ee95c.firebaseapp.com",
+            projectId: "uniconnect-ee95c",
+            storageBucket: "uniconnect-ee95c.firebasestorage.app",
+            messagingSenderId: "1003264444309",
+            appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
         };
 
         // Initialize Firebase
-        let analytics;
         let db;
         let auth;
         
         try {
             firebase.initializeApp(firebaseConfig);
-            analytics = firebase.analytics();
             db = firebase.firestore();
             auth = firebase.auth();
             
             console.log("✅ Firebase initialized successfully");
-            console.log("📊 Analytics ready");
             console.log("🗄️ Firestore ready");
             console.log("🔐 Auth ready");
-            
-            // Clear any cached data
-            localStorage.removeItem('demo_user_data');
-            sessionStorage.clear();
-            
-            // Log page view to analytics
-            analytics.logEvent('page_view', {
-                page_title: 'Legal Page',
-                page_location: window.location.href
-            });
-            
-            console.log("📈 Page view logged to Firebase Analytics");
             
         } catch (error) {
             console.error("❌ Firebase initialization error:", error);
         }
 
-        // Tab functionality
+        // Mobile menu functionality
         document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobileMenuButton');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const closeMobileMenu = document.getElementById('closeMobileMenu');
+            
+            if (mobileMenuButton && mobileMenu && closeMobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    mobileMenu.classList.add('open');
+                });
+                
+                closeMobileMenu.addEventListener('click', function() {
+                    mobileMenu.classList.remove('open');
+                });
+            }
+            
+            // Tab functionality
             const tabs = document.querySelectorAll('.nav-tab');
             const tabContents = document.querySelectorAll('.tab-content');
-            
-            // Track tab views in Firebase
-            function trackTabView(tabName) {
-                if (analytics) {
-                    analytics.logEvent('legal_tab_view', {
-                        tab_name: tabName,
-                        timestamp: new Date().toISOString()
-                    });
-                    console.log(`📊 Tab view tracked: ${tabName}`);
-                }
-                
-                // Also log to console for debugging
-                console.log(`🔍 User viewed: ${tabName}`);
-            }
             
             tabs.forEach(tab => {
                 tab.addEventListener('click', function() {
@@ -506,15 +642,8 @@
                     const activeContent = document.getElementById(target);
                     activeContent.classList.add('active');
                     activeContent.removeAttribute('hidden');
-                    
-                    // Track the tab view
-                    trackTabView(target);
                 });
             });
-            
-            // Track initial tab view
-            const initialTab = document.querySelector('.nav-tab.active').getAttribute('data-tab');
-            trackTabView(initialTab);
             
             // Keyboard navigation for tabs
             document.addEventListener('keydown', function(e) {
@@ -535,60 +664,13 @@
                 }
             });
 
-            // Track scroll depth
-            let scrollDepthTracked = false;
-            window.addEventListener('scroll', function() {
-                const scrollPosition = window.scrollY;
-                const pageHeight = document.documentElement.scrollHeight - window.innerHeight;
-                const scrollPercentage = Math.round((scrollPosition / pageHeight) * 100);
-                
-                if (scrollPercentage > 50 && !scrollDepthTracked) {
-                    if (analytics) {
-                        analytics.logEvent('scroll_depth', {
-                            depth: '50%',
-                            page: 'legal'
-                        });
-                        console.log("📊 Scroll depth tracked: 50%");
-                    }
-                    scrollDepthTracked = true;
-                }
-            });
-
-            // Track time on page
-            let startTime = new Date();
-            window.addEventListener('beforeunload', function() {
-                const endTime = new Date();
-                const timeSpent = Math.round((endTime - startTime) / 1000); // in seconds
-                
-                if (analytics) {
-                    analytics.logEvent('time_on_page', {
-                        duration_seconds: timeSpent,
-                        page: 'legal'
-                    });
-                    console.log(`📊 Time on page tracked: ${timeSpent} seconds`);
-                }
-            });
-
-            // Track external link clicks
-            document.querySelectorAll('a[href^="http"]').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    if (analytics) {
-                        analytics.logEvent('external_link_click', {
-                            link_url: this.href,
-                            link_text: this.textContent
-                        });
-                        console.log(`🔗 External link click tracked: ${this.href}`);
-                    }
-                });
-            });
-
             // Initialize authentication state
             initializeAuth();
 
             // Initialize consent manager
             initializeConsentManager();
 
-            console.log("🚀 Legal page tracking initialized successfully");
+            console.log("🚀 Legal page initialized successfully");
         });
 
         // Authentication functions
@@ -601,6 +683,7 @@
             // Check authentication state
             auth.onAuthStateChanged(function(user) {
                 const authButtons = document.getElementById('auth-buttons');
+                const mobileAuthButtons = document.getElementById('mobileAuthButtons');
                 const userStatusCard = document.getElementById('user-status-card');
                 
                 if (user) {
@@ -612,38 +695,48 @@
                     document.getElementById('user-email').textContent = user.email;
                     userStatusCard.classList.remove('hidden');
                     
-                    // Update auth buttons
+                    // Update desktop auth buttons
                     authButtons.innerHTML = `
                         <div class="flex items-center space-x-4">
-                            <a href="dashboard.html" class="glass-effect px-6 py-2 rounded-lg border border-blue-700 text-blue-300 hover:text-white hover:border-blue-400 transition">
+                            <a href="dashboard.html" class="glass-effect px-4 md:px-6 py-2 rounded-lg border border-blue-700 text-blue-300 hover:text-white hover:border-blue-400 transition text-sm md:text-base">
                                 Dashboard
                             </a>
-                            <button id="logout-btn" class="cyber-gradient px-6 py-2 rounded-lg text-white hover:scale-105 transition quantum-glow">
+                            <button id="logout-btn" class="cyber-gradient px-4 md:px-6 py-2 rounded-lg text-white hover:scale-105 transition quantum-glow text-sm md:text-base">
+                                Logout
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Update mobile auth buttons
+                    mobileAuthButtons.innerHTML = `
+                        <div class="space-y-4">
+                            <a href="dashboard.html" class="block w-full cyber-gradient py-3 rounded-lg text-white text-center hover:scale-105 transition quantum-glow">
+                                Dashboard
+                            </a>
+                            <button id="mobile-logout-btn" class="block w-full glass-effect py-3 rounded-lg border border-blue-700 text-blue-300 text-center hover:text-white hover:border-blue-400 transition">
                                 Logout
                             </button>
                         </div>
                     `;
                     
                     // Add logout functionality
-                    document.getElementById('logout-btn').addEventListener('click', function() {
+                    document.getElementById('logout-btn')?.addEventListener('click', function() {
                         auth.signOut().then(() => {
                             console.log("✅ User signed out successfully");
-                            // Clear any cached user data
-                            localStorage.removeItem('user_data');
-                            sessionStorage.clear();
                             location.reload();
                         }).catch((error) => {
                             console.error("❌ Error signing out:", error);
                         });
                     });
                     
-                    // Track user viewing legal docs
-                    if (analytics) {
-                        analytics.logEvent('legal_docs_viewed', {
-                            user_id: user.uid,
-                            user_email: user.email
+                    document.getElementById('mobile-logout-btn')?.addEventListener('click', function() {
+                        auth.signOut().then(() => {
+                            console.log("✅ User signed out successfully");
+                            location.reload();
+                        }).catch((error) => {
+                            console.error("❌ Error signing out:", error);
                         });
-                    }
+                    });
                     
                 } else {
                     // User is signed out
@@ -652,13 +745,25 @@
                     // Hide user status card
                     userStatusCard.classList.add('hidden');
                     
-                    // Show sign in/register buttons
+                    // Show desktop sign in/register buttons
                     authButtons.innerHTML = `
                         <div class="flex items-center space-x-4">
-                            <a href="login.html" class="glass-effect px-6 py-2 rounded-lg border border-blue-700 text-blue-300 hover:text-white hover:border-blue-400 transition">
+                            <a href="index.html#login" class="glass-effect px-4 md:px-6 py-2 rounded-lg border border-blue-700 text-blue-300 hover:text-white hover:border-blue-400 transition text-sm md:text-base">
                                 Sign In
                             </a>
-                            <a href="register.html" class="cyber-gradient px-6 py-2 rounded-lg text-white hover:scale-105 transition quantum-glow">
+                            <a href="index.html#register" class="cyber-gradient px-4 md:px-6 py-2 rounded-lg text-white hover:scale-105 transition quantum-glow text-sm md:text-base">
+                                Register
+                            </a>
+                        </div>
+                    `;
+                    
+                    // Show mobile sign in/register buttons
+                    mobileAuthButtons.innerHTML = `
+                        <div class="space-y-4">
+                            <a href="index.html#login" class="block w-full cyber-gradient py-3 rounded-lg text-white text-center hover:scale-105 transition quantum-glow">
+                                Sign In
+                            </a>
+                            <a href="index.html#register" class="block w-full glass-effect py-3 rounded-lg border border-blue-700 text-blue-300 text-center hover:text-white hover:border-blue-400 transition">
                                 Register
                             </a>
                         </div>
@@ -673,20 +778,20 @@
             loadConsentPreferences();
             
             // Set up toggle functionality
-            document.getElementById('analytics-toggle').addEventListener('click', function() {
+            document.getElementById('analytics-toggle')?.addEventListener('click', function() {
                 toggleConsent('analytics');
             });
             
-            document.getElementById('marketing-toggle').addEventListener('click', function() {
+            document.getElementById('marketing-toggle')?.addEventListener('click', function() {
                 toggleConsent('marketing');
             });
             
             // Set up data rights buttons
-            document.getElementById('data-export-btn').addEventListener('click', function() {
+            document.getElementById('data-export-btn')?.addEventListener('click', function() {
                 requestDataExport();
             });
             
-            document.getElementById('data-delete-btn').addEventListener('click', function() {
+            document.getElementById('data-delete-btn')?.addEventListener('click', function() {
                 requestDataDeletion();
             });
         }
@@ -709,14 +814,6 @@
             
             // Update UI
             updateToggleUI(type, newState);
-            
-            // Track consent change
-            if (analytics) {
-                analytics.logEvent('consent_updated', {
-                    consent_type: type,
-                    new_state: newState
-                });
-            }
             
             // Add to consent history
             addConsentHistory(type, newState);
@@ -772,10 +869,6 @@
             // In a real implementation, this would call your backend
             console.log("📥 Data export requested");
             
-            if (analytics) {
-                analytics.logEvent('data_export_requested');
-            }
-            
             // Show confirmation
             alert('Your data export request has been received. We will process it within 30 days as required by GDPR.');
         }
@@ -784,76 +877,12 @@
             // In a real implementation, this would call your backend
             console.log("🗑️ Data deletion requested");
             
-            if (analytics) {
-                analytics.logEvent('data_deletion_requested');
-            }
-            
             // Show confirmation
             const confirmed = confirm('Are you sure you want to request deletion of your personal data? This action cannot be undone.');
             if (confirmed) {
                 alert('Your data deletion request has been received. We will process it within 30 days as required by GDPR.');
             }
         }
-
-        // Print functionality
-        document.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-                e.preventDefault();
-                const activeTab = document.querySelector('.tab-content.active');
-                const printContent = activeTab.innerHTML;
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>Uniconnect Legal - ${activeTab.querySelector('h2').textContent}</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
-                            h2 { color: #3B82F6; border-bottom: 2px solid #3B82F6; padding-bottom: 10px; }
-                            h3 { color: #8B5CF6; margin-top: 20px; }
-                            .legal-content { max-height: none; overflow: visible; }
-                        </style>
-                    </head>
-                    <body>
-                        <h1>Uniconnect</h1>
-                        ${printContent}
-                        <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 0.8em; color: #666;">
-                            Printed from Uniconnect Legal on ${new Date().toLocaleDateString()}
-                        </footer>
-                    </body>
-                    </html>
-                `);
-                printWindow.document.close();
-                printWindow.print();
-            }
-        });
-
-        // Error tracking
-        window.addEventListener('error', function(e) {
-            if (analytics) {
-                analytics.logEvent('javascript_error', {
-                    error_message: e.message,
-                    error_file: e.filename,
-                    error_line: e.lineno,
-                    error_column: e.colno
-                });
-            }
-            console.error("❌ JavaScript error tracked:", e.error);
-        });
-
-        // Performance monitoring
-        window.addEventListener('load', function() {
-            if (analytics && 'performance' in window) {
-                const navigationTiming = performance.getEntriesByType('navigation')[0];
-                if (navigationTiming) {
-                    analytics.logEvent('page_performance', {
-                        dom_content_loaded: Math.round(navigationTiming.domContentLoadedEventEnd - navigationTiming.navigationStart),
-                        page_load: Math.round(navigationTiming.loadEventEnd - navigationTiming.navigationStart)
-                    });
-                    console.log("📊 Page performance tracked");
-                }
-            }
-        });
     </script>
 </body>
 </html>

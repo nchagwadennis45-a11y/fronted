@@ -2,11 +2,10 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Kynecta - Enhanced Social Feed</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="responsive.css">
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -179,20 +178,6 @@
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: var(--accent-color);
             border-radius: 10px;
-        }
-
-        /* Media Queries for Responsive Design */
-        @media (max-width: 768px) {
-            .masonry-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .floating-create-btn {
-                bottom: 20px;
-                right: 20px;
-                width: 50px;
-                height: 50px;
-            }
         }
 
         /* Loading Animation */
@@ -743,6 +728,17 @@
 
         /* Mobile Responsiveness */
         @media (max-width: 768px) {
+            .masonry-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .floating-create-btn {
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+            }
+
             .mood-filter-container {
                 flex-wrap: wrap;
                 justify-content: center;
@@ -778,7 +774,7 @@
         }
     </style>
 </head>
-<body class="h-full dark-theme">
+<body class="h-full dark-theme overflow-x-hidden">
     <!-- Connection Status -->
     <div class="connection-status connecting" id="connectionStatus">
         <i class="fas fa-circle-notch fa-spin mr-2"></i>
@@ -811,9 +807,16 @@
         </div>
     </div>
 
+    <!-- Mobile Navigation Toggle -->
+    <div class="lg:hidden fixed top-4 left-4 z-50">
+        <button id="mobileNavToggle" class="w-10 h-10 glass rounded-2xl flex items-center justify-center text-theme-secondary hover:text-theme-accent">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
     <div class="flex h-full" style="height: 100vh;">
         <!-- Navigation Sidebar -->
-        <div class="w-20 lg:w-64 glass border-r border-purple-800 flex flex-col">
+        <div id="sidebar" class="w-20 lg:w-64 glass border-r border-purple-800 flex flex-col fixed lg:relative h-full z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
             <div class="p-4">
                 <a href="#" class="flex items-center space-x-3">
                     <div class="w-10 h-10 rounded-2xl flex items-center justify-center" style="background: var(--accent-color);">
@@ -881,9 +884,9 @@
         </div>
 
         <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex-1 flex flex-col overflow-hidden w-full lg:w-auto">
             <!-- Header -->
-            <header class="glass border-b border-purple-800 px-6 py-4">
+            <header class="glass border-b border-purple-800 px-4 md:px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div class="flex-1 max-w-2xl relative">
                         <div class="relative">
@@ -895,7 +898,7 @@
                             <!-- Search results will appear here -->
                         </div>
                     </div>
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-4 ml-4">
                         <button id="themeToggle" class="w-10 h-10 glass rounded-2xl flex items-center justify-center text-theme-secondary hover:text-theme-accent hover:scale-110 transition">
                             <i class="fas fa-palette"></i>
                         </button>
@@ -996,7 +999,7 @@
 
             <!-- Main Feed -->
             <main class="flex-1 overflow-y-auto bg-gradient-to-b from-purple-900/20 to-gray-900/50 custom-scrollbar">
-                <div class="max-w-7xl mx-auto p-4">
+                <div class="container mx-auto px-4 py-4">
                     <!-- NEW FEATURE: AI Content Suggestions -->
                     <div class="ai-content-suggestions glass mb-6">
                         <h3 class="font-bold text-theme-accent mb-3 flex items-center">
@@ -1035,8 +1038,8 @@
         </div>
 
         <!-- Right Sidebar -->
-        <div class="hidden lg:block w-80 glass border-l border-purple-800 overflow-y-auto custom-scrollbar">
-            <div class="p-6">
+        <div id="rightSidebar" class="hidden lg:block w-80 glass border-l border-purple-800 overflow-y-auto custom-scrollbar">
+            <div class="p-4 md:p-6">
                 <!-- User Profile Card -->
                 <div class="glass border border-purple-700 rounded-2xl p-4 mb-6">
                     <div class="flex items-center space-x-3 mb-4">
@@ -1244,7 +1247,7 @@
                     </div>
                 </div>
                 
-                <div class="flex space-x-4 text-theme-secondary justify-center">
+                <div class="flex flex-wrap gap-4 text-theme-secondary justify-center">
                     <button id="modalAddPhoto" class="flex items-center space-x-2 hover:text-theme-accent transition">
                         <i class="fas fa-image"></i>
                         <span>Photo</span>
@@ -1295,12 +1298,12 @@
     <input type="file" id="modalAudioInput" accept="audio/*" class="hidden">
 
     <script>
-        // Firebase Configuration for Kynecta
+        // Firebase Configuration for Kynecta - Using the same config as index.html
         const firebaseConfig = {
             apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
-            authDomain: "kynecta-social.firebaseapp.com",
-            projectId: "kynecta-social",
-            storageBucket: "kynecta-social.firebasestorage.app",
+            authDomain: "uniconnect-ee95c.firebaseapp.com",
+            projectId: "uniconnect-ee95c",
+            storageBucket: "uniconnect-ee95c.firebasestorage.app",
             messagingSenderId: "1003264444309",
             appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
         };
@@ -1391,6 +1394,11 @@
         // NEW FEATURE: Anti-toxicity Filter
         const toxicityWarning = document.getElementById('toxicityWarning');
 
+        // Mobile Navigation Elements
+        const mobileNavToggle = document.getElementById('mobileNavToggle');
+        const sidebar = document.getElementById('sidebar');
+        const rightSidebar = document.getElementById('rightSidebar');
+
         // Initialize the application
         function init() {
             // Set up Firebase authentication state observer
@@ -1410,11 +1418,9 @@
                     // NEW: Initialize new features
                     initializeNewFeatures();
                 } else {
-                    // User is signed out - redirect to your dashboard
-                    // Since you have a separate dashboard for signing in
-                    // You can redirect or handle this as needed
-                    console.log('User not signed in, redirecting to dashboard...');
-                    // window.location.href = 'your-dashboard-url.html'; // Uncomment if you want automatic redirect
+                    // User is signed out - redirect to index page
+                    console.log('User not signed in, redirecting to index...');
+                    window.location.href = 'index.html';
                 }
             });
 
@@ -1627,6 +1633,14 @@
             
             // NEW FEATURE: Anti-toxicity filter
             modalPostInput.addEventListener('input', checkToxicity);
+            
+            // Mobile Navigation
+            mobileNavToggle.addEventListener('click', toggleMobileNav);
+        }
+
+        // Toggle mobile navigation
+        function toggleMobileNav() {
+            sidebar.classList.toggle('-translate-x-full');
         }
 
         // NEW: Refresh AI content suggestions
@@ -1771,8 +1785,8 @@
             auth.signOut()
                 .then(() => {
                     console.log('User signed out');
-                    // Redirect to your dashboard or login page
-                    // window.location.href = 'your-dashboard-url.html';
+                    // Redirect to index page
+                    window.location.href = 'index.html';
                 })
                 .catch((error) => {
                     console.error('Sign out error:', error);

@@ -1,5 +1,11 @@
-/* responsive.css - Universal Kynecta Responsive Design */
+/* responsive.css - Enhanced Universal Kynecta Responsive Design */
 /* Mobile First Approach - Works for ALL pages */
+
+/* ===== VIEWPORT META TAG (IMPORTANT - MUST BE IN HTML HEAD) ===== */
+/*
+  Add this to ALL HTML files in the <head> section:
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+*/
 
 /* ===== RESET & BASE STYLES ===== */
 * {
@@ -26,6 +32,45 @@ body {
   line-height: 1.5;
 }
 
+/* ===== RESPONSIVE CONTAINER SYSTEM ===== */
+.responsive-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .responsive-container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .responsive-container {
+    max-width: 1536px;
+  }
+}
+
 /* ===== UNIVERSAL UTILITY CLASSES ===== */
 .mobile-only { display: none !important; }
 .desktop-only { display: block !important; }
@@ -45,11 +90,140 @@ body {
 .full-height { height: 100% !important; }
 .text-center-mobile { text-align: center !important; }
 
+/* ===== RESPONSIVE SPACING UTILITIES ===== */
+.p-4 { padding: 1rem !important; }
+.p-8 { padding: 2rem !important; }
+
+@media (min-width: 768px) {
+  .md\:p-4 { padding: 1rem !important; }
+  .md\:p-8 { padding: 2rem !important; }
+}
+
+/* ===== RESPONSIVE TYPOGRAPHY ===== */
+.text-base { font-size: 1rem !important; }
+.text-lg { font-size: 1.125rem !important; }
+.text-xl { font-size: 1.25rem !important; }
+.text-2xl { font-size: 1.5rem !important; }
+
+@media (min-width: 768px) {
+  .md\:text-base { font-size: 1rem !important; }
+  .md\:text-lg { font-size: 1.125rem !important; }
+  .md\:text-xl { font-size: 1.25rem !important; }
+  .md\:text-2xl { font-size: 1.5rem !important; }
+}
+
 /* ===== UNIVERSAL LAYOUT CONTAINERS ===== */
 .app-container, .page-container, .main-container {
   width: 100vw !important;
   min-height: 100vh !important;
   position: relative !important;
+  overflow-x: hidden !important;
+}
+
+/* ===== RESPONSIVE SIDEBAR SYSTEM ===== */
+.sidebar, .desktop-sidebar {
+  display: none !important;
+  width: 250px !important;
+  height: 100vh !important;
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  background: rgba(30, 30, 60, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  border-right: 1px solid rgba(59, 130, 246, 0.3) !important;
+  z-index: 90 !important;
+  padding: 1rem !important;
+  overflow-y: auto !important;
+}
+
+@media (min-width: 1024px) {
+  .sidebar, .desktop-sidebar {
+    display: block !important;
+  }
+  
+  .sidebar-hidden {
+    display: none !important;
+  }
+}
+
+/* ===== RESPONSIVE NAVIGATION ===== */
+/* Mobile Hamburger Menu */
+.hamburger-menu {
+  display: block !important;
+  position: fixed !important;
+  top: 1rem !important;
+  left: 1rem !important;
+  z-index: 1001 !important;
+  background: rgba(30, 30, 60, 0.9) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  border-radius: 8px !important;
+  width: 44px !important;
+  height: 44px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  cursor: pointer !important;
+}
+
+.hamburger-line {
+  width: 20px !important;
+  height: 2px !important;
+  background: white !important;
+  margin: 2px 0 !important;
+  transition: all 0.3s ease !important;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px) !important;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(2) {
+  opacity: 0 !important;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px) !important;
+}
+
+/* Mobile Sidebar Menu */
+.mobile-sidebar {
+  position: fixed !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 80% !important;
+  max-width: 300px !important;
+  height: 100vh !important;
+  background: rgba(30, 30, 60, 0.98) !important;
+  backdrop-filter: blur(30px) !important;
+  border-right: 1px solid rgba(59, 130, 246, 0.3) !important;
+  z-index: 1000 !important;
+  padding: 1rem !important;
+  transition: left 0.3s ease !important;
+  overflow-y: auto !important;
+}
+
+.mobile-sidebar.active {
+  left: 0 !important;
+}
+
+.mobile-sidebar-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(5px) !important;
+  z-index: 999 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: all 0.3s ease !important;
+}
+
+.mobile-sidebar-overlay.active {
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* ===== UNIVERSAL HEADER ===== */
@@ -113,6 +287,62 @@ header, .page-header, .app-header {
   overflow-y: auto !important;
 }
 
+/* ===== RESPONSIVE FLEX & GRID LAYOUTS ===== */
+.flex-responsive {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.grid-responsive {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 1rem !important;
+  width: 100% !important;
+}
+
+@media (min-width: 768px) {
+  .md\:flex-row {
+    flex-direction: row !important;
+  }
+  
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+/* ===== RESPONSIVE IMAGES & MEDIA ===== */
+.responsive-img, .card-image, .game-image, .product-image {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: cover !important;
+  border-radius: 12px !important;
+  margin-bottom: 1rem !important;
+}
+
+/* Special case for card images that need fixed height on larger screens */
+@media (min-width: 768px) {
+  .card-image, .game-image, .product-image {
+    height: 200px !important;
+  }
+}
+
+.responsive-video {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
 /* ===== CARD COMPONENTS (Marketplace, Feed, Games) ===== */
 .card, .game-card, .product-card, .feed-card {
   width: 100% !important;
@@ -122,14 +352,6 @@ header, .page-header, .app-header {
   margin-bottom: 1rem !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   backdrop-filter: blur(10px) !important;
-}
-
-.card-image, .game-image, .product-image {
-  width: 100% !important;
-  height: 200px !important;
-  object-fit: cover !important;
-  border-radius: 12px !important;
-  margin-bottom: 1rem !important;
 }
 
 .card-title, .game-title, .product-title {
@@ -166,6 +388,13 @@ header, .page-header, .app-header {
 .btn-secondary {
   background: rgba(255, 255, 255, 0.1) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+@media (min-width: 768px) {
+  .btn, .action-btn, .primary-btn {
+    width: auto !important;
+    min-width: 120px !important;
+  }
 }
 
 /* ===== FORM ELEMENTS (Payment, Settings, Auth) ===== */

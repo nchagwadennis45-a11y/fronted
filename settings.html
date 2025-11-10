@@ -6,7 +6,7 @@
     <title>Settings - Uniconnect</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link ref="stylesheet" href="responsive.css">
+    <link rel="stylesheet" href="responsive.css">
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -172,9 +172,27 @@
         .red-theme body {
             background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
         }
+        
+        /* Mobile menu styles */
+        .mobile-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+        .mobile-overlay {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .mobile-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
 </head>
-<body class="h-full bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
+<body class="h-full bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white overflow-x-hidden">
     <!-- Connection Status -->
     <div class="connection-status connecting" id="connectionStatus">
         <i class="fas fa-circle-notch fa-spin mr-2"></i>
@@ -192,17 +210,51 @@
                     Uniconnect
                 </span>
             </a>
-            <div class="flex items-center space-x-4">
+            
+            <!-- Desktop Navigation -->
+            <div class="hidden md:flex items-center space-x-4">
                 <a href="home.html" class="text-blue-300 hover:text-white transition">Home</a>
                 <a href="chat.html" class="text-blue-300 hover:text-white transition">Chat</a>
                 <a href="profile.html" class="text-blue-300 hover:text-white transition">Profile</a>
                 <a href="settings.html" class="text-white font-semibold">Settings</a>
             </div>
+            
+            <!-- Mobile Menu Button -->
+            <button id="mobileMenuButton" class="md:hidden text-blue-300 hover:text-white transition">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Mobile Menu Overlay -->
+    <div id="mobileMenuOverlay" class="mobile-overlay fixed inset-0 bg-black bg-opacity-70 z-40"></div>
+    
+    <!-- Mobile Menu -->
+    <div id="mobileMenu" class="mobile-menu fixed top-0 left-0 h-full w-64 glass-effect z-50 p-6">
+        <div class="flex justify-between items-center mb-8">
+            <a href="home.html" class="flex items-center space-x-3">
+                <div class="w-10 h-10 primary-gradient rounded-2xl flex items-center justify-center">
+                    <i class="fas fa-id-card-alt text-white"></i>
+                </div>
+                <span class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+                    Uniconnect
+                </span>
+            </a>
+            <button id="closeMobileMenu" class="text-blue-300 hover:text-white transition">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="flex flex-col space-y-6">
+            <a href="home.html" class="text-blue-300 hover:text-white transition text-lg">Home</a>
+            <a href="chat.html" class="text-blue-300 hover:text-white transition text-lg">Chat</a>
+            <a href="profile.html" class="text-blue-300 hover:text-white transition text-lg">Profile</a>
+            <a href="settings.html" class="text-white font-semibold text-lg">Settings</a>
         </div>
     </div>
 
     <!-- Main Content -->
-    <div class="max-w-6xl mx-auto p-6">
+    <div class="container mx-auto px-4 py-6 max-w-6xl">
         <div class="mb-8">
             <h1 class="text-3xl font-bold mb-2">Settings</h1>
             <p class="text-blue-300">Manage your Uniconnect preferences and account settings</p>
@@ -212,12 +264,12 @@
             <!-- Left Column - Account & Profile -->
             <div class="lg:col-span-2 space-y-6">
                 <!-- Account Settings -->
-                <div class="settings-card p-6">
+                <div class="settings-card p-4 md:p-6">
                     <h2 class="text-xl font-bold mb-4 text-blue-300">Account Settings</h2>
                     
                     <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-3 sm:mb-0">
                                 <h3 class="font-semibold">Display Name</h3>
                                 <p class="text-sm text-blue-300">Change how your name appears</p>
                             </div>
@@ -232,8 +284,8 @@
                             </div>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-3 sm:mb-0">
                                 <h3 class="font-semibold">Email Address</h3>
                                 <p class="text-sm text-blue-300">Your account email</p>
                             </div>
@@ -243,8 +295,8 @@
                             </span>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-3 sm:mb-0">
                                 <h3 class="font-semibold">Account Created</h3>
                                 <p class="text-sm text-blue-300">When you joined Uniconnect</p>
                             </div>
@@ -254,8 +306,8 @@
                             </span>
                         </div>
 
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-3 sm:mb-0">
                                 <h3 class="font-semibold">User ID</h3>
                                 <p class="text-sm text-blue-300">Your unique identifier</p>
                             </div>
@@ -268,24 +320,24 @@
                 </div>
 
                 <!-- Privacy Settings -->
-                <div class="settings-card p-6">
+                <div class="settings-card p-4 md:p-6">
                     <h2 class="text-xl font-bold mb-4 text-blue-300">Privacy Settings</h2>
                     
                     <div class="space-y-6">
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-3 sm:mb-0">
                                 <h3 class="font-semibold">Profile Visibility</h3>
                                 <p class="text-sm text-blue-300">Control who can see your profile</p>
                             </div>
-                            <select id="profileVisibility" class="bg-gray-800 border border-blue-700 rounded-lg p-2 text-white">
+                            <select id="profileVisibility" class="bg-gray-800 border border-blue-700 rounded-lg p-2 text-white w-full sm:w-auto">
                                 <option value="public">Public</option>
                                 <option value="friends">Friends Only</option>
                                 <option value="private">Private</option>
                             </select>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-3 sm:mb-0">
                                 <h3 class="font-semibold">Online Status</h3>
                                 <p class="text-sm text-blue-300">Show when you're online</p>
                             </div>
@@ -295,8 +347,8 @@
                             </label>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-3 sm:mb-0">
                                 <h3 class="font-semibold">Read Receipts</h3>
                                 <p class="text-sm text-blue-300">Let others see when you've read their messages</p>
                             </div>
@@ -306,8 +358,8 @@
                             </label>
                         </div>
 
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-3 sm:mb-0">
                                 <h3 class="font-semibold">Activity Status</h3>
                                 <p class="text-sm text-blue-300">Show when you're active on the platform</p>
                             </div>
@@ -320,12 +372,12 @@
                 </div>
 
                 <!-- Notification Settings -->
-                <div class="settings-card p-6">
+                <div class="settings-card p-4 md:p-6">
                     <h2 class="text-xl font-bold mb-4 text-blue-300">Notification Settings</h2>
                     
                     <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-3 sm:mb-0">
                                 <h3 class="font-semibold">Push Notifications</h3>
                                 <p class="text-sm text-blue-300">Receive notifications in your browser</p>
                             </div>
@@ -335,8 +387,8 @@
                             </label>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-3 sm:mb-0">
                                 <h3 class="font-semibold">Email Notifications</h3>
                                 <p class="text-sm text-blue-300">Receive notifications via email</p>
                             </div>
@@ -346,8 +398,8 @@
                             </label>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-3 sm:mb-0">
                                 <h3 class="font-semibold">Message Notifications</h3>
                                 <p class="text-sm text-blue-300">Get notified about new messages</p>
                             </div>
@@ -357,8 +409,8 @@
                             </label>
                         </div>
 
-                        <div class="flex items-center justify-between">
-                            <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <div class="mb-3 sm:mb-0">
                                 <h3 class="font-semibold">Friend Request Notifications</h3>
                                 <p class="text-sm text-blue-300">Get notified about friend requests</p>
                             </div>
@@ -374,7 +426,7 @@
             <!-- Right Column - Appearance & Actions -->
             <div class="space-y-6">
                 <!-- Theme Settings -->
-                <div class="settings-card p-6">
+                <div class="settings-card p-4 md:p-6">
                     <h2 class="text-xl font-bold mb-4 text-blue-300">Appearance</h2>
                     
                     <div class="mb-4">
@@ -389,8 +441,8 @@
                         </div>
                     </div>
                     
-                    <div class="flex items-center justify-between mt-4">
-                        <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4">
+                        <div class="mb-3 sm:mb-0">
                             <h3 class="font-semibold">Dark Mode</h3>
                             <p class="text-sm text-blue-300">Use dark theme</p>
                         </div>
@@ -402,29 +454,29 @@
                 </div>
 
                 <!-- Data Management -->
-                <div class="settings-card p-6">
+                <div class="settings-card p-4 md:p-6">
                     <h2 class="text-xl font-bold mb-4 text-blue-300">Data Management</h2>
                     
                     <div class="space-y-3">
                         <button id="exportDataBtn" class="w-full text-left p-3 glass-effect rounded-lg hover:bg-blue-900/30 transition flex items-center justify-between">
-                            <span>Export My Data</span>
+                            <span class="text-sm md:text-base">Export My Data</span>
                             <i class="fas fa-download text-blue-400"></i>
                         </button>
                         
                         <button id="clearCacheBtn" class="w-full text-left p-3 glass-effect rounded-lg hover:bg-blue-900/30 transition flex items-center justify-between">
-                            <span>Clear Cache</span>
+                            <span class="text-sm md:text-base">Clear Cache</span>
                             <i class="fas fa-broom text-blue-400"></i>
                         </button>
                         
                         <button id="deleteAccountBtn" class="w-full text-left p-3 glass-effect rounded-lg hover:bg-red-900/30 transition flex items-center justify-between text-red-400">
-                            <span>Delete Account</span>
+                            <span class="text-sm md:text-base">Delete Account</span>
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- App Information -->
-                <div class="settings-card p-6">
+                <div class="settings-card p-4 md:p-6">
                     <h2 class="text-xl font-bold mb-4 text-blue-300">About Uniconnect</h2>
                     
                     <div class="space-y-3 text-sm">
@@ -447,7 +499,7 @@
                     </div>
                     
                     <div class="mt-4 pt-4 border-t border-blue-800">
-                        <button id="logoutBtn" class="w-full p-3 primary-gradient rounded-lg font-semibold hover:opacity-90 transition">
+                        <button id="logoutBtn" class="w-full p-3 primary-gradient rounded-lg font-semibold hover:opacity-90 transition text-sm md:text-base">
                             Sign Out
                         </button>
                     </div>
@@ -458,7 +510,7 @@
 
     <!-- Edit Name Modal -->
     <div id="editNameModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
-        <div class="settings-card p-6 w-full max-w-md">
+        <div class="settings-card p-4 md:p-6 w-full max-w-md mx-4">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-blue-300">Edit Display Name</h2>
                 <button id="closeEditNameModal" class="text-blue-400 hover:text-blue-300">
@@ -481,7 +533,7 @@
 
     <!-- Delete Account Confirmation Modal -->
     <div id="deleteAccountModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
-        <div class="settings-card p-6 w-full max-w-md">
+        <div class="settings-card p-4 md:p-6 w-full max-w-md mx-4">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-red-400">Delete Account</h2>
                 <button id="closeDeleteModal" class="text-blue-400 hover:text-blue-300">
@@ -903,6 +955,29 @@
 
             setupEventListeners() {
                 console.log("🔧 Setting up event listeners...");
+                
+                // Mobile menu functionality
+                const mobileMenuButton = document.getElementById('mobileMenuButton');
+                const closeMobileMenu = document.getElementById('closeMobileMenu');
+                const mobileMenu = document.getElementById('mobileMenu');
+                const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+                
+                if (mobileMenuButton && mobileMenu && mobileMenuOverlay && closeMobileMenu) {
+                    mobileMenuButton.addEventListener('click', () => {
+                        mobileMenu.classList.add('open');
+                        mobileMenuOverlay.classList.add('open');
+                    });
+                    
+                    closeMobileMenu.addEventListener('click', () => {
+                        mobileMenu.classList.remove('open');
+                        mobileMenuOverlay.classList.remove('open');
+                    });
+                    
+                    mobileMenuOverlay.addEventListener('click', () => {
+                        mobileMenu.classList.remove('open');
+                        mobileMenuOverlay.classList.remove('open');
+                    });
+                }
                 
                 // Theme selection
                 document.querySelectorAll('.theme-option').forEach(option => {

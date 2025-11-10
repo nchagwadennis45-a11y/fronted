@@ -19,8 +19,32 @@ class ProfessionalChatSystem {
         this.usersListener = null;
         this.lastSent = 0; // Rate limiting
         
-        // Firebase configuration - will be loaded dynamically
-        this.firebaseConfig = null;
+        // Feature state management
+        this.isVideoCallActive = false;
+        this.isVoiceCallActive = false;
+        this.isScreenSharing = false;
+        this.localStream = null;
+        this.remoteStream = null;
+        this.screenStream = null;
+        this.audioStream = null;
+        this.videoStream = null;
+        this.peerConnection = null;
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.videoChunks = [];
+        this.recordingTimer = null;
+        this.recordingStartTime = null;
+        
+        // Firebase configuration
+        this.firebaseConfig = {
+            apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
+            authDomain: "uniconnect-ee95c.firebaseapp.com",
+            projectId: "uniconnect-ee95c",
+            storageBucket: "uniconnect-ee95c.firebasestorage.app",
+            messagingSenderId: "1003264444309",
+            appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
+        };
+        
         this.environment = 'production';
         
         this.init();
@@ -28,104 +52,14 @@ class ProfessionalChatSystem {
     
     async init() {
         try {
-            await this.loadFirebaseConfig();
             await this.initializeFirebase();
             await this.setupAuthStateListener();
             this.setupEventListeners();
-            console.log(`🚀 Professional Chat System Initialized with Firebase (${this.environment})`);
+            console.log(`🚀 Professional Chat System Initialized with Firebase`);
         } catch (error) {
             console.error('Error initializing chat system:', error);
             this.showNotification('Error initializing chat system', 'error');
         }
-    }
-    
-    async loadFirebaseConfig() {
-        // Priority 1: Check for deployment-generated config
-        if (window.firebaseConfig && window.appEnvironment) {
-            this.firebaseConfig = window.firebaseConfig;
-            this.environment = window.appEnvironment;
-            console.log(`🔥 Firebase config loaded for ${this.environment} environment`);
-            return;
-        }
-
-        // Priority 2: Try to load deploy-config.js (generated during deployment)
-        try {
-            console.log('📁 Loading deployment configuration...');
-            const response = await fetch('/deploy-config.js');
-            if (response.ok) {
-                // Load the config script dynamically
-                await this.loadScript('/deploy-config.js');
-                if (window.firebaseConfig) {
-                    this.firebaseConfig = window.firebaseConfig;
-                    this.environment = window.appEnvironment || 'production';
-                    console.log(`✅ Loaded ${this.environment} configuration from deploy-config.js`);
-                    return;
-                }
-            }
-        } catch (error) {
-            console.warn('Could not load deploy-config.js:', error.message);
-        }
-
-        // Priority 3: Fallback to environment detection from hostname
-        this.environment = this.detectEnvironmentFromHostname(window.location.hostname);
-        this.firebaseConfig = this.getConfigForEnvironment(this.environment);
-        
-        console.log(`🌐 Detected ${this.environment} environment from hostname`);
-        console.log('🔥 Using Firebase project:', this.firebaseConfig.projectId);
-    }
-
-    loadScript(src) {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-    }
-
-    detectEnvironmentFromHostname(hostname) {
-        if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
-            return 'development';
-        }
-        if (hostname.includes('-dev.') || hostname.includes('.dev.')) {
-            return 'development';
-        }
-        if (hostname.includes('-staging.') || hostname.includes('.staging.')) {
-            return 'staging';
-        }
-        return 'production';
-    }
-
-    getConfigForEnvironment(environment) {
-        const configs = {
-            development: {
-                apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
-                authDomain: "uniconnect-ee95c-dev.firebaseapp.com",
-                projectId: "uniconnect-ee95c-dev",
-                storageBucket: "uniconnect-ee95c-dev.firebasestorage.app",
-                messagingSenderId: "1003264444309",
-                appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
-            },
-            staging: {
-                apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
-                authDomain: "uniconnect-ee95c-staging.firebaseapp.com",
-                projectId: "uniconnect-ee95c-staging",
-                storageBucket: "uniconnect-ee95c-staging.firebasestorage.app",
-                messagingSenderId: "1003264444309",
-                appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
-            },
-            production: {
-                apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
-                authDomain: "uniconnect-ee95c.firebaseapp.com",
-                projectId: "uniconnect-ee95c",
-                storageBucket: "uniconnect-ee95c.firebasestorage.app",
-                messagingSenderId: "1003264444309",
-                appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
-            }
-        };
-        
-        return configs[environment] || configs.production;
     }
     
     async initializeFirebase() {
@@ -140,10 +74,10 @@ class ProfessionalChatSystem {
 
         // Validate configuration
         if (!this.firebaseConfig?.apiKey || !this.firebaseConfig?.projectId) {
-            throw new Error('Firebase configuration is incomplete. Please check your configuration.');
+            throw new Error('Firebase configuration is incomplete.');
         }
 
-        // Initialize Firebase with dynamic config
+        // Initialize Firebase
         try {
             firebase.initializeApp(this.firebaseConfig);
             this.auth = firebase.auth();
@@ -158,13 +92,12 @@ class ProfessionalChatSystem {
                 console.log('✅ Firebase persistence enabled');
             } catch (persistenceError) {
                 console.warn('⚠️ Firebase persistence failed:', persistenceError);
-                // Continue without persistence - app will still work
             }
 
             console.log(`✅ Firebase initialized for project: ${this.firebaseConfig.projectId}`);
         } catch (error) {
             console.error('❌ Firebase initialization error:', error);
-            throw new Error('Failed to initialize Firebase. Please check your configuration.');
+            throw new Error('Failed to initialize Firebase.');
         }
     }
     
@@ -193,7 +126,7 @@ class ProfessionalChatSystem {
                     ...userDoc.data()
                 };
             } else {
-                // Create new user document if it doesn't exist
+                // Create new user document
                 this.currentUser = {
                     id: user.uid,
                     email: user.email,
@@ -247,19 +180,11 @@ class ProfessionalChatSystem {
             }
         }
 
-        // Clean up listeners
-        if (this.messageListener) {
-            this.messageListener();
-            this.messageListener = null;
-        }
-        if (this.chatsListener) {
-            this.chatsListener();
-            this.chatsListener = null;
-        }
-        if (this.usersListener) {
-            this.usersListener();
-            this.usersListener = null;
-        }
+        // Clean up listeners and media
+        this.cleanupAllMedia();
+        if (this.messageListener) this.messageListener();
+        if (this.chatsListener) this.chatsListener();
+        if (this.usersListener) this.usersListener();
         
         this.currentUser = null;
         this.chats = [];
@@ -289,7 +214,6 @@ class ProfessionalChatSystem {
     
     async loadChats() {
         try {
-            // Load chats where current user is a member
             const snapshot = await this.firestore.collection('chats')
                 .where('members', 'array-contains', this.currentUser.id)
                 .orderBy('lastMessageTime', 'desc')
@@ -320,38 +244,11 @@ class ProfessionalChatSystem {
                         })
                     );
                     
-                    // Load messages
-                    let messages = [];
-                    try {
-                        const messagesRef = this.firestore.collection('chats').doc(doc.id).collection('messages');
-                        const messagesSnapshot = await messagesRef.orderBy('timestamp', 'asc').limit(100).get();
-                        
-                        messages = messagesSnapshot.docs.map(msgDoc => {
-                            const msgData = msgDoc.data();
-                            const sender = membersData.find(m => m.id === msgData.senderId) || this.currentUser;
-                            return {
-                                id: msgDoc.id,
-                                sender: sender,
-                                content: msgData.content,
-                                time: this.formatTime(msgData.timestamp?.toDate()),
-                                type: msgData.type || 'normal',
-                                status: msgData.status || 'sent',
-                                timestamp: msgData.timestamp,
-                                emotion: msgData.emotion,
-                                mediaUrl: msgData.mediaUrl,
-                                mediaType: msgData.mediaType,
-                                isWhisper: msgData.isWhisper
-                            };
-                        });
-                    } catch (messageError) {
-                        console.error(`Error loading messages for chat ${doc.id}:`, messageError);
-                    }
-                    
                     return {
                         id: doc.id,
                         ...chatData,
                         members: membersData,
-                        messages: messages
+                        messages: []
                     };
                 })
             );
@@ -365,10 +262,9 @@ class ProfessionalChatSystem {
         }
     }
     
-    // Enhanced real-time listeners with better error handling
     setupRealtimeMessageListener(chatId) {
         if (this.messageListener) {
-            this.messageListener(); // Unsubscribe from previous listener
+            this.messageListener();
         }
         
         try {
@@ -387,7 +283,6 @@ class ProfessionalChatSystem {
                 // Update the current chat's messages
                 const chatIndex = this.chats.findIndex(chat => chat.id === chatId);
                 if (chatIndex >= 0) {
-                    // Convert Firestore timestamps and enrich with sender data
                     this.chats[chatIndex].messages = messages.map(msg => {
                         const sender = this.chats[chatIndex].members.find(m => m.id === msg.senderId) || this.currentUser;
                         return {
@@ -402,19 +297,11 @@ class ProfessionalChatSystem {
                     if (this.currentChatId === chatId) {
                         this.renderMessages(chatId);
                         this.scrollToBottom();
-                        
-                        // Mark as read
                         this.markAsRead(chatId);
                     }
                 }
             }, (error) => {
                 console.error('Error in real-time message listener:', error);
-                // Attempt to reconnect after delay
-                setTimeout(() => {
-                    if (this.currentChatId === chatId) {
-                        this.setupRealtimeMessageListener(chatId);
-                    }
-                }, 5000);
             });
         } catch (error) {
             console.error('Error setting up message listener:', error);
@@ -423,7 +310,7 @@ class ProfessionalChatSystem {
     
     setupRealtimeChatsListener() {
         if (this.chatsListener) {
-            this.chatsListener(); // Unsubscribe from previous listener
+            this.chatsListener();
         }
         
         try {
@@ -450,7 +337,7 @@ class ProfessionalChatSystem {
     
     setupRealtimeUsersListener() {
         if (this.usersListener) {
-            this.usersListener(); // Unsubscribe from previous listener
+            this.usersListener();
         }
         
         try {
@@ -463,7 +350,7 @@ class ProfessionalChatSystem {
                         this.updateUserFromSnapshot(change.doc);
                     }
                 });
-            }, (error) => {
+            }, (error) {
                 console.error('Error in real-time users listener:', error);
             });
         } catch (error) {
@@ -475,7 +362,6 @@ class ProfessionalChatSystem {
         this.setupRealtimeChatsListener();
         this.setupRealtimeUsersListener();
         
-        // Setup message listener for current chat if exists
         if (this.currentChatId) {
             this.setupRealtimeMessageListener(this.currentChatId);
         }
@@ -506,40 +392,11 @@ class ProfessionalChatSystem {
             })
         );
         
-        // Load messages if this is the active chat
-        let messages = [];
-        if (doc.id === this.currentChatId) {
-            try {
-                const messagesRef = this.firestore.collection('chats').doc(doc.id).collection('messages');
-                const messagesSnapshot = await messagesRef.orderBy('timestamp', 'asc').limit(100).get();
-                
-                messages = messagesSnapshot.docs.map(msgDoc => {
-                    const msgData = msgDoc.data();
-                    const sender = membersData.find(m => m.id === msgData.senderId) || this.currentUser;
-                    return {
-                        id: msgDoc.id,
-                        sender: sender,
-                        content: msgData.content,
-                        time: this.formatTime(msgData.timestamp?.toDate()),
-                        type: msgData.type || 'normal',
-                        status: msgData.status || 'sent',
-                        timestamp: msgData.timestamp,
-                        emotion: msgData.emotion,
-                        mediaUrl: msgData.mediaUrl,
-                        mediaType: msgData.mediaType,
-                        isWhisper: msgData.isWhisper
-                    };
-                });
-            } catch (error) {
-                console.error(`Error loading messages for chat ${doc.id}:`, error);
-            }
-        }
-        
         const updatedChat = {
             id: doc.id,
             ...chatData,
             members: membersData,
-            messages: messages
+            messages: this.chats[existingIndex]?.messages || []
         };
         
         if (existingIndex >= 0) {
@@ -594,7 +451,7 @@ class ProfessionalChatSystem {
     // Rate limiting function
     canSend() {
         const now = Date.now();
-        if (now - this.lastSent < 2000) { // 2 seconds gap
+        if (now - this.lastSent < 2000) {
             this.showNotification('Please wait a moment before sending another message', 'warning');
             return false;
         }
@@ -607,7 +464,6 @@ class ProfessionalChatSystem {
         const input = document.getElementById('message-input');
         const messageType = document.getElementById('message-type')?.value || 'normal';
         
-        // Use provided text or get from input
         const content = text || input?.value.trim();
         
         if (!content && !imageUrl && !this.currentMediaFile) {
@@ -620,7 +476,6 @@ class ProfessionalChatSystem {
             return;
         }
         
-        // Check rate limiting
         if (!this.canSend()) {
             return;
         }
@@ -629,11 +484,11 @@ class ProfessionalChatSystem {
             let mediaUrl = imageUrl;
             let mediaType = null;
 
-            // Upload media if exists (and no imageUrl provided)
+            // Upload media if exists
             if (this.currentMediaFile && !imageUrl) {
                 this.showNotification('Uploading media...', 'info');
                 mediaUrl = await this.uploadMediaFile(this.currentMediaFile);
-                mediaType = this.currentMediaFile.type.split('/')[0]; // image, video, audio
+                mediaType = this.currentMediaFile.type.split('/')[0];
             } else if (imageUrl) {
                 mediaUrl = imageUrl;
                 mediaType = 'image';
@@ -666,7 +521,7 @@ class ProfessionalChatSystem {
                 lastMessageTime: firebase.firestore.FieldValue.serverTimestamp()
             });
             
-            // Clear input and reset if not using direct call
+            // Clear input and reset
             if (!text && !imageUrl && input) {
                 input.value = '';
                 input.style.height = 'auto';
@@ -692,7 +547,6 @@ class ProfessionalChatSystem {
     }
 
     setupEventListeners() {
-        // Safe event listener setup with null checks
         const safeAddEventListener = (id, event, handler) => {
             const element = document.getElementById(id);
             if (element) {
@@ -705,7 +559,7 @@ class ProfessionalChatSystem {
             this.filterChats(e.target.value);
         });
         
-        // Message sending with rate limiting
+        // Message sending
         safeAddEventListener('send-btn', 'click', () => this.sendMessage());
         safeAddEventListener('message-input', 'keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -753,22 +607,8 @@ class ProfessionalChatSystem {
 
         // Time Capsule
         safeAddEventListener('timeCapsuleBtn', 'click', () => this.showTimeCapsule());
-        safeAddEventListener('timeCapsuleMenuBtn', 'click', () => this.showTimeCapsule());
         safeAddEventListener('createCapsuleBtn', 'click', () => this.createTimeCapsule());
         safeAddEventListener('closeTimeCapsuleModal', 'click', () => this.hideTimeCapsule());
-
-        // Collaboration Room
-        safeAddEventListener('collabRoomBtn', 'click', () => this.showCollabRoom());
-        safeAddEventListener('createCollabRoomBtn', 'click', () => this.showCollabRoom());
-        safeAddEventListener('closeCollabModal', 'click', () => this.hideCollabRoom());
-
-        // Nearby Pulse
-        safeAddEventListener('nearbyPulseBtn', 'click', () => this.showNearbyPulse());
-        safeAddEventListener('closePulseModal', 'click', () => this.hideNearbyPulse());
-
-        // Challenges
-        safeAddEventListener('viewChallenges', 'click', () => this.showChallenges());
-        safeAddEventListener('closeChallengesModal', 'click', () => this.hideChallenges());
 
         // Media Attachment
         safeAddEventListener('attachImageBtn', 'click', () => this.attachMedia('image'));
@@ -777,7 +617,7 @@ class ProfessionalChatSystem {
 
         // Quick image send
         safeAddEventListener('quickImageBtn', 'click', () => {
-            this.quickSend('Check out this image!', 'https://example.com/image.jpg');
+            this.quickSend('Check out this image!', 'https://via.placeholder.com/300x200/3B82F6/FFFFFF?text=Demo+Image');
         });
 
         // Whisper Mode
@@ -787,8 +627,7 @@ class ProfessionalChatSystem {
         safeAddEventListener('emojiButton', 'click', () => this.toggleEmojiPicker());
         document.addEventListener('click', (e) => {
             if (!e.target.closest('#emojiPicker') && !e.target.closest('#emojiButton')) {
-                const picker = document.getElementById('emojiPicker');
-                if (picker) picker.classList.add('hidden');
+                this.hideEmojiPicker();
             }
         });
 
@@ -797,12 +636,48 @@ class ProfessionalChatSystem {
 
         // Video Call
         safeAddEventListener('videoCallBtn', 'click', () => this.startVideoCall());
+        safeAddEventListener('endVideoCallBtn', 'click', () => this.endVideoCall());
+
+        // Voice Call
+        safeAddEventListener('voiceCallBtn', 'click', () => this.startVoiceCall());
+        safeAddEventListener('endVoiceCallBtn', 'click', () => this.endVoiceCall());
 
         // Voice Message
         safeAddEventListener('voiceMessageBtn', 'click', () => this.startVoiceMessage());
+        safeAddEventListener('stopVoiceRecording', 'click', () => this.stopVoiceRecording());
+
+        // Screen Sharing
+        safeAddEventListener('screenShareBtn', 'click', () => this.toggleScreenShare());
+        safeAddEventListener('stopScreenShare', 'click', () => this.stopScreenShare());
 
         // File Share
         safeAddEventListener('fileShareBtn', 'click', () => this.shareFile());
+
+        // Location Sharing
+        safeAddEventListener('locationBtn', 'click', () => this.shareLocation());
+        safeAddEventListener('confirmLocationShare', 'click', () => this.confirmLocationShare());
+        safeAddEventListener('cancelLocationShare', 'click', () => this.cancelLocationShare());
+
+        // GIF Picker
+        safeAddEventListener('gifBtn', 'click', () => this.toggleGifPicker());
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#gifPicker') && !e.target.closest('#gifBtn')) {
+                this.hideGifPicker();
+            }
+        });
+
+        // Sticker Picker
+        safeAddEventListener('stickerBtn', 'click', () => this.toggleStickerPicker());
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#stickerPicker') && !e.target.closest('#stickerBtn')) {
+                this.hideStickerPicker();
+            }
+        });
+
+        // Video Recording
+        safeAddEventListener('videoRecordBtn', 'click', () => this.startVideoRecording());
+        safeAddEventListener('stopVideoRecording', 'click', () => this.stopVideoRecording());
+        safeAddEventListener('cancelVideoRecording', 'click', () => this.cancelVideoRecording());
 
         // Search Messages
         safeAddEventListener('searchMenuItem', 'click', () => this.searchMessages());
@@ -817,6 +692,970 @@ class ProfessionalChatSystem {
         safeAddEventListener('createGroupBtnConfirm', 'click', () => this.createGroupChat());
         safeAddEventListener('closeCreateGroupModal', 'click', () => this.hideCreateGroupModal());
     }
+
+    // ========== ENHANCED FEATURE IMPLEMENTATIONS ==========
+
+    // Emoji Picker Implementation
+    initializeEmojiPicker() {
+        const emojiPicker = document.getElementById('emojiPicker');
+        if (!emojiPicker) return;
+
+        const emojis = ['😀', '😂', '🥰', '😎', '🤔', '😍', '🙂', '😊', '🤩', '😜', 
+                       '👍', '❤️', '🔥', '🎉', '💯', '✨', '🙏', '😢', '😡', '🤯',
+                       '😘', '🥺', '😇', '🤠', '😈', '👻', '💀', '👽', '🤖', '🎃'];
+
+        emojiPicker.innerHTML = emojis.map(emoji => `
+            <span class="emoji-item" data-emoji="${emoji}">${emoji}</span>
+        `).join('');
+
+        // Add click listeners to emoji items
+        emojiPicker.querySelectorAll('.emoji-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const emoji = e.target.getAttribute('data-emoji');
+                this.insertEmoji(emoji);
+            });
+        });
+    }
+
+    insertEmoji(emoji) {
+        const messageInput = document.getElementById('message-input');
+        if (messageInput) {
+            const start = messageInput.selectionStart;
+            const end = messageInput.selectionEnd;
+            const text = messageInput.value;
+            messageInput.value = text.substring(0, start) + emoji + text.substring(end);
+            messageInput.focus();
+            messageInput.selectionStart = messageInput.selectionEnd = start + emoji.length;
+            
+            // Trigger input event for auto-resize
+            messageInput.dispatchEvent(new Event('input'));
+        }
+        this.hideEmojiPicker();
+    }
+
+    toggleEmojiPicker() {
+        const picker = document.getElementById('emojiPicker');
+        if (picker) {
+            this.hideAllPickers();
+            picker.classList.toggle('hidden');
+        }
+    }
+
+    hideEmojiPicker() {
+        const picker = document.getElementById('emojiPicker');
+        if (picker) picker.classList.add('hidden');
+    }
+
+    // GIF Picker Implementation
+    toggleGifPicker() {
+        const picker = document.getElementById('gifPicker');
+        if (picker) {
+            this.hideAllPickers();
+            picker.classList.toggle('hidden');
+            this.loadTrendingGifs();
+        }
+    }
+
+    hideGifPicker() {
+        const picker = document.getElementById('gifPicker');
+        if (picker) picker.classList.add('hidden');
+    }
+
+    async loadTrendingGifs() {
+        const gifContainer = document.getElementById('gifContainer');
+        if (!gifContainer) return;
+
+        // Demo GIFs - in production, integrate with Giphy API
+        const demoGifs = [
+            'https://media.giphy.com/media/3o7aCTPPm4OHfRLSH6/giphy.gif',
+            'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+            'https://media.giphy.com/media/26AHONQ79FdWZhAI0/giphy.gif',
+            'https://media.giphy.com/media/l4HnKwiJJaJQB04Zq/giphy.gif'
+        ];
+
+        gifContainer.innerHTML = demoGifs.map(gifUrl => `
+            <div class="gif-item" data-gif="${gifUrl}">
+                <img src="${gifUrl}" alt="GIF" class="w-full h-20 object-cover rounded cursor-pointer">
+            </div>
+        `).join('');
+
+        // Add click listeners
+        gifContainer.querySelectorAll('.gif-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const gifUrl = e.currentTarget.getAttribute('data-gif');
+                this.sendGif(gifUrl);
+            });
+        });
+    }
+
+    async sendGif(gifUrl) {
+        if (!this.currentChatId) {
+            this.showNotification('Please select a chat first', 'warning');
+            return;
+        }
+
+        try {
+            const messageData = {
+                senderId: this.currentUser.id,
+                content: 'Sent a GIF',
+                type: 'gif',
+                mediaUrl: gifUrl,
+                mediaType: 'image',
+                status: 'sent',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            const messagesRef = this.firestore.collection('chats').doc(this.currentChatId).collection('messages');
+            await messagesRef.add(messageData);
+
+            // Update chat last message
+            const chatRef = this.firestore.collection('chats').doc(this.currentChatId);
+            await chatRef.update({
+                lastMessage: 'Sent a GIF',
+                lastMessageTime: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            this.hideGifPicker();
+            this.showNotification('GIF sent successfully', 'success');
+
+        } catch (error) {
+            console.error('Error sending GIF:', error);
+            this.showNotification('Error sending GIF', 'error');
+        }
+    }
+
+    // Sticker Picker Implementation
+    toggleStickerPicker() {
+        const picker = document.getElementById('stickerPicker');
+        if (picker) {
+            this.hideAllPickers();
+            picker.classList.toggle('hidden');
+            this.loadStickers();
+        }
+    }
+
+    hideStickerPicker() {
+        const picker = document.getElementById('stickerPicker');
+        if (picker) picker.classList.add('hidden');
+    }
+
+    loadStickers() {
+        const stickerContainer = document.getElementById('stickerContainer');
+        if (!stickerContainer) return;
+
+        // Demo stickers using emojis
+        const stickers = ['😺', '🐶', '🐼', '🦊', '🐨', '🐯', '🦁', '🐮',
+                         '🌞', '🌙', '⭐', '🌈', '🔥', '💧', '🌺', '🍕'];
+
+        stickerContainer.innerHTML = stickers.map(sticker => `
+            <div class="sticker-item" data-sticker="${sticker}">
+                <span class="text-3xl">${sticker}</span>
+            </div>
+        `).join('');
+
+        // Add click listeners
+        stickerContainer.querySelectorAll('.sticker-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const sticker = e.currentTarget.getAttribute('data-sticker');
+                this.sendSticker(sticker);
+            });
+        });
+    }
+
+    async sendSticker(sticker) {
+        if (!this.currentChatId) {
+            this.showNotification('Please select a chat first', 'warning');
+            return;
+        }
+
+        try {
+            const messageData = {
+                senderId: this.currentUser.id,
+                content: sticker,
+                type: 'sticker',
+                status: 'sent',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            const messagesRef = this.firestore.collection('chats').doc(this.currentChatId).collection('messages');
+            await messagesRef.add(messageData);
+
+            // Update chat last message
+            const chatRef = this.firestore.collection('chats').doc(this.currentChatId);
+            await chatRef.update({
+                lastMessage: 'Sent a sticker',
+                lastMessageTime: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            this.hideStickerPicker();
+            this.showNotification('Sticker sent successfully', 'success');
+
+        } catch (error) {
+            console.error('Error sending sticker:', error);
+            this.showNotification('Error sending sticker', 'error');
+        }
+    }
+
+    // Video Call Implementation
+    async startVideoCall() {
+        if (!this.currentChatId) {
+            this.showNotification('Please select a chat first', 'warning');
+            return;
+        }
+
+        try {
+            // Request camera and microphone permissions
+            this.localStream = await navigator.mediaDevices.getUserMedia({ 
+                video: true, 
+                audio: true 
+            });
+
+            // Show video call interface
+            this.showVideoCallInterface();
+            
+            // Initialize WebRTC connection
+            await this.initializeWebRTC();
+            
+            // Send call notification
+            await this.sendCallNotification('video');
+            
+            this.isVideoCallActive = true;
+            this.showNotification('Video call started', 'success');
+
+        } catch (error) {
+            console.error('Error starting video call:', error);
+            this.showNotification('Error starting video call. Please check permissions.', 'error');
+        }
+    }
+
+    async startVoiceCall() {
+        if (!this.currentChatId) {
+            this.showNotification('Please select a chat first', 'warning');
+            return;
+        }
+
+        try {
+            // Request microphone permission only
+            this.localStream = await navigator.mediaDevices.getUserMedia({ 
+                video: false, 
+                audio: true 
+            });
+
+            // Show voice call interface
+            this.showVoiceCallInterface();
+            
+            // Initialize WebRTC connection
+            await this.initializeWebRTC();
+            
+            // Send call notification
+            await this.sendCallNotification('voice');
+            
+            this.isVoiceCallActive = true;
+            this.showNotification('Voice call started', 'success');
+
+        } catch (error) {
+            console.error('Error starting voice call:', error);
+            this.showNotification('Error starting voice call. Please check permissions.', 'error');
+        }
+    }
+
+    async initializeWebRTC() {
+        // Simplified WebRTC implementation
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+            ]
+        };
+
+        this.peerConnection = new RTCPeerConnection(configuration);
+
+        // Add local stream to connection
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(track => {
+                this.peerConnection.addTrack(track, this.localStream);
+            });
+        }
+
+        // Handle incoming stream
+        this.peerConnection.ontrack = (event) => {
+            this.remoteStream = event.streams[0];
+            this.updateRemoteVideo();
+        };
+
+        // For demo purposes, simulate connection
+        setTimeout(() => {
+            if (this.isVideoCallActive || this.isVoiceCallActive) {
+                this.showNotification('Call connected', 'success');
+            }
+        }, 2000);
+    }
+
+    showVideoCallInterface() {
+        const videoCallModal = document.getElementById('videoCallModal');
+        if (videoCallModal) {
+            videoCallModal.classList.remove('hidden');
+            
+            // Set local video stream
+            const localVideo = document.getElementById('localVideo');
+            if (localVideo && this.localStream) {
+                localVideo.srcObject = this.localStream;
+            }
+        }
+    }
+
+    showVoiceCallInterface() {
+        const voiceCallModal = document.getElementById('voiceCallModal');
+        if (voiceCallModal) {
+            voiceCallModal.classList.remove('hidden');
+        }
+    }
+
+    updateRemoteVideo() {
+        const remoteVideo = document.getElementById('remoteVideo');
+        if (remoteVideo && this.remoteStream) {
+            remoteVideo.srcObject = this.remoteStream;
+        }
+    }
+
+    async endVideoCall() {
+        this.cleanupCall();
+        this.hideVideoCallInterface();
+        this.isVideoCallActive = false;
+        this.showNotification('Video call ended', 'info');
+    }
+
+    async endVoiceCall() {
+        this.cleanupCall();
+        this.hideVoiceCallInterface();
+        this.isVoiceCallActive = false;
+        this.showNotification('Voice call ended', 'info');
+    }
+
+    cleanupCall() {
+        // Stop all media tracks
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(track => track.stop());
+            this.localStream = null;
+        }
+        
+        if (this.remoteStream) {
+            this.remoteStream.getTracks().forEach(track => track.stop());
+            this.remoteStream = null;
+        }
+        
+        // Close peer connection
+        if (this.peerConnection) {
+            this.peerConnection.close();
+            this.peerConnection = null;
+        }
+    }
+
+    hideVideoCallInterface() {
+        const videoCallModal = document.getElementById('videoCallModal');
+        if (videoCallModal) {
+            videoCallModal.classList.add('hidden');
+        }
+    }
+
+    hideVoiceCallInterface() {
+        const voiceCallModal = document.getElementById('voiceCallModal');
+        if (voiceCallModal) {
+            voiceCallModal.classList.add('hidden');
+        }
+    }
+
+    async sendCallNotification(callType) {
+        if (!this.currentChatId) return;
+
+        try {
+            const callData = {
+                type: callType,
+                callerId: this.currentUser.id,
+                callerName: this.currentUser.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: 'ringing'
+            };
+
+            await this.firestore.collection('chats').doc(this.currentChatId).collection('calls').add(callData);
+        } catch (error) {
+            console.error('Error sending call notification:', error);
+        }
+    }
+
+    // Screen Sharing Implementation
+    async toggleScreenShare() {
+        if (this.isScreenSharing) {
+            await this.stopScreenShare();
+        } else {
+            await this.startScreenShare();
+        }
+    }
+
+    async startScreenShare() {
+        try {
+            // Request screen sharing permission
+            this.screenStream = await navigator.mediaDevices.getDisplayMedia({
+                video: true,
+                audio: true
+            });
+
+            // Show screen sharing interface
+            this.showScreenShareInterface();
+            
+            // Replace video track in peer connection if call is active
+            if (this.peerConnection && this.isVideoCallActive) {
+                const videoTrack = this.screenStream.getVideoTracks()[0];
+                const sender = this.peerConnection.getSenders().find(s => 
+                    s.track && s.track.kind === 'video'
+                );
+                
+                if (sender) {
+                    await sender.replaceTrack(videoTrack);
+                }
+            }
+
+            this.isScreenSharing = true;
+            this.showNotification('Screen sharing started', 'success');
+
+            // Handle when user stops screen sharing via browser UI
+            this.screenStream.getVideoTracks()[0].onended = () => {
+                this.stopScreenShare();
+            };
+
+        } catch (error) {
+            console.error('Error starting screen share:', error);
+            this.showNotification('Error starting screen share', 'error');
+        }
+    }
+
+    async stopScreenShare() {
+        if (this.screenStream) {
+            this.screenStream.getTracks().forEach(track => track.stop());
+            this.screenStream = null;
+        }
+
+        // Switch back to camera if video call is active
+        if (this.peerConnection && this.isVideoCallActive && this.localStream) {
+            const videoTrack = this.localStream.getVideoTracks()[0];
+            const sender = this.peerConnection.getSenders().find(s => 
+                s.track && s.track.kind === 'video'
+            );
+            
+            if (sender && videoTrack) {
+                await sender.replaceTrack(videoTrack);
+            }
+        }
+
+        this.hideScreenShareInterface();
+        this.isScreenSharing = false;
+        this.showNotification('Screen sharing stopped', 'info');
+    }
+
+    showScreenShareInterface() {
+        const screenShareModal = document.getElementById('screenShareModal');
+        if (screenShareModal) {
+            screenShareModal.classList.remove('hidden');
+            
+            const screenShareVideo = document.getElementById('screenShareVideo');
+            if (screenShareVideo && this.screenStream) {
+                screenShareVideo.srcObject = this.screenStream;
+            }
+        }
+    }
+
+    hideScreenShareInterface() {
+        const screenShareModal = document.getElementById('screenShareModal');
+        if (screenShareModal) {
+            screenShareModal.classList.add('hidden');
+        }
+    }
+
+    // Voice Message Implementation
+    async startVoiceMessage() {
+        try {
+            // Request microphone permission
+            this.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            // Initialize MediaRecorder
+            this.mediaRecorder = new MediaRecorder(this.audioStream);
+            this.audioChunks = [];
+            
+            // Set up event handlers
+            this.mediaRecorder.ondataavailable = (event) => {
+                this.audioChunks.push(event.data);
+            };
+            
+            this.mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                await this.uploadAndSendAudio(audioBlob);
+                
+                // Clean up
+                this.audioStream.getTracks().forEach(track => track.stop());
+                this.hideVoiceRecordingInterface();
+            };
+            
+            // Show recording interface
+            this.showVoiceRecordingInterface();
+            
+            // Start recording
+            this.mediaRecorder.start();
+            this.startRecordingTimer();
+            
+        } catch (error) {
+            console.error('Error starting voice recording:', error);
+            this.showNotification('Error accessing microphone', 'error');
+        }
+    }
+
+    stopVoiceRecording() {
+        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+            this.mediaRecorder.stop();
+            this.stopRecordingTimer();
+        }
+    }
+
+    showVoiceRecordingInterface() {
+        const voiceRecordingModal = document.getElementById('voiceRecordingModal');
+        if (voiceRecordingModal) {
+            voiceRecordingModal.classList.remove('hidden');
+        }
+    }
+
+    hideVoiceRecordingInterface() {
+        const voiceRecordingModal = document.getElementById('voiceRecordingModal');
+        if (voiceRecordingModal) {
+            voiceRecordingModal.classList.add('hidden');
+        }
+    }
+
+    startRecordingTimer() {
+        this.recordingStartTime = Date.now();
+        this.recordingTimer = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            const timerElement = document.getElementById('recordingTimer');
+            if (timerElement) {
+                timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }, 1000);
+    }
+
+    stopRecordingTimer() {
+        if (this.recordingTimer) {
+            clearInterval(this.recordingTimer);
+            this.recordingTimer = null;
+        }
+    }
+
+    async uploadAndSendAudio(audioBlob) {
+        if (!this.currentChatId) return;
+
+        try {
+            this.showNotification('Uploading voice message...', 'info');
+
+            // Create file from blob
+            const audioFile = new File([audioBlob], `voice_message_${Date.now()}.webm`, {
+                type: 'audio/webm'
+            });
+
+            // Upload to Firebase Storage
+            const storageRef = this.storage.ref(`chats/${this.currentChatId}/${audioFile.name}`);
+            const uploadTask = storageRef.put(audioFile);
+
+            const downloadURL = await new Promise((resolve, reject) => {
+                uploadTask.on('state_changed',
+                    null,
+                    (error) => reject(error),
+                    async () => {
+                        try {
+                            const url = await uploadTask.snapshot.ref.getDownloadURL();
+                            resolve(url);
+                        } catch (urlError) {
+                            reject(urlError);
+                        }
+                    }
+                );
+            });
+
+            // Send message with audio
+            const messageData = {
+                senderId: this.currentUser.id,
+                content: 'Voice message',
+                type: 'audio',
+                mediaUrl: downloadURL,
+                mediaType: 'audio',
+                status: 'sent',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            const messagesRef = this.firestore.collection('chats').doc(this.currentChatId).collection('messages');
+            await messagesRef.add(messageData);
+
+            // Update chat
+            const chatRef = this.firestore.collection('chats').doc(this.currentChatId);
+            await chatRef.update({
+                lastMessage: 'Sent a voice message',
+                lastMessageTime: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            this.showNotification('Voice message sent', 'success');
+
+        } catch (error) {
+            console.error('Error sending voice message:', error);
+            this.showNotification('Error sending voice message', 'error');
+        }
+    }
+
+    // Video Recording Implementation
+    async startVideoRecording() {
+        try {
+            // Request camera and microphone permissions
+            this.videoStream = await navigator.mediaDevices.getUserMedia({ 
+                video: true, 
+                audio: true 
+            });
+            
+            // Show recording interface
+            this.showVideoRecordingInterface();
+            
+            // Set up video preview
+            const videoPreview = document.getElementById('videoRecordingPreview');
+            if (videoPreview) {
+                videoPreview.srcObject = this.videoStream;
+            }
+            
+        } catch (error) {
+            console.error('Error starting video recording:', error);
+            this.showNotification('Error accessing camera/microphone', 'error');
+        }
+    }
+
+    async stopVideoRecording() {
+        // Similar to voice recording but for video
+        this.showNotification('Video recording feature in development', 'info');
+    }
+
+    cancelVideoRecording() {
+        if (this.videoStream) {
+            this.videoStream.getTracks().forEach(track => track.stop());
+            this.videoStream = null;
+        }
+        this.hideVideoRecordingInterface();
+    }
+
+    showVideoRecordingInterface() {
+        const videoRecordingModal = document.getElementById('videoRecordingModal');
+        if (videoRecordingModal) {
+            videoRecordingModal.classList.remove('hidden');
+        }
+    }
+
+    hideVideoRecordingInterface() {
+        const videoRecordingModal = document.getElementById('videoRecordingModal');
+        if (videoRecordingModal) {
+            videoRecordingModal.classList.add('hidden');
+        }
+    }
+
+    // Location Sharing Implementation
+    async shareLocation() {
+        if (!navigator.geolocation) {
+            this.showNotification('Geolocation is not supported by this browser', 'error');
+            return;
+        }
+
+        this.showLocationSharingInterface();
+    }
+
+    async confirmLocationShare() {
+        try {
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            });
+
+            const { latitude, longitude } = position.coords;
+            
+            // Send location message
+            const messageData = {
+                senderId: this.currentUser.id,
+                content: `📍 My Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+                type: 'location',
+                location: { latitude, longitude },
+                status: 'sent',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            const messagesRef = this.firestore.collection('chats').doc(this.currentChatId).collection('messages');
+            await messagesRef.add(messageData);
+
+            // Update chat
+            const chatRef = this.firestore.collection('chats').doc(this.currentChatId);
+            await chatRef.update({
+                lastMessage: 'Shared location',
+                lastMessageTime: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            this.hideLocationSharingInterface();
+            this.showNotification('Location shared successfully', 'success');
+
+        } catch (error) {
+            console.error('Error getting location:', error);
+            this.showNotification('Error getting location. Please check permissions.', 'error');
+        }
+    }
+
+    cancelLocationShare() {
+        this.hideLocationSharingInterface();
+    }
+
+    showLocationSharingInterface() {
+        const locationModal = document.getElementById('locationModal');
+        if (locationModal) {
+            locationModal.classList.remove('hidden');
+            
+            // Show a map placeholder
+            const mapElement = document.getElementById('locationMap');
+            if (mapElement) {
+                mapElement.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-map-marker-alt text-4xl text-blue-400 mb-4"></i>
+                        <p class="text-blue-300">Location sharing ready</p>
+                        <p class="text-sm text-gray-400 mt-2">Click "Share Location" to send your current location</p>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    hideLocationSharingInterface() {
+        const locationModal = document.getElementById('locationModal');
+        if (locationModal) {
+            locationModal.classList.add('hidden');
+        }
+    }
+
+    // File Sharing Implementation
+    async shareFile() {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '*/*';
+        fileInput.onchange = (e) => this.handleFileSelect(e);
+        fileInput.click();
+    }
+
+    async handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        try {
+            this.showNotification('Uploading file...', 'info');
+
+            // Upload to Firebase Storage
+            const storageRef = this.storage.ref(`chats/${this.currentChatId}/${file.name}`);
+            const uploadTask = storageRef.put(file);
+
+            const downloadURL = await new Promise((resolve, reject) => {
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        // Progress tracking
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        const progressBar = document.getElementById('uploadProgressBar');
+                        if (progressBar) {
+                            progressBar.style.width = progress + '%';
+                        }
+                    },
+                    (error) => reject(error),
+                    async () => {
+                        try {
+                            const url = await uploadTask.snapshot.ref.getDownloadURL();
+                            resolve(url);
+                        } catch (urlError) {
+                            reject(urlError);
+                        }
+                    }
+                );
+            });
+
+            // Determine file type
+            let fileType = 'file';
+            if (file.type.startsWith('image/')) fileType = 'image';
+            else if (file.type.startsWith('video/')) fileType = 'video';
+            else if (file.type.startsWith('audio/')) fileType = 'audio';
+            else if (file.type.startsWith('application/pdf')) fileType = 'pdf';
+            else if (file.type.includes('document')) fileType = 'document';
+
+            // Send message with file
+            const messageData = {
+                senderId: this.currentUser.id,
+                content: `Shared a file: ${file.name}`,
+                type: fileType,
+                mediaUrl: downloadURL,
+                fileName: file.name,
+                fileSize: file.size,
+                status: 'sent',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            const messagesRef = this.firestore.collection('chats').doc(this.currentChatId).collection('messages');
+            await messagesRef.add(messageData);
+
+            // Update chat
+            const chatRef = this.firestore.collection('chats').doc(this.currentChatId);
+            await chatRef.update({
+                lastMessage: `Shared ${file.name}`,
+                lastMessageTime: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            this.showNotification('File shared successfully', 'success');
+
+        } catch (error) {
+            console.error('Error sharing file:', error);
+            this.showNotification('Error sharing file', 'error');
+        }
+    }
+
+    // Media Attachment
+    attachMedia(type) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = `${type}/*`;
+        input.onchange = (e) => this.handleMediaSelect(e, type);
+        input.click();
+    }
+
+    handleMediaSelect(event, type) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        this.currentMediaFile = file;
+        this.showMediaPreview(file, type);
+    }
+
+    showMediaPreview(file, type) {
+        const previewContainer = document.getElementById('mediaPreview');
+        const previewImage = document.getElementById('previewImage');
+        const previewVideo = document.getElementById('previewVideo');
+        const previewAudio = document.getElementById('previewAudio');
+        const uploadProgress = document.getElementById('uploadProgress');
+
+        if (!previewContainer) return;
+
+        // Hide all previews first
+        if (previewImage) previewImage.classList.add('hidden');
+        if (previewVideo) previewVideo.classList.add('hidden');
+        if (previewAudio) previewAudio.classList.add('hidden');
+        if (uploadProgress) uploadProgress.classList.remove('hidden');
+
+        const objectUrl = URL.createObjectURL(file);
+
+        if (type === 'image' && previewImage) {
+            previewImage.src = objectUrl;
+            previewImage.classList.remove('hidden');
+        } else if (type === 'video' && previewVideo) {
+            previewVideo.src = objectUrl;
+            previewVideo.classList.remove('hidden');
+        } else if (type === 'audio' && previewAudio) {
+            previewAudio.src = objectUrl;
+            previewAudio.classList.remove('hidden');
+        }
+
+        previewContainer.classList.remove('hidden');
+    }
+
+    clearMediaPreview() {
+        const previewContainer = document.getElementById('mediaPreview');
+        if (previewContainer) {
+            previewContainer.classList.add('hidden');
+        }
+        const uploadProgress = document.getElementById('uploadProgress');
+        if (uploadProgress) uploadProgress.classList.add('hidden');
+        const progressBar = document.getElementById('uploadProgressBar');
+        if (progressBar) progressBar.style.width = '0%';
+    }
+
+    async uploadMediaFile(file) {
+        return new Promise((resolve, reject) => {
+            const storageRef = this.storage.ref(`chats/${this.currentChatId}/${Date.now()}_${file.name}`);
+            const uploadTask = storageRef.put(file);
+            
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    const progressBar = document.getElementById('uploadProgressBar');
+                    if (progressBar) {
+                        progressBar.style.width = progress + '%';
+                    }
+                },
+                (error) => {
+                    console.error('Upload error:', error);
+                    reject(error);
+                },
+                async () => {
+                    try {
+                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                        resolve(downloadURL);
+                    } catch (urlError) {
+                        reject(urlError);
+                    }
+                }
+            );
+        });
+    }
+
+    // Whisper Mode
+    toggleWhisperMode() {
+        this.whisperMode = !this.whisperMode;
+        const whisperBtn = document.getElementById('whisperButton');
+        
+        if (whisperBtn) {
+            if (this.whisperMode) {
+                whisperBtn.classList.add('text-yellow-400');
+                whisperBtn.classList.remove('text-blue-400');
+                this.showNotification('Whisper mode activated - messages will self-destruct after 24 hours', 'info');
+            } else {
+                whisperBtn.classList.remove('text-yellow-400');
+                whisperBtn.classList.add('text-blue-400');
+                this.showNotification('Whisper mode deactivated', 'info');
+            }
+        }
+    }
+
+    // Utility Methods
+    hideAllPickers() {
+        this.hideEmojiPicker();
+        this.hideGifPicker();
+        this.hideStickerPicker();
+    }
+
+    cleanupAllMedia() {
+        this.cleanupCall();
+        if (this.isScreenSharing) {
+            this.stopScreenShare();
+        }
+        if (this.audioStream) {
+            this.audioStream.getTracks().forEach(track => track.stop());
+            this.audioStream = null;
+        }
+        if (this.videoStream) {
+            this.videoStream.getTracks().forEach(track => track.stop());
+            this.videoStream = null;
+        }
+        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+            this.mediaRecorder.stop();
+        }
+        if (this.recordingTimer) {
+            clearInterval(this.recordingTimer);
+            this.recordingTimer = null;
+        }
+    }
+
+    // ========== EXISTING CHAT FUNCTIONALITY ==========
     
     async logout() {
         try {
@@ -828,7 +1667,8 @@ class ProfessionalChatSystem {
                 });
             }
 
-            // Clean up listeners
+            // Clean up all media and listeners
+            this.cleanupAllMedia();
             if (this.messageListener) this.messageListener();
             if (this.chatsListener) this.chatsListener();
             if (this.usersListener) this.usersListener();
@@ -1038,11 +1878,13 @@ class ProfessionalChatSystem {
             let mediaContent = '';
             if (message.mediaUrl) {
                 if (message.mediaType === 'image') {
-                    mediaContent = `<img src="${message.mediaUrl}" class="media-preview optimized-image" alt="Shared image">`;
+                    mediaContent = `<img src="${message.mediaUrl}" class="media-preview optimized-image" alt="Shared image" style="max-width: 300px; border-radius: 10px; margin: 5px 0;">`;
                 } else if (message.mediaType === 'video') {
-                    mediaContent = `<video src="${message.mediaUrl}" class="media-preview" controls></video>`;
+                    mediaContent = `<video src="${message.mediaUrl}" class="media-preview" controls style="max-width: 300px; border-radius: 10px; margin: 5px 0;"></video>`;
                 } else if (message.mediaType === 'audio') {
-                    mediaContent = `<audio src="${message.mediaUrl}" class="w-full mt-2" controls></audio>`;
+                    mediaContent = `<audio src="${message.mediaUrl}" controls style="width: 100%; margin: 5px 0;"></audio>`;
+                } else if (message.mediaType === 'gif') {
+                    mediaContent = `<img src="${message.mediaUrl}" class="media-preview" alt="GIF" style="max-width: 200px; border-radius: 10px; margin: 5px 0;">`;
                 }
             }
             
@@ -1090,145 +1932,17 @@ class ProfessionalChatSystem {
         return `<span class="emotion-indicator">${emojiMap[emotion] || ''}</span>`;
     }
 
-    async uploadMediaFile(file) {
-        return new Promise((resolve, reject) => {
-            const storageRef = this.storage.ref(`chats/${this.currentChatId}/${Date.now()}_${file.name}`);
-            const uploadTask = storageRef.put(file);
-            
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    // Progress tracking
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    const progressBar = document.getElementById('uploadProgressBar');
-                    if (progressBar) {
-                        progressBar.style.width = progress + '%';
-                    }
-                },
-                (error) => {
-                    console.error('Upload error:', error);
-                    reject(error);
-                },
-                async () => {
-                    try {
-                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                        resolve(downloadURL);
-                    } catch (urlError) {
-                        reject(urlError);
-                    }
-                }
-            );
-        });
-    }
-
-    attachMedia(type) {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = `${type}/*`;
-        input.onchange = (e) => this.handleMediaSelect(e, type);
-        input.click();
-    }
-
-    handleMediaSelect(event, type) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        this.currentMediaFile = file;
-        this.showMediaPreview(file, type);
-    }
-
-    showMediaPreview(file, type) {
-        const previewContainer = document.getElementById('mediaPreview');
-        const previewImage = document.getElementById('previewImage');
-        const previewVideo = document.getElementById('previewVideo');
-        const previewAudio = document.getElementById('previewAudio');
-        const uploadProgress = document.getElementById('uploadProgress');
-
-        if (!previewContainer) return;
-
-        // Hide all previews first
-        if (previewImage) previewImage.classList.add('hidden');
-        if (previewVideo) previewVideo.classList.add('hidden');
-        if (previewAudio) previewAudio.classList.add('hidden');
-        if (uploadProgress) uploadProgress.classList.remove('hidden');
-
-        const objectUrl = URL.createObjectURL(file);
-
-        if (type === 'image' && previewImage) {
-            previewImage.src = objectUrl;
-            previewImage.classList.remove('hidden');
-        } else if (type === 'video' && previewVideo) {
-            previewVideo.src = objectUrl;
-            previewVideo.classList.remove('hidden');
-        } else if (type === 'audio' && previewAudio) {
-            previewAudio.src = objectUrl;
-            previewAudio.classList.remove('hidden');
-        }
-
-        previewContainer.classList.remove('hidden');
-    }
-
-    clearMediaPreview() {
-        const previewContainer = document.getElementById('mediaPreview');
-        if (previewContainer) {
-            previewContainer.classList.add('hidden');
-        }
-        const uploadProgress = document.getElementById('uploadProgress');
-        if (uploadProgress) uploadProgress.classList.add('hidden');
-        const progressBar = document.getElementById('uploadProgressBar');
-        if (progressBar) progressBar.style.width = '0%';
-    }
-
-    toggleWhisperMode() {
-        this.whisperMode = !this.whisperMode;
-        const whisperBtn = document.getElementById('whisperButton');
-        
-        if (whisperBtn) {
-            if (this.whisperMode) {
-                whisperBtn.classList.add('text-yellow-400');
-                whisperBtn.classList.remove('text-blue-400');
-                this.showNotification('Whisper mode activated - messages will self-destruct after 24 hours', 'info');
-            } else {
-                whisperBtn.classList.remove('text-yellow-400');
-                whisperBtn.classList.add('text-blue-400');
-                this.showNotification('Whisper mode deactivated', 'info');
-            }
-        }
-    }
-
-    toggleEmojiPicker() {
-        const picker = document.getElementById('emojiPicker');
-        if (picker) {
-            picker.classList.toggle('hidden');
-        }
-    }
-
-    initializeEmojiPicker() {
-        const emojiGrid = document.querySelector('.emoji-grid');
-        if (!emojiGrid) return;
-
-        emojiGrid.addEventListener('click', (e) => {
-            if (e.target.classList.contains('emoji')) {
-                const input = document.getElementById('message-input');
-                if (input) {
-                    input.value += e.target.textContent;
-                    input.focus();
-                }
-            }
-        });
-    }
-
     applyEmotionTheme(emotion) {
         if (emotion === this.currentEmotion) return;
         
         this.currentEmotion = emotion;
-        const body = document.getElementById('emotionBody');
-        const messageArea = document.getElementById('messageInputArea');
+        const body = document.body;
+        const messageArea = document.getElementById('message-input');
         
         // Remove previous emotion classes
-        if (body) {
-            body.className = body.className.replace(/emotion-\w+/g, '');
-            body.classList.add(`emotion-${emotion}`);
-        }
+        body.className = body.className.replace(/emotion-\w+/g, '');
+        body.classList.add(`emotion-${emotion}`);
+        
         if (messageArea) {
             messageArea.className = messageArea.className.replace(/emotion-border-\w+/g, '');
             messageArea.classList.add(`emotion-border-${emotion}`);
@@ -1286,176 +2000,6 @@ class ProfessionalChatSystem {
         });
     }
     
-    handleChatTypeSelection(type) {
-        this.closeAllModals();
-        this.showCreateGroupModal(type);
-    }
-    
-    showCreateGroupModal(type) {
-        const modalTitle = document.getElementById('group-modal-title');
-        if (modalTitle) {
-            modalTitle.textContent = `Create ${type.charAt(0).toUpperCase() + type.slice(1)} Group`;
-        }
-        
-        const groupType = document.getElementById('group-type');
-        if (groupType) groupType.value = type;
-        
-        this.loadAvailableMembers();
-        this.showModal('create-group-modal');
-    }
-    
-    loadAvailableMembers() {
-        const container = document.getElementById('available-members');
-        if (!container) return;
-        
-        const membersHTML = this.users.map(user => `
-            <div class="member-item">
-                <input type="checkbox" id="member-${user.id}" value="${user.id}">
-                <label for="member-${user.id}">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${user.online ? '#27ae60' : '#bdc3c7'}"></div>
-                        ${user.name} (${user.role})
-                    </div>
-                </label>
-            </div>
-        `).join('');
-        
-        container.innerHTML = membersHTML;
-    }
-    
-    async createGroup(e) {
-        e.preventDefault();
-        
-        const groupNameInput = document.getElementById('group-name');
-        const groupTypeInput = document.getElementById('group-type');
-        
-        if (!groupNameInput || !groupTypeInput) return;
-        
-        const groupName = groupNameInput.value;
-        const groupType = groupTypeInput.value;
-        
-        if (!groupName.trim()) {
-            this.showNotification('Please enter a group name', 'warning');
-            return;
-        }
-        
-        // Get selected members
-        const selectedMembers = [];
-        document.querySelectorAll('#available-members input:checked').forEach(input => {
-            selectedMembers.push(input.value);
-        });
-        
-        if (selectedMembers.length === 0) {
-            this.showNotification('Please select at least one member', 'warning');
-            return;
-        }
-        
-        // Add current user to members
-        selectedMembers.push(this.currentUser.id);
-        
-        try {
-            const chatData = {
-                name: groupName,
-                type: groupType,
-                members: selectedMembers,
-                createdBy: this.currentUser.id,
-                avatarText: groupName.substring(0, 2).toUpperCase(),
-                lastMessage: 'Group created',
-                lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
-                lastRead: {
-                    [this.currentUser.id]: firebase.firestore.FieldValue.serverTimestamp()
-                }
-            };
-            
-            // Create new chat in Firestore
-            await this.firestore.collection('chats').add(chatData);
-            
-            // Close modal and show chat list
-            this.closeAllModals();
-            this.showChatList();
-            
-            this.showNotification(`${groupType.charAt(0).toUpperCase() + groupType.slice(1)} group created successfully`, 'success');
-            
-        } catch (error) {
-            console.error('Error creating group:', error);
-            this.showNotification('Error creating group', 'error');
-        }
-    }
-    
-    async showGroupInfoModal(chatId) {
-        const chat = this.chats.find(c => c.id === chatId);
-        
-        if (!chat) return;
-        
-        const groupAvatar = document.getElementById('group-avatar-large');
-        const groupName = document.getElementById('info-group-name');
-        const groupType = document.getElementById('info-group-type');
-        const memberCount = document.getElementById('info-member-count');
-        const membersList = document.getElementById('group-members-list');
-        
-        if (groupAvatar) groupAvatar.textContent = chat.avatarText || chat.name.substring(0, 2).toUpperCase();
-        if (groupName) groupName.textContent = chat.name;
-        if (groupType) groupType.textContent = `${chat.type.charAt(0).toUpperCase() + chat.type.slice(1)} Group`;
-        if (memberCount) memberCount.textContent = `${chat.members.length} members`;
-        
-        if (membersList) {
-            membersList.innerHTML = '';
-            
-            chat.members.forEach(member => {
-                const memberItem = document.createElement('div');
-                memberItem.className = 'member-item';
-                memberItem.innerHTML = `
-                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <div class="chat-avatar" style="width: 35px; height: 35px; font-size: 0.8rem;">
-                                <span>${member.avatar}</span>
-                            </div>
-                            <div>
-                                <div style="font-weight: 600; color: #2c3e50;">${member.name}</div>
-                                <div style="font-size: 0.8rem; color: #7f8c8d;">${member.role}</div>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <div style="width: 8px; height: 8px; border-radius: 50%; background: ${member.online ? '#27ae60' : '#bdc3c7'}"></div>
-                            ${member.id === this.currentUser.id ? '<span style="color: #3498db; font-size: 0.8rem; font-weight: 600;">You</span>' : ''}
-                        </div>
-                    </div>
-                `;
-                membersList.appendChild(memberItem);
-            });
-        }
-        
-        this.showModal('group-info-modal');
-    }
-    
-    async leaveGroup() {
-        if (!this.currentChatId) return;
-        
-        if (confirm('Are you sure you want to leave this group? This action cannot be undone.')) {
-            try {
-                const chatRef = this.firestore.collection('chats').doc(this.currentChatId);
-                const chat = await chatRef.get();
-                
-                if (chat.exists) {
-                    const members = chat.data().members;
-                    const updatedMembers = members.filter(memberId => memberId !== this.currentUser.id);
-                    
-                    await chatRef.update({
-                        members: updatedMembers
-                    });
-                    
-                    this.showNotification('You have left the group', 'info');
-                    this.closeAllModals();
-                    this.showChatList();
-                }
-                
-            } catch (error) {
-                console.error('Error leaving group:', error);
-                this.showNotification('Error leaving group', 'error');
-            }
-        }
-    }
-    
     async markAsRead(chatId) {
         try {
             const chatRef = this.firestore.collection('chats').doc(chatId);
@@ -1474,7 +2018,7 @@ class ProfessionalChatSystem {
         }
     }
 
-    // Enhanced Features Implementation
+    // Enhanced Features Stubs
     showEmotionAnalysis() {
         if (!this.currentChatId) {
             this.showNotification('Please select a chat first', 'warning');
@@ -1507,36 +2051,6 @@ class ProfessionalChatSystem {
 
     hideTimeCapsule() {
         this.closeModal('timeCapsuleModal');
-    }
-
-    showCollabRoom() {
-        if (!this.currentChatId) {
-            this.showNotification('Please select a chat first', 'warning');
-            return;
-        }
-        this.showModal('collabRoomModal');
-    }
-
-    hideCollabRoom() {
-        this.closeModal('collabRoomModal');
-    }
-
-    showNearbyPulse() {
-        this.showModal('nearbyPulseModal');
-        this.loadNearbyPulse();
-    }
-
-    hideNearbyPulse() {
-        this.closeModal('nearbyPulseModal');
-    }
-
-    showChallenges() {
-        this.showModal('challengesModal');
-        this.loadDailyChallenges();
-    }
-
-    hideChallenges() {
-        this.closeModal('challengesModal');
     }
 
     showAddFriendModal() {
@@ -1635,49 +2149,6 @@ class ProfessionalChatSystem {
         this.hideTimeCapsule();
     }
 
-    async loadNearbyPulse() {
-        const contentDiv = document.getElementById('nearbyPulseContent');
-        if (!contentDiv) return;
-        
-        contentDiv.innerHTML = `
-            <div class="space-y-4">
-                <div class="glass-effect rounded-lg p-4">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                            <i class="fas fa-user text-white"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold">TechMeetup NYC</h4>
-                            <p class="text-xs text-blue-300">0.5km away • 15 people active</p>
-                        </div>
-                    </div>
-                    <p class="text-sm">Discussing AI and quantum computing trends</p>
-                </div>
-            </div>
-        `;
-    }
-
-    async loadDailyChallenges() {
-        const challenges = [
-            { title: "Send 5 Messages", progress: "2/5", reward: "15 🪙" },
-            { title: "Start New Conversation", progress: "0/1", reward: "20 🪙" },
-            { title: "Use 3 Emotions", progress: "1/3", reward: "25 🪙" }
-        ];
-
-        const container = document.getElementById('challengesList');
-        if (!container) return;
-
-        container.innerHTML = challenges.map(challenge => `
-            <div class="glass-effect rounded-lg p-4">
-                <div class="flex justify-between items-center mb-2">
-                    <h4 class="font-semibold">${challenge.title}</h4>
-                    <span class="text-sm text-yellow-400">${challenge.reward}</span>
-                </div>
-                <p class="text-sm text-blue-300">Progress: ${challenge.progress}</p>
-            </div>
-        `).join('');
-    }
-
     async searchFriends() {
         const query = document.getElementById('friendSearchInput')?.value;
         const resultsDiv = document.getElementById('friendSearchResults');
@@ -1715,18 +2186,6 @@ class ProfessionalChatSystem {
 
         this.showNotification(`Group "${groupName}" created successfully!`, 'success');
         this.hideCreateGroupModal();
-    }
-
-    startVideoCall() {
-        this.showNotification('Video call feature coming soon!', 'info');
-    }
-
-    startVoiceMessage() {
-        this.showNotification('Voice message feature coming soon!', 'info');
-    }
-
-    shareFile() {
-        this.showNotification('File sharing feature coming soon!', 'info');
     }
 
     searchMessages() {
@@ -1815,23 +2274,7 @@ class ProfessionalChatSystem {
             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
     }
-    
-    handleResize() {
-        if (window.innerWidth > 768) {
-            this.isSidebarVisible = true;
-        }
-    }
 }
-
-// Make the send function available globally for external use
-window.sendQuickMessage = function(text, imageUrl = null) {
-    if (window.chatSystem) {
-        return window.chatSystem.quickSend(text, imageUrl);
-    } else {
-        console.error('Chat system not initialized');
-        return Promise.reject('Chat system not initialized');
-    }
-};
 
 // Emotion AI Class
 class EmotionAI {
@@ -1949,7 +2392,28 @@ class GamificationSystem {
     }
 }
 
-// Initialize the chat system with better error handling
+// Make the send function available globally
+window.sendQuickMessage = function(text, imageUrl = null) {
+    if (window.chatSystem) {
+        return window.chatSystem.quickSend(text, imageUrl);
+    } else {
+        console.error('Chat system not initialized');
+        return Promise.reject('Chat system not initialized');
+    }
+};
+
+// Make features available globally
+window.chatFeatures = {
+    sendQuickMessage: (text, imageUrl) => window.sendQuickMessage(text, imageUrl),
+    startVideoCall: () => window.chatSystem?.startVideoCall(),
+    startVoiceCall: () => window.chatSystem?.startVoiceCall(),
+    shareLocation: () => window.chatSystem?.shareLocation(),
+    shareFile: () => window.chatSystem?.shareFile(),
+    sendGif: (gifUrl) => window.chatSystem?.sendGif(gifUrl),
+    sendSticker: (sticker) => window.chatSystem?.sendSticker(sticker)
+};
+
+// Initialize the chat system
 document.addEventListener('DOMContentLoaded', function() {
     // Check if we're on a chat page
     const chatApp = document.getElementById('chat-app');
@@ -1962,49 +2426,21 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // Wait for Firebase to be available
             if (typeof firebase === 'undefined') {
-                console.log('Firebase not loaded, loading from CDN...');
+                console.log('Firebase not loaded, waiting...');
                 
-                // Load Firebase from CDN
-                const firebaseScript = document.createElement('script');
-                firebaseScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
-                
-                const firestoreScript = document.createElement('script');
-                firestoreScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js';
-                
-                const authScript = document.createElement('script');
-                authScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js';
-                
-                const storageScript = document.createElement('script');
-                storageScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js';
-
-                // Load scripts sequentially
-                firebaseScript.onload = () => {
-                    firestoreScript.onload = () => {
-                        authScript.onload = () => {
-                            storageScript.onload = () => {
-                                console.log('✅ All Firebase scripts loaded');
-                                window.chatSystem = new ProfessionalChatSystem();
-                            };
-                            document.head.appendChild(storageScript);
-                        };
-                        document.head.appendChild(authScript);
-                    };
-                    document.head.appendChild(firestoreScript);
-                };
-                
-                document.head.appendChild(firebaseScript);
-
-                // Timeout after 10 seconds
-                setTimeout(() => {
-                    if (typeof firebase === 'undefined') {
-                        console.error('❌ Firebase failed to load within timeout period');
-                        throw new Error('Firebase failed to load');
-                    }
-                }, 10000);
-            } else {
-                console.log('✅ Firebase already available');
-                window.chatSystem = new ProfessionalChatSystem();
+                // Wait for Firebase to load
+                await new Promise((resolve) => {
+                    const checkFirebase = setInterval(() => {
+                        if (typeof firebase !== 'undefined') {
+                            clearInterval(checkFirebase);
+                            resolve();
+                        }
+                    }, 100);
+                });
             }
+
+            console.log('✅ Firebase available, initializing chat system...');
+            window.chatSystem = new ProfessionalChatSystem();
             
         } catch (error) {
             console.error('❌ Error initializing chat system:', error);
@@ -2032,14 +2468,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ProfessionalChatSystem;
-}
-// Register for settings updates
-if (window.settingsApp) {
-    window.settingsApp.addSettingsListener((settings) => {
-        // Apply theme
-        document.body.className = document.body.className.replace(/theme-\w+/g, '') + ' ' + settings.theme;
-        
-        // Apply other settings as needed
-        console.log("Settings updated:", settings);
-    });
 }

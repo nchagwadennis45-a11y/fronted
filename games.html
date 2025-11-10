@@ -594,7 +594,7 @@
         }
     </style>
 </head>
-<body class="h-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+<body class="h-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-x-hidden">
     <!-- Debug Panel -->
     <div class="debug-panel hidden md:block" id="debugPanel">
         <div>Firebase: <span id="firebaseStatus">Checking...</span></div>
@@ -609,7 +609,7 @@
     <div class="min-h-screen">
         <!-- Header -->
         <div class="glass-card border-b border-slate-700">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col sm:flex-row justify-between items-center py-4 space-y-4 sm:space-y-0">
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 primary-gradient rounded-2xl flex items-center justify-center">
@@ -622,7 +622,15 @@
                             <p class="text-slate-400 text-xs sm:text-sm">Unlimited levels & premium rewards</p>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-4">
+                    
+                    <!-- Mobile Menu Button -->
+                    <div class="md:hidden">
+                        <button id="mobileMenuButton" class="text-slate-400 hover:text-white">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="hidden md:flex items-center space-x-4">
                         <!-- Theme Toggle -->
                         <div class="theme-toggle hidden sm:block" id="themeToggle" onclick="toggleTheme()">
                             <i class="fas fa-moon absolute left-1 top-1 text-yellow-400 text-xs"></i>
@@ -643,10 +651,40 @@
                         <img id="userAvatar" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-slate-600" alt="User Avatar">
                     </div>
                 </div>
+                
+                <!-- Mobile Menu -->
+                <div id="mobileMenu" class="hidden md:hidden py-4 border-t border-slate-700">
+                    <div class="flex flex-col space-y-4">
+                        <!-- Search Bar for Mobile -->
+                        <div class="search-container relative">
+                            <input type="text" id="gameSearchMobile" placeholder="Search games..." 
+                                   class="bg-slate-800 text-white px-4 py-2 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            <div class="search-results hidden" id="searchResultsMobile"></div>
+                        </div>
+                        
+                        <!-- Theme Toggle for Mobile -->
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400">Theme</span>
+                            <div class="theme-toggle" id="themeToggleMobile" onclick="toggleTheme()">
+                                <i class="fas fa-moon absolute left-1 top-1 text-yellow-400 text-xs"></i>
+                                <i class="fas fa-sun absolute right-1 top-1 text-yellow-400 text-xs"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- User Info for Mobile -->
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="font-semibold text-white" id="userCoinsMobile">0 coins</div>
+                                <div class="text-slate-400 text-sm" id="userLevelMobile">Level 1</div>
+                            </div>
+                            <img id="userAvatarMobile" class="w-10 h-10 rounded-full border-2 border-slate-600" alt="User Avatar">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <!-- Quick Stats & Mood-Based Suggestions -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <!-- Quick Stats -->
@@ -1727,6 +1765,16 @@
                 } else {
                     avatar.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(userData.displayName) + "&background=3b82f6&color=fff";
                 }
+                
+                // Update mobile UI elements
+                document.getElementById('userCoinsMobile').textContent = userData.coins + ' coins';
+                document.getElementById('userLevelMobile').textContent = 'Level ' + userData.level;
+                const mobileAvatar = document.getElementById('userAvatarMobile');
+                if (userData.profilePicture) {
+                    mobileAvatar.src = userData.profilePicture;
+                } else {
+                    mobileAvatar.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(userData.displayName) + "&background=3b82f6&color=fff";
+                }
             }
         }
 
@@ -1904,9 +1952,26 @@
         }
 
         function setupEventListeners() {
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobileMenuButton');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            
             // Search functionality
             const searchInput = document.getElementById('gameSearch');
-            searchInput.addEventListener('input', handleSearch);
+            if (searchInput) {
+                searchInput.addEventListener('input', handleSearch);
+            }
+            
+            const searchInputMobile = document.getElementById('gameSearchMobile');
+            if (searchInputMobile) {
+                searchInputMobile.addEventListener('input', handleSearch);
+            }
             
             // Category filters
             document.querySelectorAll('[data-category]').forEach(button => {
@@ -1925,7 +1990,9 @@
 
         function handleSearch(e) {
             const query = e.target.value.toLowerCase();
-            const resultsContainer = document.getElementById('searchResults');
+            const resultsContainer = e.target.id === 'gameSearchMobile' ? 
+                document.getElementById('searchResultsMobile') : 
+                document.getElementById('searchResults');
             
             if (query.length < 2) {
                 resultsContainer.classList.add('hidden');
@@ -1953,7 +2020,12 @@
                     resultItem.onclick = () => {
                         startGame(game.id);
                         resultsContainer.classList.add('hidden');
-                        searchInput.value = '';
+                        if (e.target.id === 'gameSearchMobile') {
+                            document.getElementById('gameSearchMobile').value = '';
+                            document.getElementById('mobileMenu').classList.add('hidden');
+                        } else {
+                            document.getElementById('gameSearch').value = '';
+                        }
                     };
                     resultsContainer.appendChild(resultItem);
                 });
@@ -3055,11 +3127,14 @@
 
         function toggleTheme() {
             const toggle = document.getElementById('themeToggle');
-            toggle.classList.toggle('active');
+            const mobileToggle = document.getElementById('themeToggleMobile');
+            
+            if (toggle) toggle.classList.toggle('active');
+            if (mobileToggle) mobileToggle.classList.toggle('active');
             
             // In a real app, this would toggle between light and dark mode
             // For this demo, we'll just show a toast
-            const isDark = toggle.classList.contains('active');
+            const isDark = toggle ? toggle.classList.contains('active') : mobileToggle.classList.contains('active');
             showToast(`Switched to ${isDark ? 'dark' : 'light'} mode`, 'info');
         }
 

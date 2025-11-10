@@ -2,11 +2,10 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Neural Alerts - ConnectSphere</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="responsive.css">
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
@@ -214,9 +213,72 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 767px) {
+            .mobile-padding {
+                padding: 1rem;
+            }
+            
+            .mobile-margin {
+                margin-bottom: 1.5rem;
+            }
+            
+            .mobile-text-center {
+                text-align: center;
+            }
+            
+            .mobile-stack {
+                flex-direction: column;
+            }
+            
+            .mobile-space-y > * + * {
+                margin-top: 1rem;
+            }
+            
+            .modal-content {
+                padding: 1rem;
+            }
+            
+            .notification-category {
+                margin-bottom: 2rem;
+            }
+            
+            .category-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .notification-actions {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .notification-action-btn {
+                font-size: 0.7rem;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            .quick-actions-panel {
+                bottom: 1rem;
+                right: 1rem;
+            }
+            
+            .quick-action-btn {
+                width: 2.5rem;
+                height: 2.5rem;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .modal-content {
+                padding: 2rem;
+            }
+        }
     </style>
 </head>
-<body class="h-full bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
+<body class="h-full bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white overflow-x-hidden">
     <!-- Firebase Connection Status -->
     <div class="connection-status connecting" id="connectionStatus">
         <i class="fas fa-circle-notch fa-spin mr-2"></i>
@@ -230,8 +292,8 @@
     </div>
 
     <div class="flex h-full">
-        <!-- Neural Navigation -->
-        <div class="w-20 lg:w-64 neuro-glass border-r border-purple-800 flex flex-col">
+        <!-- Neural Navigation - Hidden on mobile -->
+        <div class="hidden lg:flex w-20 lg:w-64 neuro-glass border-r border-purple-800 flex-col">
             <div class="p-4">
                 <a href="integration.html" class="flex items-center space-x-3">
                     <div class="w-10 h-10 cyber-gradient rounded-2xl flex items-center justify-center">
@@ -265,12 +327,18 @@
         </div>
 
         <!-- Main Neural Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex-1 flex flex-col overflow-hidden w-full">
             <!-- Cyber Header -->
-            <header class="neuro-glass border-b border-purple-800 px-6 py-4">
+            <header class="neuro-glass border-b border-purple-800 px-4 md:px-6 py-4">
                 <div class="flex items-center justify-between">
-                    <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">Neural Alerts</h1>
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <!-- Mobile Menu Button -->
+                        <button id="mobileMenuBtn" class="lg:hidden text-purple-400 hover:text-cyan-400 transition">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h1 class="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">Neural Alerts</h1>
+                    </div>
+                    <div class="flex items-center space-x-2 md:space-x-4">
                         <button id="notificationSettingsBtn" class="text-purple-400 hover:text-cyan-400 transition">
                             <i class="fas fa-sliders-h"></i>
                         </button>
@@ -286,36 +354,36 @@
 
             <!-- Neural Alert Tabs & Filters -->
             <div class="neuro-glass border-b border-purple-800">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between px-6">
-                    <nav class="flex space-x-8">
-                        <button class="tab-btn border-b-2 border-cyan-400 text-cyan-400 py-4 px-1 font-semibold" data-tab="all">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between px-4 md:px-6">
+                    <nav class="flex space-x-4 md:space-x-8 overflow-x-auto py-2 lg:py-0">
+                        <button class="tab-btn border-b-2 border-cyan-400 text-cyan-400 py-2 md:py-4 px-1 font-semibold whitespace-nowrap" data-tab="all">
                             All Alerts
                         </button>
-                        <button class="tab-btn text-purple-400 hover:text-cyan-400 py-4 px-1 font-semibold transition" data-tab="unread">
+                        <button class="tab-btn text-purple-400 hover:text-cyan-400 py-2 md:py-4 px-1 font-semibold whitespace-nowrap transition" data-tab="unread">
                             Unread
                         </button>
-                        <button class="tab-btn text-purple-400 hover:text-cyan-400 py-4 px-1 font-semibold transition" data-tab="messages">
+                        <button class="tab-btn text-purple-400 hover:text-cyan-400 py-2 md:py-4 px-1 font-semibold whitespace-nowrap transition" data-tab="messages">
                             Messages
                         </button>
-                        <button class="tab-btn text-purple-400 hover:text-cyan-400 py-4 px-1 font-semibold transition" data-tab="games">
+                        <button class="tab-btn text-purple-400 hover:text-cyan-400 py-2 md:py-4 px-1 font-semibold whitespace-nowrap transition" data-tab="games">
                             Games
                         </button>
-                        <button class="tab-btn text-purple-400 hover:text-cyan-400 py-4 px-1 font-semibold transition" data-tab="marketplace">
+                        <button class="tab-btn text-purple-400 hover:text-cyan-400 py-2 md:py-4 px-1 font-semibold whitespace-nowrap transition" data-tab="marketplace">
                             Marketplace
                         </button>
                     </nav>
                     
-                    <div class="flex space-x-2 py-2 lg:py-0">
-                        <button class="filter-btn px-3 py-1 neuro-glass text-cyan-400 rounded-2xl border border-cyan-500/50 filter-active" data-filter="all">
+                    <div class="flex space-x-2 py-2 lg:py-0 overflow-x-auto">
+                        <button class="filter-btn px-3 py-1 neuro-glass text-cyan-400 rounded-2xl border border-cyan-500/50 filter-active whitespace-nowrap" data-filter="all">
                             All
                         </button>
-                        <button class="filter-btn px-3 py-1 neuro-glass text-purple-400 rounded-2xl hover:border-purple-500/50" data-filter="quantum">
+                        <button class="filter-btn px-3 py-1 neuro-glass text-purple-400 rounded-2xl hover:border-purple-500/50 whitespace-nowrap" data-filter="quantum">
                             Quantum
                         </button>
-                        <button class="filter-btn px-3 py-1 neuro-glass text-purple-400 rounded-2xl hover:border-purple-500/50" data-filter="neural">
+                        <button class="filter-btn px-3 py-1 neuro-glass text-purple-400 rounded-2xl hover:border-purple-500/50 whitespace-nowrap" data-filter="neural">
                             Neural
                         </button>
-                        <button class="filter-btn px-3 py-1 neuro-glass text-purple-400 rounded-2xl hover:border-purple-500/50" data-filter="ai">
+                        <button class="filter-btn px-3 py-1 neuro-glass text-purple-400 rounded-2xl hover:border-purple-500/50 whitespace-nowrap" data-filter="ai">
                             AI
                         </button>
                     </div>
@@ -324,132 +392,172 @@
 
             <!-- Neural Alerts Stream -->
             <main class="flex-1 overflow-y-auto bg-gradient-to-b from-purple-900/20 to-gray-900/50">
-                <div class="max-w-4xl mx-auto p-6">
+                <div class="max-w-4xl mx-auto p-4 md:p-6">
                     <!-- Notification Stats -->
-                    <div class="neuro-glass rounded-2xl p-6 mb-6 border border-purple-700">
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div class="text-center p-4 rounded-xl bg-cyan-900/20 border border-cyan-500/30">
-                                <div class="text-2xl font-bold text-cyan-400" id="totalAlerts">12</div>
-                                <div class="text-sm text-purple-300">Total Alerts</div>
+                    <div class="neuro-glass rounded-2xl p-4 md:p-6 mb-4 md:mb-6 border border-purple-700">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                            <div class="text-center p-3 md:p-4 rounded-xl bg-cyan-900/20 border border-cyan-500/30">
+                                <div class="text-xl md:text-2xl font-bold text-cyan-400" id="totalAlerts">12</div>
+                                <div class="text-xs md:text-sm text-purple-300">Total Alerts</div>
                             </div>
-                            <div class="text-center p-4 rounded-xl bg-purple-900/20 border border-purple-500/30">
-                                <div class="text-2xl font-bold text-purple-400" id="unreadAlerts">5</div>
-                                <div class="text-sm text-purple-300">Unread</div>
+                            <div class="text-center p-3 md:p-4 rounded-xl bg-purple-900/20 border border-purple-500/30">
+                                <div class="text-xl md:text-2xl font-bold text-purple-400" id="unreadAlerts">5</div>
+                                <div class="text-xs md:text-sm text-purple-300">Unread</div>
                             </div>
-                            <div class="text-center p-4 rounded-xl bg-green-900/20 border border-green-500/30">
-                                <div class="text-2xl font-bold text-green-400" id="todayAlerts">3</div>
-                                <div class="text-sm text-purple-300">Today</div>
+                            <div class="text-center p-3 md:p-4 rounded-xl bg-green-900/20 border border-green-500/30">
+                                <div class="text-xl md:text-2xl font-bold text-green-400" id="todayAlerts">3</div>
+                                <div class="text-xs md:text-sm text-purple-300">Today</div>
                             </div>
-                            <div class="text-center p-4 rounded-xl bg-yellow-900/20 border border-yellow-500/30">
-                                <div class="text-2xl font-bold text-yellow-400" id="priorityAlerts">2</div>
-                                <div class="text-sm text-purple-300">High Priority</div>
+                            <div class="text-center p-3 md:p-4 rounded-xl bg-yellow-900/20 border border-yellow-500/30">
+                                <div class="text-xl md:text-2xl font-bold text-yellow-400" id="priorityAlerts">2</div>
+                                <div class="text-xs md:text-sm text-purple-300">High Priority</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Category Sections -->
-                    <div class="space-y-8" id="notificationsContainer">
+                    <div class="space-y-6 md:space-y-8" id="notificationsContainer">
                         <!-- Messages Category -->
                         <div class="notification-category" data-category="messages">
-                            <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center justify-between mb-4 category-header">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-3 h-3 bg-blue-500 rounded-full neural-pulse"></div>
-                                    <h3 class="text-lg font-semibold text-blue-400">Messages</h3>
+                                    <h3 class="text-base md:text-lg font-semibold text-blue-400">Messages</h3>
                                     <span class="category-badge category-messages" id="messagesCount">3</span>
                                 </div>
                                 <button class="text-xs neuro-glass text-blue-400 rounded-2xl px-3 py-1 hover:bg-blue-900/30 transition mark-category-read" data-category="messages">
                                     <i class="fas fa-check mr-1"></i> Mark all as read
                                 </button>
                             </div>
-                            <div class="space-y-4" id="messagesNotifications">
+                            <div class="space-y-3 md:space-y-4" id="messagesNotifications">
                                 <!-- Message notifications will be loaded here -->
                             </div>
                         </div>
 
                         <!-- Games Category -->
                         <div class="notification-category" data-category="games">
-                            <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center justify-between mb-4 category-header">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-3 h-3 bg-purple-500 rounded-full neural-pulse"></div>
-                                    <h3 class="text-lg font-semibold text-purple-400">Games</h3>
+                                    <h3 class="text-base md:text-lg font-semibold text-purple-400">Games</h3>
                                     <span class="category-badge category-games" id="gamesCount">2</span>
                                 </div>
                                 <button class="text-xs neuro-glass text-purple-400 rounded-2xl px-3 py-1 hover:bg-purple-900/30 transition mark-category-read" data-category="games">
                                     <i class="fas fa-check mr-1"></i> Mark all as read
                                 </button>
                             </div>
-                            <div class="space-y-4" id="gamesNotifications">
+                            <div class="space-y-3 md:space-y-4" id="gamesNotifications">
                                 <!-- Game notifications will be loaded here -->
                             </div>
                         </div>
 
                         <!-- Marketplace Category -->
                         <div class="notification-category" data-category="marketplace">
-                            <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center justify-between mb-4 category-header">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-3 h-3 bg-green-500 rounded-full neural-pulse"></div>
-                                    <h3 class="text-lg font-semibold text-green-400">Marketplace</h3>
+                                    <h3 class="text-base md:text-lg font-semibold text-green-400">Marketplace</h3>
                                     <span class="category-badge category-marketplace" id="marketplaceCount">2</span>
                                 </div>
                                 <button class="text-xs neuro-glass text-green-400 rounded-2xl px-3 py-1 hover:bg-green-900/30 transition mark-category-read" data-category="marketplace">
                                     <i class="fas fa-check mr-1"></i> Mark all as read
                                 </button>
                             </div>
-                            <div class="space-y-4" id="marketplaceNotifications">
+                            <div class="space-y-3 md:space-y-4" id="marketplaceNotifications">
                                 <!-- Marketplace notifications will be loaded here -->
                             </div>
                         </div>
 
                         <!-- System Category -->
                         <div class="notification-category" data-category="system">
-                            <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center justify-between mb-4 category-header">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-3 h-3 bg-gray-500 rounded-full neural-pulse"></div>
-                                    <h3 class="text-lg font-semibold text-gray-400">System</h3>
+                                    <h3 class="text-base md:text-lg font-semibold text-gray-400">System</h3>
                                     <span class="category-badge category-system" id="systemCount">5</span>
                                 </div>
                                 <button class="text-xs neuro-glass text-gray-400 rounded-2xl px-3 py-1 hover:bg-gray-900/30 transition mark-category-read" data-category="system">
                                     <i class="fas fa-check mr-1"></i> Mark all as read
                                 </button>
                             </div>
-                            <div class="space-y-4" id="systemNotifications">
+                            <div class="space-y-3 md:space-y-4" id="systemNotifications">
                                 <!-- System notifications will be loaded here -->
                             </div>
                         </div>
                     </div>
 
                     <!-- Empty State -->
-                    <div id="emptyState" class="hidden text-center py-12">
-                        <div class="w-24 h-24 neuro-glass rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                            <i class="fas fa-bell-slash text-3xl text-purple-400"></i>
+                    <div id="emptyState" class="hidden text-center py-8 md:py-12">
+                        <div class="w-16 h-16 md:w-24 md:h-24 neuro-glass rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-bell-slash text-2xl md:text-3xl text-purple-400"></i>
                         </div>
-                        <h3 class="text-xl font-semibold text-cyan-400 mb-2">No Notifications</h3>
-                        <p class="text-purple-300 max-w-md mx-auto">Your neural stream is quiet. New alerts will appear here as they're detected.</p>
+                        <h3 class="text-lg md:text-xl font-semibold text-cyan-400 mb-2">No Notifications</h3>
+                        <p class="text-purple-300 max-w-md mx-auto text-sm md:text-base">Your neural stream is quiet. New alerts will appear here as they're detected.</p>
                     </div>
                 </div>
             </main>
         </div>
     </div>
 
+    <!-- Mobile Navigation Menu -->
+    <div id="mobileNavMenu" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden lg:hidden">
+        <div class="flex flex-col h-full neuro-glass max-w-xs w-full">
+            <div class="p-4 border-b border-purple-800">
+                <div class="flex items-center justify-between">
+                    <a href="integration.html" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 cyber-gradient rounded-2xl flex items-center justify-center">
+                            <i class="fas fa-brain text-white"></i>
+                        </div>
+                        <span class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+                            ConnectSphere
+                        </span>
+                    </a>
+                    <button id="closeMobileMenuBtn" class="text-purple-400 hover:text-cyan-400">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="home.html" class="flex items-center space-x-3 p-3 rounded-xl text-purple-300 hover:bg-purple-900/30 hover:text-cyan-400 transition">
+                    <i class="fas fa-home w-6"></i>
+                    <span>Neural Feed</span>
+                </a>
+                <a href="chat.html" class="flex items-center space-x-3 p-3 rounded-xl text-purple-300 hover:bg-purple-900/30 hover:text-cyan-400 transition">
+                    <i class="fas fa-comment-dots w-6"></i>
+                    <span>Quantum Chat</span>
+                </a>
+                <a href="notifications.html" class="flex items-center space-x-3 p-3 rounded-xl bg-cyan-900/30 text-cyan-400 border border-cyan-500/50">
+                    <i class="fas fa-bell w-6"></i>
+                    <span>Neural Alerts</span>
+                    <span id="mobileNotificationBadge" class="bg-cyan-500 text-white text-xs px-2 py-1 rounded-full neural-pulse">5</span>
+                </a>
+                <a href="profile.html" class="flex items-center space-x-3 p-3 rounded-xl text-purple-300 hover:bg-purple-900/30 hover:text-cyan-400 transition">
+                    <i class="fas fa-user-astronaut w-6"></i>
+                    <span>Neural Profile</span>
+                </a>
+            </nav>
+        </div>
+    </div>
+
     <!-- Enhanced Notification Settings Modal -->
     <div id="settingsModal" class="modal-overlay hidden">
         <div class="modal-content fade-in">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-cyan-400">Notification Settings</h3>
+            <div class="flex justify-between items-center mb-4 md:mb-6">
+                <h3 class="text-lg md:text-xl font-bold text-cyan-400">Notification Settings</h3>
                 <button id="closeSettingsBtn" class="text-purple-400 hover:text-cyan-400">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             
-            <div class="space-y-6">
+            <div class="space-y-4 md:space-y-6">
                 <!-- Push Notification Preferences -->
                 <div>
-                    <h4 class="text-lg font-semibold text-purple-300 mb-3">Push Notifications</h4>
+                    <h4 class="text-base md:text-lg font-semibold text-purple-300 mb-3">Push Notifications</h4>
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="text-gray-300 font-medium">Enable Push Notifications</span>
-                                <p class="text-sm text-gray-400">Receive notifications even when app is closed</p>
+                                <span class="text-gray-300 font-medium text-sm md:text-base">Enable Push Notifications</span>
+                                <p class="text-xs md:text-sm text-gray-400">Receive notifications even when app is closed</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" id="pushNotificationsToggle" checked>
@@ -461,12 +569,12 @@
 
                 <!-- Notification Categories -->
                 <div>
-                    <h4 class="text-lg font-semibold text-purple-300 mb-3">Notification Categories</h4>
+                    <h4 class="text-base md:text-lg font-semibold text-purple-300 mb-3">Notification Categories</h4>
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="text-gray-300">Messages</span>
-                                <p class="text-sm text-gray-400">New messages, replies, mentions</p>
+                                <span class="text-gray-300 text-sm md:text-base">Messages</span>
+                                <p class="text-xs md:text-sm text-gray-400">New messages, replies, mentions</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" data-category="messages" checked>
@@ -475,8 +583,8 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="text-gray-300">Games</span>
-                                <p class="text-sm text-gray-400">Game invites, achievements, updates</p>
+                                <span class="text-gray-300 text-sm md:text-base">Games</span>
+                                <p class="text-xs md:text-sm text-gray-400">Game invites, achievements, updates</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" data-category="games" checked>
@@ -485,8 +593,8 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="text-gray-300">Marketplace</span>
-                                <p class="text-sm text-gray-400">Sales, purchases, listings</p>
+                                <span class="text-gray-300 text-sm md:text-base">Marketplace</span>
+                                <p class="text-xs md:text-sm text-gray-400">Sales, purchases, listings</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" data-category="marketplace" checked>
@@ -495,8 +603,8 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="text-gray-300">System</span>
-                                <p class="text-sm text-gray-400">Updates, maintenance, security</p>
+                                <span class="text-gray-300 text-sm md:text-base">System</span>
+                                <p class="text-xs md:text-sm text-gray-400">Updates, maintenance, security</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" data-category="system" checked>
@@ -508,27 +616,27 @@
                 
                 <!-- Notification Sound -->
                 <div>
-                    <h4 class="text-lg font-semibold text-purple-300 mb-3">Notification Sound</h4>
-                    <div class="flex space-x-4">
+                    <h4 class="text-base md:text-lg font-semibold text-purple-300 mb-3">Notification Sound</h4>
+                    <div class="flex space-x-3 md:space-x-4 mobile-stack">
                         <button class="flex-1 neuro-glass text-cyan-400 rounded-2xl p-3 border border-cyan-500/50 hover:bg-cyan-900/30 transition text-center sound-option active" data-sound="quantum">
-                            <i class="fas fa-volume-up text-xl mb-2"></i>
-                            <div>Quantum Pulse</div>
+                            <i class="fas fa-volume-up text-lg md:text-xl mb-2"></i>
+                            <div class="text-sm md:text-base">Quantum Pulse</div>
                         </button>
                         <button class="flex-1 neuro-glass text-purple-400 rounded-2xl p-3 border border-purple-700 hover:bg-purple-900/30 transition text-center sound-option" data-sound="neural">
-                            <i class="fas fa-wave-square text-xl mb-2"></i>
-                            <div>Neural Wave</div>
+                            <i class="fas fa-wave-square text-lg md:text-xl mb-2"></i>
+                            <div class="text-sm md:text-base">Neural Wave</div>
                         </button>
                     </div>
                 </div>
 
                 <!-- Real-time Settings -->
                 <div>
-                    <h4 class="text-lg font-semibold text-purple-300 mb-3">Real-time Updates</h4>
+                    <h4 class="text-base md:text-lg font-semibold text-purple-300 mb-3">Real-time Updates</h4>
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="text-gray-300">Live Updates</span>
-                                <p class="text-sm text-gray-400">Receive notifications in real-time</p>
+                                <span class="text-gray-300 text-sm md:text-base">Live Updates</span>
+                                <p class="text-xs md:text-sm text-gray-400">Receive notifications in real-time</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" id="realtimeUpdatesToggle" checked>
@@ -537,8 +645,8 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="text-gray-300">Desktop Notifications</span>
-                                <p class="text-sm text-gray-400">Show notifications on your desktop</p>
+                                <span class="text-gray-300 text-sm md:text-base">Desktop Notifications</span>
+                                <p class="text-xs md:text-sm text-gray-400">Show notifications on your desktop</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" id="desktopNotificationsToggle">
@@ -549,10 +657,10 @@
                 </div>
                 
                 <div class="flex justify-end space-x-3 pt-4">
-                    <button id="cancelSettingsBtn" class="px-4 py-2 neuro-glass text-purple-300 rounded-2xl hover:bg-purple-900/30 border border-purple-700 transition">
+                    <button id="cancelSettingsBtn" class="px-4 py-2 neuro-glass text-purple-300 rounded-2xl hover:bg-purple-900/30 border border-purple-700 transition text-sm md:text-base">
                         Cancel
                     </button>
-                    <button id="saveSettingsBtn" class="px-4 py-2 cyber-gradient text-white rounded-2xl hover:scale-105 font-medium transition">
+                    <button id="saveSettingsBtn" class="px-4 py-2 cyber-gradient text-white rounded-2xl hover:scale-105 font-medium transition text-sm md:text-base">
                         Save Settings
                     </button>
                 </div>
@@ -563,57 +671,57 @@
     <!-- Notification Detail Modal -->
     <div id="notificationDetailModal" class="modal-overlay hidden">
         <div class="modal-content fade-in" style="max-width: 700px;">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-cyan-400" id="detailTitle">Notification Details</h3>
+            <div class="flex justify-between items-center mb-4 md:mb-6">
+                <h3 class="text-lg md:text-xl font-bold text-cyan-400" id="detailTitle">Notification Details</h3>
                 <button id="closeDetailBtn" class="text-purple-400 hover:text-cyan-400">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             
-            <div class="space-y-6">
+            <div class="space-y-4 md:space-y-6">
                 <!-- Notification Header -->
-                <div class="neuro-glass rounded-2xl p-4 border border-purple-700">
-                    <div class="flex items-start space-x-4">
-                        <div id="detailAvatar" class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-user text-white text-xl"></i>
+                <div class="neuro-glass rounded-2xl p-3 md:p-4 border border-purple-700">
+                    <div class="flex items-start space-x-3 md:space-x-4">
+                        <div id="detailAvatar" class="w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-user text-white text-lg md:text-xl"></i>
                         </div>
                         <div class="flex-1">
                             <div class="flex items-start justify-between">
                                 <div>
-                                    <h4 id="detailUser" class="text-lg font-bold text-cyan-400">User Name</h4>
-                                    <p id="detailTime" class="text-sm text-purple-400">Time</p>
+                                    <h4 id="detailUser" class="text-base md:text-lg font-bold text-cyan-400">User Name</h4>
+                                    <p id="detailTime" class="text-xs md:text-sm text-purple-400">Time</p>
                                 </div>
                                 <div id="detailCategory" class="text-xs px-2 py-1 rounded-full">Category</div>
                             </div>
-                            <p id="detailContent" class="text-gray-300 mt-2">Notification content</p>
+                            <p id="detailContent" class="text-gray-300 mt-2 text-sm md:text-base">Notification content</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Detailed Content -->
-                <div id="detailContentArea" class="neuro-glass rounded-2xl p-4 border border-purple-700">
-                    <h4 class="text-lg font-semibold text-purple-300 mb-3">Details</h4>
+                <div id="detailContentArea" class="neuro-glass rounded-2xl p-3 md:p-4 border border-purple-700">
+                    <h4 class="text-base md:text-lg font-semibold text-purple-300 mb-3">Details</h4>
                     <div id="detailedContent" class="notification-detail-content">
                         <!-- Detailed content will be loaded here -->
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex justify-between pt-4">
-                    <div class="flex space-x-3">
-                        <button id="markDetailReadBtn" class="px-4 py-2 neuro-glass text-purple-300 rounded-2xl hover:bg-purple-900/30 border border-purple-700 transition">
-                            <i class="fas fa-envelope-open mr-2"></i>Mark as Read
+                <div class="flex justify-between pt-4 mobile-stack mobile-space-y">
+                    <div class="flex space-x-2 md:space-x-3 notification-actions">
+                        <button id="markDetailReadBtn" class="px-3 md:px-4 py-2 neuro-glass text-purple-300 rounded-2xl hover:bg-purple-900/30 border border-purple-700 transition text-xs md:text-sm notification-action-btn">
+                            <i class="fas fa-envelope-open mr-1 md:mr-2"></i>Mark as Read
                         </button>
-                        <button id="archiveDetailBtn" class="px-4 py-2 neuro-glass text-green-400 rounded-2xl hover:bg-green-900/30 border border-green-500/50 transition">
-                            <i class="fas fa-archive mr-2"></i>Archive
+                        <button id="archiveDetailBtn" class="px-3 md:px-4 py-2 neuro-glass text-green-400 rounded-2xl hover:bg-green-900/30 border border-green-500/50 transition text-xs md:text-sm notification-action-btn">
+                            <i class="fas fa-archive mr-1 md:mr-2"></i>Archive
                         </button>
                     </div>
-                    <div class="flex space-x-3">
-                        <button id="closeDetailActionBtn" class="px-4 py-2 neuro-glass text-gray-300 rounded-2xl hover:bg-gray-900/30 border border-gray-700 transition">
+                    <div class="flex space-x-2 md:space-x-3 notification-actions">
+                        <button id="closeDetailActionBtn" class="px-3 md:px-4 py-2 neuro-glass text-gray-300 rounded-2xl hover:bg-gray-900/30 border border-gray-700 transition text-xs md:text-sm notification-action-btn">
                             Close
                         </button>
-                        <button id="respondDetailBtn" class="px-4 py-2 cyber-gradient text-white rounded-2xl hover:scale-105 font-medium transition">
-                            <i class="fas fa-reply mr-2"></i>Respond
+                        <button id="respondDetailBtn" class="px-3 md:px-4 py-2 cyber-gradient text-white rounded-2xl hover:scale-105 font-medium transition text-xs md:text-sm notification-action-btn">
+                            <i class="fas fa-reply mr-1 md:mr-2"></i>Respond
                         </button>
                     </div>
                 </div>
@@ -622,15 +730,15 @@
     </div>
 
     <!-- Quick Actions Panel -->
-    <div id="quickActionsPanel" class="fixed bottom-6 right-6 flex flex-col space-y-3 z-50">
-        <button id="quickReplyBtn" class="w-12 h-12 neuro-glass text-cyan-400 rounded-2xl border border-cyan-500/50 hover:bg-cyan-900/30 transition flex items-center justify-center">
-            <i class="fas fa-reply"></i>
+    <div id="quickActionsPanel" class="fixed bottom-4 md:bottom-6 right-4 md:right-6 flex flex-col space-y-2 md:space-y-3 z-50 quick-actions-panel">
+        <button id="quickReplyBtn" class="w-10 h-10 md:w-12 md:h-12 neuro-glass text-cyan-400 rounded-2xl border border-cyan-500/50 hover:bg-cyan-900/30 transition flex items-center justify-center quick-action-btn">
+            <i class="fas fa-reply text-sm md:text-base"></i>
         </button>
-        <button id="snoozeBtn" class="w-12 h-12 neuro-glass text-purple-400 rounded-2xl border border-purple-700 hover:bg-purple-900/30 transition flex items-center justify-center">
-            <i class="fas fa-clock"></i>
+        <button id="snoozeBtn" class="w-10 h-10 md:w-12 md:h-12 neuro-glass text-purple-400 rounded-2xl border border-purple-700 hover:bg-purple-900/30 transition flex items-center justify-center quick-action-btn">
+            <i class="fas fa-clock text-sm md:text-base"></i>
         </button>
-        <button id="archiveBtn" class="w-12 h-12 neuro-glass text-green-400 rounded-2xl border border-green-500/50 hover:bg-green-900/30 transition flex items-center justify-center">
-            <i class="fas fa-archive"></i>
+        <button id="archiveBtn" class="w-10 h-10 md:w-12 md:h-12 neuro-glass text-green-400 rounded-2xl border border-green-500/50 hover:bg-green-900/30 transition flex items-center justify-center quick-action-btn">
+            <i class="fas fa-archive text-sm md:text-base"></i>
         </button>
     </div>
 
@@ -724,25 +832,25 @@
                     detailedContent: `
                         <div class="space-y-4">
                             <div class="text-center">
-                                <div class="w-20 h-20 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                                    <i class="fas fa-chess-queen text-white text-2xl"></i>
+                                <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                                    <i class="fas fa-chess-queen text-white text-xl md:text-2xl"></i>
                                 </div>
-                                <h4 class="text-xl font-bold text-cyan-400">Quantum Chess Invitation</h4>
-                                <p class="text-purple-300 mt-2">Cyber_Nova challenges you to a game of Quantum Chess</p>
+                                <h4 class="text-lg md:text-xl font-bold text-cyan-400">Quantum Chess Invitation</h4>
+                                <p class="text-purple-300 mt-2 text-sm md:text-base">Cyber_Nova challenges you to a game of Quantum Chess</p>
                             </div>
-                            <div class="grid grid-cols-2 gap-4 mt-6">
-                                <div class="text-center p-3 neuro-glass rounded-xl">
-                                    <div class="text-lg font-bold text-cyan-400">1,240</div>
-                                    <div class="text-sm text-purple-400">Cyber_Nova's Rating</div>
+                            <div class="grid grid-cols-2 gap-3 md:gap-4 mt-4 md:mt-6">
+                                <div class="text-center p-2 md:p-3 neuro-glass rounded-xl">
+                                    <div class="text-base md:text-lg font-bold text-cyan-400">1,240</div>
+                                    <div class="text-xs md:text-sm text-purple-400">Cyber_Nova's Rating</div>
                                 </div>
-                                <div class="text-center p-3 neuro-glass rounded-xl">
-                                    <div class="text-lg font-bold text-green-400">1,150</div>
-                                    <div class="text-sm text-purple-400">Your Rating</div>
+                                <div class="text-center p-2 md:p-3 neuro-glass rounded-xl">
+                                    <div class="text-base md:text-lg font-bold text-green-400">1,150</div>
+                                    <div class="text-xs md:text-sm text-purple-400">Your Rating</div>
                                 </div>
                             </div>
-                            <div class="mt-4 p-3 neuro-glass rounded-xl">
-                                <h5 class="font-semibold text-purple-300 mb-2">Game Settings</h5>
-                                <ul class="text-sm text-gray-300 space-y-1">
+                            <div class="mt-3 md:mt-4 p-2 md:p-3 neuro-glass rounded-xl">
+                                <h5 class="font-semibold text-purple-300 mb-2 text-sm md:text-base">Game Settings</h5>
+                                <ul class="text-xs md:text-sm text-gray-300 space-y-1">
                                     <li>• Time Control: 10 minutes + 5 seconds</li>
                                     <li>• Variant: Standard Quantum Rules</li>
                                     <li>• Rated: Yes</li>
@@ -766,34 +874,34 @@
                     actions: ['view', 'respond', 'dismiss'],
                     detailedContent: `
                         <div class="space-y-4">
-                            <div class="flex items-center space-x-4">
-                                <div class="w-16 h-16 neuro-glass rounded-xl flex items-center justify-center">
-                                    <i class="fas fa-microchip text-cyan-400 text-2xl"></i>
+                            <div class="flex items-center space-x-3 md:space-x-4">
+                                <div class="w-12 h-12 md:w-16 md:h-16 neuro-glass rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-microchip text-cyan-400 text-lg md:text-2xl"></i>
                                 </div>
                                 <div class="flex-1">
-                                    <h4 class="text-lg font-bold text-cyan-400">Quantum Processor QP-9000</h4>
-                                    <p class="text-purple-300">Listed: $2,450</p>
+                                    <h4 class="text-base md:text-lg font-bold text-cyan-400">Quantum Processor QP-9000</h4>
+                                    <p class="text-purple-300 text-sm md:text-base">Listed: $2,450</p>
                                 </div>
                             </div>
-                            <div class="p-4 neuro-glass rounded-2xl border border-green-500/50">
-                                <h5 class="font-semibold text-green-400 mb-2">New Offer Received</h5>
+                            <div class="p-3 md:p-4 neuro-glass rounded-2xl border border-green-500/50">
+                                <h5 class="font-semibold text-green-400 mb-2 text-sm md:text-base">New Offer Received</h5>
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-2xl font-bold text-white">$2,200</p>
-                                        <p class="text-sm text-purple-400">from Quantum_Collector</p>
+                                        <p class="text-xl md:text-2xl font-bold text-white">$2,200</p>
+                                        <p class="text-xs md:text-sm text-purple-400">from Quantum_Collector</p>
                                     </div>
                                     <div class="text-right">
-                                        <p class="text-sm text-gray-300">10% below asking</p>
+                                        <p class="text-xs md:text-sm text-gray-300">10% below asking</p>
                                         <p class="text-xs text-purple-400">Expires in 24 hours</p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <button class="p-3 neuro-glass text-green-400 rounded-xl border border-green-500/50 hover:bg-green-900/30 transition">
-                                    <i class="fas fa-check mr-2"></i>Accept
+                            <div class="grid grid-cols-2 gap-2 md:gap-3">
+                                <button class="p-2 md:p-3 neuro-glass text-green-400 rounded-xl border border-green-500/50 hover:bg-green-900/30 transition text-xs md:text-sm">
+                                    <i class="fas fa-check mr-1 md:mr-2"></i>Accept
                                 </button>
-                                <button class="p-3 neuro-glass text-purple-400 rounded-xl border border-purple-700 hover:bg-purple-900/30 transition">
-                                    <i class="fas fa-times mr-2"></i>Decline
+                                <button class="p-2 md:p-3 neuro-glass text-purple-400 rounded-xl border border-purple-700 hover:bg-purple-900/30 transition text-xs md:text-sm">
+                                    <i class="fas fa-times mr-1 md:mr-2"></i>Decline
                                 </button>
                             </div>
                         </div>
@@ -814,36 +922,36 @@
                     actions: ['view', 'secure', 'dismiss'],
                     detailedContent: `
                         <div class="space-y-4">
-                            <div class="p-4 neuro-glass rounded-2xl border border-red-500/50">
-                                <div class="flex items-center space-x-3">
-                                    <i class="fas fa-shield-alt text-red-400 text-2xl"></i>
+                            <div class="p-3 md:p-4 neuro-glass rounded-2xl border border-red-500/50">
+                                <div class="flex items-center space-x-2 md:space-x-3">
+                                    <i class="fas fa-shield-alt text-red-400 text-lg md:text-2xl"></i>
                                     <div>
-                                        <h4 class="text-lg font-bold text-red-400">Security Alert</h4>
-                                        <p class="text-sm text-purple-300">Unusual login activity detected</p>
+                                        <h4 class="text-base md:text-lg font-bold text-red-400">Security Alert</h4>
+                                        <p class="text-xs md:text-sm text-purple-300">Unusual login activity detected</p>
                                     </div>
                                 </div>
                             </div>
-                            <div class="space-y-3">
+                            <div class="space-y-2 md:space-y-3">
                                 <div class="flex justify-between">
-                                    <span class="text-gray-300">Location:</span>
-                                    <span class="text-cyan-400">Tokyo, Japan</span>
+                                    <span class="text-gray-300 text-sm md:text-base">Location:</span>
+                                    <span class="text-cyan-400 text-sm md:text-base">Tokyo, Japan</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-gray-300">Device:</span>
-                                    <span class="text-cyan-400">Unknown Browser</span>
+                                    <span class="text-gray-300 text-sm md:text-base">Device:</span>
+                                    <span class="text-cyan-400 text-sm md:text-base">Unknown Browser</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-gray-300">Time:</span>
-                                    <span class="text-cyan-400">2024-01-15 08:23:45 UTC</span>
+                                    <span class="text-gray-300 text-sm md:text-base">Time:</span>
+                                    <span class="text-cyan-400 text-sm md:text-base">2024-01-15 08:23:45 UTC</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-gray-300">Status:</span>
-                                    <span class="text-yellow-400">Requires Verification</span>
+                                    <span class="text-gray-300 text-sm md:text-base">Status:</span>
+                                    <span class="text-yellow-400 text-sm md:text-base">Requires Verification</span>
                                 </div>
                             </div>
-                            <div class="mt-4 p-3 neuro-glass rounded-xl">
-                                <h5 class="font-semibold text-purple-300 mb-2">Recommended Actions</h5>
-                                <ul class="text-sm text-gray-300 space-y-2">
+                            <div class="mt-3 md:mt-4 p-2 md:p-3 neuro-glass rounded-xl">
+                                <h5 class="font-semibold text-purple-300 mb-2 text-sm md:text-base">Recommended Actions</h5>
+                                <ul class="text-xs md:text-sm text-gray-300 space-y-1 md:space-y-2">
                                     <li>• Verify if this was you</li>
                                     <li>• Change your password if suspicious</li>
                                     <li>• Enable two-factor authentication</li>
@@ -1082,11 +1190,11 @@
                             type === 'error' ? 'fa-exclamation-circle text-red-400' : 
                             'fa-info-circle text-cyan-400';
                 
-                toast.className = `neuro-glass rounded-2xl p-4 mb-2 border ${bgColor} slide-in-right`;
+                toast.className = `neuro-glass rounded-2xl p-3 md:p-4 mb-2 border ${bgColor} slide-in-right`;
                 toast.innerHTML = `
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2 md:space-x-3">
                         <i class="fas ${icon}"></i>
-                        <span class="text-gray-200">${message}</span>
+                        <span class="text-gray-200 text-sm md:text-base">${message}</span>
                         <button class="ml-auto text-purple-400 hover:text-cyan-400" onclick="this.parentElement.parentElement.remove()">
                             <i class="fas fa-times"></i>
                         </button>
@@ -1177,11 +1285,11 @@
                             type === 'error' ? 'fa-exclamation-circle text-red-400' : 
                             'fa-info-circle text-cyan-400';
                 
-                toast.className = `neuro-glass rounded-2xl p-4 mb-2 border ${bgColor} slide-in-right`;
+                toast.className = `neuro-glass rounded-2xl p-3 md:p-4 mb-2 border ${bgColor} slide-in-right`;
                 toast.innerHTML = `
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2 md:space-x-3">
                         <i class="fas ${icon}"></i>
-                        <span class="text-gray-200">${message}</span>
+                        <span class="text-gray-200 text-sm md:text-base">${message}</span>
                         <button class="ml-auto text-purple-400 hover:text-cyan-400" onclick="this.parentElement.parentElement.remove()">
                             <i class="fas fa-times"></i>
                         </button>
@@ -1218,11 +1326,15 @@
             
             // Update notification badge
             const badge = document.getElementById('notificationBadge');
+            const mobileBadge = document.getElementById('mobileNotificationBadge');
             if (unreadCount > 0) {
                 badge.textContent = unreadCount;
                 badge.classList.remove('hidden');
+                mobileBadge.textContent = unreadCount;
+                mobileBadge.classList.remove('hidden');
             } else {
                 badge.classList.add('hidden');
+                mobileBadge.classList.add('hidden');
             }
         }
 
@@ -1290,34 +1402,34 @@
 
         function createNotificationElement(alert) {
             const div = document.createElement('div');
-            div.className = `neuro-glass rounded-2xl p-4 border ${getCategoryStyle(alert.category)} ${alert.read ? 'border-purple-700' : 'notification-glow border-cyan-500/50'} fade-in cursor-pointer hover:scale-105 transition-transform duration-200`;
+            div.className = `neuro-glass rounded-2xl p-3 md:p-4 border ${getCategoryStyle(alert.category)} ${alert.read ? 'border-purple-700' : 'notification-glow border-cyan-500/50'} fade-in cursor-pointer hover:scale-105 transition-transform duration-200`;
             div.setAttribute('data-notification-id', alert.id);
             div.innerHTML = `
-                <div class="flex items-start space-x-3">
-                    <div class="w-10 h-10 ${alert.avatar} rounded-xl flex items-center justify-center">
-                        <i class="${getCategoryIcon(alert.category)}"></i>
+                <div class="flex items-start space-x-2 md:space-x-3">
+                    <div class="w-8 h-8 md:w-10 md:h-10 ${alert.avatar} rounded-xl flex items-center justify-center">
+                        <i class="${getCategoryIcon(alert.category)} text-sm md:text-base"></i>
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <span class="font-semibold text-cyan-400">${alert.user}</span>
+                            <div class="flex items-center space-x-1 md:space-x-2">
+                                <span class="font-semibold text-cyan-400 text-sm md:text-base">${alert.user}</span>
                                 <span class="text-xs ${getCategoryBadge(alert.category)} rounded-full px-2 py-1">${alert.category}</span>
                                 ${alert.priority === 'critical' ? '<span class="text-xs bg-red-500/20 text-red-400 rounded-full px-2 py-1">Critical</span>' : ''}
                                 ${alert.priority === 'high' ? '<span class="text-xs bg-yellow-500/20 text-yellow-400 rounded-full px-2 py-1">High</span>' : ''}
                             </div>
-                            <div class="flex items-center space-x-2">
+                            <div class="flex items-center space-x-1 md:space-x-2">
                                 <span class="text-xs text-purple-300">${alert.time}</span>
                                 ${!alert.read ? '<div class="w-2 h-2 bg-cyan-400 rounded-full neural-pulse"></div>' : ''}
                             </div>
                         </div>
-                        <p class="text-purple-200 mt-1">${alert.content}</p>
-                        <div class="flex space-x-2 mt-3">
+                        <p class="text-purple-200 mt-1 text-sm md:text-base">${alert.content}</p>
+                        <div class="flex space-x-1 md:space-x-2 mt-2 md:mt-3 notification-actions">
                             ${alert.actions.map(action => `
-                                <button class="action-btn text-xs neuro-glass text-purple-300 rounded-xl px-3 py-1 hover:bg-purple-900/30 hover:text-cyan-400 transition" data-action="${action}" data-id="${alert.id}">
+                                <button class="action-btn text-xs neuro-glass text-purple-300 rounded-xl px-2 md:px-3 py-1 hover:bg-purple-900/30 hover:text-cyan-400 transition notification-action-btn" data-action="${action}" data-id="${alert.id}">
                                     <i class="fas fa-${getActionIcon(action)} mr-1"></i>${action.charAt(0).toUpperCase() + action.slice(1)}
                                 </button>
                             `).join('')}
-                            <button class="mark-read-btn text-xs neuro-glass text-purple-300 rounded-xl px-3 py-1 hover:bg-purple-900/30 hover:text-green-400 transition" data-id="${alert.id}">
+                            <button class="mark-read-btn text-xs neuro-glass text-purple-300 rounded-xl px-2 md:px-3 py-1 hover:bg-purple-900/30 hover:text-green-400 transition notification-action-btn" data-id="${alert.id}">
                                 <i class="fas fa-${alert.read ? 'envelope' : 'envelope-open'} mr-1"></i>${alert.read ? 'Mark Unread' : 'Mark Read'}
                             </button>
                         </div>
@@ -1360,7 +1472,7 @@
             
             // Update avatar
             const avatar = document.getElementById('detailAvatar');
-            avatar.className = `w-16 h-16 ${notification.avatar} rounded-2xl flex items-center justify-center flex-shrink-0`;
+            avatar.className = `w-12 h-12 md:w-16 md:h-16 ${notification.avatar} rounded-2xl flex items-center justify-center flex-shrink-0`;
             
             // Update category badge
             const categoryBadge = document.getElementById('detailCategory');
@@ -1373,7 +1485,7 @@
             
             // Update mark as read button text
             const markReadBtn = document.getElementById('markDetailReadBtn');
-            markReadBtn.innerHTML = `<i class="fas fa-${notification.read ? 'envelope' : 'envelope-open'} mr-2"></i>${notification.read ? 'Mark Unread' : 'Mark Read'}`;
+            markReadBtn.innerHTML = `<i class="fas fa-${notification.read ? 'envelope' : 'envelope-open'} mr-1 md:mr-2"></i>${notification.read ? 'Mark Unread' : 'Mark Read'}`;
             
             // Show modal
             document.getElementById('notificationDetailModal').classList.remove('hidden');
@@ -1535,6 +1647,30 @@
             
             // Start real-time simulation (for demo purposes)
             setInterval(simulateRealTimeNotification, 15000);
+            
+            // Mobile menu functionality
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileNavMenu = document.getElementById('mobileNavMenu');
+            const closeMobileMenuBtn = document.getElementById('closeMobileMenuBtn');
+            
+            if (mobileMenuBtn) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    mobileNavMenu.classList.remove('hidden');
+                });
+            }
+            
+            if (closeMobileMenuBtn) {
+                closeMobileMenuBtn.addEventListener('click', function() {
+                    mobileNavMenu.classList.add('hidden');
+                });
+            }
+            
+            // Close mobile menu when clicking outside
+            mobileNavMenu.addEventListener('click', function(e) {
+                if (e.target === mobileNavMenu) {
+                    mobileNavMenu.classList.add('hidden');
+                }
+            });
             
             // Tab switching
             document.querySelectorAll('.tab-btn').forEach(btn => {

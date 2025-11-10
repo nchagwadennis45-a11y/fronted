@@ -248,7 +248,7 @@
         }
         
         .stats-counter {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: bold;
             background: linear-gradient(135deg, #60a5fa, #a78bfa);
             -webkit-background-clip: text;
@@ -400,7 +400,7 @@
             max-width: 500px;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             border-radius: 20px;
-            padding: 2rem;
+            padding: 1.5rem;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
             transform: translateY(20px);
             transition: transform 0.3s ease;
@@ -456,6 +456,16 @@
             .mobile-space-y > * + * {
                 margin-top: 1rem;
             }
+            
+            .forgot-password-content {
+                padding: 1rem;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .forgot-password-content {
+                padding: 2rem;
+            }
         }
     </style>
 </head>
@@ -496,11 +506,11 @@
                         By continuing to use kynecta, you agree to our use of cookies and our Privacy Policy.
                     </p>
                 </div>
-                <div class="flex space-x-4 mobile-stack mobile-space-y">
-                    <button id="cookieReject" class="px-4 py-2 md:px-6 md:py-2 border border-blue-400 text-blue-400 rounded-lg hover:bg-blue-400 hover:text-white transition text-sm md:text-base">
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                    <button id="cookieReject" class="px-4 py-2 border border-blue-400 text-blue-400 rounded-lg hover:bg-blue-400 hover:text-white transition text-sm md:text-base">
                         Reject Non-Essential
                     </button>
-                    <button id="cookieAccept" class="px-4 py-2 md:px-6 md:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition pulse-glow text-sm md:text-base">
+                    <button id="cookieAccept" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition pulse-glow text-sm md:text-base">
                         Accept All
                     </button>
                 </div>
@@ -633,7 +643,7 @@
 
     <!-- Main Dashboard Container -->
     <div class="min-h-screen flex flex-col lg:flex-row">
-        <!-- Left Side - Advertisement Section (Always Visible) -->
+        <!-- Left Side - Advertisement Section (Hidden on mobile) -->
         <div class="hidden lg:flex flex-1 p-4 md:p-8 items-center justify-center">
             <div class="max-w-2xl w-full">
                 <!-- Header -->

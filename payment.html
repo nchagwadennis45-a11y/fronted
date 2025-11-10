@@ -2,11 +2,10 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payments - ConnectSphere</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>ConnectPay - kynecta</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="responsive.css">
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -310,9 +309,170 @@
             background: rgba(59, 130, 246, 0.5);
             border-radius: 10px;
         }
+        
+        /* Responsive improvements */
+        .responsive-text {
+            font-size: clamp(1rem, 4vw, 1.5rem);
+        }
+        
+        .responsive-heading {
+            font-size: clamp(1.5rem, 6vw, 2.5rem);
+        }
+        
+        .responsive-subheading {
+            font-size: clamp(1rem, 3vw, 1.25rem);
+        }
+
+        /* Better mobile layout */
+        @media (max-width: 767px) {
+            .mobile-padding {
+                padding: 1rem;
+            }
+            
+            .mobile-margin {
+                margin-bottom: 1.5rem;
+            }
+            
+            .mobile-text-center {
+                text-align: center;
+            }
+            
+            .mobile-stack {
+                flex-direction: column;
+            }
+            
+            .mobile-space-y > * + * {
+                margin-top: 1rem;
+            }
+            
+            .modal-content {
+                padding: 1rem;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .modal-content {
+                padding: 2rem;
+            }
+        }
+        
+        /* Dashboard background */
+        .dashboard-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            transition: all 0.5s ease-in-out;
+        }
+        
+        .bg-grid-pattern {
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        
+        /* Mood Theme Colors */
+        .theme-calm {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%) !important;
+        }
+        
+        .theme-energetic {
+            background: linear-gradient(135deg, #431407 0%, #9a3412 50%, #431407 100%) !important;
+        }
+        
+        .theme-creative {
+            background: linear-gradient(135deg, #1e1b4b 0%, #7e22ce 50%, #1e1b4b 100%) !important;
+        }
+        
+        .theme-chill {
+            background: linear-gradient(135deg, #064e3b 0%, #059669 50%, #064e3b 100%) !important;
+        }
+        
+        .theme-romantic {
+            background: linear-gradient(135deg, #831843 0%, #db2777 50%, #831843 100%) !important;
+        }
+        
+        /* Mood Selector */
+        .mood-selector {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+        }
+        
+        .mood-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .mood-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .mood-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            min-width: 150px;
+        }
+        
+        .mood-options.show {
+            display: grid;
+        }
+        
+        .mood-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .mood-option:hover {
+            transform: scale(1.1);
+            border-color: white;
+        }
+        
+        .mood-calm { background: linear-gradient(135deg, #3B82F6, #8B5CF6); }
+        .mood-energetic { background: linear-gradient(135deg, #DC2626, #EA580C); }
+        .mood-creative { background: linear-gradient(135deg, #7C3AED, #DB2777); }
+        .mood-chill { background: linear-gradient(135deg, #059669, #10B981); }
+        .mood-romantic { background: linear-gradient(135deg, #DB2777, #BE185D); }
+        .mood-default { background: linear-gradient(135deg, #6B7280, #4B5563); }
     </style>
 </head>
-<body class="h-full bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
+<body class="h-full dashboard-container bg-grid-pattern theme-calm overflow-x-hidden">
+    <!-- Mood Theme Selector -->
+    <div class="mood-selector">
+        <button class="mood-btn flex items-center space-x-2">
+            <i class="fas fa-palette"></i>
+            <span class="hidden sm:inline">Mood</span>
+        </button>
+        <div class="mood-options">
+            <div class="mood-option mood-calm" data-theme="calm" title="Calm"></div>
+            <div class="mood-option mood-energetic" data-theme="energetic" title="Energetic"></div>
+            <div class="mood-option mood-creative" data-theme="creative" title="Creative"></div>
+            <div class="mood-option mood-chill" data-theme="chill" title="Chill"></div>
+            <div class="mood-option mood-romantic" data-theme="romantic" title="Romantic"></div>
+            <div class="mood-option mood-default" data-theme="default" title="Default"></div>
+        </div>
+    </div>
+
     <!-- Connection Status Indicator -->
     <div id="connectionStatus" class="connection-status connecting">
         <i class="fas fa-sync fa-spin"></i>
@@ -322,64 +482,62 @@
     <!-- Toast Notifications -->
     <div id="toastContainer"></div>
 
-    <div class="min-h-screen">
+    <div class="min-h-screen container mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="glass-card border-b border-slate-700">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center py-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 primary-gradient rounded-2xl flex items-center justify-center">
-                            <i class="fas fa-wallet text-white"></i>
-                        </div>
-                        <div>
-                            <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
-                                ConnectPay
-                            </h1>
-                            <p class="text-slate-400 text-sm">Secure, fast, and social payments</p>
-                        </div>
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 primary-gradient rounded-2xl flex items-center justify-center">
+                        <i class="fas fa-wallet text-white"></i>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <div class="text-right">
-                            <div class="font-semibold text-white" id="userBalance">Loading...</div>
-                            <div class="text-slate-400 text-sm">Available Balance</div>
-                        </div>
-                        <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                            <i class="fas fa-shield-alt text-white"></i>
-                        </div>
+                    <div>
+                        <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+                            ConnectPay
+                        </h1>
+                        <p class="text-slate-400 text-sm">Secure, fast, and social payments</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-right hidden sm:block">
+                        <div class="font-semibold text-white" id="userBalance">Loading...</div>
+                        <div class="text-slate-400 text-sm">Available Balance</div>
+                    </div>
+                    <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-white"></i>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="py-8">
             <!-- Quick Actions -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <button class="glass-card rounded-2xl border border-slate-700 p-4 text-center hover:border-blue-400 transition" onclick="openSendMoneyModal()">
                     <div class="w-12 h-12 primary-gradient rounded-full flex items-center justify-center mx-auto mb-2">
                         <i class="fas fa-paper-plane text-white"></i>
                     </div>
-                    <span class="font-semibold text-white">Send Money</span>
+                    <span class="font-semibold text-white text-sm md:text-base">Send Money</span>
                 </button>
                 
                 <button class="glass-card rounded-2xl border border-slate-700 p-4 text-center hover:border-green-400 transition" onclick="openRequestMoneyModal()">
                     <div class="w-12 h-12 security-gradient rounded-full flex items-center justify-center mx-auto mb-2">
                         <i class="fas fa-hand-holding-usd text-white"></i>
                     </div>
-                    <span class="font-semibold text-white">Request Money</span>
+                    <span class="font-semibold text-white text-sm md:text-base">Request Money</span>
                 </button>
                 
                 <button class="glass-card rounded-2xl border border-slate-700 p-4 text-center hover:border-yellow-400 transition" onclick="openMarketplaceModal()">
                     <div class="w-12 h-12 rewards-gradient rounded-full flex items-center justify-center mx-auto mb-2">
                         <i class="fas fa-shopping-cart text-white"></i>
                     </div>
-                    <span class="font-semibold text-white">Marketplace</span>
+                    <span class="font-semibold text-white text-sm md:text-base">Marketplace</span>
                 </button>
                 
                 <button class="glass-card rounded-2xl border border-slate-700 p-4 text-center hover:border-purple-400 transition" onclick="openCryptoModal()">
                     <div class="w-12 h-12 crypto-gradient rounded-full flex items-center justify-center mx-auto mb-2">
                         <i class="fas fa-coins text-white"></i>
                     </div>
-                    <span class="font-semibold text-white">Crypto</span>
+                    <span class="font-semibold text-white text-sm md:text-base">Crypto</span>
                 </button>
             </div>
 
@@ -390,11 +548,11 @@
                     <h3 class="text-xl font-black text-white mb-4">Account Balance</h3>
                     <div class="text-3xl font-black text-green-400 mb-2" id="balanceAmount">Loading...</div>
                     <p class="text-slate-400 text-sm mb-4">Available for transactions</p>
-                    <div class="flex space-x-3">
-                        <button class="flex-1 px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="openAddMoneyModal()">
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button class="flex-1 px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openAddMoneyModal()">
                             Add Money
                         </button>
-                        <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:text-white transition" onclick="openWithdrawModal()">
+                        <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:text-white transition text-sm md:text-base" onclick="openWithdrawModal()">
                             Withdraw
                         </button>
                     </div>
@@ -405,25 +563,25 @@
                     <h3 class="text-xl font-black text-white mb-4">Security Status</h3>
                     <div class="space-y-3 mb-4">
                         <div class="flex justify-between items-center">
-                            <span class="text-slate-400">AI Fraud Detection</span>
-                            <span class="security-badge" id="fraudDetectionStatus">
+                            <span class="text-slate-400 text-sm md:text-base">AI Fraud Detection</span>
+                            <span class="security-badge text-xs" id="fraudDetectionStatus">
                                 <i class="fas fa-shield-alt mr-1"></i> Loading...
                             </span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-slate-400">Biometric Auth</span>
-                            <span class="security-badge" id="biometricStatus">
+                            <span class="text-slate-400 text-sm md:text-base">Biometric Auth</span>
+                            <span class="security-badge text-xs" id="biometricStatus">
                                 <i class="fas fa-fingerprint mr-1"></i> Loading...
                             </span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-slate-400">2FA</span>
-                            <span class="security-badge" id="twoFAStatus">
+                            <span class="text-slate-400 text-sm md:text-base">2FA</span>
+                            <span class="security-badge text-xs" id="twoFAStatus">
                                 <i class="fas fa-mobile-alt mr-1"></i> Loading...
                             </span>
                         </div>
                     </div>
-                    <button class="w-full px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="openSecuritySettings()">
+                    <button class="w-full px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openSecuritySettings()">
                         <i class="fas fa-cog mr-2"></i> Security Settings
                     </button>
                 </div>
@@ -450,7 +608,7 @@
                             <span class="text-yellow-400 font-semibold" id="streakCount">Loading...</span>
                         </div>
                     </div>
-                    <button class="w-full px-4 py-2 rewards-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="claimRewards()">
+                    <button class="w-full px-4 py-2 rewards-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="claimRewards()">
                         <i class="fas fa-trophy mr-2"></i> Claim Rewards
                     </button>
                 </div>
@@ -458,7 +616,7 @@
 
             <!-- Payment Methods -->
             <div class="mb-8">
-                <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-6">
+                <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-6 responsive-heading">
                     Payment Methods
                 </h2>
 
@@ -467,7 +625,7 @@
                         <div class="w-16 h-16 mpesa-green rounded-full flex items-center justify-center mx-auto mb-3">
                             <i class="fas fa-mobile-alt text-white text-2xl"></i>
                         </div>
-                        <h3 class="font-semibold text-white">M-Pesa</h3>
+                        <h3 class="font-semibold text-white text-base md:text-lg">M-Pesa</h3>
                         <p class="text-slate-400 text-sm">Mobile Money</p>
                     </div>
 
@@ -475,7 +633,7 @@
                         <div class="w-16 h-16 primary-gradient rounded-full flex items-center justify-center mx-auto mb-3">
                             <i class="fas fa-credit-card text-white text-2xl"></i>
                         </div>
-                        <h3 class="font-semibold text-white">Card</h3>
+                        <h3 class="font-semibold text-white text-base md:text-lg">Card</h3>
                         <p class="text-slate-400 text-sm">Visa • MasterCard</p>
                     </div>
 
@@ -483,7 +641,7 @@
                         <div class="w-16 h-16 security-gradient rounded-full flex items-center justify-center mx-auto mb-3">
                             <i class="fas fa-university text-white text-2xl"></i>
                         </div>
-                        <h3 class="font-semibold text-white">Bank Transfer</h3>
+                        <h3 class="font-semibold text-white text-base md:text-lg">Bank Transfer</h3>
                         <p class="text-slate-400 text-sm">Direct Transfer</p>
                     </div>
 
@@ -491,7 +649,7 @@
                         <div class="w-16 h-16 crypto-gradient rounded-full flex items-center justify-center mx-auto mb-3">
                             <i class="fas fa-coins text-white text-2xl"></i>
                         </div>
-                        <h3 class="font-semibold text-white">Crypto</h3>
+                        <h3 class="font-semibold text-white text-base md:text-lg">Crypto</h3>
                         <p class="text-slate-400 text-sm">Bitcoin • Ethereum</p>
                     </div>
                 </div>
@@ -500,10 +658,10 @@
             <!-- Recent Transactions -->
             <div class="mb-8">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+                    <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 responsive-heading">
                         Recent Transactions
                     </h2>
-                    <button class="text-purple-400 hover:text-pink-300 font-semibold transition" onclick="viewAllTransactions()">
+                    <button class="text-purple-400 hover:text-pink-300 font-semibold transition text-sm md:text-base" onclick="viewAllTransactions()">
                         View All
                     </button>
                 </div>
@@ -520,31 +678,31 @@
 
             <!-- AI Fraud Detection -->
             <div class="glass-card rounded-2xl border border-slate-700 p-6 mb-8">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-2xl font-black text-white">AI Fraud Detection</h3>
-                    <span class="security-badge pulse-effect">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                    <h3 class="text-2xl font-black text-white mb-2 md:mb-0">AI Fraud Detection</h3>
+                    <span class="security-badge pulse-effect text-xs md:text-sm">
                         <i class="fas fa-shield-alt mr-1"></i> Real-time Protection
                     </span>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="text-center">
                         <div class="text-3xl font-black text-green-400">99.7%</div>
-                        <div class="text-slate-400">Detection Accuracy</div>
+                        <div class="text-slate-400 text-sm md:text-base">Detection Accuracy</div>
                     </div>
                     <div class="text-center">
                         <div class="text-3xl font-black text-blue-400">0.2s</div>
-                        <div class="text-slate-400">Response Time</div>
+                        <div class="text-slate-400 text-sm md:text-base">Response Time</div>
                     </div>
                     <div class="text-center">
                         <div class="text-3xl font-black text-purple-400">24/7</div>
-                        <div class="text-slate-400">Active Monitoring</div>
+                        <div class="text-slate-400 text-sm md:text-base">Active Monitoring</div>
                     </div>
                 </div>
             </div>
 
             <!-- Social Payment Features -->
             <div class="mb-8">
-                <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400 mb-6">
+                <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400 mb-6 responsive-heading">
                     Social Payments
                 </h2>
 
@@ -555,7 +713,7 @@
                         </div>
                         <h3 class="text-lg font-semibold text-white mb-2">Group Payments</h3>
                         <p class="text-slate-400 text-sm mb-4">Split bills and collect money from groups</p>
-                        <button class="w-full px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="openGroupPaymentModal()">
+                        <button class="w-full px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openGroupPaymentModal()">
                             Create Group
                         </button>
                     </div>
@@ -566,7 +724,7 @@
                         </div>
                         <h3 class="text-lg font-semibold text-white mb-2">Social Gifting</h3>
                         <p class="text-slate-400 text-sm mb-4">Send gifts with personalized messages</p>
-                        <button class="w-full px-4 py-2 rewards-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="openSocialGiftingModal()">
+                        <button class="w-full px-4 py-2 rewards-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openSocialGiftingModal()">
                             Send Gift
                         </button>
                     </div>
@@ -577,7 +735,7 @@
                         </div>
                         <h3 class="text-lg font-semibold text-white mb-2">Shared Goals</h3>
                         <p class="text-slate-400 text-sm mb-4">Save together for common objectives</p>
-                        <button class="w-full px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="openSharedGoalsModal()">
+                        <button class="w-full px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openSharedGoalsModal()">
                             Start Goal
                         </button>
                     </div>
@@ -590,7 +748,7 @@
     
     <!-- Send Money Modal -->
     <div id="sendMoneyModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
-        <div class="glass-card rounded-2xl p-6 max-w-md w-full fade-in">
+        <div class="glass-card rounded-2xl modal-content max-w-md w-full fade-in">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-black text-white">Send Money</h3>
                 <button class="text-slate-400 hover:text-white" onclick="closeModal('sendMoneyModal')">
@@ -631,11 +789,11 @@
                 </div>
             </div>
             
-            <div class="flex space-x-3">
-                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition" onclick="closeModal('sendMoneyModal')">
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition text-sm md:text-base" onclick="closeModal('sendMoneyModal')">
                     Cancel
                 </button>
-                <button class="flex-1 px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="processPayment()">
+                <button class="flex-1 px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="processPayment()">
                     Send Money
                 </button>
             </div>
@@ -644,7 +802,7 @@
 
     <!-- Request Money Modal -->
     <div id="requestMoneyModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
-        <div class="glass-card rounded-2xl p-6 max-w-md w-full fade-in">
+        <div class="glass-card rounded-2xl modal-content max-w-md w-full fade-in">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-black text-white">Request Money</h3>
                 <button class="text-slate-400 hover:text-white" onclick="closeModal('requestMoneyModal')">
@@ -672,16 +830,16 @@
                     <label class="form-label">Split Equally</label>
                     <div class="flex items-center">
                         <input type="checkbox" class="mr-2" id="splitEqually">
-                        <label for="splitEqually" class="text-slate-400">Divide amount between selected people</label>
+                        <label for="splitEqually" class="text-slate-400 text-sm md:text-base">Divide amount between selected people</label>
                     </div>
                 </div>
             </div>
             
-            <div class="flex space-x-3">
-                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-green-400 hover:text-green-400 transition" onclick="closeModal('requestMoneyModal')">
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-green-400 hover:text-green-400 transition text-sm md:text-base" onclick="closeModal('requestMoneyModal')">
                     Cancel
                 </button>
-                <button class="flex-1 px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="sendRequest()">
+                <button class="flex-1 px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="sendRequest()">
                     Send Request
                 </button>
             </div>
@@ -690,7 +848,7 @@
 
     <!-- Add Money Modal -->
     <div id="addMoneyModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
-        <div class="glass-card rounded-2xl p-6 max-w-md w-full fade-in">
+        <div class="glass-card rounded-2xl modal-content max-w-md w-full fade-in">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-black text-white">Add Money</h3>
                 <button class="text-slate-400 hover:text-white" onclick="closeModal('addMoneyModal')">
@@ -727,11 +885,11 @@
                 </div>
             </div>
             
-            <div class="flex space-x-3">
-                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition" onclick="closeModal('addMoneyModal')">
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition text-sm md:text-base" onclick="closeModal('addMoneyModal')">
                     Cancel
                 </button>
-                <button class="flex-1 px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="addMoney()">
+                <button class="flex-1 px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="addMoney()">
                     Add Money
                 </button>
             </div>
@@ -740,7 +898,7 @@
 
     <!-- Security Settings Modal -->
     <div id="securitySettingsModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
-        <div class="glass-card rounded-2xl p-6 max-w-md w-full fade-in">
+        <div class="glass-card rounded-2xl modal-content max-w-md w-full fade-in">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-black text-white">Security Settings</h3>
                 <button class="text-slate-400 hover:text-white" onclick="closeModal('securitySettingsModal')">
@@ -751,7 +909,7 @@
             <div class="mb-6 space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
-                        <div class="font-semibold text-white">AI Fraud Detection</div>
+                        <div class="font-semibold text-white text-sm md:text-base">AI Fraud Detection</div>
                         <div class="text-slate-400 text-sm">Real-time transaction monitoring</div>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
@@ -762,7 +920,7 @@
                 
                 <div class="flex justify-between items-center">
                     <div>
-                        <div class="font-semibold text-white">Biometric Authentication</div>
+                        <div class="font-semibold text-white text-sm md:text-base">Biometric Authentication</div>
                         <div class="text-slate-400 text-sm">Use fingerprint or face ID</div>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
@@ -773,7 +931,7 @@
                 
                 <div class="flex justify-between items-center">
                     <div>
-                        <div class="font-semibold text-white">Two-Factor Authentication</div>
+                        <div class="font-semibold text-white text-sm md:text-base">Two-Factor Authentication</div>
                         <div class="text-slate-400 text-sm">Extra security for logins</div>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
@@ -784,20 +942,20 @@
                 
                 <div class="flex justify-between items-center">
                     <div>
-                        <div class="font-semibold text-white">Transaction Limits</div>
+                        <div class="font-semibold text-white text-sm md:text-base">Transaction Limits</div>
                         <div class="text-slate-400 text-sm">Set daily spending limits</div>
                     </div>
-                    <button class="text-blue-400 hover:text-blue-300" onclick="setTransactionLimits()">
+                    <button class="text-blue-400 hover:text-blue-300 text-sm md:text-base" onclick="setTransactionLimits()">
                         Configure
                     </button>
                 </div>
             </div>
             
-            <div class="flex space-x-3">
-                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-green-400 hover:text-green-400 transition" onclick="closeModal('securitySettingsModal')">
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-green-400 hover:text-green-400 transition text-sm md:text-base" onclick="closeModal('securitySettingsModal')">
                     Cancel
                 </button>
-                <button class="flex-1 px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="saveSecuritySettings()">
+                <button class="flex-1 px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="saveSecuritySettings()">
                     Save Settings
                 </button>
             </div>
@@ -806,7 +964,7 @@
 
     <!-- Rewards Spin Modal -->
     <div id="rewardsSpinModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
-        <div class="glass-card rounded-2xl p-6 max-w-md w-full fade-in">
+        <div class="glass-card rounded-2xl modal-content max-w-md w-full fade-in">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-black text-white">Daily Rewards</h3>
                 <button class="text-slate-400 hover:text-white" onclick="closeModal('rewardsSpinModal')">
@@ -815,11 +973,11 @@
             </div>
             
             <div class="mb-6 text-center">
-                <div class="relative w-64 h-64 mx-auto mb-4">
+                <div class="relative w-48 h-48 md:w-64 md:h-64 mx-auto mb-4">
                     <div class="absolute inset-0 rounded-full primary-gradient flex items-center justify-center">
-                        <div class="w-60 h-60 bg-slate-900 rounded-full flex items-center justify-center">
+                        <div class="w-44 h-44 md:w-60 md:h-60 bg-slate-900 rounded-full flex items-center justify-center">
                             <div class="text-center">
-                                <div class="text-2xl font-black text-white mb-2">Spin to Win!</div>
+                                <div class="text-xl md:text-2xl font-black text-white mb-2">Spin to Win!</div>
                                 <div class="text-slate-400 text-sm">Tap the button below</div>
                             </div>
                         </div>
@@ -832,11 +990,11 @@
                 </div>
             </div>
             
-            <div class="flex space-x-3">
-                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-yellow-400 hover:text-yellow-400 transition" onclick="closeModal('rewardsSpinModal')">
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-yellow-400 hover:text-yellow-400 transition text-sm md:text-base" onclick="closeModal('rewardsSpinModal')">
                     Maybe Later
                 </button>
-                <button class="flex-1 px-4 py-2 rewards-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="spinRewardsWheel()">
+                <button class="flex-1 px-4 py-2 rewards-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="spinRewardsWheel()">
                     <i class="fas fa-sync mr-2"></i> Spin Now
                 </button>
             </div>
@@ -845,7 +1003,7 @@
 
     <!-- Group Payment Modal -->
     <div id="groupPaymentModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
-        <div class="glass-card rounded-2xl p-6 max-w-md w-full fade-in">
+        <div class="glass-card rounded-2xl modal-content max-w-md w-full fade-in">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-black text-white">Create Group Payment</h3>
                 <button class="text-slate-400 hover:text-white" onclick="closeModal('groupPaymentModal')">
@@ -871,9 +1029,9 @@
                 
                 <div class="form-group">
                     <label class="form-label">Add Members</label>
-                    <div class="flex space-x-2 mb-2">
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mb-2">
                         <input type="text" class="form-input flex-1" id="memberSearchInput" placeholder="Search users">
-                        <button class="px-4 py-2 primary-gradient text-white rounded-xl font-semibold" onclick="addMember()">
+                        <button class="px-4 py-2 primary-gradient text-white rounded-xl font-semibold text-sm md:text-base" onclick="addMember()">
                             Add
                         </button>
                     </div>
@@ -884,22 +1042,22 @@
                 
                 <div class="form-group">
                     <label class="form-label">Split Options</label>
-                    <div class="flex space-x-3">
-                        <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition" onclick="setSplitOption('equal')">
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition text-sm md:text-base" onclick="setSplitOption('equal')">
                             Equal Split
                         </button>
-                        <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition" onclick="setSplitOption('custom')">
+                        <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition text-sm md:text-base" onclick="setSplitOption('custom')">
                             Custom Split
                         </button>
                     </div>
                 </div>
             </div>
             
-            <div class="flex space-x-3">
-                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition" onclick="closeModal('groupPaymentModal')">
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition text-sm md:text-base" onclick="closeModal('groupPaymentModal')">
                     Cancel
                 </button>
-                <button class="flex-1 px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="createGroupPayment()">
+                <button class="flex-1 px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="createGroupPayment()">
                     Create Group
                 </button>
             </div>
@@ -908,7 +1066,7 @@
 
     <!-- Social Gifting Modal -->
     <div id="socialGiftingModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
-        <div class="glass-card rounded-2xl p-6 max-w-md w-full fade-in">
+        <div class="glass-card rounded-2xl modal-content max-w-md w-full fade-in">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-black text-white">Send a Gift</h3>
                 <button class="text-slate-400 hover:text-white" onclick="closeModal('socialGiftingModal')">
@@ -919,7 +1077,7 @@
             <div class="mb-6">
                 <div class="form-group">
                     <label class="form-label">Recipient</label>
-                    <div class="flex space-x-2">
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                         <select class="form-input flex-1" id="giftRecipientType">
                             <option value="user">Individual User</option>
                             <option value="group">Group</option>
@@ -953,16 +1111,16 @@
                     <label class="form-label">Gift Anonymously</label>
                     <div class="flex items-center">
                         <input type="checkbox" class="mr-2" id="anonymousGift">
-                        <label for="anonymousGift" class="text-slate-400">Send gift without revealing your identity</label>
+                        <label for="anonymousGift" class="text-slate-400 text-sm md:text-base">Send gift without revealing your identity</label>
                     </div>
                 </div>
             </div>
             
-            <div class="flex space-x-3">
-                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-yellow-400 hover:text-yellow-400 transition" onclick="closeModal('socialGiftingModal')">
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-yellow-400 hover:text-yellow-400 transition text-sm md:text-base" onclick="closeModal('socialGiftingModal')">
                     Cancel
                 </button>
-                <button class="flex-1 px-4 py-2 rewards-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="sendGift()">
+                <button class="flex-1 px-4 py-2 rewards-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="sendGift()">
                     Send Gift
                 </button>
             </div>
@@ -971,7 +1129,7 @@
 
     <!-- Shared Goals Modal -->
     <div id="sharedGoalsModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
-        <div class="glass-card rounded-2xl p-6 max-w-md w-full fade-in">
+        <div class="glass-card rounded-2xl modal-content max-w-md w-full fade-in">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-black text-white">Create Shared Goal</h3>
                 <button class="text-slate-400 hover:text-white" onclick="closeModal('sharedGoalsModal')">
@@ -1002,9 +1160,9 @@
                 
                 <div class="form-group">
                     <label class="form-label">Add Participants</label>
-                    <div class="flex space-x-2 mb-2">
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mb-2">
                         <input type="text" class="form-input flex-1" id="participantSearchInput" placeholder="Search users">
-                        <button class="px-4 py-2 primary-gradient text-white rounded-xl font-semibold" onclick="addParticipant()">
+                        <button class="px-4 py-2 primary-gradient text-white rounded-xl font-semibold text-sm md:text-base" onclick="addParticipant()">
                             Add
                         </button>
                     </div>
@@ -1015,22 +1173,22 @@
                 
                 <div class="form-group">
                     <label class="form-label">Contribution Type</label>
-                    <div class="flex space-x-3">
-                        <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition" onclick="setContributionType('equal')">
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition text-sm md:text-base" onclick="setContributionType('equal')">
                             Equal Shares
                         </button>
-                        <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition" onclick="setContributionType('custom')">
+                        <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-blue-400 hover:text-blue-400 transition text-sm md:text-base" onclick="setContributionType('custom')">
                             Custom Amounts
                         </button>
                     </div>
                 </div>
             </div>
             
-            <div class="flex space-x-3">
-                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-green-400 hover:text-green-400 transition" onclick="closeModal('sharedGoalsModal')">
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:border-green-400 hover:text-green-400 transition text-sm md:text-base" onclick="closeModal('sharedGoalsModal')">
                     Cancel
                 </button>
-                <button class="flex-1 px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition" onclick="createSharedGoal()">
+                <button class="flex-1 px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="createSharedGoal()">
                     Create Goal
                 </button>
             </div>
@@ -1076,6 +1234,9 @@
             
             // Set up event listeners
             setupEventListeners();
+            
+            // Set up mood selector
+            setupMoodSelector();
         });
 
         // Clear all cached demo data
@@ -1104,7 +1265,7 @@
                     
                     // Redirect to login page after a delay
                     setTimeout(() => {
-                        window.location.href = 'login.html';
+                        window.location.href = 'index.html';
                     }, 3000);
                 }
             }, (error) => {
@@ -1254,12 +1415,12 @@
                         <i class="fas ${icon} ${isPositive ? 'text-green-400' : 'text-red-400'}"></i>
                     </div>
                     <div>
-                        <div class="font-semibold text-white">${transaction.description || 'Payment'}</div>
+                        <div class="font-semibold text-white text-sm md:text-base">${transaction.description || 'Payment'}</div>
                         <div class="text-slate-400 text-sm">${formatDate(transaction.timestamp?.toDate())}</div>
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="font-bold ${colorClass}">${sign}KSh ${Math.abs(transaction.amount).toLocaleString()}</div>
+                    <div class="font-bold ${colorClass} text-sm md:text-base">${sign}KSh ${Math.abs(transaction.amount).toLocaleString()}</div>
                     <div class="text-slate-400 text-sm">${transaction.status || 'Completed'}</div>
                 </div>
             `;
@@ -1332,6 +1493,75 @@
             });
         }
 
+        // Set up mood theme selector
+        function setupMoodSelector() {
+            const moodBtn = document.querySelector('.mood-btn');
+            const moodOptions = document.querySelector('.mood-options');
+            const moodOptionsList = document.querySelectorAll('.mood-option');
+
+            // Toggle mood options visibility
+            if (moodBtn) {
+                moodBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    moodOptions.classList.toggle('show');
+                });
+            }
+
+            // Close mood options when clicking outside
+            document.addEventListener('click', () => {
+                if (moodOptions) {
+                    moodOptions.classList.remove('show');
+                }
+            });
+
+            // Prevent mood options from closing when clicking inside
+            if (moodOptions) {
+                moodOptions.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+            }
+
+            // Handle mood selection
+            if (moodOptionsList) {
+                moodOptionsList.forEach(option => {
+                    option.addEventListener('click', () => {
+                        const theme = option.getAttribute('data-theme');
+                        changeTheme(theme);
+                        if (moodOptions) {
+                            moodOptions.classList.remove('show');
+                        }
+                    });
+                });
+            }
+        }
+
+        // Change theme based on mood selection
+        function changeTheme(theme) {
+            const body = document.body;
+            
+            // Remove all theme classes
+            body.classList.remove('theme-calm', 'theme-energetic', 'theme-creative', 'theme-chill', 'theme-romantic', 'theme-default');
+            
+            // Add new theme class
+            body.classList.add(`theme-${theme}`);
+            
+            // Save theme preference
+            localStorage.setItem('kynecta-theme', theme);
+            
+            // Show theme change message
+            const themeNames = {
+                'calm': 'Calm Blue',
+                'energetic': 'Energetic Orange',
+                'creative': 'Creative Purple',
+                'chill': 'Chill Green',
+                'romantic': 'Romantic Pink',
+                'default': 'Default Dark'
+            };
+            
+            showToast(`Theme changed to ${themeNames[theme]}`, 'success');
+            console.log(`🎨 Theme changed to: ${theme}`);
+        }
+
         // Get display name for payment method
         function getPaymentMethodName(method) {
             const names = {
@@ -1394,7 +1624,7 @@
             toast.innerHTML = `
                 <div class="flex items-center">
                     <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle'} mr-2"></i>
-                    <span>${message}</span>
+                    <span class="text-sm md:text-base">${message}</span>
                 </div>
             `;
             
@@ -1788,7 +2018,7 @@
                 memberElement.innerHTML = `
                     <div class="flex items-center">
                         <div class="user-avatar mr-3">${member.name.charAt(0).toUpperCase()}</div>
-                        <span class="text-white">${member.name}</span>
+                        <span class="text-white text-sm md:text-base">${member.name}</span>
                     </div>
                     <button class="text-red-400 hover:text-red-300" onclick="removeMember(${index})">
                         <i class="fas fa-times"></i>
@@ -2016,7 +2246,7 @@
                 participantElement.innerHTML = `
                     <div class="flex items-center">
                         <div class="user-avatar mr-3">${participant.name.charAt(0).toUpperCase()}</div>
-                        <span class="text-white">${participant.name}</span>
+                        <span class="text-white text-sm md:text-base">${participant.name}</span>
                     </div>
                     <button class="text-red-400 hover:text-red-300" onclick="removeParticipant(${index})">
                         <i class="fas fa-times"></i>
