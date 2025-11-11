@@ -1278,8 +1278,8 @@
 
     <!-- Connection Status -->
     <div class="connection-status connecting" id="connectionStatus">
-        <i class="fas fa-circle-notch fa-spin mr-2"></i>
-        <span id="connectionText">Connecting to Kynecta...</span>
+        <i class="fas fa-check mr-2"></i>
+        <span id="connectionText">Connected</span>
     </div>
 
     <!-- Loading Spinner -->
@@ -1535,6 +1535,18 @@
                 <i class="fas fa-bell mr-2"></i>
                 Notifications
             </a>
+            <a href="marketplace.html">
+                <i class="fas fa-store mr-2"></i>
+                Marketplace
+            </a>
+            <a href="games.html">
+                <i class="fas fa-gamepad mr-2"></i>
+                Games
+            </a>
+            <a href="payment.html">
+                <i class="fas fa-credit-card mr-2"></i>
+                Payment
+            </a>
             <a href="profile.html" class="bg-blue-900/30 text-cyan-400">
                 <i class="fas fa-user-astronaut mr-2"></i>
                 Profile
@@ -1577,6 +1589,18 @@
                 <a href="notifications.html" class="flex items-center space-x-3 p-3 rounded-xl text-blue-300 hover:bg-blue-900/30 hover:text-cyan-400 transition">
                     <i class="fas fa-bell w-6"></i>
                     <span class="hidden xl:block">Notifications</span>
+                </a>
+                <a href="marketplace.html" class="flex items-center space-x-3 p-3 rounded-xl text-blue-300 hover:bg-blue-900/30 hover:text-cyan-400 transition">
+                    <i class="fas fa-store w-6"></i>
+                    <span class="hidden xl:block">Marketplace</span>
+                </a>
+                <a href="games.html" class="flex items-center space-x-3 p-3 rounded-xl text-blue-300 hover:bg-blue-900/30 hover:text-cyan-400 transition">
+                    <i class="fas fa-gamepad w-6"></i>
+                    <span class="hidden xl:block">Games</span>
+                </a>
+                <a href="payment.html" class="flex items-center space-x-3 p-3 rounded-xl text-blue-300 hover:bg-blue-900/30 hover:text-cyan-400 transition">
+                    <i class="fas fa-credit-card w-6"></i>
+                    <span class="hidden xl:block">Payment</span>
                 </a>
                 <a href="profile.html" class="flex items-center space-x-3 p-3 rounded-xl bg-blue-900/30 text-cyan-400 border border-cyan-500/50">
                     <i class="fas fa-user-astronaut w-6"></i>
@@ -1627,14 +1651,22 @@
                             <span class="hidden md:inline ml-2">Notifications</span>
                             <span class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hidden" id="notificationBadge">0</span>
                         </a>
+                        <a href="marketplace.html" class="px-3 py-2 md:px-4 md:py-2 glass-effect text-blue-400 rounded-2xl hover:bg-blue-800/30 border border-blue-700 transition hidden md:inline-flex">
+                            <i class="fas fa-store mr-2"></i>
+                            Marketplace
+                        </a>
+                        <a href="games.html" class="px-3 py-2 md:px-4 md:py-2 glass-effect text-blue-400 rounded-2xl hover:bg-blue-800/30 border border-blue-700 transition hidden md:inline-flex">
+                            <i class="fas fa-gamepad mr-2"></i>
+                            Games
+                        </a>
+                        <a href="payment.html" class="px-3 py-2 md:px-4 md:py-2 glass-effect text-blue-400 rounded-2xl hover:bg-blue-800/30 border border-blue-700 transition hidden md:inline-flex">
+                            <i class="fas fa-credit-card mr-2"></i>
+                            Payment
+                        </a>
                         <a href="settings.html" class="px-3 py-2 md:px-4 md:py-2 glass-effect text-blue-400 rounded-2xl hover:bg-blue-800/30 border border-blue-700 transition hidden md:inline-flex">
                             <i class="fas fa-cog mr-2"></i>
                             Settings
                         </a>
-                        <button id="logoutBtn" class="px-3 py-2 md:px-4 md:py-2 primary-gradient text-white rounded-2xl hover:scale-105 font-medium transition">
-                            <i class="fas fa-sign-out-alt mr-2"></i>
-                            <span class="hidden md:inline">Logout</span>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -1952,14 +1984,6 @@
         </div>
     </div>
 
-    <!-- Debug Panel -->
-    <div id="debugPanel" class="fixed bottom-4 right-4 z-50">
-        <button onclick="forceCreateProfile()" 
-                class="px-4 py-2 bg-red-500 text-white rounded-lg font-bold">
-            🔧 Debug: Create Profile
-        </button>
-    </div>
-
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -1967,7 +1991,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
     <script>
-        // Firebase configuration - Use environment variables in production
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
             authDomain: "uniconnect-ee95c.firebaseapp.com",
@@ -1992,7 +2016,9 @@
         // Cloudinary configuration
         const cloudinaryConfig = {
             cloudName: "dhjnxa5rh",
-            uploadPreset: "unsigned-profile"
+            uploadPreset: "unsigned-profile",
+            apiKey: "817591969559894",
+            apiSecret: "236GfzEsSvl-PYU85"
         };
 
         // Profile Application Class
@@ -2032,12 +2058,12 @@
                     this.createParticles();
                     this.setupEventListeners();
                     this.checkAuthentication();
-                    console.log('✅ Kynecta profile app initialized successfully');
+                    console.log('✅ kynecta Profile app initialized successfully');
                 } catch (error) {
-                    console.error('❌ Profile app initialization failed:', error);
+                    console.error('❌ kynecta Profile app initialization failed:', error);
                     this.updateConnectionStatus('error');
                     this.showNotification('Connection failed. Please check your connection.', 'error');
-                    this.showLoading(false); // Always hide loading spinner
+                    this.showLoading(false);
                 }
             }
 
@@ -2090,25 +2116,24 @@
                         console.log("❌ No authenticated user, redirecting to login...");
                         localStorage.clear();
                         sessionStorage.clear();
-                        this.showLoading(false); // Always hide loading spinner
+                        this.showLoading(false);
                         window.location.href = 'login.html';
                     }
                 }, (error) => {
                     console.error('🔥 Auth state change error:', error);
                     this.updateConnectionStatus('error');
                     this.showNotification('Authentication error. Please try again.', 'error');
-                    this.showLoading(false); // Always hide loading spinner
+                    this.showLoading(false);
                 });
             }
 
-            // Add this debug method
             async debugUserDocument(uid) {
                 try {
                     console.log("🔍 Checking if user document exists...");
                     
                     const userDoc = await db.collection("users").doc(uid).get();
                     
-                    if (userDoc.exists) { // FIXED: Changed .exists() to .exists
+                    if (userDoc.exists) {
                         console.log("✅ User document FOUND:", userDoc.data());
                         this.loadProfileData(uid);
                     } else {
@@ -2131,7 +2156,7 @@
                     // Set up real-time listener with better error handling
                     this.profileUnsubscribe = userRef.onSnapshot(async (doc) => {
                         try {
-                            if (doc.exists) { // FIXED: Changed .exists() to .exists
+                            if (doc.exists) {
                                 console.log("✅ Profile data received:", doc.data());
                                 this.userProfile = { id: doc.id, ...doc.data() };
                                 this.updateProfileUI(this.userProfile);
@@ -2163,19 +2188,19 @@
                         } catch (error) {
                             console.error("💥 Error in snapshot handler:", error);
                             this.showNotification('Error loading profile data', 'error');
-                            this.showLoading(false); // Always hide loading spinner
+                            this.showLoading(false);
                         }
                     }, (error) => {
                         console.error("🔥 Snapshot error:", error);
                         this.showNotification('Connection error. Please refresh.', 'error');
-                        this.showLoading(false); // Always hide loading spinner
+                        this.showLoading(false);
                         // Try direct fetch as fallback
                         this.loadProfileOnce(uid);
                     });
                     
                 } catch (error) {
                     console.error('💥 Error setting up real-time listener:', error);
-                    this.showLoading(false); // Always hide loading spinner
+                    this.showLoading(false);
                     this.createFallbackProfile();
                 }
             }
@@ -2273,7 +2298,7 @@
                     for (const friendId of friendIds) {
                         const friendDoc = await db.collection("users").doc(friendId).get();
                         
-                        if (friendDoc.exists) { // FIXED: Changed .exists() to .exists
+                        if (friendDoc.exists) {
                             this.friends.push({
                                 id: friendDoc.id,
                                 ...friendDoc.data()
@@ -2306,7 +2331,7 @@
                         const requestData = doc.data();
                         const fromUserDoc = await db.collection("users").doc(requestData.fromUserId).get();
                         
-                        if (fromUserDoc.exists) { // FIXED: Changed .exists() to .exists
+                        if (fromUserDoc.exists) {
                             this.friendRequests.push({
                                 id: doc.id,
                                 ...requestData,
@@ -2340,7 +2365,7 @@
                         const requestData = doc.data();
                         const toUserDoc = await db.collection("users").doc(requestData.toUserId).get();
                         
-                        if (toUserDoc.exists) { // FIXED: Changed .exists() to .exists
+                        if (toUserDoc.exists) {
                             this.sentRequests.push({
                                 id: doc.id,
                                 ...requestData,
@@ -2372,7 +2397,7 @@
                     const friendIds = this.friends.map(friend => friend.id);
                     
                     querySnapshot.forEach(doc => {
-                        if (doc.id !== uid && !friendIds.includes(doc.id) && doc.exists) { // FIXED: Added .exists check
+                        if (doc.id !== uid && !friendIds.includes(doc.id) && doc.exists) {
                             this.peopleSuggestions.push({
                                 id: doc.id,
                                 ...doc.data()
@@ -2406,7 +2431,7 @@
                     for (const friendId of friendIds) {
                         const friendDoc = await db.collection("users").doc(friendId).get();
                         
-                        if (friendDoc.exists) { // FIXED: Changed .exists() to .exists
+                        if (friendDoc.exists) {
                             this.friends.push({
                                 id: friendDoc.id,
                                 ...friendDoc.data()
@@ -2430,7 +2455,7 @@
                         const requestData = doc.data();
                         const fromUserDoc = await db.collection("users").doc(requestData.fromUserId).get();
                         
-                        if (fromUserDoc.exists) { // FIXED: Changed .exists() to .exists
+                        if (fromUserDoc.exists) {
                             this.friendRequests.push({
                                 id: doc.id,
                                 ...requestData,
@@ -2455,7 +2480,7 @@
                         const requestData = doc.data();
                         const toUserDoc = await db.collection("users").doc(requestData.toUserId).get();
                         
-                        if (toUserDoc.exists) { // FIXED: Changed .exists() to .exists
+                        if (toUserDoc.exists) {
                             this.sentRequests.push({
                                 id: doc.id,
                                 ...requestData,
@@ -2777,7 +2802,7 @@
                     
                     // Add name results
                     nameSnapshot.forEach(doc => {
-                        if (doc.id !== this.currentUser.uid && !addedIds.has(doc.id) && doc.exists) { // FIXED: Added .exists check
+                        if (doc.id !== this.currentUser.uid && !addedIds.has(doc.id) && doc.exists) {
                             results.push({ id: doc.id, ...doc.data() });
                             addedIds.add(doc.id);
                         }
@@ -2785,7 +2810,7 @@
                     
                     // Add email results
                     emailSnapshot.forEach(doc => {
-                        if (doc.id !== this.currentUser.uid && !addedIds.has(doc.id) && doc.exists) { // FIXED: Added .exists check
+                        if (doc.id !== this.currentUser.uid && !addedIds.has(doc.id) && doc.exists) {
                             results.push({ id: doc.id, ...doc.data() });
                             addedIds.add(doc.id);
                         }
@@ -2866,7 +2891,7 @@
                 // Check if chat already exists
                 const chatDoc = await db.collection("chats").doc(chatId).get();
                 
-                if (chatDoc.exists) { // FIXED: Changed .exists() to .exists
+                if (chatDoc.exists) {
                     this.activeChat = { id: chatDoc.id, ...chatDoc.data() };
                 } else {
                     // Create new chat
@@ -3730,11 +3755,6 @@
                     });
                 });
 
-                // Logout button
-                document.getElementById('logoutBtn').addEventListener('click', () => {
-                    this.logout();
-                });
-
                 // Edit profile button
                 document.getElementById('editProfileBtn').addEventListener('click', () => {
                     this.openEditProfileModal();
@@ -4046,7 +4066,7 @@
                 try {
                     const userDoc = await db.collection("users").doc(uid).get();
                     
-                    if (userDoc.exists) { // FIXED: Changed .exists() to .exists
+                    if (userDoc.exists) {
                         this.userProfile = { id: userDoc.id, ...userDoc.data() };
                         this.updateProfileUI(this.userProfile);
                         this.updateSidebar(this.userProfile);
@@ -4058,7 +4078,7 @@
                     }
                 } catch (error) {
                     console.error("Fallback load also failed:", error);
-                    this.showLoading(false); // Always hide loading spinner
+                    this.showLoading(false);
                     this.createFallbackProfile();
                 }
             }
@@ -4110,7 +4130,7 @@
                     
                 } catch (error) {
                     console.error("Error creating new profile:", error);
-                    this.showLoading(false); // Always hide loading spinner
+                    this.showLoading(false);
                     this.createFallbackProfile();
                 }
             }
@@ -4508,10 +4528,10 @@
                 
                 switch(status) {
                     case 'connected':
-                        statusElement.innerHTML = '<i class="fas fa-check mr-2"></i><span>Connected to Kynecta</span>';
+                        statusElement.innerHTML = '<i class="fas fa-check mr-2"></i><span>Connected</span>';
                         break;
                     case 'connecting':
-                        statusElement.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i><span>Connecting to Kynecta...</span>';
+                        statusElement.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i><span>Connecting...</span>';
                         break;
                     case 'error':
                         statusElement.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i><span>Connection Error</span>';
@@ -4559,31 +4579,6 @@
                 document.body.className = 'h-full bg-gradient-to-br from-blue-50 via-white to-purple-50 text-gray-800 overflow-x-hidden';
             }
         });
-
-        // Temporary debug function
-        async function forceCreateProfile() {
-            const user = auth.currentUser;
-            if (user) {
-                console.log("🛠️ Force creating profile for:", user.uid);
-                await window.profileApp.createNewProfile(user.uid);
-            } else {
-                alert("No user logged in");
-            }
-        }
-
-        // Also add this to check current status
-        function checkStatus() {
-            const user = auth.currentUser;
-            console.log("👤 Current user:", user);
-            if (user) {
-                db.collection("users").doc(user.uid).get().then((doc) => {
-                    console.log("📄 Document exists:", doc.exists);
-                    console.log("📊 Document data:", doc.data());
-                });
-            }
-        }
-        // Run status check on load
-        setTimeout(checkStatus, 2000);
     </script>
 </body>
 </html>

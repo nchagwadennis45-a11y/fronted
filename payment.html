@@ -454,6 +454,65 @@
         .mood-chill { background: linear-gradient(135deg, #059669, #10B981); }
         .mood-romantic { background: linear-gradient(135deg, #DB2777, #BE185D); }
         .mood-default { background: linear-gradient(135deg, #6B7280, #4B5563); }
+        
+        /* Navigation Styles */
+        .nav-container {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-link {
+            color: #cbd5e1;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            color: white;
+            background: rgba(59, 130, 246, 0.2);
+        }
+        
+        .nav-link.active {
+            color: white;
+            background: rgba(59, 130, 246, 0.3);
+        }
+        
+        .mobile-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .mobile-menu.show {
+            display: flex;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .mobile-menu-btn {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body class="h-full dashboard-container bg-grid-pattern theme-calm overflow-x-hidden">
@@ -473,18 +532,9 @@
         </div>
     </div>
 
-    <!-- Connection Status Indicator -->
-    <div id="connectionStatus" class="connection-status connecting">
-        <i class="fas fa-sync fa-spin"></i>
-        <span>Connecting to Firebase...</span>
-    </div>
-
-    <!-- Toast Notifications -->
-    <div id="toastContainer"></div>
-
-    <div class="min-h-screen container mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="glass-card border-b border-slate-700">
+    <!-- Navigation Bar -->
+    <nav class="nav-container">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 primary-gradient rounded-2xl flex items-center justify-center">
@@ -497,6 +547,22 @@
                         <p class="text-slate-400 text-sm">Secure, fast, and social payments</p>
                     </div>
                 </div>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-6 nav-links">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="payment.html" class="nav-link active">Payments</a>
+                    <a href="games.html" class="nav-link">Games</a>
+                    <a href="marketplace.html" class="nav-link">Marketplace</a>
+                    <a href="chat.html" class="nav-link">Chat</a>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn md:hidden text-slate-400 hover:text-white">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                
+                <!-- User Balance -->
                 <div class="flex items-center space-x-4">
                     <div class="text-right hidden sm:block">
                         <div class="font-semibold text-white" id="userBalance">Loading...</div>
@@ -507,238 +573,256 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Mobile Navigation Menu -->
+            <div class="mobile-menu md:hidden" id="mobileMenu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="payment.html" class="nav-link active">Payments</a>
+                <a href="games.html" class="nav-link">Games</a>
+                <a href="marketplace.html" class="nav-link">Marketplace</a>
+                <a href="chat.html" class="nav-link">Chat</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Connection Status Indicator -->
+    <div id="connectionStatus" class="connection-status connecting">
+        <i class="fas fa-sync fa-spin"></i>
+        <span>Connecting...</span>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer"></div>
+
+    <div class="min-h-screen container mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <button class="glass-card rounded-2xl border border-slate-700 p-4 text-center hover:border-blue-400 transition" onclick="openSendMoneyModal()">
+                <div class="w-12 h-12 primary-gradient rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fas fa-paper-plane text-white"></i>
+                </div>
+                <span class="font-semibold text-white text-sm md:text-base">Send Money</span>
+            </button>
+            
+            <button class="glass-card rounded-2xl border border-slate-700 p-4 text-center hover:border-green-400 transition" onclick="openRequestMoneyModal()">
+                <div class="w-12 h-12 security-gradient rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fas fa-hand-holding-usd text-white"></i>
+                </div>
+                <span class="font-semibold text-white text-sm md:text-base">Request Money</span>
+            </button>
+            
+            <button class="glass-card rounded-2xl border border-slate-700 p-4 text-center hover:border-yellow-400 transition" onclick="openMarketplaceModal()">
+                <div class="w-12 h-12 rewards-gradient rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fas fa-shopping-cart text-white"></i>
+                </div>
+                <span class="font-semibold text-white text-sm md:text-base">Marketplace</span>
+            </button>
+            
+            <button class="glass-card rounded-2xl border border-slate-700 p-4 text-center hover:border-purple-400 transition" onclick="openCryptoModal()">
+                <div class="w-12 h-12 crypto-gradient rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fas fa-coins text-white"></i>
+                </div>
+                <span class="font-semibold text-white text-sm md:text-base">Crypto</span>
+            </button>
         </div>
 
-        <div class="py-8">
-            <!-- Quick Actions -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <button class="glass-card rounded-2xl border border-slate-700 p-4 text-center hover:border-blue-400 transition" onclick="openSendMoneyModal()">
-                    <div class="w-12 h-12 primary-gradient rounded-full flex items-center justify-center mx-auto mb-2">
-                        <i class="fas fa-paper-plane text-white"></i>
-                    </div>
-                    <span class="font-semibold text-white text-sm md:text-base">Send Money</span>
-                </button>
-                
-                <button class="glass-card rounded-2xl border border-slate-700 p-4 text-center hover:border-green-400 transition" onclick="openRequestMoneyModal()">
-                    <div class="w-12 h-12 security-gradient rounded-full flex items-center justify-center mx-auto mb-2">
-                        <i class="fas fa-hand-holding-usd text-white"></i>
-                    </div>
-                    <span class="font-semibold text-white text-sm md:text-base">Request Money</span>
-                </button>
-                
-                <button class="glass-card rounded-2xl border border-slate-700 p-4 text-center hover:border-yellow-400 transition" onclick="openMarketplaceModal()">
-                    <div class="w-12 h-12 rewards-gradient rounded-full flex items-center justify-center mx-auto mb-2">
-                        <i class="fas fa-shopping-cart text-white"></i>
-                    </div>
-                    <span class="font-semibold text-white text-sm md:text-base">Marketplace</span>
-                </button>
-                
-                <button class="glass-card rounded-2xl border border-slate-700 p-4 text-center hover:border-purple-400 transition" onclick="openCryptoModal()">
-                    <div class="w-12 h-12 crypto-gradient rounded-full flex items-center justify-center mx-auto mb-2">
-                        <i class="fas fa-coins text-white"></i>
-                    </div>
-                    <span class="font-semibold text-white text-sm md:text-base">Crypto</span>
-                </button>
-            </div>
-
-            <!-- Payment Overview -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <!-- Balance Card -->
-                <div class="glass-card rounded-2xl border border-slate-700 p-6">
-                    <h3 class="text-xl font-black text-white mb-4">Account Balance</h3>
-                    <div class="text-3xl font-black text-green-400 mb-2" id="balanceAmount">Loading...</div>
-                    <p class="text-slate-400 text-sm mb-4">Available for transactions</p>
-                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                        <button class="flex-1 px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openAddMoneyModal()">
-                            Add Money
-                        </button>
-                        <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:text-white transition text-sm md:text-base" onclick="openWithdrawModal()">
-                            Withdraw
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Security Status -->
-                <div class="glass-card rounded-2xl border border-slate-700 p-6">
-                    <h3 class="text-xl font-black text-white mb-4">Security Status</h3>
-                    <div class="space-y-3 mb-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-slate-400 text-sm md:text-base">AI Fraud Detection</span>
-                            <span class="security-badge text-xs" id="fraudDetectionStatus">
-                                <i class="fas fa-shield-alt mr-1"></i> Loading...
-                            </span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-slate-400 text-sm md:text-base">Biometric Auth</span>
-                            <span class="security-badge text-xs" id="biometricStatus">
-                                <i class="fas fa-fingerprint mr-1"></i> Loading...
-                            </span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-slate-400 text-sm md:text-base">2FA</span>
-                            <span class="security-badge text-xs" id="twoFAStatus">
-                                <i class="fas fa-mobile-alt mr-1"></i> Loading...
-                            </span>
-                        </div>
-                    </div>
-                    <button class="w-full px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openSecuritySettings()">
-                        <i class="fas fa-cog mr-2"></i> Security Settings
+        <!-- Payment Overview -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Balance Card -->
+            <div class="glass-card rounded-2xl border border-slate-700 p-6">
+                <h3 class="text-xl font-black text-white mb-4">Account Balance</h3>
+                <div class="text-3xl font-black text-green-400 mb-2" id="balanceAmount">Loading...</div>
+                <p class="text-slate-400 text-sm mb-4">Available for transactions</p>
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                    <button class="flex-1 px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openAddMoneyModal()">
+                        Add Money
                     </button>
-                </div>
-
-                <!-- Rewards & Cashback -->
-                <div class="glass-card rounded-2xl border border-slate-700 p-6">
-                    <h3 class="text-xl font-black text-white mb-4">Rewards</h3>
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <div class="text-2xl font-black text-yellow-400" id="cashbackAmount">Loading...</div>
-                            <div class="text-slate-400 text-sm">Cashback Earned</div>
-                        </div>
-                        <div class="cashback-badge w-12 h-12 rounded-full flex items-center justify-center">
-                            <i class="fas fa-gift text-white"></i>
-                        </div>
-                    </div>
-                    <div class="space-y-2 mb-4">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-slate-400">Daily Spin Available</span>
-                            <span class="text-green-400 font-semibold cursor-pointer" onclick="openRewardsSpinModal()">Spin Now</span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-slate-400">Streak Bonus</span>
-                            <span class="text-yellow-400 font-semibold" id="streakCount">Loading...</span>
-                        </div>
-                    </div>
-                    <button class="w-full px-4 py-2 rewards-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="claimRewards()">
-                        <i class="fas fa-trophy mr-2"></i> Claim Rewards
+                    <button class="flex-1 px-4 py-2 glass-card border border-slate-700 rounded-xl text-slate-400 hover:text-white transition text-sm md:text-base" onclick="openWithdrawModal()">
+                        Withdraw
                     </button>
                 </div>
             </div>
 
-            <!-- Payment Methods -->
-            <div class="mb-8">
-                <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-6 responsive-heading">
-                    Payment Methods
+            <!-- Security Status -->
+            <div class="glass-card rounded-2xl border border-slate-700 p-6">
+                <h3 class="text-xl font-black text-white mb-4">Security Status</h3>
+                <div class="space-y-3 mb-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400 text-sm md:text-base">AI Fraud Detection</span>
+                        <span class="security-badge text-xs" id="fraudDetectionStatus">
+                            <i class="fas fa-shield-alt mr-1"></i> Loading...
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400 text-sm md:text-base">Biometric Auth</span>
+                        <span class="security-badge text-xs" id="biometricStatus">
+                            <i class="fas fa-fingerprint mr-1"></i> Loading...
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400 text-sm md:text-base">2FA</span>
+                        <span class="security-badge text-xs" id="twoFAStatus">
+                            <i class="fas fa-mobile-alt mr-1"></i> Loading...
+                        </span>
+                    </div>
+                </div>
+                <button class="w-full px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openSecuritySettings()">
+                    <i class="fas fa-cog mr-2"></i> Security Settings
+                </button>
+            </div>
+
+            <!-- Rewards & Cashback -->
+            <div class="glass-card rounded-2xl border border-slate-700 p-6">
+                <h3 class="text-xl font-black text-white mb-4">Rewards</h3>
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <div class="text-2xl font-black text-yellow-400" id="cashbackAmount">Loading...</div>
+                        <div class="text-slate-400 text-sm">Cashback Earned</div>
+                    </div>
+                    <div class="cashback-badge w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fas fa-gift text-white"></i>
+                    </div>
+                </div>
+                <div class="space-y-2 mb-4">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-400">Daily Spin Available</span>
+                        <span class="text-green-400 font-semibold cursor-pointer" onclick="openRewardsSpinModal()">Spin Now</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-400">Streak Bonus</span>
+                        <span class="text-yellow-400 font-semibold" id="streakCount">Loading...</span>
+                    </div>
+                </div>
+                <button class="w-full px-4 py-2 rewards-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="claimRewards()">
+                    <i class="fas fa-trophy mr-2"></i> Claim Rewards
+                </button>
+            </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 mb-6 responsive-heading">
+                Payment Methods
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="paymentMethods">
+                <div class="payment-method glass-card rounded-2xl border border-slate-700 p-4 text-center" data-method="mpesa">
+                    <div class="w-16 h-16 mpesa-green rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-mobile-alt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-white text-base md:text-lg">M-Pesa</h3>
+                    <p class="text-slate-400 text-sm">Mobile Money</p>
+                </div>
+
+                <div class="payment-method glass-card rounded-2xl border border-slate-700 p-4 text-center" data-method="card">
+                    <div class="w-16 h-16 primary-gradient rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-credit-card text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-white text-base md:text-lg">Card</h3>
+                    <p class="text-slate-400 text-sm">Visa • MasterCard</p>
+                </div>
+
+                <div class="payment-method glass-card rounded-2xl border border-slate-700 p-4 text-center" data-method="bank">
+                    <div class="w-16 h-16 security-gradient rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-university text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-white text-base md:text-lg">Bank Transfer</h3>
+                    <p class="text-slate-400 text-sm">Direct Transfer</p>
+                </div>
+
+                <div class="payment-method glass-card rounded-2xl border border-slate-700 p-4 text-center" data-method="crypto">
+                    <div class="w-16 h-16 crypto-gradient rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-coins text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-semibold text-white text-base md:text-lg">Crypto</h3>
+                    <p class="text-slate-400 text-sm">Bitcoin • Ethereum</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 responsive-heading">
+                    Recent Transactions
                 </h2>
+                <button class="text-purple-400 hover:text-pink-300 font-semibold transition text-sm md:text-base" onclick="viewAllTransactions()">
+                    View All
+                </button>
+            </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="paymentMethods">
-                    <div class="payment-method glass-card rounded-2xl border border-slate-700 p-4 text-center" data-method="mpesa">
-                        <div class="w-16 h-16 mpesa-green rounded-full flex items-center justify-center mx-auto mb-3">
-                            <i class="fas fa-mobile-alt text-white text-2xl"></i>
-                        </div>
-                        <h3 class="font-semibold text-white text-base md:text-lg">M-Pesa</h3>
-                        <p class="text-slate-400 text-sm">Mobile Money</p>
-                    </div>
-
-                    <div class="payment-method glass-card rounded-2xl border border-slate-700 p-4 text-center" data-method="card">
-                        <div class="w-16 h-16 primary-gradient rounded-full flex items-center justify-center mx-auto mb-3">
-                            <i class="fas fa-credit-card text-white text-2xl"></i>
-                        </div>
-                        <h3 class="font-semibold text-white text-base md:text-lg">Card</h3>
-                        <p class="text-slate-400 text-sm">Visa • MasterCard</p>
-                    </div>
-
-                    <div class="payment-method glass-card rounded-2xl border border-slate-700 p-4 text-center" data-method="bank">
-                        <div class="w-16 h-16 security-gradient rounded-full flex items-center justify-center mx-auto mb-3">
-                            <i class="fas fa-university text-white text-2xl"></i>
-                        </div>
-                        <h3 class="font-semibold text-white text-base md:text-lg">Bank Transfer</h3>
-                        <p class="text-slate-400 text-sm">Direct Transfer</p>
-                    </div>
-
-                    <div class="payment-method glass-card rounded-2xl border border-slate-700 p-4 text-center" data-method="crypto">
-                        <div class="w-16 h-16 crypto-gradient rounded-full flex items-center justify-center mx-auto mb-3">
-                            <i class="fas fa-coins text-white text-2xl"></i>
-                        </div>
-                        <h3 class="font-semibold text-white text-base md:text-lg">Crypto</h3>
-                        <p class="text-slate-400 text-sm">Bitcoin • Ethereum</p>
+            <div class="glass-card rounded-2xl border border-slate-700 p-6">
+                <div class="space-y-4" id="transactionsList">
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fas fa-sync fa-spin text-2xl mb-2"></i>
+                        <p>Loading transactions...</p>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Recent Transactions -->
-            <div class="mb-8">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 responsive-heading">
-                        Recent Transactions
-                    </h2>
-                    <button class="text-purple-400 hover:text-pink-300 font-semibold transition text-sm md:text-base" onclick="viewAllTransactions()">
-                        View All
+        <!-- AI Fraud Detection -->
+        <div class="glass-card rounded-2xl border border-slate-700 p-6 mb-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                <h3 class="text-2xl font-black text-white mb-2 md:mb-0">AI Fraud Detection</h3>
+                <span class="security-badge pulse-effect text-xs md:text-sm">
+                    <i class="fas fa-shield-alt mr-1"></i> Real-time Protection
+                </span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-3xl font-black text-green-400">99.7%</div>
+                    <div class="text-slate-400 text-sm md:text-base">Detection Accuracy</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-black text-blue-400">0.2s</div>
+                    <div class="text-slate-400 text-sm md:text-base">Response Time</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-black text-purple-400">24/7</div>
+                    <div class="text-slate-400 text-sm md:text-base">Active Monitoring</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Social Payment Features -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400 mb-6 responsive-heading">
+                Social Payments
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="glass-card rounded-2xl border border-slate-700 p-6 text-center">
+                    <div class="w-16 h-16 primary-gradient rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-users text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Group Payments</h3>
+                    <p class="text-slate-400 text-sm mb-4">Split bills and collect money from groups</p>
+                    <button class="w-full px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openGroupPaymentModal()">
+                        Create Group
                     </button>
                 </div>
 
-                <div class="glass-card rounded-2xl border border-slate-700 p-6">
-                    <div class="space-y-4" id="transactionsList">
-                        <div class="text-center py-8 text-slate-400">
-                            <i class="fas fa-sync fa-spin text-2xl mb-2"></i>
-                            <p>Loading transactions...</p>
-                        </div>
+                <div class="glass-card rounded-2xl border border-slate-700 p-6 text-center">
+                    <div class="w-16 h-16 rewards-gradient rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-gift text-white text-2xl"></i>
                     </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Social Gifting</h3>
+                    <p class="text-slate-400 text-sm mb-4">Send gifts with personalized messages</p>
+                    <button class="w-full px-4 py-2 rewards-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openSocialGiftingModal()">
+                        Send Gift
+                    </button>
                 </div>
-            </div>
 
-            <!-- AI Fraud Detection -->
-            <div class="glass-card rounded-2xl border border-slate-700 p-6 mb-8">
-                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
-                    <h3 class="text-2xl font-black text-white mb-2 md:mb-0">AI Fraud Detection</h3>
-                    <span class="security-badge pulse-effect text-xs md:text-sm">
-                        <i class="fas fa-shield-alt mr-1"></i> Real-time Protection
-                    </span>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="text-center">
-                        <div class="text-3xl font-black text-green-400">99.7%</div>
-                        <div class="text-slate-400 text-sm md:text-base">Detection Accuracy</div>
+                <div class="glass-card rounded-2xl border border-slate-700 p-6 text-center">
+                    <div class="w-16 h-16 security-gradient rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-bullseye text-white text-2xl"></i>
                     </div>
-                    <div class="text-center">
-                        <div class="text-3xl font-black text-blue-400">0.2s</div>
-                        <div class="text-slate-400 text-sm md:text-base">Response Time</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-3xl font-black text-purple-400">24/7</div>
-                        <div class="text-slate-400 text-sm md:text-base">Active Monitoring</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Social Payment Features -->
-            <div class="mb-8">
-                <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400 mb-6 responsive-heading">
-                    Social Payments
-                </h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="glass-card rounded-2xl border border-slate-700 p-6 text-center">
-                        <div class="w-16 h-16 primary-gradient rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-users text-white text-2xl"></i>
-                        </div>
-                        <h3 class="text-lg font-semibold text-white mb-2">Group Payments</h3>
-                        <p class="text-slate-400 text-sm mb-4">Split bills and collect money from groups</p>
-                        <button class="w-full px-4 py-2 primary-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openGroupPaymentModal()">
-                            Create Group
-                        </button>
-                    </div>
-
-                    <div class="glass-card rounded-2xl border border-slate-700 p-6 text-center">
-                        <div class="w-16 h-16 rewards-gradient rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-gift text-white text-2xl"></i>
-                        </div>
-                        <h3 class="text-lg font-semibold text-white mb-2">Social Gifting</h3>
-                        <p class="text-slate-400 text-sm mb-4">Send gifts with personalized messages</p>
-                        <button class="w-full px-4 py-2 rewards-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openSocialGiftingModal()">
-                            Send Gift
-                        </button>
-                    </div>
-
-                    <div class="glass-card rounded-2xl border border-slate-700 p-6 text-center">
-                        <div class="w-16 h-16 security-gradient rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-bullseye text-white text-2xl"></i>
-                        </div>
-                        <h3 class="text-lg font-semibold text-white mb-2">Shared Goals</h3>
-                        <p class="text-slate-400 text-sm mb-4">Save together for common objectives</p>
-                        <button class="w-full px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openSharedGoalsModal()">
-                            Start Goal
-                        </button>
-                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Shared Goals</h3>
+                    <p class="text-slate-400 text-sm mb-4">Save together for common objectives</p>
+                    <button class="w-full px-4 py-2 security-gradient text-white rounded-xl font-semibold hover:scale-105 transition text-sm md:text-base" onclick="openSharedGoalsModal()">
+                        Start Goal
+                    </button>
                 </div>
             </div>
         </div>
@@ -1237,7 +1321,29 @@
             
             // Set up mood selector
             setupMoodSelector();
+            
+            // Set up mobile menu
+            setupMobileMenu();
         });
+
+        // Set up mobile menu toggle
+        function setupMobileMenu() {
+            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('show');
+                });
+                
+                // Close mobile menu when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.mobile-menu') && !e.target.closest('.mobile-menu-btn')) {
+                        mobileMenu.classList.remove('show');
+                    }
+                });
+            }
+        }
 
         // Clear all cached demo data
         function clearCachedData() {
@@ -1249,18 +1355,18 @@
 
         // Initialize Firebase and authentication
         function initFirebase() {
-            updateConnectionStatus('connecting', 'Connecting to Firebase...');
+            updateConnectionStatus('connecting', 'Connecting...');
             
             // Check authentication state
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     // User is signed in
                     currentUser = user;
-                    updateConnectionStatus('connected', 'Connected to Firebase');
+                    updateConnectionStatus('connected', 'Connected');
                     loadUserData();
                 } else {
                     // User is signed out
-                    updateConnectionStatus('error', 'Not authenticated. Please log in.');
+                    updateConnectionStatus('error', 'Authentication required');
                     showToast('Please log in to access payment features', 'error');
                     
                     // Redirect to login page after a delay
@@ -1270,7 +1376,7 @@
                 }
             }, (error) => {
                 console.error('Auth state change error:', error);
-                updateConnectionStatus('error', 'Authentication error');
+                updateConnectionStatus('error', 'Connection error');
                 showToast('Authentication error. Please try again.', 'error');
             });
         }

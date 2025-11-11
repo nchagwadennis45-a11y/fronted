@@ -39,6 +39,35 @@
             --text-secondary: #94a3b8;
             --border: #334155;
         }
+
+        /* Mood Themes */
+        [data-mood="happy"] {
+            --primary: #f59e0b;
+            --primary-dark: #d97706;
+            --secondary: #fbbf24;
+            --accent: #10b981;
+        }
+        
+        [data-mood="calm"] {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #60a5fa;
+            --accent: #06b6d4;
+        }
+        
+        [data-mood="energetic"] {
+            --primary: #ef4444;
+            --primary-dark: #dc2626;
+            --secondary: #f87171;
+            --accent: #f59e0b;
+        }
+        
+        [data-mood="creative"] {
+            --primary: #8b5cf6;
+            --primary-dark: #7c3aed;
+            --secondary: #a78bfa;
+            --accent: #ec4899;
+        }
         
         body {
             font-family: 'Inter', sans-serif;
@@ -932,6 +961,91 @@
                 grid-template-columns: repeat(3, 1fr);
             }
         }
+
+        /* Mood selector styles */
+        .mood-selector {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .mood-option {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .mood-option.active {
+            border-color: var(--text-primary);
+            transform: scale(1.1);
+        }
+
+        .mood-happy {
+            background-color: #f59e0b;
+        }
+
+        .mood-calm {
+            background-color: #3b82f6;
+        }
+
+        .mood-energetic {
+            background-color: #ef4444;
+        }
+
+        .mood-creative {
+            background-color: #8b5cf6;
+        }
+
+        /* Professional category grid */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .category-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+        }
+
+        .category-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .category-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .category-count {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body class="min-h-screen pb-16 overflow-x-hidden">
@@ -948,7 +1062,7 @@
         </div>
         
         <div class="space-y-4">
-            <a href="#" class="block py-2 text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white font-medium transition">Home</a>
+            <a href="home.html" class="block py-2 text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white font-medium transition">Home</a>
             <a href="#" id="mobileDiscoverLink" class="block py-2 text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white font-medium transition">Discover</a>
             <a href="#" id="mobileCategoriesLink" class="block py-2 text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white font-medium transition">Categories</a>
             <a href="#" id="mobileSellersLink" class="block py-2 text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white font-medium transition">Sellers</a>
@@ -966,6 +1080,7 @@
                     <a href="profile.html" class="block py-2 text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white">Profile</a>
                     <a href="chat.html" class="block py-2 text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white">Messages</a>
                     <a href="games.html" class="block py-2 text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white">Games</a>
+                    <a href="payment.html" class="block py-2 text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-white">Payment</a>
                     <button id="mobileLogoutBtn" class="block w-full text-left py-2 text-red-600 hover:text-red-800">Logout</button>
                 </div>
             </div>
@@ -984,7 +1099,8 @@
                 </div>
                 
                 <div class="hidden md:flex space-x-6 desktop-nav">
-                    <a href="#" class="nav-link active" data-section="home">Home</a>
+                    <a href="home.html" class="nav-link">Home</a>
+                    <a href="#" class="nav-link active" data-section="home">Marketplace</a>
                     <a href="#" class="nav-link" data-section="discover">Discover</a>
                     <a href="#" class="nav-link" data-section="categories">Categories</a>
                     <a href="#" class="nav-link" data-section="sellers">Sellers</a>
@@ -1000,6 +1116,14 @@
                     </div>
                     
                     <div class="flex items-center space-x-2">
+                        <!-- Mood Selector -->
+                        <div class="mood-selector hidden md:flex">
+                            <div class="mood-option mood-happy active" data-mood="happy" title="Happy"></div>
+                            <div class="mood-option mood-calm" data-mood="calm" title="Calm"></div>
+                            <div class="mood-option mood-energetic" data-mood="energetic" title="Energetic"></div>
+                            <div class="mood-option mood-creative" data-mood="creative" title="Creative"></div>
+                        </div>
+                        
                         <div class="theme-toggle" id="themeToggle">
                             <div class="theme-toggle-handle"></div>
                         </div>
@@ -1122,57 +1246,56 @@
                 </div>
             </section>
 
-            <!-- Categories Section (Jumia Style) -->
+            <!-- Categories Section (Professional Style) -->
             <section class="mb-6">
                 <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Categories</h2>
-                <div class="jumia-category-grid">
-                    <div class="jumia-category-item" data-category="phones">
-                        <div class="jumia-category-icon">
-                            <i class="fas fa-mobile-alt text-indigo-600"></i>
+                <div class="category-grid">
+                    <div class="category-card" data-category="electronics">
+                        <div class="category-icon">
+                            <i class="fas fa-laptop"></i>
                         </div>
-                        <span class="jumia-category-name">Phones & Tablets</span>
+                        <h3 class="category-name">Electronics</h3>
+                        <p class="category-count">245 items</p>
                     </div>
-                    <div class="jumia-category-item" data-category="tvs">
-                        <div class="jumia-category-icon">
-                            <i class="fas fa-tv text-indigo-600"></i>
+                    
+                    <div class="category-card" data-category="phones">
+                        <div class="category-icon">
+                            <i class="fas fa-mobile-alt"></i>
                         </div>
-                        <span class="jumia-category-name">TVs & Audio</span>
+                        <h3 class="category-name">Phones & Tablets</h3>
+                        <p class="category-count">189 items</p>
                     </div>
-                    <div class="jumia-category-item" data-category="computing">
-                        <div class="jumia-category-icon">
-                            <i class="fas fa-laptop text-indigo-600"></i>
+                    
+                    <div class="category-card" data-category="fashion">
+                        <div class="category-icon">
+                            <i class="fas fa-tshirt"></i>
                         </div>
-                        <span class="jumia-category-name">Computing</span>
+                        <h3 class="category-name">Fashion</h3>
+                        <p class="category-count">312 items</p>
                     </div>
-                    <div class="jumia-category-item" data-category="fashion">
-                        <div class="jumia-category-icon">
-                            <i class="fas fa-tshirt text-indigo-600"></i>
+                    
+                    <div class="category-card" data-category="home">
+                        <div class="category-icon">
+                            <i class="fas fa-home"></i>
                         </div>
-                        <span class="jumia-category-name">Fashion</span>
+                        <h3 class="category-name">Home & Office</h3>
+                        <p class="category-count">156 items</p>
                     </div>
-                    <div class="jumia-category-item" data-category="home">
-                        <div class="jumia-category-icon">
-                            <i class="fas fa-home text-indigo-600"></i>
+                    
+                    <div class="category-card" data-category="books">
+                        <div class="category-icon">
+                            <i class="fas fa-book"></i>
                         </div>
-                        <span class="jumia-category-name">Home & Office</span>
+                        <h3 class="category-name">Books & Media</h3>
+                        <p class="category-count">98 items</p>
                     </div>
-                    <div class="jumia-category-item" data-category="health">
-                        <div class="jumia-category-icon">
-                            <i class="fas fa-heartbeat text-indigo-600"></i>
+                    
+                    <div class="category-card" data-category="sports">
+                        <div class="category-icon">
+                            <i class="fas fa-basketball-ball"></i>
                         </div>
-                        <span class="jumia-category-name">Health & Beauty</span>
-                    </div>
-                    <div class="jumia-category-item" data-category="gaming">
-                        <div class="jumia-category-icon">
-                            <i class="fas fa-gamepad text-indigo-600"></i>
-                        </div>
-                        <span class="jumia-category-name">Gaming</span>
-                    </div>
-                    <div class="jumia-category-item" id="moreCategories">
-                        <div class="jumia-category-icon">
-                            <i class="fas fa-ellipsis-h text-indigo-600"></i>
-                        </div>
-                        <span class="jumia-category-name">More</span>
+                        <h3 class="category-name">Sports</h3>
+                        <p class="category-count">76 items</p>
                     </div>
                 </div>
             </section>
@@ -1338,7 +1461,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                <div class="glass-card p-6 text-center">
+                <div class="glass-card p-6 text-center cursor-pointer hover-lift" id="hotDealsCard">
                     <i class="fas fa-fire text-4xl text-red-500 mb-4"></i>
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Hot Deals</h3>
                     <p class="text-gray-600 dark:text-gray-400 mb-4">Discover the most popular items with special discounts</p>
@@ -1347,7 +1470,7 @@
                     </button>
                 </div>
                 
-                <div class="glass-card p-6 text-center">
+                <div class="glass-card p-6 text-center cursor-pointer hover-lift" id="topRatedCard">
                     <i class="fas fa-star text-4xl text-yellow-500 mb-4"></i>
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Top Rated</h3>
                     <p class="text-gray-600 dark:text-gray-400 mb-4">Find items with the highest ratings from our community</p>
@@ -1356,7 +1479,7 @@
                     </button>
                 </div>
                 
-                <div class="glass-card p-6 text-center">
+                <div class="glass-card p-6 text-center cursor-pointer hover-lift" id="justAddedCard">
                     <i class="fas fa-bolt text-4xl text-purple-500 mb-4"></i>
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Just Added</h3>
                     <p class="text-gray-600 dark:text-gray-400 mb-4">Check out the newest listings in our marketplace</p>
@@ -1369,25 +1492,25 @@
             <div class="mb-8">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Featured Collections</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="glass-card p-4 text-center cursor-pointer hover-lift">
+                    <div class="glass-card p-4 text-center cursor-pointer hover-lift" data-category="electronics">
                         <img src="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Electronics" class="w-full h-32 object-cover rounded-lg mb-3">
                         <h4 class="font-semibold text-gray-900 dark:text-white">Electronics</h4>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Latest gadgets and devices</p>
                     </div>
                     
-                    <div class="glass-card p-4 text-center cursor-pointer hover-lift">
+                    <div class="glass-card p-4 text-center cursor-pointer hover-lift" data-category="fashion">
                         <img src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Fashion" class="w-full h-32 object-cover rounded-lg mb-3">
                         <h4 class="font-semibold text-gray-900 dark:text-white">Fashion</h4>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Trendy clothes and accessories</p>
                     </div>
                     
-                    <div class="glass-card p-4 text-center cursor-pointer hover-lift">
+                    <div class="glass-card p-4 text-center cursor-pointer hover-lift" data-category="home">
                         <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Home" class="w-full h-32 object-cover rounded-lg mb-3">
                         <h4 class="font-semibold text-gray-900 dark:text-white">Home & Living</h4>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Furniture and home essentials</p>
                     </div>
                     
-                    <div class="glass-card p-4 text-center cursor-pointer hover-lift">
+                    <div class="glass-card p-4 text-center cursor-pointer hover-lift" data-category="books">
                         <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="Books" class="w-full h-32 object-cover rounded-lg mb-3">
                         <h4 class="font-semibold text-gray-900 dark:text-white">Books & Media</h4>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Textbooks and entertainment</p>
@@ -1416,89 +1539,101 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-                <div class="jumia-category-item" data-category="electronics">
-                    <div class="jumia-category-icon">
-                        <i class="fas fa-laptop text-indigo-600"></i>
+            <div class="category-grid mb-8">
+                <div class="category-card" data-category="electronics">
+                    <div class="category-icon">
+                        <i class="fas fa-laptop"></i>
                     </div>
-                    <span class="jumia-category-name">Electronics</span>
+                    <h3 class="category-name">Electronics</h3>
+                    <p class="category-count">245 items</p>
                 </div>
                 
-                <div class="jumia-category-item" data-category="phones">
-                    <div class="jumia-category-icon">
-                        <i class="fas fa-mobile-alt text-indigo-600"></i>
+                <div class="category-card" data-category="phones">
+                    <div class="category-icon">
+                        <i class="fas fa-mobile-alt"></i>
                     </div>
-                    <span class="jumia-category-name">Phones</span>
+                    <h3 class="category-name">Phones & Tablets</h3>
+                    <p class="category-count">189 items</p>
                 </div>
                 
-                <div class="jumia-category-item" data-category="fashion">
-                    <div class="jumia-category-icon">
-                        <i class="fas fa-tshirt text-indigo-600"></i>
+                <div class="category-card" data-category="fashion">
+                    <div class="category-icon">
+                        <i class="fas fa-tshirt"></i>
                     </div>
-                    <span class="jumia-category-name">Fashion</span>
+                    <h3 class="category-name">Fashion</h3>
+                    <p class="category-count">312 items</p>
                 </div>
                 
-                <div class="jumia-category-item" data-category="home">
-                    <div class="jumia-category-icon">
-                        <i class="fas fa-home text-indigo-600"></i>
+                <div class="category-card" data-category="home">
+                    <div class="category-icon">
+                        <i class="fas fa-home"></i>
                     </div>
-                    <span class="jumia-category-name">Home</span>
+                    <h3 class="category-name">Home & Office</h3>
+                    <p class="category-count">156 items</p>
                 </div>
                 
-                <div class="jumia-category-item" data-category="health">
-                    <div class="jumia-category-icon">
-                        <i class="fas fa-heartbeat text-indigo-600"></i>
+                <div class="category-card" data-category="health">
+                    <div class="category-icon">
+                        <i class="fas fa-heartbeat"></i>
                     </div>
-                    <span class="jumia-category-name">Health</span>
+                    <h3 class="category-name">Health & Beauty</h3>
+                    <p class="category-count">98 items</p>
                 </div>
                 
-                <div class="jumia-category-item" data-category="sports">
-                    <div class="jumia-category-icon">
-                        <i class="fas fa-basketball-ball text-indigo-600"></i>
+                <div class="category-card" data-category="sports">
+                    <div class="category-icon">
+                        <i class="fas fa-basketball-ball"></i>
                     </div>
-                    <span class="jumia-category-name">Sports</span>
+                    <h3 class="category-name">Sports</h3>
+                    <p class="category-count">76 items</p>
                 </div>
                 
-                <div class="jumia-category-item" data-category="books">
-                    <div class="jumia-category-icon">
-                        <i class="fas fa-book text-indigo-600"></i>
+                <div class="category-card" data-category="books">
+                    <div class="category-icon">
+                        <i class="fas fa-book"></i>
                     </div>
-                    <span class="jumia-category-name">Books</span>
+                    <h3 class="category-name">Books & Media</h3>
+                    <p class="category-count">134 items</p>
                 </div>
                 
-                <div class="jumia-category-item" data-category="toys">
-                    <div class="jumia-category-icon">
-                        <i class="fas fa-gamepad text-indigo-600"></i>
+                <div class="category-card" data-category="gaming">
+                    <div class="category-icon">
+                        <i class="fas fa-gamepad"></i>
                     </div>
-                    <span class="jumia-category-name">Toys & Games</span>
+                    <h3 class="category-name">Gaming</h3>
+                    <p class="category-count">87 items</p>
                 </div>
                 
-                <div class="jumia-category-item" data-category="automotive">
-                    <div class="jumia-category-icon">
-                        <i class="fas fa-car text-indigo-600"></i>
+                <div class="category-card" data-category="automotive">
+                    <div class="category-icon">
+                        <i class="fas fa-car"></i>
                     </div>
-                    <span class="jumia-category-name">Automotive</span>
+                    <h3 class="category-name">Automotive</h3>
+                    <p class="category-count">54 items</p>
                 </div>
                 
-                <div class="jumia-category-item" data-category="pets">
-                    <div class="jumia-category-icon">
-                        <i class="fas fa-paw text-indigo-600"></i>
+                <div class="category-card" data-category="pets">
+                    <div class="category-icon">
+                        <i class="fas fa-paw"></i>
                     </div>
-                    <span class="jumia-category-name">Pets</span>
+                    <h3 class="category-name">Pets</h3>
+                    <p class="category-count">43 items</p>
                 </div>
                 
-                <div class="jumia-category-item" data-category="baby">
-                    <div class="jumia-category-icon">
-                        <i class="fas fa-baby text-indigo-600"></i>
+                <div class="category-card" data-category="baby">
+                    <div class="category-icon">
+                        <i class="fas fa-baby"></i>
                     </div>
-                    <span class="jumia-category-name">Baby</span>
+                    <h3 class="category-name">Baby Products</h3>
+                    <p class="category-count">32 items</p>
                 </div>
                 
-                <div class="jumia-category-item" data-category="grocery">
-                    <div class="jumia-category-icon">
-                        <i class="fas fa-shopping-basket text-indigo-600"></i>
+                <div class="category-card" data-category="grocery">
+                    <div class="category-icon">
+                        <i class="fas fa-shopping-basket"></i>
                     </div>
-                    <span class="jumia-category-name">Grocery</span>
+                    <h3 class="category-name">Grocery</h3>
+                    <p class="category-count">67 items</p>
                 </div>
             </div>
 
@@ -1566,7 +1701,7 @@
 
     <!-- Bottom Navigation (Jumia Style) -->
     <div class="bottom-nav md:hidden">
-        <a href="#" class="bottom-nav-item active" data-section="home">
+        <a href="home.html" class="bottom-nav-item">
             <i class="fas fa-home"></i>
             <span>Home</span>
         </a>
@@ -1788,6 +1923,7 @@
         let lastVisible = null;
         let hasMoreListings = true;
         let currentDashboard = 'home';
+        let currentMood = 'happy';
 
         // DOM Elements
         const homeDashboard = document.getElementById('homeDashboard');
@@ -1877,6 +2013,9 @@
         const refreshDiscover = document.getElementById('refreshDiscover');
         const refreshSellers = document.getElementById('refreshSellers');
         const categorySearch = document.getElementById('categorySearch');
+        const hotDealsCard = document.getElementById('hotDealsCard');
+        const topRatedCard = document.getElementById('topRatedCard');
+        const justAddedCard = document.getElementById('justAddedCard');
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
@@ -1893,6 +2032,9 @@
             
             // Initialize theme
             initTheme();
+            
+            // Initialize mood
+            initMood();
             
             // Start flash sale timer
             startFlashSaleTimer();
@@ -2676,6 +2818,14 @@
             // Theme toggle
             themeToggle.addEventListener('click', toggleTheme);
             
+            // Mood selector
+            document.querySelectorAll('.mood-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const mood = this.getAttribute('data-mood');
+                    setMood(mood);
+                });
+            });
+            
             // Category tabs
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.addEventListener('click', function() {
@@ -2707,7 +2857,7 @@
             clearRecentlyViewed.addEventListener('click', clearRecentlyViewedItems);
             
             // Category items
-            document.querySelectorAll('.jumia-category-item[data-category]').forEach(item => {
+            document.querySelectorAll('.category-card, .jumia-category-item[data-category]').forEach(item => {
                 item.addEventListener('click', function() {
                     const category = this.getAttribute('data-category');
                     filterByCategory(category);
@@ -2721,6 +2871,35 @@
             // Refresh buttons
             refreshDiscover.addEventListener('click', loadDiscoverItems);
             refreshSellers.addEventListener('click', loadSellers);
+            
+            // Discover cards
+            hotDealsCard.addEventListener('click', () => {
+                filterByCategory('electronics');
+                switchDashboard('home');
+            });
+            
+            topRatedCard.addEventListener('click', () => {
+                sortFilter.value = 'popular';
+                currentSort = 'popular';
+                filterAndDisplayListings();
+                switchDashboard('home');
+            });
+            
+            justAddedCard.addEventListener('click', () => {
+                sortFilter.value = 'newest';
+                currentSort = 'newest';
+                filterAndDisplayListings();
+                switchDashboard('home');
+            });
+            
+            // Featured collections
+            document.querySelectorAll('.glass-card[data-category]').forEach(card => {
+                card.addEventListener('click', function() {
+                    const category = this.getAttribute('data-category');
+                    filterByCategory(category);
+                    switchDashboard('home');
+                });
+            });
             
             // Close modals when clicking outside
             document.addEventListener('click', function(e) {
@@ -2754,8 +2933,8 @@
         function handleCategorySearch() {
             const searchTerm = categorySearch.value.toLowerCase().trim();
             
-            document.querySelectorAll('.jumia-category-item').forEach(item => {
-                const categoryName = item.querySelector('.jumia-category-name').textContent.toLowerCase();
+            document.querySelectorAll('.category-card, .jumia-category-item').forEach(item => {
+                const categoryName = item.querySelector('.category-name, .jumia-category-name').textContent.toLowerCase();
                 if (categoryName.includes(searchTerm)) {
                     item.style.display = 'flex';
                 } else {
@@ -3542,6 +3721,27 @@
             } else {
                 themeToggle.classList.remove('active');
             }
+        }
+
+        // Initialize mood
+        function initMood() {
+            const savedMood = localStorage.getItem('mood') || 'happy';
+            setMood(savedMood);
+        }
+
+        // Set mood
+        function setMood(mood) {
+            currentMood = mood;
+            document.documentElement.setAttribute('data-mood', mood);
+            localStorage.setItem('mood', mood);
+            
+            // Update active state
+            document.querySelectorAll('.mood-option').forEach(option => {
+                option.classList.remove('active');
+                if (option.getAttribute('data-mood') === mood) {
+                    option.classList.add('active');
+                }
+            });
         }
 
         // Start flash sale timer

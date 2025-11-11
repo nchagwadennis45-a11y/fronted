@@ -309,12 +309,20 @@
             background: linear-gradient(135deg, #831843 0%, #db2777 50%, #831843 100%) !important;
         }
         
-        /* Mood Selector */
+        /* Mood Selector - IMPROVED FOR MOBILE */
         .mood-selector {
             position: fixed;
             top: 10px;
             left: 10px;
             z-index: 1000;
+        }
+        
+        @media (max-width: 767px) {
+            .mood-selector {
+                top: 80px;
+                left: 10px;
+                z-index: 1000;
+            }
         }
         
         .mood-btn {
@@ -346,6 +354,18 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 5px;
             min-width: 150px;
+        }
+        
+        @media (max-width: 767px) {
+            .mood-options {
+                position: fixed;
+                top: 120px;
+                left: 10px;
+                right: 10px;
+                grid-template-columns: repeat(6, 1fr);
+                min-width: auto;
+                z-index: 1000;
+            }
         }
         
         .mood-options.show {
@@ -544,6 +564,14 @@
             z-index: 1000;
         }
         
+        @media (max-width: 767px) {
+            .mood-customizer {
+                top: 80px;
+                right: 10px;
+                z-index: 1000;
+            }
+        }
+        
         .mood-customizer-btn {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -603,6 +631,12 @@
             margin-bottom: 1.5rem;
         }
         
+        @media (max-width: 767px) {
+            .color-palette {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
         .color-option {
             width: 100%;
             aspect-ratio: 1;
@@ -626,6 +660,12 @@
             align-items: center;
             gap: 10px;
             margin-top: 1rem;
+        }
+        
+        @media (max-width: 767px) {
+            .custom-color-input {
+                flex-direction: column;
+            }
         }
         
         .custom-color-preview {
@@ -656,7 +696,7 @@
     </style>
 </head>
 <body class="h-full dashboard-container bg-grid-pattern theme-calm">
-    <!-- Mood Theme Selector -->
+    <!-- Mood Theme Selector - IMPROVED FOR MOBILE -->
     <div class="mood-selector">
         <button class="mood-btn flex items-center space-x-2">
             <i class="fas fa-palette"></i>
@@ -672,7 +712,7 @@
         </div>
     </div>
 
-    <!-- Mood Customizer -->
+    <!-- Mood Customizer - IMPROVED FOR MOBILE -->
     <div class="mood-customizer">
         <button class="mood-customizer-btn flex items-center space-x-2" id="moodCustomizerBtn">
             <i class="fas fa-sliders-h"></i>
