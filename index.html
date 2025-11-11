@@ -467,6 +467,192 @@
                 padding: 2rem;
             }
         }
+
+        /* New Platform Feature Styles */
+        .platform-feature {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .platform-feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .mood-tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .mood-tag.calm { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+        .mood-tag.energetic { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .mood-tag.creative { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; }
+        .mood-tag.chill { background: rgba(16, 185, 129, 0.2); color: #86efac; }
+        .mood-tag.romantic { background: rgba(236, 72, 153, 0.2); color: #f9a8d4; }
+        
+        .interest-badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #a5b4fc;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .payment-badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #86efac;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Mood Customizer Styles */
+        .mood-customizer {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+        
+        .mood-customizer-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .mood-customizer-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .mood-customizer-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .mood-customizer-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .mood-customizer-content {
+            width: 90%;
+            max-width: 600px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .mood-customizer-modal.show .mood-customizer-content {
+            transform: translateY(0);
+        }
+        
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .color-option {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-option.active {
+            border-color: white;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+        
+        .custom-color-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+        
+        .custom-color-preview {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .intensity-slider {
+            width: 100%;
+            margin: 1rem 0;
+        }
+        
+        .mood-preview {
+            width: 100%;
+            height: 100px;
+            border-radius: 10px;
+            margin-top: 1rem;
+            background: linear-gradient(135deg, var(--primary-color, #3B82F6), var(--secondary-color, #8B5CF6));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
     </style>
 </head>
 <body class="h-full dashboard-container bg-grid-pattern theme-calm">
@@ -483,6 +669,80 @@
             <div class="mood-option mood-chill" data-theme="chill" title="Chill"></div>
             <div class="mood-option mood-romantic" data-theme="romantic" title="Romantic"></div>
             <div class="mood-option mood-default" data-theme="default" title="Default"></div>
+        </div>
+    </div>
+
+    <!-- Mood Customizer -->
+    <div class="mood-customizer">
+        <button class="mood-customizer-btn flex items-center space-x-2" id="moodCustomizerBtn">
+            <i class="fas fa-sliders-h"></i>
+            <span class="hidden sm:inline">Customize</span>
+        </button>
+    </div>
+
+    <!-- Mood Customizer Modal -->
+    <div id="moodCustomizerModal" class="mood-customizer-modal">
+        <div class="mood-customizer-content">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-palette text-2xl text-blue-400"></i>
+                    <h2 class="text-xl md:text-2xl font-bold text-white">Mood Color Customizer</h2>
+                </div>
+                <button id="closeMoodCustomizer" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-white mb-3">Select Your Mood Color</h3>
+                <div class="color-palette">
+                    <div class="color-option active" style="background: linear-gradient(135deg, #3B82F6, #8B5CF6);" data-primary="#3B82F6" data-secondary="#8B5CF6" data-theme="calm"></div>
+                    <div class="color-option" style="background: linear-gradient(135deg, #DC2626, #EA580C);" data-primary="#DC2626" data-secondary="#EA580C" data-theme="energetic"></div>
+                    <div class="color-option" style="background: linear-gradient(135deg, #7C3AED, #DB2777);" data-primary="#7C3AED" data-secondary="#DB2777" data-theme="creative"></div>
+                    <div class="color-option" style="background: linear-gradient(135deg, #059669, #10B981);" data-primary="#059669" data-secondary="#10B981" data-theme="chill"></div>
+                    <div class="color-option" style="background: linear-gradient(135deg, #DB2777, #BE185D);" data-primary="#DB2777" data-secondary="#BE185D" data-theme="romantic"></div>
+                    <div class="color-option" style="background: linear-gradient(135deg, #6B7280, #4B5563);" data-primary="#6B7280" data-secondary="#4B5563" data-theme="default"></div>
+                    <div class="color-option" style="background: linear-gradient(135deg, #F59E0B, #D97706);" data-primary="#F59E0B" data-secondary="#D97706" data-theme="sunny"></div>
+                    <div class="color-option" style="background: linear-gradient(135deg, #8B5CF6, #EC4899);" data-primary="#8B5CF6" data-secondary="#EC4899" data-theme="vibrant"></div>
+                    <div class="color-option" style="background: linear-gradient(135deg, #06B6D4, #0EA5E9);" data-primary="#06B6D4" data-secondary="#0EA5E9" data-theme="ocean"></div>
+                    <div class="color-option" style="background: linear-gradient(135deg, #84CC16, #22C55E);" data-primary="#84CC16" data-secondary="#22C55E" data-theme="fresh"></div>
+                </div>
+                
+                <div class="custom-color-input">
+                    <div class="custom-color-preview" id="customColorPreview" style="background: linear-gradient(135deg, #3B82F6, #8B5CF6);"></div>
+                    <input type="color" id="primaryColorPicker" value="#3B82F6" class="flex-1">
+                    <input type="color" id="secondaryColorPicker" value="#8B5CF6" class="flex-1">
+                    <button id="applyCustomColors" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                        Apply
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-white mb-3">Color Intensity</h3>
+                <input type="range" min="0" max="100" value="50" class="intensity-slider" id="colorIntensity">
+                <div class="flex justify-between text-xs text-gray-400">
+                    <span>Subtle</span>
+                    <span>Balanced</span>
+                    <span>Vibrant</span>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-semibold text-white mb-3">Preview</h3>
+                <div class="mood-preview" id="moodPreview">
+                    Your Mood Preview
+                </div>
+            </div>
+
+            <div class="flex justify-between mt-6">
+                <button id="resetMoodColors" class="px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition">
+                    Reset to Default
+                </button>
+                <button id="saveMoodColors" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                    Save Mood Colors
+                </button>
+            </div>
         </div>
     </div>
 
@@ -668,6 +928,99 @@
                         <p class="text-blue-200 text-base md:text-xl mb-4 md:mb-6 responsive-subheading">The world's most vibrant community is waiting for you</p>
                     </div>
 
+                    <!-- Platform Features -->
+                    <div class="grid grid-cols-1 gap-4 md:gap-6 mb-6 md:mb-8">
+                        <div class="platform-feature">
+                            <div class="flex items-start space-x-4">
+                                <div class="feature-icon bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg md:text-xl font-bold text-white mb-2">Mood-Based Chat</h3>
+                                    <p class="text-blue-300 text-sm md:text-base mb-3">Connect with people who match your current mood. Find calm conversations or energetic debates based on how you feel.</p>
+                                    <div class="flex flex-wrap">
+                                        <span class="mood-tag calm">Calm</span>
+                                        <span class="mood-tag energetic">Energetic</span>
+                                        <span class="mood-tag creative">Creative</span>
+                                        <span class="mood-tag chill">Chill</span>
+                                        <span class="mood-tag romantic">Romantic</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="platform-feature">
+                            <div class="flex items-start space-x-4">
+                                <div class="feature-icon bg-gradient-to-br from-green-500 to-blue-600 text-white">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg md:text-xl font-bold text-white mb-2">Interest-Based Marketplace</h3>
+                                    <p class="text-blue-300 text-sm md:text-base mb-3">Buy and sell items within communities that share your interests. Find unique products from like-minded people.</p>
+                                    <div class="flex flex-wrap">
+                                        <span class="interest-badge"><i class="fas fa-gamepad mr-1"></i> Gaming</span>
+                                        <span class="interest-badge"><i class="fas fa-music mr-1"></i> Music</span>
+                                        <span class="interest-badge"><i class="fas fa-paint-brush mr-1"></i> Art</span>
+                                        <span class="interest-badge"><i class="fas fa-camera mr-1"></i> Photography</span>
+                                        <span class="interest-badge"><i class="fas fa-utensils mr-1"></i> Food</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="platform-feature">
+                            <div class="flex items-start space-x-4">
+                                <div class="feature-icon bg-gradient-to-br from-purple-500 to-pink-600 text-white">
+                                    <i class="fas fa-gamepad"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg md:text-xl font-bold text-white mb-2">Interactive Games</h3>
+                                    <p class="text-blue-300 text-sm md:text-base mb-3">Play games with friends or find new gaming partners based on shared interests and skill levels.</p>
+                                    <div class="flex flex-wrap">
+                                        <span class="interest-badge"><i class="fas fa-chess mr-1"></i> Strategy</span>
+                                        <span class="interest-badge"><i class="fas fa-dice mr-1"></i> Casual</span>
+                                        <span class="interest-badge"><i class="fas fa-trophy mr-1"></i> Competitive</span>
+                                        <span class="interest-badge"><i class="fas fa-puzzle-piece mr-1"></i> Puzzle</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="platform-feature">
+                            <div class="flex items-start space-x-4">
+                                <div class="feature-icon bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
+                                    <i class="fas fa-newspaper"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg md:text-xl font-bold text-white mb-2">Personalized Feed</h3>
+                                    <p class="text-blue-300 text-sm md:text-base mb-3">Discover content tailored to your interests and mood. Follow creators who share your passions.</p>
+                                    <div class="flex flex-wrap">
+                                        <span class="interest-badge"><i class="fas fa-video mr-1"></i> Video</span>
+                                        <span class="interest-badge"><i class="fas fa-image mr-1"></i> Images</span>
+                                        <span class="interest-badge"><i class="fas fa-podcast mr-1"></i> Audio</span>
+                                        <span class="interest-badge"><i class="fas fa-file-text mr-1"></i> Articles</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secure Payments -->
+                    <div class="glass-effect border border-green-700 rounded-2xl p-4 md:p-6">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <i class="fas fa-shield-alt text-2xl text-green-400"></i>
+                            <h3 class="text-lg md:text-xl font-bold text-white">Secure Payments</h3>
+                        </div>
+                        <p class="text-blue-300 text-sm md:text-base mb-4">
+                            Shop with confidence using our encrypted payment system. All transactions are protected with bank-level security.
+                        </p>
+                        <div class="flex flex-wrap">
+                            <span class="payment-badge"><i class="fas fa-lock mr-1"></i> Encrypted</span>
+                            <span class="payment-badge"><i class="fas fa-shield-check mr-1"></i> Protected</span>
+                            <span class="payment-badge"><i class="fas fa-user-shield mr-1"></i> Verified</span>
+                        </div>
+                    </div>
+
                     <!-- Live Stats Counter -->
                     <div class="grid grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
                         <div class="text-center">
@@ -685,25 +1038,6 @@
                         <div class="text-center">
                             <div class="stats-counter" id="communityCount">10K+</div>
                             <div class="text-blue-300 text-xs md:text-sm">Communities</div>
-                        </div>
-                    </div>
-
-                    <!-- Feature Highlights -->
-                    <div class="grid grid-cols-1 gap-3 md:gap-4 mb-6 md:mb-8">
-                        <div class="feature-highlight rounded-xl p-4 md:p-6 text-center">
-                            <div class="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                                <i class="fas fa-comments text-white text-xl md:text-2xl"></i>
-                            </div>
-                            <h3 class="text-base md:text-lg font-bold text-white mb-1 md:mb-2">Real-time Chat</h3>
-                            <p class="text-blue-300 text-xs md:text-sm">Connect instantly with people worldwide in 50+ languages</p>
-                        </div>
-                        
-                        <div class="feature-highlight rounded-xl p-4 md:p-6 text-center">
-                            <div class="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                                <i class="fas fa-users text-white text-xl md:text-2xl"></i>
-                            </div>
-                            <h3 class="text-base md:text-lg font-bold text-white mb-1 md:mb-2">Global Communities</h3>
-                            <p class="text-blue-300 text-xs md:text-sm">Join interest-based groups from tech to travel</p>
                         </div>
                     </div>
 
@@ -815,37 +1149,73 @@
                         <!-- Mobile Feature Highlights -->
                         <div class="lg:hidden mt-6 md:mt-8">
                             <h3 class="text-lg md:text-xl font-bold text-center text-white mb-4">Discover kynecta</h3>
-                            <div class="grid grid-cols-2 gap-3 md:gap-4">
-                                <div class="feature-highlight rounded-xl p-3 md:p-4 text-center">
-                                    <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                        <i class="fas fa-comments text-white text-lg md:text-xl"></i>
+                            <div class="grid grid-cols-1 gap-4">
+                                <div class="platform-feature">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="feature-icon bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                                            <i class="fas fa-comments"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="text-base font-bold text-white mb-2">Mood-Based Chat</h4>
+                                            <p class="text-blue-300 text-xs mb-2">Connect with people who match your current mood.</p>
+                                            <div class="flex flex-wrap">
+                                                <span class="mood-tag calm">Calm</span>
+                                                <span class="mood-tag energetic">Energetic</span>
+                                                <span class="mood-tag creative">Creative</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <h4 class="text-sm md:text-base font-bold text-white mb-1">Global Chat</h4>
-                                    <p class="text-blue-300 text-xs">Connect with people worldwide</p>
                                 </div>
                                 
-                                <div class="feature-highlight rounded-xl p-3 md:p-4 text-center">
-                                    <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                        <i class="fas fa-shopping-cart text-white text-lg md:text-xl"></i>
+                                <div class="platform-feature">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="feature-icon bg-gradient-to-br from-green-500 to-blue-600 text-white">
+                                            <i class="fas fa-shopping-cart"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="text-base font-bold text-white mb-2">Marketplace</h4>
+                                            <p class="text-blue-300 text-xs mb-2">Buy & sell within interest-based communities.</p>
+                                            <div class="flex flex-wrap">
+                                                <span class="interest-badge"><i class="fas fa-gamepad mr-1"></i> Gaming</span>
+                                                <span class="interest-badge"><i class="fas fa-music mr-1"></i> Music</span>
+                                                <span class="interest-badge"><i class="fas fa-paint-brush mr-1"></i> Art</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <h4 class="text-sm md:text-base font-bold text-white mb-1">Marketplace</h4>
-                                    <p class="text-blue-300 text-xs">Buy & sell globally</p>
                                 </div>
                                 
-                                <div class="feature-highlight rounded-xl p-3 md:p-4 text-center">
-                                    <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                        <i class="fas fa-gamepad text-white text-lg md:text-xl"></i>
+                                <div class="platform-feature">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="feature-icon bg-gradient-to-br from-purple-500 to-pink-600 text-white">
+                                            <i class="fas fa-gamepad"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="text-base font-bold text-white mb-2">Games</h4>
+                                            <p class="text-blue-300 text-xs mb-2">Play with friends based on shared interests.</p>
+                                            <div class="flex flex-wrap">
+                                                <span class="interest-badge"><i class="fas fa-chess mr-1"></i> Strategy</span>
+                                                <span class="interest-badge"><i class="fas fa-dice mr-1"></i> Casual</span>
+                                                <span class="interest-badge"><i class="fas fa-trophy mr-1"></i> Competitive</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <h4 class="text-sm md:text-base font-bold text-white mb-1">Games</h4>
-                                    <p class="text-blue-300 text-xs">Play with friends worldwide</p>
                                 </div>
                                 
-                                <div class="feature-highlight rounded-xl p-3 md:p-4 text-center">
-                                    <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                        <i class="fas fa-newspaper text-white text-lg md:text-xl"></i>
+                                <div class="platform-feature">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="feature-icon bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
+                                            <i class="fas fa-newspaper"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="text-base font-bold text-white mb-2">Feed</h4>
+                                            <p class="text-blue-300 text-xs mb-2">Discover content tailored to your interests.</p>
+                                            <div class="flex flex-wrap">
+                                                <span class="interest-badge"><i class="fas fa-video mr-1"></i> Video</span>
+                                                <span class="interest-badge"><i class="fas fa-image mr-1"></i> Images</span>
+                                                <span class="interest-badge"><i class="fas fa-podcast mr-1"></i> Audio</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <h4 class="text-sm md:text-base font-bold text-white mb-1">Feed</h4>
-                                    <p class="text-blue-300 text-xs">Discover trending content</p>
                                 </div>
                             </div>
                             
@@ -1241,7 +1611,14 @@
                         bio: 'New kynecta member!',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-                        emailVerified: false
+                        emailVerified: false,
+                        interests: [],
+                        preferredMoods: [],
+                        customColors: {
+                            primary: '#3B82F6',
+                            secondary: '#8B5CF6',
+                            theme: 'calm'
+                        }
                     });
                     
                     // Store user info in localStorage
@@ -1249,7 +1626,12 @@
                         uid: user.uid,
                         email: user.email,
                         displayName: displayName,
-                        isNewUser: true
+                        isNewUser: true,
+                        customColors: {
+                            primary: '#3B82F6',
+                            secondary: '#8B5CF6',
+                            theme: 'calm'
+                        }
                     }));
                     
                     console.log('✅ User registered successfully:', user.email);
@@ -1301,12 +1683,22 @@
                         lastLogin: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     
+                    // Get user's custom colors if they exist
+                    const userDoc = await userDocRef.get();
+                    const userData = userDoc.data();
+                    const customColors = userData?.customColors || {
+                        primary: '#3B82F6',
+                        secondary: '#8B5CF6',
+                        theme: 'calm'
+                    };
+                    
                     // Store user info in localStorage
                     localStorage.setItem('kynecta-user', JSON.stringify({
                         uid: user.uid,
                         email: user.email,
                         displayName: user.displayName || user.email.split('@')[0],
-                        isNewUser: false
+                        isNewUser: false,
+                        customColors: customColors
                     }));
                     
                     console.log('✅ User logged in successfully:', user.email);
@@ -1315,33 +1707,8 @@
                 } catch (error) {
                     console.error('❌ Login failed:', error);
                     
-                    // Handle specific error cases
-                    let errorMessage = 'Login failed. Please try again.';
-                    
-                    switch (error.code) {
-                        case 'auth/user-not-found':
-                            errorMessage = 'No account found with this email. Please register first.';
-                            break;
-                        case 'auth/wrong-password':
-                            errorMessage = 'Incorrect password. Please try again.';
-                            break;
-                        case 'auth/invalid-email':
-                            errorMessage = 'Invalid email address. Please check your email.';
-                            break;
-                        case 'auth/user-disabled':
-                            errorMessage = 'This account has been disabled. Please contact support.';
-                            break;
-                        case 'auth/too-many-requests':
-                            errorMessage = 'Too many failed attempts. Please try again later.';
-                            break;
-                        case 'auth/network-request-failed':
-                            errorMessage = 'Network error. Please check your internet connection.';
-                            break;
-                        default:
-                            errorMessage = `Login failed: ${error.message}`;
-                    }
-                    
-                    throw new Error(errorMessage);
+                    // Generic error message for security
+                    throw new Error('Login failed. Please check your credentials and try again.');
                 }
             }
 
@@ -1417,6 +1784,11 @@
                 this.cookiesAccepted = false;
                 this.showingCookieBanner = false;
                 this.currentTheme = 'calm';
+                this.customColors = {
+                    primary: '#3B82F6',
+                    secondary: '#8B5CF6',
+                    theme: 'calm'
+                };
                 
                 // Forgot password modal state
                 this.forgotPasswordStep = 1;
@@ -1438,6 +1810,9 @@
                 
                 // Initialize mood theme
                 this.loadThemePreference();
+                
+                // Initialize mood customizer
+                this.setupMoodCustomizer();
                 
                 console.log('🚀 kynecta app initialized');
             }
@@ -1489,6 +1864,231 @@
                 
                 // Forgot password functionality
                 this.setupForgotPassword();
+            }
+
+            /**
+             * Sets up mood customizer functionality
+             */
+            setupMoodCustomizer() {
+                // Mood customizer button
+                document.getElementById('moodCustomizerBtn').addEventListener('click', () => {
+                    this.showMoodCustomizerModal();
+                });
+                
+                // Close mood customizer modal
+                document.getElementById('closeMoodCustomizer').addEventListener('click', () => {
+                    this.hideMoodCustomizerModal();
+                });
+                
+                // Color palette selection
+                const colorOptions = document.querySelectorAll('.color-option');
+                colorOptions.forEach(option => {
+                    option.addEventListener('click', () => {
+                        // Remove active class from all options
+                        colorOptions.forEach(opt => opt.classList.remove('active'));
+                        // Add active class to clicked option
+                        option.classList.add('active');
+                        
+                        // Update custom colors
+                        this.customColors.primary = option.getAttribute('data-primary');
+                        this.customColors.secondary = option.getAttribute('data-secondary');
+                        this.customColors.theme = option.getAttribute('data-theme');
+                        
+                        // Update preview
+                        this.updateMoodPreview();
+                        
+                        // Update custom color inputs
+                        document.getElementById('primaryColorPicker').value = this.customColors.primary;
+                        document.getElementById('secondaryColorPicker').value = this.customColors.secondary;
+                        document.getElementById('customColorPreview').style.background = 
+                            `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
+                    });
+                });
+                
+                // Custom color inputs
+                document.getElementById('primaryColorPicker').addEventListener('input', (e) => {
+                    this.customColors.primary = e.target.value;
+                    this.updateMoodPreview();
+                    document.getElementById('customColorPreview').style.background = 
+                        `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
+                });
+                
+                document.getElementById('secondaryColorPicker').addEventListener('input', (e) => {
+                    this.customColors.secondary = e.target.value;
+                    this.updateMoodPreview();
+                    document.getElementById('customColorPreview').style.background = 
+                        `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
+                });
+                
+                // Apply custom colors button
+                document.getElementById('applyCustomColors').addEventListener('click', () => {
+                    this.applyCustomColors();
+                });
+                
+                // Color intensity slider
+                document.getElementById('colorIntensity').addEventListener('input', (e) => {
+                    this.updateColorIntensity(e.target.value);
+                });
+                
+                // Reset mood colors button
+                document.getElementById('resetMoodColors').addEventListener('click', () => {
+                    this.resetMoodColors();
+                });
+                
+                // Save mood colors button
+                document.getElementById('saveMoodColors').addEventListener('click', () => {
+                    this.saveMoodColors();
+                });
+                
+                // Close modal when clicking outside
+                document.getElementById('moodCustomizerModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'moodCustomizerModal') {
+                        this.hideMoodCustomizerModal();
+                    }
+                });
+            }
+
+            /**
+             * Updates the mood preview based on selected colors
+             */
+            updateMoodPreview() {
+                const preview = document.getElementById('moodPreview');
+                preview.style.background = `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
+            }
+
+            /**
+             * Updates color intensity based on slider value
+             */
+            updateColorIntensity(intensity) {
+                // This would adjust the saturation/brightness of colors based on intensity
+                // For now, we'll just update the preview opacity to simulate intensity
+                const preview = document.getElementById('moodPreview');
+                preview.style.opacity = 0.5 + (intensity / 100) * 0.5;
+            }
+
+            /**
+             * Applies custom colors to the interface
+             */
+            applyCustomColors() {
+                // Update CSS variables with custom colors
+                document.documentElement.style.setProperty('--primary-color', this.customColors.primary);
+                document.documentElement.style.setProperty('--secondary-color', this.customColors.secondary);
+                
+                // Update gradient elements
+                const gradientElements = document.querySelectorAll('.cyber-gradient, .quantum-glow, .feature-icon');
+                gradientElements.forEach(el => {
+                    if (el.classList.contains('cyber-gradient')) {
+                        el.style.background = `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
+                    }
+                });
+                
+                // Update mood preview
+                this.updateMoodPreview();
+                
+                this.showToast('Custom colors applied!', 'success');
+            }
+
+            /**
+             * Resets mood colors to default
+             */
+            resetMoodColors() {
+                this.customColors = {
+                    primary: '#3B82F6',
+                    secondary: '#8B5CF6',
+                    theme: 'calm'
+                };
+                
+                // Reset color inputs
+                document.getElementById('primaryColorPicker').value = this.customColors.primary;
+                document.getElementById('secondaryColorPicker').value = this.customColors.secondary;
+                document.getElementById('customColorPreview').style.background = 
+                    `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
+                
+                // Reset active color option
+                const colorOptions = document.querySelectorAll('.color-option');
+                colorOptions.forEach(option => {
+                    option.classList.remove('active');
+                    if (option.getAttribute('data-theme') === 'calm') {
+                        option.classList.add('active');
+                    }
+                });
+                
+                // Reset intensity slider
+                document.getElementById('colorIntensity').value = 50;
+                
+                // Apply default colors
+                this.applyCustomColors();
+                
+                this.showToast('Colors reset to default', 'info');
+            }
+
+            /**
+             * Saves mood colors to user profile
+             */
+            async saveMoodColors() {
+                // In a real app, this would save to the user's profile in Firebase
+                // For now, we'll just save to localStorage
+                localStorage.setItem('kynecta-custom-colors', JSON.stringify(this.customColors));
+                
+                // If user is logged in, we would update their Firestore document
+                const user = JSON.parse(localStorage.getItem('kynecta-user'));
+                if (user && window.firebaseAuth && window.firebaseAuth.isInitialized) {
+                    try {
+                        const userDocRef = window.firebaseAuth.db.collection('users').doc(user.uid);
+                        await userDocRef.update({
+                            customColors: this.customColors
+                        });
+                        
+                        // Update local user data
+                        user.customColors = this.customColors;
+                        localStorage.setItem('kynecta-user', JSON.stringify(user));
+                    } catch (error) {
+                        console.error('Error saving custom colors:', error);
+                    }
+                }
+                
+                this.showToast('Mood colors saved to your profile!', 'success');
+                this.hideMoodCustomizerModal();
+            }
+
+            /**
+             * Shows the mood customizer modal
+             */
+            showMoodCustomizerModal() {
+                const modal = document.getElementById('moodCustomizerModal');
+                modal.classList.add('show');
+                
+                // Load current custom colors
+                const savedColors = localStorage.getItem('kynecta-custom-colors');
+                if (savedColors) {
+                    this.customColors = JSON.parse(savedColors);
+                    
+                    // Update color inputs
+                    document.getElementById('primaryColorPicker').value = this.customColors.primary;
+                    document.getElementById('secondaryColorPicker').value = this.customColors.secondary;
+                    document.getElementById('customColorPreview').style.background = 
+                        `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
+                    
+                    // Update active color option
+                    const colorOptions = document.querySelectorAll('.color-option');
+                    colorOptions.forEach(option => {
+                        option.classList.remove('active');
+                        if (option.getAttribute('data-theme') === this.customColors.theme) {
+                            option.classList.add('active');
+                        }
+                    });
+                }
+                
+                // Update preview
+                this.updateMoodPreview();
+            }
+
+            /**
+             * Hides the mood customizer modal
+             */
+            hideMoodCustomizerModal() {
+                const modal = document.getElementById('moodCustomizerModal');
+                modal.classList.remove('show');
             }
 
             /**
@@ -1968,8 +2568,8 @@
                         this.redirectToProfile();
                         
                     } catch (error) {
-                        // Handle authentication error
-                        this.showMessage(error.message, 'error');
+                        // Handle authentication error with generic message
+                        this.showMessage('Login failed. Please check your credentials and try again.', 'error');
                         this.setLoginLoadingState(false);
                     }
                 }
@@ -2243,6 +2843,13 @@
                     const rememberMeCheckbox = document.getElementById('remember-me');
                     if (loginEmail) loginEmail.value = savedEmail;
                     if (rememberMeCheckbox) rememberMeCheckbox.checked = true;
+                }
+                
+                // Load custom colors
+                const savedColors = localStorage.getItem('kynecta-custom-colors');
+                if (savedColors) {
+                    this.customColors = JSON.parse(savedColors);
+                    this.applyCustomColors();
                 }
             }
 

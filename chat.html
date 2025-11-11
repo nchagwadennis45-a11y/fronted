@@ -7,6 +7,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    
+    <!-- Cloudinary -->
+    <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+    
     <style>
         :root {
             --kynecta-primary: #7C3AED;
@@ -2969,8 +2978,32 @@
     </div>
 
     <script>
+        // Firebase configuration - Replace with your actual Firebase config
+        const firebaseConfig = {
+            apiKey: "your-api-key",
+            authDomain: "your-auth-domain",
+            projectId: "your-project-id",
+            storageBucket: "your-storage-bucket",
+            messagingSenderId: "your-sender-id",
+            appId: "your-app-id"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // Cloudinary configuration
+        const cloudinaryConfig = {
+            cloudName: 'dhjnxa5rh',
+            apiKey: '817591969559894',
+            uploadPreset: 'kynecta_uploads' // You need to create this in Cloudinary
+        };
+
         // Global Variables
         let currentUser = null;
+        let currentUserData = null;
         let currentChat = null;
         let isInCall = false;
         let contacts = [];
@@ -3029,6 +3062,7 @@
             favorites: []
         };
         let userStatuses = [];
+        let unsubscribeMessages = null;
 
         // DOM Elements
         const loadingScreen = document.getElementById('loadingScreen');
@@ -3059,25 +3093,64 @@
         document.addEventListener('DOMContentLoaded', initApp);
 
         function initApp() {
-            // Simulate user authentication
-            setTimeout(() => {
-                currentUser = {
-                    displayName: "Denis Chacha",
-                    email: "denis@example.com",
-                    photoURL: ""
-                };
-                initializeUserData();
+            // Check if user is logged in
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    currentUser = user;
+                    loadUserData();
+                } else {
+                    // Redirect to login page
+                    window.location.href = 'login.html';
+                }
+            });
+        }
+
+        async function loadUserData() {
+            try {
+                // Get user document from Firestore
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                
+                if (userDoc.exists) {
+                    currentUserData = userDoc.data();
+                    initializeUserData();
+                } else {
+                    // Create user document if it doesn't exist
+                    currentUserData = {
+                        uid: currentUser.uid,
+                        email: currentUser.email,
+                        displayName: currentUser.displayName || currentUser.email.split('@')[0],
+                        photoURL: currentUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.displayName || currentUser.email)}&background=7C3AED&color=fff`,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+                        status: 'online',
+                        mood: 'happy'
+                    };
+                    
+                    await db.collection('users').doc(currentUser.uid).set(currentUserData);
+                    initializeUserData();
+                }
+                
                 showChatApp();
                 setupEventListeners();
                 loadUserSettings();
                 loadStatusUpdates();
-            }, 1500);
+                loadContacts();
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                showToast('Error loading user data', 'error');
+            }
         }
 
         function initializeUserData() {
             // Set user info in UI
-            document.getElementById('userName').textContent = currentUser.displayName || currentUser.email;
-            document.getElementById('userAvatar').src = currentUser.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(currentUser.displayName || currentUser.email) + '&background=7C3AED&color=fff';
+            document.getElementById('userName').textContent = currentUserData.displayName;
+            document.getElementById('userAvatar').src = currentUserData.photoURL;
+            
+            // Update settings modal with user data
+            const settingsName = document.querySelector('#settingsModal .font-semibold.text-lg');
+            if (settingsName) {
+                settingsName.textContent = currentUserData.displayName;
+            }
             
             // Load user preferences
             loadUserPreferences();
@@ -3239,7 +3312,7 @@
                     statusElement.innerHTML = `
                         ${statusContent}
                         <div>
-                            <p class="font-medium">${currentUser.displayName}</p>
+                            <p class="font-medium">${currentUserData.displayName}</p>
                             <p class="text-sm text-gray-500">${formatTimeAgo(status.timestamp)}</p>
                         </div>
                     `;
@@ -3290,22 +3363,339 @@
             document.getElementById('statusAudioPreview').classList.add('hidden');
         }
 
-        function postStatus(type, content) {
-            const newStatus = {
-                type: type,
-                content: content,
-                timestamp: new Date().toISOString(),
-                userId: currentUser.email
+        async function uploadToCloudinary(file, resourceType = 'image') {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+                formData.append('cloud_name', cloudinaryConfig.cloudName);
+                
+                fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/${resourceType}/upload`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.secure_url) {
+                        resolve(data.secure_url);
+                    } else {
+                        reject(new Error('Upload failed'));
+                    }
+                })
+                .catch(error => {
+                    reject(error);
+                });
+            });
+        }
+
+        async function postStatus(type, content) {
+            try {
+                let finalContent = content;
+                
+                // Handle file uploads to Cloudinary
+                if (type === 'image' || type === 'video' || type === 'audio') {
+                    showToast('Uploading media...', 'info');
+                    
+                    // For demo purposes, we'll use a placeholder
+                    // In a real app, you would get the file and upload it
+                    if (type === 'image') {
+                        finalContent = 'https://res.cloudinary.com/dhjnxa5rh/image/upload/v1621234567/placeholder.jpg';
+                    } else if (type === 'video') {
+                        finalContent = 'https://res.cloudinary.com/dhjnxa5rh/video/upload/v1621234567/placeholder.mp4';
+                    } else if (type === 'audio') {
+                        finalContent = 'https://res.cloudinary.com/dhjnxa5rh/audio/upload/v1621234567/placeholder.mp3';
+                    }
+                }
+                
+                const newStatus = {
+                    type: type,
+                    content: finalContent,
+                    timestamp: new Date().toISOString(),
+                    userId: currentUser.uid,
+                    userDisplayName: currentUserData.displayName,
+                    userPhotoURL: currentUserData.photoURL
+                };
+                
+                // Save to Firestore
+                await db.collection('statuses').add(newStatus);
+                
+                // Save to localStorage for offline viewing
+                const userStatuses = JSON.parse(localStorage.getItem('kynecta-statuses') || '[]');
+                userStatuses.unshift(newStatus);
+                localStorage.setItem('kynecta-statuses', JSON.stringify(userStatuses));
+                
+                // Update UI
+                loadStatusUpdates();
+                showToast('Status posted successfully', 'success');
+            } catch (error) {
+                console.error('Error posting status:', error);
+                showToast('Error posting status', 'error');
+            }
+        }
+
+        function loadContacts() {
+            // Load contacts from Firebase
+            db.collection('contacts')
+                .where('userId', '==', currentUser.uid)
+                .onSnapshot(snapshot => {
+                    contacts = [];
+                    snapshot.forEach(doc => {
+                        contacts.push({ id: doc.id, ...doc.data() });
+                    });
+                    renderContacts(contacts);
+                    
+                    if (contacts.length === 0) {
+                        document.getElementById('noContactsMessage').classList.remove('hidden');
+                    } else {
+                        document.getElementById('noContactsMessage').classList.add('hidden');
+                    }
+                });
+        }
+
+        function addNewContact(name, email, phone) {
+            const newContact = {
+                userId: currentUser.uid,
+                name: name,
+                email: email,
+                phone: phone,
+                status: "Online",
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             
-            // Save to localStorage
-            const userStatuses = JSON.parse(localStorage.getItem('kynecta-statuses') || '[]');
-            userStatuses.unshift(newStatus);
-            localStorage.setItem('kynecta-statuses', JSON.stringify(userStatuses));
+            // Add to Firebase
+            db.collection('contacts').add(newContact)
+                .then(() => {
+                    showToast(`Contact ${name} added successfully`, 'success');
+                })
+                .catch(error => {
+                    console.error('Error adding contact: ', error);
+                    showToast('Error adding contact', 'error');
+                });
+        }
+
+        function renderContacts(contactsToRender) {
+            const contactsList = document.getElementById('contactsList');
+            contactsList.innerHTML = '';
+            
+            contactsToRender.forEach(contact => {
+                const contactItem = document.createElement('div');
+                contactItem.className = 'contact-item';
+                contactItem.dataset.contactId = contact.id;
+                contactItem.innerHTML = `
+                    <div class="contact-avatar">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-green-500 flex items-center justify-center text-white font-bold">
+                            ${contact.name.charAt(0)}
+                        </div>
+                        ${contact.status === 'Online' ? '<div class="online-indicator"></div>' : ''}
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-name">${contact.name}</div>
+                        <div class="contact-status">${contact.status}</div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center hover:bg-purple-200 transition-colors message-contact" data-name="${contact.name}" data-id="${contact.id}">
+                            <i class="fas fa-comment"></i>
+                        </button>
+                        <button class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200 transition-colors call-contact" data-name="${contact.name}" data-id="${contact.id}">
+                            <i class="fas fa-phone"></i>
+                        </button>
+                    </div>
+                `;
+                
+                contactsList.appendChild(contactItem);
+            });
+
+            // Add event listeners to message and call buttons
+            document.querySelectorAll('.message-contact').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const contactId = e.currentTarget.dataset.id;
+                    const contactName = e.currentTarget.dataset.name;
+                    startChat(contactId, contactName);
+                });
+            });
+
+            document.querySelectorAll('.call-contact').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const contactId = e.currentTarget.dataset.id;
+                    const contactName = e.currentTarget.dataset.name;
+                    startCall(contactId, contactName);
+                });
+            });
+        }
+
+        function searchContacts(query) {
+            if (!query) {
+                renderContacts(contacts);
+                return;
+            }
+            
+            const filteredContacts = contacts.filter(contact => 
+                contact.name.toLowerCase().includes(query.toLowerCase()) ||
+                contact.email.toLowerCase().includes(query.toLowerCase()) ||
+                contact.phone.includes(query)
+            );
+            
+            renderContacts(filteredContacts);
+            
+            if (filteredContacts.length === 0) {
+                document.getElementById('noContactsMessage').classList.remove('hidden');
+                document.getElementById('noContactsMessage').innerHTML = `
+                    <i class="fas fa-search text-4xl mb-3 text-gray-300 block"></i>
+                    <p>No contacts found</p>
+                    <p class="text-sm mt-1">Try a different search term</p>
+                `;
+            } else {
+                document.getElementById('noContactsMessage').classList.add('hidden');
+            }
+        }
+
+        function startChat(contactId, contactName) {
+            // Create or get chat ID
+            const chatId = [currentUser.uid, contactId].sort().join('_');
+            
+            // Set current chat
+            currentChat = {
+                id: chatId,
+                contactId: contactId,
+                name: contactName
+            };
             
             // Update UI
-            loadStatusUpdates();
-            showToast('Status posted successfully', 'success');
+            document.getElementById('chatHeader').classList.remove('hidden');
+            document.getElementById('inputArea').classList.remove('hidden');
+            document.getElementById('noMessagesMessage').classList.add('hidden');
+            document.getElementById('chatTitle').textContent = contactName;
+            document.getElementById('chatAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(contactName)}&background=7C3AED&color=fff`;
+            
+            // Enable message input
+            document.getElementById('messageInput').disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+            
+            // Load messages
+            loadMessages(chatId);
+            
+            // Hide contact list on mobile
+            if (window.innerWidth < 768) {
+                document.getElementById('chatListContainer').classList.add('hidden');
+            }
+        }
+
+        function loadMessages(chatId) {
+            // Unsubscribe from previous listener
+            if (unsubscribeMessages) {
+                unsubscribeMessages();
+            }
+            
+            const messagesContainer = document.getElementById('messagesContainer');
+            messagesContainer.innerHTML = '';
+            
+            // Subscribe to messages
+            unsubscribeMessages = db.collection('chats')
+                .doc(chatId)
+                .collection('messages')
+                .orderBy('timestamp', 'asc')
+                .onSnapshot(snapshot => {
+                    messagesContainer.innerHTML = '';
+                    
+                    if (snapshot.empty) {
+                        messagesContainer.innerHTML = `
+                            <div class="text-center text-gray-500 py-10">
+                                <i class="fas fa-comments text-4xl mb-3 text-gray-300 block"></i>
+                                <p>No messages yet</p>
+                                <p class="text-sm mt-1">Send a message to start the conversation</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    snapshot.forEach(doc => {
+                        const message = doc.data();
+                        addMessageToUI(message, doc.id);
+                    });
+                    
+                    // Scroll to bottom
+                    setTimeout(() => {
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }, 100);
+                });
+        }
+
+        function addMessageToUI(message, messageId) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageElement = document.createElement('div');
+            
+            const isSent = message.senderId === currentUser.uid;
+            const messageTime = message.timestamp ? message.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now';
+            
+            messageElement.className = `message-container ${isSent ? 'sent' : 'received'}`;
+            messageElement.innerHTML = `
+                <div class="message-bubble ${isSent ? 'message-sent' : 'message-received'}">
+                    <div class="message-text">${message.text}</div>
+                    <div class="message-time">${messageTime}</div>
+                    ${isSent ? `<div class="message-status">${message.status || 'sent'}</div>` : ''}
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageElement);
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const text = messageInput.value.trim();
+            
+            if (!text || !currentChat) return;
+            
+            const message = {
+                text: text,
+                senderId: currentUser.uid,
+                senderName: currentUserData.displayName,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: 'sent'
+            };
+            
+            // Add message to Firebase
+            db.collection('chats')
+                .doc(currentChat.id)
+                .collection('messages')
+                .add(message)
+                .then(docRef => {
+                    // Update message status to delivered
+                    db.collection('chats')
+                        .doc(currentChat.id)
+                        .collection('messages')
+                        .doc(docRef.id)
+                        .update({
+                            status: 'delivered'
+                        });
+                    
+                    // Clear input
+                    messageInput.value = '';
+                    
+                    // Update last message in chat
+                    updateLastMessage(currentChat.id, text);
+                })
+                .catch(error => {
+                    console.error('Error sending message: ', error);
+                    showToast('Error sending message', 'error');
+                });
+        }
+
+        function updateLastMessage(chatId, text) {
+            db.collection('chats')
+                .doc(chatId)
+                .set({
+                    lastMessage: text,
+                    lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
+                    participants: [currentUser.uid, currentChat.contactId]
+                }, { merge: true });
+        }
+
+        function startCall(contactId, contactName) {
+            // For now, just show a toast notification
+            showToast(`Calling ${contactName}...`, 'info');
+            
+            // In a real implementation, you would integrate with a WebRTC service
+            // and show the call interface
         }
 
         function setupEventListeners() {
@@ -3384,28 +3774,48 @@
             });
 
             // Profile photo upload
-            document.getElementById('profileUpload').addEventListener('change', (e) => {
+            document.getElementById('profileUpload').addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        document.getElementById('userAvatar').src = event.target.result;
+                    try {
+                        showToast('Uploading profile photo...', 'info');
+                        
+                        // Upload to Cloudinary
+                        const imageUrl = await uploadToCloudinary(file, 'image');
+                        
+                        // Update Firebase user profile
+                        await updateUserProfile({ photoURL: imageUrl });
+                        
+                        // Update UI
+                        document.getElementById('userAvatar').src = imageUrl;
+                        currentUserData.photoURL = imageUrl;
+                        
                         showToast('Profile photo updated successfully', 'success');
-                    };
-                    reader.readAsDataURL(file);
+                    } catch (error) {
+                        console.error('Error uploading profile photo:', error);
+                        showToast('Error uploading profile photo', 'error');
+                    }
                 }
             });
 
             // Cover photo upload
-            document.getElementById('coverUpload').addEventListener('change', (e) => {
+            document.getElementById('coverUpload').addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        document.querySelector('.profile-cover').style.backgroundImage = `url(${event.target.result})`;
+                    try {
+                        showToast('Uploading cover photo...', 'info');
+                        
+                        // Upload to Cloudinary
+                        const imageUrl = await uploadToCloudinary(file, 'image');
+                        
+                        // Update UI
+                        document.querySelector('.profile-cover').style.backgroundImage = `url(${imageUrl})`;
+                        
                         showToast('Cover photo updated successfully', 'success');
-                    };
-                    reader.readAsDataURL(file);
+                    } catch (error) {
+                        console.error('Error uploading cover photo:', error);
+                        showToast('Error uploading cover photo', 'error');
+                    }
                 }
             });
 
@@ -3904,9 +4314,9 @@
             // Logout
             document.getElementById('logoutBtn').addEventListener('click', () => {
                 showToast('Logging out...', 'info');
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 1500);
+                auth.signOut().then(() => {
+                    window.location.href = 'login.html';
+                });
             });
 
             // Back to chats on mobile
@@ -3975,6 +4385,16 @@
                 input.click();
             });
 
+            // Send message on Enter key
+            document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && userSettings.chat.enterKeySends) {
+                    sendMessage();
+                }
+            });
+
+            // Send message on button click
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+
             // Responsive behavior
             window.addEventListener('resize', () => {
                 if (window.innerWidth >= 768 && currentChat) {
@@ -4030,79 +4450,6 @@
             }
         }
 
-        function addNewContact(name, email, phone) {
-            const newContact = {
-                id: Date.now().toString(),
-                name: name,
-                email: email,
-                phone: phone,
-                status: "Online"
-            };
-            
-            contacts.push(newContact);
-            renderContacts(contacts);
-            document.getElementById('noContactsMessage').classList.add('hidden');
-            showToast(`Contact ${name} added successfully`, 'success');
-        }
-
-        function renderContacts(contactsToRender) {
-            const contactsList = document.getElementById('contactsList');
-            contactsList.innerHTML = '';
-            
-            contactsToRender.forEach(contact => {
-                const contactItem = document.createElement('div');
-                contactItem.className = 'contact-item';
-                contactItem.innerHTML = `
-                    <div class="contact-avatar">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-green-500 flex items-center justify-center text-white font-bold">
-                            ${contact.name.charAt(0)}
-                        </div>
-                        ${contact.status === 'Online' ? '<div class="online-indicator"></div>' : ''}
-                    </div>
-                    <div class="contact-info">
-                        <div class="contact-name">${contact.name}</div>
-                        <div class="contact-status">${contact.status}</div>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center hover:bg-purple-200 transition-colors message-contact" data-name="${contact.name}">
-                            <i class="fas fa-comment"></i>
-                        </button>
-                        <button class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200 transition-colors call-contact" data-name="${contact.name}">
-                            <i class="fas fa-phone"></i>
-                        </button>
-                    </div>
-                `;
-                
-                contactsList.appendChild(contactItem);
-            });
-        }
-
-        function searchContacts(query) {
-            if (!query) {
-                renderContacts(contacts);
-                return;
-            }
-            
-            const filteredContacts = contacts.filter(contact => 
-                contact.name.toLowerCase().includes(query.toLowerCase()) ||
-                contact.email.toLowerCase().includes(query.toLowerCase()) ||
-                contact.phone.includes(query)
-            );
-            
-            renderContacts(filteredContacts);
-            
-            if (filteredContacts.length === 0) {
-                document.getElementById('noContactsMessage').classList.remove('hidden');
-                document.getElementById('noContactsMessage').innerHTML = `
-                    <i class="fas fa-search text-4xl mb-3 text-gray-300 block"></i>
-                    <p>No contacts found</p>
-                    <p class="text-sm mt-1">Try a different search term</p>
-                `;
-            } else {
-                document.getElementById('noContactsMessage').classList.add('hidden');
-            }
-        }
-
         function startVideoConference(name) {
             document.getElementById('videoConference').style.display = 'block';
             
@@ -4114,7 +4461,7 @@
             userVideo.className = 'participant-video';
             userVideo.innerHTML = `
                 <video autoplay muted class="w-full h-full object-cover rounded-lg"></video>
-                <div class="participant-name">${currentUser.displayName} (You)</div>
+                <div class="participant-name">${currentUserData.displayName} (You)</div>
             `;
             conferenceGrid.appendChild(userVideo);
             
@@ -4140,6 +4487,25 @@
                 
                 showToast('Participants joined the conference', 'success');
             }, 2000);
+        }
+
+        async function updateUserProfile(updates) {
+            try {
+                // Update Firebase Authentication profile
+                await currentUser.updateProfile(updates);
+                
+                // Update Firestore user document
+                await db.collection('users').doc(currentUser.uid).update(updates);
+                
+                // Update local user data
+                currentUserData = { ...currentUserData, ...updates };
+                
+                return true;
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showToast('Error updating profile', 'error');
+                return false;
+            }
         }
 
         // End conference

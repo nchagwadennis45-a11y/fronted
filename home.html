@@ -13,6 +13,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     
+    <!-- Cloudinary -->
+    <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+    
     <style>
         /* CSS Variables for Themes */
         :root {
@@ -63,14 +66,6 @@
             --card-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
         }
 
-        /* Emotion Reactive Backgrounds */
-        .emotion-joy { --primary-bg: linear-gradient(135deg, #FFD93D 0%, #FF6B6B 100%) !important; }
-        .emotion-love { --primary-bg: linear-gradient(135deg, #FF6B9D 0%, #C44569 100%) !important; }
-        .emotion-calm { --primary-bg: linear-gradient(135deg, #6BC5D2 0%, #3B82F6 100%) !important; }
-        .emotion-excited { --primary-bg: linear-gradient(135deg, #FF9A3D 0%, #FF6B6B 100%) !important; }
-        .emotion-sad { --primary-bg: linear-gradient(135deg, #3a7bd5 0%, #3a6073 100%) !important; }
-        .emotion-angry { --primary-bg: linear-gradient(135deg, #c31432 0%, #240b36 100%) !important; }
-
         /* Enhanced UI Components */
         .glass {
             background: var(--glass-bg);
@@ -96,16 +91,6 @@
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
             align-items: start;
-        }
-
-        /* Reaction Animations */
-        .reaction-animation {
-            animation: floatUp 1s ease-out forwards;
-        }
-
-        @keyframes floatUp {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
         }
 
         /* Floating Create Button */
@@ -196,192 +181,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Reaction Picker */
-        .reaction-picker {
-            position: absolute;
-            bottom: 40px;
-            left: 0;
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 10px;
-            display: flex;
-            gap: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            z-index: 10;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s ease;
-            pointer-events: none;
-        }
-
-        .reaction-picker.show {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: all;
-        }
-
-        .reaction-option {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 18px;
-        }
-
-        .reaction-option:hover {
-            transform: scale(1.2);
-        }
-
-        /* Poll Styles */
-        .poll-option {
-            background: var(--glass-bg);
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .poll-option:hover {
-            background: rgba(139, 92, 246, 0.2);
-        }
-
-        .poll-option.selected {
-            background: rgba(34, 211, 238, 0.2);
-            border: 1px solid var(--accent-color);
-        }
-
-        .poll-bar {
-            height: 8px;
-            background: var(--accent-color);
-            border-radius: 4px;
-            margin-top: 5px;
-            transition: width 0.5s ease;
-        }
-
-        /* Story Styles */
-        .story-ring {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            padding: 3px;
-            background: linear-gradient(45deg, #ff6b6b, #ffa726, #4ecdc4, #45b7d1);
-            cursor: pointer;
-        }
-
-        .story-content {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            overflow: hidden;
-            background: var(--card-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .story-content img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Comment Thread */
-        .comment-thread {
-            margin-top: 15px;
-            border-left: 2px solid var(--glass-border);
-            padding-left: 15px;
-        }
-
-        .comment-item {
-            margin-bottom: 10px;
-            padding: 10px;
-            background: var(--glass-bg);
-            border-radius: 10px;
-        }
-
-        /* Link Preview */
-        .link-preview {
-            border-radius: 12px;
-            overflow: hidden;
-            margin-top: 10px;
-            background: var(--glass-bg);
-        }
-
-        .link-preview img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-        }
-
-        .link-preview-content {
-            padding: 12px;
-        }
-
-        /* Filter & Sort Controls */
-        .filter-controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .filter-btn {
-            padding: 8px 16px;
-            border-radius: 20px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            color: var(--text-primary);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-        }
-
-        .filter-btn.active {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .filter-btn:hover:not(.active) {
-            background: rgba(139, 92, 246, 0.2);
-        }
-
-        /* Keyboard Shortcuts Help */
-        .keyboard-shortcuts {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            z-index: 100;
-            max-width: 300px;
-            display: none;
-        }
-
-        .keyboard-shortcuts.show {
-            display: block;
-        }
-
-        .shortcut-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-
-        .shortcut-key {
-            background: var(--glass-bg);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-
         /* Modal Styles */
         .modal {
             position: fixed;
@@ -394,7 +193,16 @@
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
         }
+        
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
         .modal-container {
             background: rgba(30, 30, 60, 0.95);
             backdrop-filter: blur(20px);
@@ -403,6 +211,12 @@
             width: 90%;
             max-width: 500px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal.active .modal-container {
+            transform: scale(1);
         }
 
         .hidden {
@@ -440,32 +254,6 @@
             object-fit: cover;
             border-radius: 12px;
             margin-top: 10px;
-        }
-
-        /* Upload Progress */
-        .upload-progress {
-            width: 100%;
-            height: 6px;
-            background: var(--glass-bg);
-            border-radius: 3px;
-            margin-top: 10px;
-            overflow: hidden;
-        }
-        .upload-progress-bar {
-            height: 100%;
-            background: var(--accent-color);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        /* Audio Player */
-        .audio-player {
-            width: 100%;
-            margin-top: 10px;
-        }
-        .audio-player audio {
-            width: 100%;
-            border-radius: 20px;
         }
 
         /* Kynecta Unique Features */
@@ -572,158 +360,620 @@
             transform: scale(1.05);
         }
 
-        /* AI Content Suggestions */
-        .ai-content-suggestions {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .ai-suggestion-item {
-            padding: 10px;
-            background: var(--glass-bg);
-            border-radius: 8px;
-            margin-bottom: 10px;
+        /* Story Styles */
+        .story-ring {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            padding: 3px;
+            background: linear-gradient(45deg, #ff6b6b, #ffa726, #4ecdc4, #45b7d1);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: transform 0.3s ease;
         }
 
-        .ai-suggestion-item:hover {
-            background: rgba(139, 92, 246, 0.2);
+        .story-ring:hover {
+            transform: scale(1.05);
         }
 
-        /* Gamified Engagement System */
-        .gamification-panel {
+        .story-content {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
             background: var(--card-bg);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .streak-counter {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
+        }
+
+        .story-content img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Story Viewer Modal */
+        .story-viewer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .story-viewer.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .story-viewer-container {
+            width: 100%;
+            max-width: 400px;
+            height: 80%;
+            background: var(--card-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        
+        .story-viewer.active .story-viewer-container {
+            transform: scale(1);
+        }
+        
+        .story-progress {
+            display: flex;
+            gap: 4px;
+            padding: 10px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+        }
+        
+        .story-progress-bar {
+            height: 3px;
+            flex: 1;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .story-progress-fill {
+            height: 100%;
+            background: white;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        
+        .story-content-viewer {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .story-content-viewer img,
+        .story-content-viewer video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .story-nav {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            cursor: pointer;
+            z-index: 5;
+        }
+        
+        .story-nav.prev {
+            left: 0;
+        }
+        
+        .story-nav.next {
+            right: 0;
+        }
+        
+        .story-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            z-index: 15;
+        }
+
+        /* Post hiding animation */
+        .post-card.hiding {
+            transform: translateX(-100%);
+            opacity: 0;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+
+        /* NEW FEATURE STYLES */
+
+        /* User Tagging System */
+        .tagging-container {
+            position: relative;
             margin-bottom: 15px;
         }
 
-        .streak-days {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--accent-color);
-        }
-
-        .badge-collection {
+        .tagged-users {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
+            margin-top: 10px;
         }
 
-        .badge-item {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+        .tagged-user {
+            display: flex;
+            align-items: center;
             background: var(--glass-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
+            padding: 4px 8px;
+            border-radius: 16px;
+            font-size: 0.8rem;
         }
 
-        /* Enhanced Comment System */
-        .nested-comment {
-            margin-left: 20px;
-            border-left: 2px solid var(--glass-border);
-            padding-left: 10px;
-        }
-
-        .voice-comment-btn {
-            background: var(--accent-color);
-            color: white;
+        .tagged-user img {
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
+            margin-right: 5px;
         }
 
-        .emoji-picker {
+        .tagged-user .remove-tag {
+            margin-left: 5px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .tag-suggestions {
             position: absolute;
-            bottom: 40px;
+            top: 100%;
+            left: 0;
+            right: 0;
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            max-height: 200px;
+            overflow-y: auto;
             z-index: 10;
-            display: none;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 5px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
         }
 
-        .emoji-picker.show {
-            display: grid;
-        }
-
-        .emoji-option {
-            width: 30px;
-            height: 30px;
+        .tag-suggestion {
+            padding: 10px;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 10px;
+        }
+
+        .tag-suggestion:hover {
+            background: var(--glass-bg);
+        }
+
+        .tag-suggestion img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+
+        /* Reels Styles */
+        .reel-container {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .reel-video {
+            width: 100%;
+            border-radius: 16px;
+            background: black;
+        }
+
+        .reel-actions {
+            position: absolute;
+            right: 10px;
+            bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .reel-action {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .reel-action i {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .reel-action span {
+            font-size: 0.8rem;
+        }
+
+        /* Enhanced Audience Control */
+        .audience-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .audience-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: var(--glass-bg);
             cursor: pointer;
-            border-radius: 6px;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .audience-option.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        /* Enhanced Mood & Interest System */
+        .mood-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .mood-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            background: var(--glass-bg);
+            cursor: pointer;
             transition: all 0.2s ease;
         }
 
-        .emoji-option:hover {
+        .mood-item.active {
             background: var(--accent-color);
+            color: white;
         }
 
-        /* Daily Vibe Section */
-        .daily-vibe-section {
-            background: var(--card-bg);
+        .interest-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .interest-item {
+            padding: 8px 12px;
             border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
+            background: var(--glass-bg);
+            cursor: pointer;
+            transition: all 0.2s ease;
             text-align: center;
         }
 
-        .daily-vibe-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: var(--accent-color);
-        }
-
-        /* Anti-toxicity Filter */
-        .toxicity-warning {
-            background: rgba(239, 68, 68, 0.2);
-            border-left: 3px solid #EF4444;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-size: 0.9rem;
-        }
-
-        /* Appreciation Button */
-        .appreciation-btn {
-            background: linear-gradient(45deg, #FFD93D, #FF6B6B);
+        .interest-item.active {
+            background: var(--accent-color);
             color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        }
+
+        /* NEW: Section Headers */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
             font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .section-link {
+            color: var(--accent-color);
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+
+        .section-link:hover {
+            text-decoration: underline;
+        }
+
+        /* NEW: Group Card Styles */
+        .group-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .group-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .group-header {
             display: flex;
             align-items: center;
-            gap: 5px;
+            margin-bottom: 12px;
         }
 
-        .appreciation-btn:hover {
-            transform: scale(1.05);
+        .group-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            margin-right: 12px;
+            object-fit: cover;
+        }
+
+        .group-info {
+            flex: 1;
+        }
+
+        .group-name {
+            font-weight: bold;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .group-members {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .group-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .group-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .group-action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .group-join-btn {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .group-join-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .group-view-btn {
+            background: var(--glass-bg);
+            color: var(--text-primary);
+        }
+
+        .group-view-btn:hover {
+            background: var(--glass-border);
+        }
+
+        /* NEW: Event Card Styles */
+        .event-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .event-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .event-date {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            margin-right: 12px;
+            background: var(--accent-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .event-month {
+            font-size: 0.7rem;
+        }
+
+        .event-day {
+            font-size: 1.2rem;
+        }
+
+        .event-info {
+            flex: 1;
+        }
+
+        .event-name {
+            font-weight: bold;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .event-details {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .event-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .event-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .event-action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .event-rsvp-btn {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .event-rsvp-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .event-view-btn {
+            background: var(--glass-bg);
+            color: var(--text-primary);
+        }
+
+        .event-view-btn:hover {
+            background: var(--glass-border);
+        }
+
+        /* NEW: Space Card Styles */
+        .space-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .space-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .space-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .space-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            margin-right: 12px;
+            object-fit: cover;
+        }
+
+        .space-info {
+            flex: 1;
+        }
+
+        .space-name {
+            font-weight: bold;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .space-members {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .space-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .space-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .space-action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .space-join-btn {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .space-join-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .space-view-btn {
+            background: var(--glass-bg);
+            color: var(--text-primary);
+        }
+
+        .space-view-btn:hover {
+            background: var(--glass-border);
         }
 
         /* Mobile Responsiveness */
@@ -746,20 +996,6 @@
             
             .vibe-reactions {
                 flex-wrap: wrap;
-            }
-            
-            .streak-counter {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-            
-            .badge-collection {
-                justify-content: center;
-            }
-            
-            .emoji-picker {
-                grid-template-columns: repeat(4, 1fr);
             }
             
             /* Mobile-specific improvements */
@@ -786,31 +1022,46 @@
                 font-size: 0.8rem;
             }
             
-            .daily-vibe-section {
-                padding: 12px;
-            }
-            
-            .ai-content-suggestions {
-                padding: 12px;
-            }
-            
-            .gamification-panel {
-                padding: 12px;
-            }
-            
             .modal-container {
                 width: 95%;
                 padding: 20px;
+            }
+            
+            .story-viewer-container {
+                max-width: 95%;
+                height: 70%;
+            }
+
+            /* New features mobile responsiveness */
+            .mood-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .interest-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .reel-container {
+                max-width: 100%;
+            }
+
+            /* NEW: Section responsiveness */
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .group-actions,
+            .event-actions,
+            .space-actions {
+                flex-direction: column;
             }
         }
 
         @media (max-width: 480px) {
             .filter-controls {
                 justify-content: center;
-            }
-            
-            .emoji-picker {
-                grid-template-columns: repeat(3, 1fr);
             }
             
             /* Extra small screen improvements */
@@ -823,21 +1074,17 @@
                 font-size: 0.75rem;
             }
             
-            .daily-vibe-title {
-                font-size: 1rem;
-            }
-            
-            .appreciation-btn {
-                padding: 6px 12px;
-                font-size: 0.9rem;
-            }
-            
             .mood-filter-container {
                 padding: 8px;
             }
+
+            /* New features extra small screen */
+            .mood-grid {
+                grid-template-columns: 1fr;
+            }
             
-            .ai-suggestion-item {
-                padding: 8px;
+            .audience-selector {
+                flex-direction: column;
             }
         }
         
@@ -862,12 +1109,6 @@
                 font-size: 0.7rem;
                 padding: 6px 12px;
             }
-            
-            .keyboard-shortcuts {
-                max-width: 90%;
-                left: 5%;
-                bottom: 10px;
-            }
         }
     </style>
 </head>
@@ -883,24 +1124,96 @@
         <i class="fas fa-plus"></i>
     </div>
 
-    <!-- Keyboard Shortcuts Help -->
-    <div class="keyboard-shortcuts" id="keyboardShortcuts">
-        <h3 class="font-bold text-theme-accent mb-3">Keyboard Shortcuts</h3>
-        <div class="shortcut-item">
-            <span>Create New Post</span>
-            <span class="shortcut-key">N</span>
+    <!-- Story Viewer Modal -->
+    <div class="story-viewer" id="storyViewer">
+        <div class="story-viewer-container">
+            <div class="story-progress" id="storyProgress">
+                <!-- Progress bars will be added dynamically -->
+            </div>
+            <div class="story-content-viewer" id="storyContentViewer">
+                <!-- Story content will be displayed here -->
+            </div>
+            <div class="story-nav prev" id="storyPrev"></div>
+            <div class="story-nav next" id="storyNext"></div>
+            <div class="story-close" id="storyClose">
+                <i class="fas fa-times"></i>
+            </div>
         </div>
-        <div class="shortcut-item">
-            <span>Search</span>
-            <span class="shortcut-key">/</span>
-        </div>
-        <div class="shortcut-item">
-            <span>Toggle Theme</span>
-            <span class="shortcut-key">T</span>
-        </div>
-        <div class="shortcut-item">
-            <span>Show Shortcuts</span>
-            <span class="shortcut-key">?</span>
+    </div>
+
+    <!-- Create Story Modal -->
+    <div id="createStoryModal" class="modal">
+        <div class="modal-container">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-theme-accent">Create Story</h2>
+                <button id="closeStoryModal" class="text-theme-secondary hover:text-theme-accent transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex items-center space-x-3 mb-4">
+                    <img id="storyUserAvatar" class="w-10 h-10 rounded-2xl object-cover" src="" alt="Your Avatar">
+                    <div>
+                        <p id="storyUserName" class="font-semibold text-theme-primary">Loading...</p>
+                        <p class="text-xs text-theme-secondary">Your story will be visible for 24 hours</p>
+                    </div>
+                </div>
+                
+                <!-- Enhanced Audience Control for Stories -->
+                <div class="audience-selector">
+                    <div class="audience-option active" data-audience="public">
+                        <i class="fas fa-globe"></i>
+                        <span>Public</span>
+                    </div>
+                    <div class="audience-option" data-audience="friends">
+                        <i class="fas fa-user-friends"></i>
+                        <span>Friends</span>
+                    </div>
+                    <div class="audience-option" data-audience="close-friends">
+                        <i class="fas fa-star"></i>
+                        <span>Close Friends</span>
+                    </div>
+                    <div class="audience-option" data-audience="only-me">
+                        <i class="fas fa-lock"></i>
+                        <span>Only Me</span>
+                    </div>
+                </div>
+                
+                <div id="storyTextInput" class="hidden">
+                    <textarea id="storyTextContent" placeholder="What's happening?" 
+                              class="w-full p-4 glass border border-purple-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme-accent focus:border-transparent placeholder-theme-secondary h-32 resize-none"></textarea>
+                </div>
+                
+                <div id="storyMediaPreview" class="hidden">
+                    <img id="storyPreviewImage" class="media-preview w-full hidden rounded-xl">
+                    <video id="storyPreviewVideo" class="media-preview w-full hidden rounded-xl" controls></video>
+                </div>
+                
+                <div class="flex flex-wrap gap-4 text-theme-secondary justify-center">
+                    <button id="addTextStory" class="flex items-center space-x-2 hover:text-theme-accent transition">
+                        <i class="fas fa-font"></i>
+                        <span>Text</span>
+                    </button>
+                    <button id="addImageStory" class="flex items-center space-x-2 hover:text-theme-accent transition">
+                        <i class="fas fa-image"></i>
+                        <span>Image</span>
+                    </button>
+                    <button id="addVideoStory" class="flex items-center space-x-2 hover:text-theme-accent transition">
+                        <i class="fas fa-video"></i>
+                        <span>Video</span>
+                    </button>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button id="cancelStory" class="px-4 py-2 glass border border-purple-700 rounded-2xl text-theme-secondary hover:text-theme-accent transition">
+                        Cancel
+                    </button>
+                    <button id="publishStory" class="px-6 py-2 rounded-2xl font-semibold hover:scale-105 transition" style="background: var(--accent-color); color: white;">
+                        Publish Story
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -942,14 +1255,13 @@
                     <i class="fas fa-store w-6"></i>
                     <span class="hidden lg:block">Marketplace</span>
                 </a>
-                <a href="collections.html" class="flex items-center space-x-3 p-3 rounded-xl text-theme-secondary hover:bg-purple-900/30 hover:text-theme-accent transition">
-                    <i class="fas fa-bookmark w-6"></i>
-                    <span class="hidden lg:block">Collections</span>
+                <a href="games.html" class="flex items-center space-x-3 p-3 rounded-xl text-theme-secondary hover:bg-purple-900/30 hover:text-theme-accent transition">
+                    <i class="fas fa-gamepad w-6"></i>
+                    <span class="hidden lg:block">Games</span>
                 </a>
-                <!-- Kynecta Unique Feature: Collaborative Spaces -->
-                <a href="spaces.html" class="flex items-center space-x-3 p-3 rounded-xl text-theme-secondary hover:bg-purple-900/30 hover:text-theme-accent transition">
-                    <i class="fas fa-users w-6"></i>
-                    <span class="hidden lg:block">Collaborative Spaces</span>
+                <a href="payment.html" class="flex items-center space-x-3 p-3 rounded-xl text-theme-secondary hover:bg-purple-900/30 hover:text-theme-accent transition">
+                    <i class="fas fa-credit-card w-6"></i>
+                    <span class="hidden lg:block">Payment</span>
                 </a>
             </nav>
 
@@ -957,7 +1269,7 @@
             <div class="p-4 border-t border-purple-800">
                 <div id="userStatusContainer" class="flex items-center space-x-3 p-3 glass rounded-xl cursor-pointer hover:bg-cyan-900/30 transition">
                     <div class="relative">
-                        <img id="userAvatar" class="w-8 h-8 rounded-2xl object-cover" src="https://via.placeholder.com/40" alt="User Avatar">
+                        <img id="userAvatar" class="w-8 h-8 rounded-2xl object-cover" src="" alt="User Avatar">
                         <div id="statusIndicator" class="status-indicator status-online absolute -bottom-1 -right-1 border-2 border-gray-900"></div>
                     </div>
                     <div class="hidden lg:block">
@@ -1006,15 +1318,6 @@
                     </div>
                 </div>
             </header>
-
-            <!-- NEW FEATURE: Daily Vibe Section -->
-            <div class="daily-vibe-section glass border-b border-purple-800">
-                <div class="daily-vibe-title">Today's Vibe: Gratitude</div>
-                <p class="text-theme-secondary mb-3">Share what you're thankful for today</p>
-                <button class="appreciation-btn" id="shareGratitudeBtn">
-                    <i class="fas fa-heart mr-1"></i> Share Gratitude
-                </button>
-            </div>
 
             <!-- Stories Section -->
             <div class="glass border-b border-purple-800 p-4">
@@ -1075,51 +1378,60 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Kynecta Unique Feature: Content Type Filter -->
-                    <div class="relative content-type-filter">
-                        <button class="filter-btn" id="contentTypeFilterBtn">
-                            <i class="fas fa-filter mr-1"></i> Content Type
-                        </button>
-                        <div class="content-type-options absolute mt-2 p-3 glass rounded-xl z-10 hidden" id="contentTypeOptions">
-                            <div class="space-y-2">
-                                <div class="content-type-option" data-content-type="text">Text Only</div>
-                                <div class="content-type-option" data-content-type="image">With Images</div>
-                                <div class="content-type-option" data-content-type="video">With Videos</div>
-                                <div class="content-type-option" data-content-type="poll">Polls</div>
-                                <div class="content-type-option" data-content-type="collaborative">Collaborative</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
             <!-- Main Feed -->
             <main class="flex-1 overflow-y-auto bg-gradient-to-b from-purple-900/20 to-gray-900/50 custom-scrollbar">
                 <div class="container mx-auto px-4 py-4">
-                    <!-- NEW FEATURE: AI Content Suggestions -->
-                    <div class="ai-content-suggestions glass mb-6">
-                        <h3 class="font-bold text-theme-accent mb-3 flex items-center">
-                            <i class="fas fa-robot mr-2"></i> AI Content Ideas
-                        </h3>
-                        <div id="aiContentSuggestionsList">
-                            <div class="ai-suggestion-item">
-                                <p>Share a recent accomplishment and what you learned from it</p>
-                            </div>
-                            <div class="ai-suggestion-item">
-                                <p>Ask your network for recommendations on [your interest]</p>
-                            </div>
-                            <div class="ai-suggestion-item">
-                                <p>Post about a book, movie, or podcast that inspired you recently</p>
-                            </div>
-                        </div>
-                        <button id="refreshAISuggestions" class="w-full mt-3 py-2 glass border border-purple-700 rounded-2xl text-theme-secondary hover:text-theme-accent transition">
-                            <i class="fas fa-sync-alt mr-2"></i> Get New Ideas
-                        </button>
-                    </div>
-
+                    <!-- Posts Section -->
                     <div class="masonry-grid" id="feedContainer">
                         <!-- Posts will be loaded dynamically from Firebase -->
+                    </div>
+                    
+                    <!-- NEW: Groups Section -->
+                    <div class="section-header">
+                        <h2 class="section-title">Your Groups</h2>
+                        <a href="#" class="section-link">See All</a>
+                    </div>
+                    <div id="groupsContainer">
+                        <!-- Groups will be loaded dynamically from Firebase -->
+                    </div>
+                    
+                    <!-- NEW: Collaborative Spaces Section -->
+                    <div class="section-header">
+                        <h2 class="section-title">Collaborative Spaces</h2>
+                        <a href="#" class="section-link">See All</a>
+                    </div>
+                    <div id="spacesContainer">
+                        <!-- Spaces will be loaded dynamically from Firebase -->
+                    </div>
+                    
+                    <!-- NEW: Events Section -->
+                    <div class="section-header">
+                        <h2 class="section-title">Upcoming Events</h2>
+                        <a href="#" class="section-link">See All</a>
+                    </div>
+                    <div id="eventsContainer">
+                        <!-- Events will be loaded dynamically from Firebase -->
+                    </div>
+                    
+                    <!-- NEW: Reels Section -->
+                    <div class="section-header">
+                        <h2 class="section-title">Reels</h2>
+                        <a href="#" class="section-link">See All</a>
+                    </div>
+                    <div id="reelsContainer">
+                        <!-- Reels will be loaded dynamically from Firebase -->
+                    </div>
+                    
+                    <!-- NEW: Saved Posts Section -->
+                    <div class="section-header">
+                        <h2 class="section-title">Saved Posts</h2>
+                        <a href="#" class="section-link">See All</a>
+                    </div>
+                    <div id="savedContainer">
+                        <!-- Saved posts will be loaded dynamically from Firebase -->
                     </div>
                     
                     <!-- Loading Indicator -->
@@ -1140,7 +1452,7 @@
                 <!-- User Profile Card -->
                 <div class="glass border border-purple-700 rounded-2xl p-4 mb-6">
                     <div class="flex items-center space-x-3 mb-4">
-                        <img id="sidebarUserAvatar" class="w-12 h-12 rounded-2xl object-cover" src="https://via.placeholder.com/40" alt="User Avatar">
+                        <img id="sidebarUserAvatar" class="w-12 h-12 rounded-2xl object-cover" src="" alt="User Avatar">
                         <div>
                             <h3 id="sidebarUserName" class="font-bold text-theme-accent">Loading...</h3>
                             <p id="sidebarUserStatus" class="text-xs text-theme-secondary">Online</p>
@@ -1166,35 +1478,6 @@
                     </div>
                 </div>
 
-                <!-- NEW FEATURE: Gamified Engagement System -->
-                <div class="gamification-panel glass border border-purple-700 rounded-2xl p-4 mb-6">
-                    <h3 class="font-bold text-theme-accent mb-4 flex items-center">
-                        <i class="fas fa-trophy mr-2"></i> Engagement Streak
-                    </h3>
-                    <div class="streak-counter">
-                        <div>
-                            <p class="text-sm text-theme-secondary">Current Streak</p>
-                            <div class="streak-days">7 days</div>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-sm text-theme-secondary">Points</p>
-                            <div class="streak-days">245</div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <p class="text-sm text-theme-secondary mb-2">Your Badges</p>
-                        <div class="badge-collection">
-                            <div class="badge-item" title="Newcomer">🥚</div>
-                            <div class="badge-item" title="Contributor">🌟</div>
-                            <div class="badge-item" title="Social Butterfly">🦋</div>
-                            <div class="badge-item" title="Thought Leader">💡</div>
-                        </div>
-                    </div>
-                    <button id="viewAllBadges" class="w-full py-2 glass border border-purple-700 rounded-2xl text-theme-secondary hover:text-theme-accent transition text-sm">
-                        View All Achievements
-                    </button>
-                </div>
-
                 <!-- Trending Topics -->
                 <div class="glass border border-purple-700 rounded-2xl p-4 mb-6">
                     <h3 class="font-bold text-theme-accent mb-4 flex items-center">
@@ -1202,16 +1485,6 @@
                     </h3>
                     <div id="trendingTopicsContainer" class="space-y-3">
                         <!-- Trending topics will be loaded dynamically -->
-                    </div>
-                </div>
-
-                <!-- Leaderboard -->
-                <div class="glass border border-purple-700 rounded-2xl p-4 mb-6">
-                    <h3 class="font-bold text-theme-accent mb-4 flex items-center">
-                        <i class="fas fa-trophy mr-2"></i> Top Contributors
-                    </h3>
-                    <div id="leaderboardContainer" class="space-y-3">
-                        <!-- Leaderboard will be loaded dynamically -->
                     </div>
                 </div>
 
@@ -1227,7 +1500,7 @@
     </div>
 
     <!-- Create Post Modal -->
-    <div id="createPostModal" class="modal hidden">
+    <div id="createPostModal" class="modal">
         <div class="modal-container">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold text-theme-accent">Create Post</h2>
@@ -1238,87 +1511,68 @@
             
             <div class="space-y-4">
                 <div class="flex items-center space-x-3 mb-4">
-                    <img id="currentUserAvatar" class="w-10 h-10 rounded-2xl object-cover" src="https://via.placeholder.com/40" alt="Your Avatar">
+                    <img id="currentUserAvatar" class="w-10 h-10 rounded-2xl object-cover" src="" alt="Your Avatar">
                     <div>
                         <p id="currentUserName" class="font-semibold text-theme-primary">Loading...</p>
-                        <div class="flex space-x-2 mt-1">
-                            <select id="postAudience" class="text-xs bg-transparent border border-purple-700 rounded-lg px-2 py-1">
-                                <option value="public">🌍 Public</option>
-                                <option value="friends">👥 Friends</option>
-                                <option value="private">🔒 Only Me</option>
-                            </select>
-                            <select id="postMood" class="text-xs bg-transparent border border-purple-700 rounded-lg px-2 py-1">
-                                <option value="">How are you feeling?</option>
-                                <option value="joy">😄 Joyful</option>
-                                <option value="love">❤️ Loving</option>
-                                <option value="calm">😌 Calm</option>
-                                <option value="excited">🤩 Excited</option>
-                                <option value="sad">😢 Sad</option>
-                                <option value="angry">😠 Angry</option>
-                            </select>
+                        <!-- Enhanced Audience Control -->
+                        <div class="audience-selector mt-2">
+                            <div class="audience-option active" data-audience="public">
+                                <i class="fas fa-globe"></i>
+                                <span>Public</span>
+                            </div>
+                            <div class="audience-option" data-audience="friends">
+                                <i class="fas fa-user-friends"></i>
+                                <span>Friends</span>
+                            </div>
+                            <div class="audience-option" data-audience="close-friends">
+                                <i class="fas fa-star"></i>
+                                <span>Close Friends</span>
+                            </div>
+                            <div class="audience-option" data-audience="only-me">
+                                <i class="fas fa-lock"></i>
+                                <span>Only Me</span>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <textarea id="modalPostInput" placeholder="What's on your mind?" 
-                          class="w-full p-4 glass border border-purple-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme-accent focus:border-transparent placeholder-theme-secondary h-32 resize-none"></textarea>
-                
-                <!-- Kynecta Unique Feature: AI Content Suggestions -->
-                <div id="aiSuggestion" class="ai-suggestion hidden">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm font-semibold text-theme-accent mb-1">AI Suggestion</p>
-                            <p id="aiSuggestionText" class="text-sm">Try adding a question to engage your audience!</p>
-                        </div>
-                        <button id="applySuggestion" class="text-xs bg-theme-accent text-white px-2 py-1 rounded-lg">Apply</button>
+                <!-- User Tagging System -->
+                <div class="tagging-container">
+                    <textarea id="modalPostInput" placeholder="What's on your mind? Tag friends with @..." 
+                              class="w-full p-4 glass border border-purple-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme-accent focus:border-transparent placeholder-theme-secondary h-32 resize-none"></textarea>
+                    <div class="tagged-users" id="taggedUsers">
+                        <!-- Tagged users will appear here -->
+                    </div>
+                    <div class="tag-suggestions hidden" id="tagSuggestions">
+                        <!-- Tag suggestions will appear here -->
                     </div>
                 </div>
                 
-                <!-- NEW FEATURE: Anti-toxicity Filter Warning -->
-                <div id="toxicityWarning" class="toxicity-warning hidden">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>
-                    <span>Our AI detected potentially harmful content. Please review before posting.</span>
-                </div>
-                
-                <!-- Poll Creator -->
-                <div id="pollCreator" class="hidden">
-                    <div class="mb-3">
-                        <input type="text" id="pollQuestion" placeholder="Ask a question..." class="w-full p-2 glass border border-purple-700 rounded-lg">
+                <!-- Enhanced Mood & Interest System -->
+                <div class="mood-grid" id="moodGrid">
+                    <div class="mood-item" data-mood="joy">
+                        <span>😄</span>
+                        <span>Joyful</span>
                     </div>
-                    <div id="pollOptions" class="space-y-2">
-                        <div class="flex items-center space-x-2">
-                            <input type="text" placeholder="Option 1" class="flex-1 p-2 glass border border-purple-700 rounded-lg">
-                            <button class="text-red-500 remove-poll-option"><i class="fas fa-times"></i></button>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <input type="text" placeholder="Option 2" class="flex-1 p-2 glass border border-purple-700 rounded-lg">
-                            <button class="text-red-500 remove-poll-option"><i class="fas fa-times"></i></button>
-                        </div>
+                    <div class="mood-item" data-mood="love">
+                        <span>❤️</span>
+                        <span>Loving</span>
                     </div>
-                    <button id="addPollOption" class="mt-2 text-theme-accent text-sm"><i class="fas fa-plus mr-1"></i> Add Option</button>
-                    <div class="flex items-center mt-3">
-                        <input type="checkbox" id="multiplePollAnswers" class="mr-2">
-                        <label for="multiplePollAnswers" class="text-sm">Allow multiple answers</label>
+                    <div class="mood-item" data-mood="calm">
+                        <span>😌</span>
+                        <span>Calm</span>
                     </div>
-                </div>
-                
-                <!-- Kynecta Unique Feature: Collaborative Post -->
-                <div id="collaborativePost" class="hidden mt-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <p class="text-sm font-semibold text-theme-accent">Collaborative Post</p>
-                        <button id="toggleCollaborative" class="text-xs bg-theme-accent text-white px-2 py-1 rounded-lg">Enable</button>
+                    <div class="mood-item" data-mood="excited">
+                        <span>🤩</span>
+                        <span>Excited</span>
                     </div>
-                    <div id="collaborativeSettings" class="hidden space-y-2">
-                        <input type="text" id="collaborativeTitle" placeholder="Collaboration title..." class="w-full p-2 glass border border-purple-700 rounded-lg">
-                        <select id="collaborativeType" class="w-full p-2 glass border border-purple-700 rounded-lg">
-                            <option value="brainstorming">Brainstorming</option>
-                            <option value="decision">Decision Making</option>
-                            <option value="project">Project Planning</option>
-                        </select>
-                        <div class="flex items-center">
-                            <input type="checkbox" id="allowEdits" class="mr-2">
-                            <label for="allowEdits" class="text-sm">Allow others to edit</label>
-                        </div>
+                    <div class="mood-item" data-mood="sad">
+                        <span>😢</span>
+                        <span>Sad</span>
+                    </div>
+                    <div class="mood-item" data-mood="angry">
+                        <span>😠</span>
+                        <span>Angry</span>
                     </div>
                 </div>
                 
@@ -1326,22 +1580,6 @@
                 <div id="modalMediaPreview" class="hidden">
                     <img id="modalPreviewImage" class="media-preview w-full hidden rounded-xl">
                     <video id="modalPreviewVideo" class="media-preview w-full hidden rounded-xl" controls></video>
-                    <audio id="modalPreviewAudio" class="audio-player hidden" controls></audio>
-                    <div class="upload-progress hidden" id="uploadProgress">
-                        <div class="upload-progress-bar" id="uploadProgressBar"></div>
-                    </div>
-                </div>
-                
-                <!-- Link Preview -->
-                <div id="linkPreview" class="link-preview hidden">
-                    <div class="flex">
-                        <div class="link-preview-content flex-1">
-                            <h4 id="linkTitle" class="font-semibold text-theme-primary"></h4>
-                            <p id="linkDescription" class="text-sm text-theme-secondary mt-1"></p>
-                            <p id="linkDomain" class="text-xs text-theme-secondary mt-2"></p>
-                        </div>
-                        <img id="linkImage" class="w-24 h-24 object-cover rounded-r-lg" src="" alt="Link preview">
-                    </div>
                 </div>
                 
                 <div class="flex flex-wrap gap-4 text-theme-secondary justify-center">
@@ -1353,22 +1591,9 @@
                         <i class="fas fa-video"></i>
                         <span>Video</span>
                     </button>
-                    <button id="modalAddAudio" class="flex items-center space-x-2 hover:text-theme-accent transition">
-                        <i class="fas fa-music"></i>
-                        <span>Audio</span>
-                    </button>
-                    <button id="modalAddPoll" class="flex items-center space-x-2 hover:text-theme-accent transition">
-                        <i class="fas fa-poll"></i>
-                        <span>Poll</span>
-                    </button>
-                    <button id="modalAddLink" class="flex items-center space-x-2 hover:text-theme-accent transition">
-                        <i class="fas fa-link"></i>
-                        <span>Link</span>
-                    </button>
-                    <!-- Kynecta Unique Feature: Collaborative Post Button -->
-                    <button id="modalAddCollaborative" class="flex items-center space-x-2 hover:text-theme-accent transition">
-                        <i class="fas fa-users"></i>
-                        <span>Collaborate</span>
+                    <button id="modalAddReel" class="flex items-center space-x-2 hover:text-theme-accent transition">
+                        <i class="fas fa-film"></i>
+                        <span>Reel</span>
                     </button>
                 </div>
                 
@@ -1384,18 +1609,60 @@
         </div>
     </div>
 
-    <!-- NEW FEATURE: Emoji Picker -->
-    <div class="emoji-picker" id="emojiPicker">
-        <!-- Emojis will be populated dynamically -->
+    <!-- Create Reel Modal -->
+    <div id="createReelModal" class="modal">
+        <div class="modal-container">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-theme-accent">Create Reel</h2>
+                <button id="closeReelModal" class="text-theme-secondary hover:text-theme-accent transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex items-center space-x-3 mb-4">
+                    <img id="reelUserAvatar" class="w-10 h-10 rounded-2xl object-cover" src="" alt="Your Avatar">
+                    <div>
+                        <p id="reelUserName" class="font-semibold text-theme-primary">Loading...</p>
+                        <p class="text-xs text-theme-secondary">Max 6 seconds</p>
+                    </div>
+                </div>
+                
+                <div id="reelVideoPreview" class="hidden">
+                    <video id="reelPreviewVideo" class="media-preview w-full hidden rounded-xl" controls></video>
+                    <div class="text-center mt-2 text-theme-secondary" id="reelDuration">Duration: 0s</div>
+                </div>
+                
+                <div class="flex flex-col items-center justify-center border-2 border-dashed border-purple-700 rounded-2xl p-8 text-center" id="reelUploadArea">
+                    <i class="fas fa-video text-4xl text-theme-secondary mb-4"></i>
+                    <p class="text-theme-primary font-medium">Upload a video for your reel</p>
+                    <p class="text-theme-secondary text-sm mt-2">Maximum duration: 6 seconds</p>
+                    <button id="uploadReelVideo" class="mt-4 px-4 py-2 rounded-2xl font-semibold" style="background: var(--accent-color); color: white;">
+                        Select Video
+                    </button>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button id="cancelReel" class="px-4 py-2 glass border border-purple-700 rounded-2xl text-theme-secondary hover:text-theme-accent transition">
+                        Cancel
+                    </button>
+                    <button id="publishReel" class="px-6 py-2 rounded-2xl font-semibold hover:scale-105 transition" style="background: var(--accent-color); color: white;">
+                        Publish Reel
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- File Inputs (Hidden) -->
     <input type="file" id="modalPhotoInput" accept="image/*" class="hidden">
     <input type="file" id="modalVideoInput" accept="video/*" class="hidden">
-    <input type="file" id="modalAudioInput" accept="audio/*" class="hidden">
+    <input type="file" id="storyImageInput" accept="image/*" class="hidden">
+    <input type="file" id="storyVideoInput" accept="video/*" class="hidden">
+    <input type="file" id="reelVideoInput" accept="video/*" class="hidden">
 
     <script>
-        // Firebase Configuration for Kynecta - Using the same config as index.html
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
             authDomain: "uniconnect-ee95c.firebaseapp.com",
@@ -1403,6 +1670,13 @@
             storageBucket: "uniconnect-ee95c.firebasestorage.app",
             messagingSenderId: "1003264444309",
             appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
+        };
+
+        // Cloudinary Configuration
+        const cloudinaryConfig = {
+            cloudName: 'dhjnxa5rh',
+            apiKey: '817591969559894',
+            uploadPreset: 'kynecta_stories'
         };
 
         // Initialize Firebase
@@ -1420,9 +1694,28 @@
         let currentFilter = 'all';
         let currentEmotionFilter = null;
         let currentInterestFilter = null;
-        let currentContentTypeFilter = null;
-        let selectedReaction = null;
-        let currentMoodFilter = 'all'; // NEW: Mood-based filtering
+        let currentMoodFilter = 'all';
+        let viewedPosts = new Set();
+        let currentStories = [];
+        let currentStoryIndex = 0;
+        let storyInterval = null;
+        let currentStoryType = null;
+        
+        // NEW: User Tagging System Variables
+        let taggedUsers = [];
+        let friendsList = [];
+        let currentTaggingIndex = -1;
+        
+        // NEW: Reels Variables
+        let reelVideoFile = null;
+        let reelVideoDuration = 0;
+
+        // NEW: Additional Data Variables
+        let groups = [];
+        let spaces = [];
+        let events = [];
+        let reels = [];
+        let savedPosts = [];
 
         // DOM Elements
         const connectionStatus = document.getElementById('connectionStatus');
@@ -1438,7 +1731,6 @@
         const modalPostInput = document.getElementById('modalPostInput');
         const themeToggle = document.getElementById('themeToggle');
         const searchInput = document.getElementById('searchInput');
-        const keyboardShortcuts = document.getElementById('keyboardShortcuts');
         const userStatusContainer = document.getElementById('userStatusContainer');
         const userAvatar = document.getElementById('userAvatar');
         const userDisplayName = document.getElementById('userDisplayName');
@@ -1453,11 +1745,8 @@
         const emotionOptions = document.getElementById('emotionOptions');
         const interestFilterBtn = document.getElementById('interestFilterBtn');
         const interestOptions = document.getElementById('interestOptions');
-        const contentTypeFilterBtn = document.getElementById('contentTypeFilterBtn');
-        const contentTypeOptions = document.getElementById('contentTypeOptions');
         const storiesContainer = document.getElementById('storiesContainer');
         const trendingTopicsContainer = document.getElementById('trendingTopicsContainer');
-        const leaderboardContainer = document.getElementById('leaderboardContainer');
         const suggestedUsersContainer = document.getElementById('suggestedUsersContainer');
         const currentUserAvatar = document.getElementById('currentUserAvatar');
         const currentUserName = document.getElementById('currentUserName');
@@ -1465,32 +1754,61 @@
         const userEnergyRing = document.getElementById('userEnergyRing');
         const energyPercentage = document.getElementById('energyPercentage');
         const userBadges = document.getElementById('userBadges');
-        const aiSuggestion = document.getElementById('aiSuggestion');
-        const aiSuggestionText = document.getElementById('aiSuggestionText');
-        const applySuggestion = document.getElementById('applySuggestion');
-        const collaborativePost = document.getElementById('collaborativePost');
-        const toggleCollaborative = document.getElementById('toggleCollaborative');
-        const collaborativeSettings = document.getElementById('collaborativeSettings');
-        const modalAddCollaborative = document.getElementById('modalAddCollaborative');
         
-        // NEW FEATURE: Mood-based Filtering Elements
+        // NEW: Additional Section Containers
+        const groupsContainer = document.getElementById('groupsContainer');
+        const spacesContainer = document.getElementById('spacesContainer');
+        const eventsContainer = document.getElementById('eventsContainer');
+        const reelsContainer = document.getElementById('reelsContainer');
+        const savedContainer = document.getElementById('savedContainer');
+        
+        // Story Elements
+        const storyViewer = document.getElementById('storyViewer');
+        const storyProgress = document.getElementById('storyProgress');
+        const storyContentViewer = document.getElementById('storyContentViewer');
+        const storyPrev = document.getElementById('storyPrev');
+        const storyNext = document.getElementById('storyNext');
+        const storyClose = document.getElementById('storyClose');
+        const createStoryModal = document.getElementById('createStoryModal');
+        const closeStoryModal = document.getElementById('closeStoryModal');
+        const cancelStory = document.getElementById('cancelStory');
+        const publishStory = document.getElementById('publishStory');
+        const addTextStory = document.getElementById('addTextStory');
+        const addImageStory = document.getElementById('addImageStory');
+        const addVideoStory = document.getElementById('addVideoStory');
+        const storyTextInput = document.getElementById('storyTextInput');
+        const storyTextContent = document.getElementById('storyTextContent');
+        const storyMediaPreview = document.getElementById('storyMediaPreview');
+        const storyPreviewImage = document.getElementById('storyPreviewImage');
+        const storyPreviewVideo = document.getElementById('storyPreviewVideo');
+        const storyUserAvatar = document.getElementById('storyUserAvatar');
+        const storyUserName = document.getElementById('storyUserName');
+
+        // Mood-based Filtering Elements
         const moodOptions = document.querySelectorAll('.mood-option');
         
-        // NEW FEATURE: AI Content Suggestions Elements
-        const refreshAISuggestions = document.getElementById('refreshAISuggestions');
-        const aiContentSuggestionsList = document.getElementById('aiContentSuggestionsList');
+        // NEW: User Tagging System Elements
+        const taggedUsersContainer = document.getElementById('taggedUsers');
+        const tagSuggestions = document.getElementById('tagSuggestions');
         
-        // NEW FEATURE: Gamification Elements
-        const viewAllBadges = document.getElementById('viewAllBadges');
+        // NEW: Enhanced Mood & Interest System Elements
+        const moodGrid = document.getElementById('moodGrid');
+        const moodItems = document.querySelectorAll('.mood-item');
         
-        // NEW FEATURE: Daily Vibe Elements
-        const shareGratitudeBtn = document.getElementById('shareGratitudeBtn');
+        // NEW: Enhanced Audience Control Elements
+        const audienceOptions = document.querySelectorAll('.audience-option');
         
-        // NEW FEATURE: Emoji Picker
-        const emojiPicker = document.getElementById('emojiPicker');
-        
-        // NEW FEATURE: Anti-toxicity Filter
-        const toxicityWarning = document.getElementById('toxicityWarning');
+        // NEW: Reels Elements
+        const createReelModal = document.getElementById('createReelModal');
+        const closeReelModal = document.getElementById('closeReelModal');
+        const cancelReel = document.getElementById('cancelReel');
+        const publishReel = document.getElementById('publishReel');
+        const reelVideoPreview = document.getElementById('reelVideoPreview');
+        const reelPreviewVideo = document.getElementById('reelPreviewVideo');
+        const reelDuration = document.getElementById('reelDuration');
+        const reelUploadArea = document.getElementById('reelUploadArea');
+        const uploadReelVideo = document.getElementById('uploadReelVideo');
+        const modalAddReel = document.getElementById('modalAddReel');
 
         // Mobile Navigation Elements
         const mobileNavToggle = document.getElementById('mobileNavToggle');
@@ -1512,10 +1830,16 @@
                         loadInitialPosts();
                         loadStories();
                         loadTrendingTopics();
-                        loadLeaderboard();
                         loadSuggestedUsers();
                         
-                        // NEW: Initialize new features
+                        // NEW: Load additional data
+                        loadGroups();
+                        loadSpaces();
+                        loadEvents();
+                        loadReels();
+                        loadSavedPosts();
+                        
+                        // Initialize new features
                         initializeNewFeatures();
                     }).catch(error => {
                         console.error('Error loading user data:', error);
@@ -1542,55 +1866,28 @@
             setupConnectionMonitoring();
         }
 
-        // NEW: Initialize new features
+        // Initialize new features
         function initializeNewFeatures() {
-            // Initialize emoji picker
-            initializeEmojiPicker();
-            
-            // Load AI content suggestions
-            loadAIContentSuggestions();
-            
             // Initialize mood-based filtering
             initializeMoodFiltering();
             
-            // Initialize gamification data
-            initializeGamificationData();
-        }
-
-        // NEW: Initialize emoji picker
-        function initializeEmojiPicker() {
-            const emojis = ['😀', '😂', '🥰', '😎', '🤔', '🙌', '🔥', '💯', '✨', '🌟', '💖', '👍', '👏', '🎉', '💡', '🌈', '🚀', '📚', '🎨', '🎵', '🍕', '☕', '🌍', '💪'];
+            // Initialize story viewer
+            initializeStoryViewer();
             
-            emojiPicker.innerHTML = '';
-            emojis.forEach(emoji => {
-                const emojiOption = document.createElement('div');
-                emojiOption.className = 'emoji-option';
-                emojiOption.textContent = emoji;
-                emojiOption.addEventListener('click', function() {
-                    // TODO: Insert emoji into active comment or post input
-                    const activeInput = document.activeElement;
-                    if (activeInput && (activeInput.tagName === 'TEXTAREA' || activeInput.tagName === 'INPUT')) {
-                        const cursorPosition = activeInput.selectionStart;
-                        const textBefore = activeInput.value.substring(0, cursorPosition);
-                        const textAfter = activeInput.value.substring(cursorPosition);
-                        activeInput.value = textBefore + emoji + textAfter;
-                        activeInput.focus();
-                        activeInput.setSelectionRange(cursorPosition + emoji.length, cursorPosition + emoji.length);
-                    }
-                    emojiPicker.classList.remove('show');
-                });
-                emojiPicker.appendChild(emojiOption);
-            });
+            // NEW: Initialize user tagging system
+            initializeUserTagging();
+            
+            // NEW: Initialize enhanced mood & interest system
+            initializeEnhancedMoodInterest();
+            
+            // NEW: Initialize enhanced audience control
+            initializeEnhancedAudienceControl();
+            
+            // NEW: Initialize reels system
+            initializeReelsSystem();
         }
 
-        // NEW: Load AI content suggestions
-        function loadAIContentSuggestions() {
-            // TODO: Fetch AI content suggestions from backend
-            // For now, using static suggestions
-            console.log('Loading AI content suggestions...');
-        }
-
-        // NEW: Initialize mood-based filtering
+        // Initialize mood-based filtering
         function initializeMoodFiltering() {
             moodOptions.forEach(option => {
                 option.addEventListener('click', function() {
@@ -1602,10 +1899,75 @@
             });
         }
 
-        // NEW: Initialize gamification data
-        function initializeGamificationData() {
-            // TODO: Fetch user's gamification data from Firebase
-            console.log('Initializing gamification data...');
+        // Initialize story viewer
+        function initializeStoryViewer() {
+            // Event listeners for story navigation
+            storyPrev.addEventListener('click', showPreviousStory);
+            storyNext.addEventListener('click', showNextStory);
+            storyClose.addEventListener('click', closeStoryViewer);
+            
+            // Keyboard navigation for stories
+            document.addEventListener('keydown', function(e) {
+                if (storyViewer.classList.contains('active')) {
+                    if (e.key === 'ArrowLeft') {
+                        showPreviousStory();
+                    } else if (e.key === 'ArrowRight') {
+                        showNextStory();
+                    } else if (e.key === 'Escape') {
+                        closeStoryViewer();
+                    }
+                }
+            });
+        }
+
+        // NEW: Initialize user tagging system
+        function initializeUserTagging() {
+            // Load friends list
+            loadFriendsList();
+            
+            // Set up tagging event listeners
+            modalPostInput.addEventListener('input', handleTaggingInput);
+            modalPostInput.addEventListener('keydown', handleTaggingKeydown);
+            
+            // Close tag suggestions when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!modalPostInput.contains(event.target) && !tagSuggestions.contains(event.target)) {
+                    tagSuggestions.classList.add('hidden');
+                }
+            });
+        }
+
+        // NEW: Initialize enhanced mood & interest system
+        function initializeEnhancedMoodInterest() {
+            moodItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    moodItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        }
+
+        // NEW: Initialize enhanced audience control
+        function initializeEnhancedAudienceControl() {
+            audienceOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    audienceOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        }
+
+        // NEW: Initialize reels system
+        function initializeReelsSystem() {
+            // Set up event listeners for reels
+            modalAddReel.addEventListener('click', openCreateReelModal);
+            closeReelModal.addEventListener('click', closeCreateReelModal);
+            cancelReel.addEventListener('click', closeCreateReelModal);
+            uploadReelVideo.addEventListener('click', () => document.getElementById('reelVideoInput').click());
+            publishReel.addEventListener('click', createReel);
+            
+            // Handle reel video upload
+            document.getElementById('reelVideoInput').addEventListener('change', handleReelVideoUpload);
         }
 
         // Set up event listeners
@@ -1651,17 +2013,6 @@
                 });
             });
             
-            // Content type filter
-            contentTypeFilterBtn.addEventListener('click', toggleContentTypeOptions);
-            document.querySelectorAll('.content-type-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    currentContentTypeFilter = this.dataset.contentType;
-                    contentTypeFilterBtn.innerHTML = `<i class="fas fa-filter mr-1"></i> ${this.textContent}`;
-                    contentTypeOptions.classList.add('hidden');
-                    reloadPosts();
-                });
-            });
-            
             // Close dropdowns when clicking outside
             document.addEventListener('click', function(event) {
                 if (!emotionFilterBtn.contains(event.target) && !emotionOptions.contains(event.target)) {
@@ -1669,12 +2020,6 @@
                 }
                 if (!interestFilterBtn.contains(event.target) && !interestOptions.contains(event.target)) {
                     interestOptions.classList.add('hidden');
-                }
-                if (!contentTypeFilterBtn.contains(event.target) && !contentTypeOptions.contains(event.target)) {
-                    contentTypeOptions.classList.add('hidden');
-                }
-                if (!emojiPicker.contains(event.target)) {
-                    emojiPicker.classList.remove('show');
                 }
             });
             
@@ -1684,60 +2029,27 @@
             // Media upload buttons
             document.getElementById('modalAddPhoto').addEventListener('click', () => document.getElementById('modalPhotoInput').click());
             document.getElementById('modalAddVideo').addEventListener('click', () => document.getElementById('modalVideoInput').click());
-            document.getElementById('modalAddAudio').addEventListener('click', () => document.getElementById('modalAudioInput').click());
-            document.getElementById('modalAddPoll').addEventListener('click', togglePollCreator);
-            document.getElementById('modalAddLink').addEventListener('click', addLinkToPost);
-            document.getElementById('modalAddCollaborative').addEventListener('click', toggleCollaborativePost);
             
             // File inputs
-            document.getElementById('modalPhotoInput').addEventListener('change', handleMediaUpload);
-            document.getElementById('modalVideoInput').addEventListener('change', handleMediaUpload);
-            document.getElementById('modalAudioInput').addEventListener('change', handleMediaUpload);
+            document.getElementById('modalPhotoInput').addEventListener('change', handlePostMediaUpload);
+            document.getElementById('modalVideoInput').addEventListener('change', handlePostMediaUpload);
             
-            // Add poll option
-            document.getElementById('addPollOption').addEventListener('click', addPollOption);
+            // Story creation buttons
+            addTextStory.addEventListener('click', () => openStoryTextInput());
+            addImageStory.addEventListener('click', () => document.getElementById('storyImageInput').click());
+            addVideoStory.addEventListener('click', () => document.getElementById('storyVideoInput').click());
             
-            // Remove poll option
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('remove-poll-option') || 
-                    e.target.parentElement.classList.contains('remove-poll-option')) {
-                    const optionElement = e.target.closest('.flex.items-center');
-                    if (document.querySelectorAll('#pollOptions .flex.items-center').length > 2) {
-                        optionElement.remove();
-                    } else {
-                        alert('Poll must have at least 2 options');
-                    }
-                }
-            });
+            // Story file inputs
+            document.getElementById('storyImageInput').addEventListener('change', handleStoryMediaUpload);
+            document.getElementById('storyVideoInput').addEventListener('change', handleStoryMediaUpload);
             
-            // AI Suggestion
-            applySuggestion.addEventListener('click', applyAISuggestion);
-            modalPostInput.addEventListener('input', generateAISuggestion);
-            
-            // Collaborative post
-            toggleCollaborative.addEventListener('click', function() {
-                collaborativeSettings.classList.toggle('hidden');
-                if (collaborativeSettings.classList.contains('hidden')) {
-                    this.textContent = 'Enable';
-                } else {
-                    this.textContent = 'Disable';
-                }
-            });
+            // Story modal buttons
+            closeStoryModal.addEventListener('click', closeCreateStoryModal);
+            cancelStory.addEventListener('click', closeCreateStoryModal);
+            publishStory.addEventListener('click', createStory);
             
             // Sign out button
             signOutBtn.addEventListener('click', signOut);
-            
-            // NEW FEATURE: AI Content Suggestions
-            refreshAISuggestions.addEventListener('click', refreshAISuggestionsHandler);
-            
-            // NEW FEATURE: Daily Vibe
-            shareGratitudeBtn.addEventListener('click', shareGratitudeHandler);
-            
-            // NEW FEATURE: Gamification
-            viewAllBadges.addEventListener('click', viewAllBadgesHandler);
-            
-            // NEW FEATURE: Anti-toxicity filter
-            modalPostInput.addEventListener('input', checkToxicity);
             
             // Mobile Navigation
             mobileNavToggle.addEventListener('click', toggleMobileNav);
@@ -1746,47 +2058,6 @@
         // Toggle mobile navigation
         function toggleMobileNav() {
             sidebar.classList.toggle('-translate-x-full');
-        }
-
-        // NEW: Refresh AI content suggestions
-        function refreshAISuggestionsHandler() {
-            // TODO: Fetch new AI content suggestions from backend
-            showNotification('Getting fresh content ideas...', 'success');
-            
-            // Simulate API call delay
-            setTimeout(() => {
-                showNotification('New content ideas loaded!', 'success');
-            }, 1000);
-        }
-
-        // NEW: Share gratitude post
-        function shareGratitudeHandler() {
-            openCreatePostModal();
-            modalPostInput.value = "I'm grateful for... #Gratitude";
-            modalPostInput.focus();
-        }
-
-        // NEW: View all badges
-        function viewAllBadgesHandler() {
-            // TODO: Open modal with all user badges and achievements
-            showNotification('Opening achievements dashboard...', 'success');
-        }
-
-        // NEW: Check for toxic content
-        function checkToxicity() {
-            const content = modalPostInput.value;
-            // TODO: Implement actual toxicity detection with AI/ML API
-            // For now, using simple keyword matching as placeholder
-            const toxicKeywords = ['hate', 'stupid', 'idiot', 'kill', 'hurt'];
-            const hasToxicContent = toxicKeywords.some(keyword => 
-                content.toLowerCase().includes(keyword)
-            );
-            
-            if (hasToxicContent && content.length > 10) {
-                toxicityWarning.classList.remove('hidden');
-            } else {
-                toxicityWarning.classList.add('hidden');
-            }
         }
 
         // Set up keyboard shortcuts
@@ -1816,13 +2087,11 @@
                             toggleTheme();
                         }
                         break;
-                    case '?':
-                        e.preventDefault();
-                        toggleKeyboardShortcuts();
-                        break;
                     case 'Escape':
                         closeCreatePostModal();
-                        keyboardShortcuts.classList.remove('show');
+                        closeCreateStoryModal();
+                        closeStoryViewer();
+                        closeCreateReelModal();
                         break;
                 }
             });
@@ -1939,7 +2208,7 @@
                 energy: 0,
                 badges: ['newcomer'],
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                // NEW: Gamification data
+                // Gamification data
                 streak: 0,
                 points: 0,
                 achievements: []
@@ -1960,7 +2229,7 @@
         function updateUserUI() {
             if (currentUser && userData) {
                 const displayName = userData.userName || currentUser.displayName || 'User';
-                const photoURL = userData.userAvatar || currentUser.photoURL || 'https://via.placeholder.com/40';
+                const photoURL = userData.userAvatar || currentUser.photoURL || '';
                 
                 userAvatar.src = photoURL;
                 userDisplayName.textContent = displayName;
@@ -1968,6 +2237,10 @@
                 sidebarUserName.textContent = displayName;
                 currentUserAvatar.src = photoURL;
                 currentUserName.textContent = displayName;
+                storyUserAvatar.src = photoURL;
+                storyUserName.textContent = displayName;
+                reelUserAvatar.src = photoURL;
+                reelUserName.textContent = displayName;
                 
                 postCount.textContent = userData.postsCount || 0;
                 followerCount.textContent = userData.followersCount || 0;
@@ -1982,13 +2255,395 @@
                 loadUserBadges(userData.badges || []);
             } else if (currentUser) {
                 // Fallback to Firebase Auth data if userData not loaded yet
-                userAvatar.src = currentUser.photoURL || 'https://via.placeholder.com/40';
-                userDisplayName.textContent = currentUser.displayName || 'User';
-                sidebarUserAvatar.src = currentUser.photoURL || 'https://via.placeholder.com/40';
-                sidebarUserName.textContent = currentUser.displayName || 'User';
-                currentUserAvatar.src = currentUser.photoURL || 'https://via.placeholder.com/40';
-                currentUserName.textContent = currentUser.displayName || 'User';
+                const photoURL = currentUser.photoURL || '';
+                const displayName = currentUser.displayName || 'User';
+                
+                userAvatar.src = photoURL;
+                userDisplayName.textContent = displayName;
+                sidebarUserAvatar.src = photoURL;
+                sidebarUserName.textContent = displayName;
+                currentUserAvatar.src = photoURL;
+                currentUserName.textContent = displayName;
+                storyUserAvatar.src = photoURL;
+                storyUserName.textContent = displayName;
+                reelUserAvatar.src = photoURL;
+                reelUserName.textContent = displayName;
             }
+        }
+
+        // NEW: Load friends list for tagging
+        function loadFriendsList() {
+            if (!currentUser) return;
+            
+            // Fetch user's friends from Firebase
+            db.collection('users').doc(currentUser.uid).collection('friends')
+                .get()
+                .then(snapshot => {
+                    friendsList = [];
+                    snapshot.forEach(doc => {
+                        const friend = doc.data();
+                        friendsList.push({
+                            id: doc.id,
+                            userName: friend.userName,
+                            userAvatar: friend.userAvatar
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading friends list:', error);
+                    friendsList = [];
+                });
+        }
+
+        // NEW: Load groups from Firebase
+        function loadGroups() {
+            if (!currentUser) return;
+            
+            db.collection('groups')
+                .where('members', 'array-contains', currentUser.uid)
+                .limit(5)
+                .get()
+                .then(snapshot => {
+                    groups = [];
+                    snapshot.forEach(doc => {
+                        groups.push({ id: doc.id, ...doc.data() });
+                    });
+                    displayGroups(groups);
+                })
+                .catch(error => {
+                    console.error('Error loading groups:', error);
+                    groupsContainer.innerHTML = '<div class="text-center py-4 text-theme-secondary">Unable to load groups</div>';
+                });
+        }
+
+        // NEW: Display groups
+        function displayGroups(groups) {
+            if (groups.length === 0) {
+                groupsContainer.innerHTML = '<div class="text-center py-4 text-theme-secondary">You haven\'t joined any groups yet</div>';
+                return;
+            }
+            
+            let html = '';
+            groups.forEach(group => {
+                html += `
+                    <div class="group-card">
+                        <div class="group-header">
+                            <img src="${group.avatar || ''}" alt="${group.name}" class="group-avatar">
+                            <div class="group-info">
+                                <div class="group-name">${group.name}</div>
+                                <div class="group-members">${group.memberCount || 0} members</div>
+                            </div>
+                        </div>
+                        <div class="group-description">${group.description || 'No description available'}</div>
+                        <div class="group-actions">
+                            <div class="group-action-btn group-view-btn">View Group</div>
+                            <div class="group-action-btn group-join-btn">Leave Group</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            groupsContainer.innerHTML = html;
+        }
+
+        // NEW: Load collaborative spaces from Firebase
+        function loadSpaces() {
+            if (!currentUser) return;
+            
+            db.collection('spaces')
+                .where('members', 'array-contains', currentUser.uid)
+                .limit(5)
+                .get()
+                .then(snapshot => {
+                    spaces = [];
+                    snapshot.forEach(doc => {
+                        spaces.push({ id: doc.id, ...doc.data() });
+                    });
+                    displaySpaces(spaces);
+                })
+                .catch(error => {
+                    console.error('Error loading spaces:', error);
+                    spacesContainer.innerHTML = '<div class="text-center py-4 text-theme-secondary">Unable to load spaces</div>';
+                });
+        }
+
+        // NEW: Display spaces
+        function displaySpaces(spaces) {
+            if (spaces.length === 0) {
+                spacesContainer.innerHTML = '<div class="text-center py-4 text-theme-secondary">You haven\'t joined any spaces yet</div>';
+                return;
+            }
+            
+            let html = '';
+            spaces.forEach(space => {
+                html += `
+                    <div class="space-card">
+                        <div class="space-header">
+                            <img src="${space.avatar || ''}" alt="${space.name}" class="space-avatar">
+                            <div class="space-info">
+                                <div class="space-name">${space.name}</div>
+                                <div class="space-members">${space.memberCount || 0} members</div>
+                            </div>
+                        </div>
+                        <div class="space-description">${space.description || 'No description available'}</div>
+                        <div class="space-actions">
+                            <div class="space-action-btn space-view-btn">View Space</div>
+                            <div class="space-action-btn space-join-btn">Leave Space</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            spacesContainer.innerHTML = html;
+        }
+
+        // NEW: Load events from Firebase
+        function loadEvents() {
+            if (!currentUser) return;
+            
+            const now = new Date();
+            db.collection('events')
+                .where('date', '>=', now)
+                .orderBy('date', 'asc')
+                .limit(5)
+                .get()
+                .then(snapshot => {
+                    events = [];
+                    snapshot.forEach(doc => {
+                        events.push({ id: doc.id, ...doc.data() });
+                    });
+                    displayEvents(events);
+                })
+                .catch(error => {
+                    console.error('Error loading events:', error);
+                    eventsContainer.innerHTML = '<div class="text-center py-4 text-theme-secondary">Unable to load events</div>';
+                });
+        }
+
+        // NEW: Display events
+        function displayEvents(events) {
+            if (events.length === 0) {
+                eventsContainer.innerHTML = '<div class="text-center py-4 text-theme-secondary">No upcoming events</div>';
+                return;
+            }
+            
+            let html = '';
+            events.forEach(event => {
+                const eventDate = event.date.toDate();
+                const month = eventDate.toLocaleString('default', { month: 'short' });
+                const day = eventDate.getDate();
+                
+                html += `
+                    <div class="event-card">
+                        <div class="event-header">
+                            <div class="event-date">
+                                <div class="event-month">${month}</div>
+                                <div class="event-day">${day}</div>
+                            </div>
+                            <div class="event-info">
+                                <div class="event-name">${event.name}</div>
+                                <div class="event-details">${event.location || 'Online'} • ${event.attendeeCount || 0} attending</div>
+                            </div>
+                        </div>
+                        <div class="event-description">${event.description || 'No description available'}</div>
+                        <div class="event-actions">
+                            <div class="event-action-btn event-view-btn">View Event</div>
+                            <div class="event-action-btn event-rsvp-btn">RSVP</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            eventsContainer.innerHTML = html;
+        }
+
+        // NEW: Load reels from Firebase
+        function loadReels() {
+            if (!currentUser) return;
+            
+            db.collection('reels')
+                .orderBy('timestamp', 'desc')
+                .limit(5)
+                .get()
+                .then(snapshot => {
+                    reels = [];
+                    snapshot.forEach(doc => {
+                        reels.push({ id: doc.id, ...doc.data() });
+                    });
+                    displayReels(reels);
+                })
+                .catch(error => {
+                    console.error('Error loading reels:', error);
+                    reelsContainer.innerHTML = '<div class="text-center py-4 text-theme-secondary">Unable to load reels</div>';
+                });
+        }
+
+        // NEW: Display reels
+        function displayReels(reels) {
+            if (reels.length === 0) {
+                reelsContainer.innerHTML = '<div class="text-center py-4 text-theme-secondary">No reels available</div>';
+                return;
+            }
+            
+            let html = '';
+            reels.forEach(reel => {
+                html += `
+                    <div class="post-card p-5">
+                        <div class="flex items-start space-x-3">
+                            <img src="${reel.userAvatar || ''}" alt="${reel.userName}'s avatar" class="w-10 h-10 rounded-2xl object-cover cursor-pointer">
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="font-semibold text-theme-primary cursor-pointer">${reel.userName}</h3>
+                                        <span class="text-xs text-theme-secondary">${formatDate(reel.timestamp?.toDate())}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="reel-container mt-3">
+                                    <video class="reel-video" controls>
+                                        <source src="${reel.videoUrl}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                    <div class="reel-actions">
+                                        <div class="reel-action">
+                                            <i class="fas fa-heart"></i>
+                                            <span>${reel.likesCount || 0}</span>
+                                        </div>
+                                        <div class="reel-action">
+                                            <i class="fas fa-comment"></i>
+                                            <span>${reel.commentsCount || 0}</span>
+                                        </div>
+                                        <div class="reel-action">
+                                            <i class="fas fa-share"></i>
+                                            <span>${reel.sharesCount || 0}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            reelsContainer.innerHTML = html;
+        }
+
+        // NEW: Load saved posts from Firebase
+        function loadSavedPosts() {
+            if (!currentUser) return;
+            
+            db.collection('users').doc(currentUser.uid).collection('savedPosts')
+                .orderBy('savedAt', 'desc')
+                .limit(5)
+                .get()
+                .then(snapshot => {
+                    const savedPostIds = [];
+                    snapshot.forEach(doc => {
+                        savedPostIds.push(doc.id);
+                    });
+                    
+                    // Fetch the actual posts
+                    if (savedPostIds.length > 0) {
+                        db.collection('posts')
+                            .where(firebase.firestore.FieldPath.documentId(), 'in', savedPostIds)
+                            .get()
+                            .then(postsSnapshot => {
+                                savedPosts = [];
+                                postsSnapshot.forEach(doc => {
+                                    savedPosts.push({ id: doc.id, ...doc.data() });
+                                });
+                                displaySavedPosts(savedPosts);
+                            })
+                            .catch(error => {
+                                console.error('Error loading saved posts:', error);
+                                savedContainer.innerHTML = '<div class="text-center py-4 text-theme-secondary">Unable to load saved posts</div>';
+                            });
+                    } else {
+                        savedContainer.innerHTML = '<div class="text-center py-4 text-theme-secondary">No saved posts yet</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading saved posts:', error);
+                    savedContainer.innerHTML = '<div class="text-center py-4 text-theme-secondary">Unable to load saved posts</div>';
+                });
+        }
+
+        // NEW: Display saved posts
+        function displaySavedPosts(savedPosts) {
+            if (savedPosts.length === 0) {
+                savedContainer.innerHTML = '<div class="text-center py-4 text-theme-secondary">No saved posts yet</div>';
+                return;
+            }
+            
+            let html = '';
+            savedPosts.forEach(post => {
+                // Format hashtags and mentions
+                let content = post.content || '';
+                if (post.hashtags) {
+                    post.hashtags.forEach(tag => {
+                        content = content.replace(
+                            new RegExp(`#${tag}`, 'g'),
+                            `<span class="hashtag text-theme-accent cursor-pointer">#${tag}</span>`
+                        );
+                    });
+                }
+                
+                if (post.mentions) {
+                    post.mentions.forEach(mention => {
+                        content = content.replace(
+                            new RegExp(`@${mention}`, 'g'),
+                            `<span class="mention text-theme-accent cursor-pointer">@${mention}</span>`
+                        );
+                    });
+                }
+                
+                // Check if current user liked the post
+                const userLiked = post.likes && post.likes.includes(currentUser.uid);
+                
+                html += `
+                    <div class="post-card p-5">
+                        <div class="flex items-start space-x-3">
+                            <img src="${post.userAvatar || ''}" alt="${post.userName}'s avatar" class="w-10 h-10 rounded-2xl object-cover cursor-pointer">
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="font-semibold text-theme-primary cursor-pointer">${post.userName}</h3>
+                                        <span class="text-xs text-theme-secondary">${formatDate(post.timestamp?.toDate())}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3 text-theme-primary">
+                                    ${content}
+                                </div>
+                                
+                                <div class="flex items-center justify-between mt-4 pt-3 border-t border-purple-800">
+                                    <div class="flex items-center space-x-4 text-theme-secondary">
+                                        <div class="relative reaction-container">
+                                            <button class="reaction-btn flex items-center space-x-1 ${userLiked ? 'text-red-500' : 'hover:text-theme-accent'} transition" data-post-id="${post.id}">
+                                                <i class="fas fa-heart"></i>
+                                                <span>${post.likesCount || 0}</span>
+                                            </button>
+                                        </div>
+                                        <button class="comment-btn flex items-center space-x-1 hover:text-theme-accent transition" data-post-id="${post.id}">
+                                            <i class="fas fa-comment"></i>
+                                            <span>${post.commentsCount || 0}</span>
+                                        </button>
+                                        <button class="share-btn flex items-center space-x-1 hover:text-theme-accent transition">
+                                            <i class="fas fa-share"></i>
+                                            <span>${post.sharesCount || 0}</span>
+                                        </button>
+                                    </div>
+                                    <button class="save-post-btn text-theme-accent transition">
+                                        <i class="fas fa-bookmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            savedContainer.innerHTML = html;
         }
 
         // Toggle theme
@@ -2013,26 +2668,12 @@
         function toggleEmotionOptions() {
             emotionOptions.classList.toggle('hidden');
             interestOptions.classList.add('hidden');
-            contentTypeOptions.classList.add('hidden');
         }
 
         // Toggle interest options
         function toggleInterestOptions() {
             interestOptions.classList.toggle('hidden');
             emotionOptions.classList.add('hidden');
-            contentTypeOptions.classList.add('hidden');
-        }
-
-        // Toggle content type options
-        function toggleContentTypeOptions() {
-            contentTypeOptions.classList.toggle('hidden');
-            emotionOptions.classList.add('hidden');
-            interestOptions.classList.add('hidden');
-        }
-
-        // Toggle keyboard shortcuts display
-        function toggleKeyboardShortcuts() {
-            keyboardShortcuts.classList.toggle('show');
         }
 
         // Open create post modal
@@ -2041,28 +2682,229 @@
                 alert('Please sign in to create a post');
                 return;
             }
-            createPostModal.classList.remove('hidden');
+            createPostModal.classList.add('active');
             modalPostInput.focus();
         }
 
         // Close create post modal
         function closeCreatePostModal() {
-            createPostModal.classList.add('hidden');
-            resetPostModal();
+            createPostModal.classList.remove('active');
+            setTimeout(() => {
+                resetPostModal();
+            }, 300);
         }
 
         // Reset post modal to initial state
         function resetPostModal() {
             modalPostInput.value = '';
-            document.getElementById('pollCreator').classList.add('hidden');
             document.getElementById('modalMediaPreview').classList.add('hidden');
-            document.getElementById('linkPreview').classList.add('hidden');
             document.getElementById('postMood').value = '';
             document.getElementById('postAudience').value = 'public';
-            aiSuggestion.classList.add('hidden');
-            collaborativePost.classList.add('hidden');
-            collaborativeSettings.classList.add('hidden');
-            toxicityWarning.classList.add('hidden');
+            
+            // NEW: Reset tagging system
+            taggedUsers = [];
+            updateTaggedUsersDisplay();
+            tagSuggestions.classList.add('hidden');
+            
+            // NEW: Reset mood selection
+            moodItems.forEach(item => item.classList.remove('active'));
+            
+            // NEW: Reset audience selection
+            audienceOptions.forEach(option => {
+                if (option.dataset.audience === 'public') {
+                    option.classList.add('active');
+                } else {
+                    option.classList.remove('active');
+                }
+            });
+        }
+
+        // NEW: Open create reel modal
+        function openCreateReelModal() {
+            if (!currentUser) {
+                alert('Please sign in to create a reel');
+                return;
+            }
+            closeCreatePostModal();
+            createReelModal.classList.add('active');
+        }
+
+        // NEW: Close create reel modal
+        function closeCreateReelModal() {
+            createReelModal.classList.remove('active');
+            setTimeout(() => {
+                resetReelModal();
+            }, 300);
+        }
+
+        // NEW: Reset reel modal to initial state
+        function resetReelModal() {
+            reelVideoFile = null;
+            reelVideoDuration = 0;
+            reelVideoPreview.classList.add('hidden');
+            reelUploadArea.classList.remove('hidden');
+            reelPreviewVideo.src = '';
+            reelDuration.textContent = 'Duration: 0s';
+        }
+
+        // NEW: Handle user tagging input
+        function handleTaggingInput(event) {
+            const value = event.target.value;
+            const cursorPosition = event.target.selectionStart;
+            
+            // Check if user is typing @ to tag someone
+            const textBeforeCursor = value.substring(0, cursorPosition);
+            const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+            
+            if (lastAtIndex !== -1) {
+                const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+                const spaceIndex = textAfterAt.indexOf(' ');
+                
+                if (spaceIndex === -1) {
+                    // User is typing a tag without spaces
+                    const searchTerm = textAfterAt.toLowerCase();
+                    currentTaggingIndex = lastAtIndex;
+                    
+                    // Show tag suggestions
+                    showTagSuggestions(searchTerm);
+                    return;
+                }
+            }
+            
+            // Hide tag suggestions if not tagging
+            tagSuggestions.classList.add('hidden');
+        }
+
+        // NEW: Handle tagging keyboard events
+        function handleTaggingKeydown(event) {
+            if (tagSuggestions.classList.contains('hidden')) return;
+            
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                const firstSuggestion = tagSuggestions.querySelector('.tag-suggestion');
+                if (firstSuggestion) firstSuggestion.focus();
+            } else if (event.key === 'Escape') {
+                tagSuggestions.classList.add('hidden');
+            }
+        }
+
+        // NEW: Show tag suggestions
+        function showTagSuggestions(searchTerm) {
+            const filteredFriends = friendsList.filter(friend => 
+                friend.userName.toLowerCase().includes(searchTerm)
+            );
+            
+            if (filteredFriends.length === 0) {
+                tagSuggestions.classList.add('hidden');
+                return;
+            }
+            
+            tagSuggestions.innerHTML = '';
+            filteredFriends.forEach(friend => {
+                const suggestion = document.createElement('div');
+                suggestion.className = 'tag-suggestion';
+                suggestion.innerHTML = `
+                    <img src="${friend.userAvatar}" alt="${friend.userName}">
+                    <span>${friend.userName}</span>
+                `;
+                suggestion.addEventListener('click', () => selectTag(friend));
+                tagSuggestions.appendChild(suggestion);
+            });
+            
+            tagSuggestions.classList.remove('hidden');
+        }
+
+        // NEW: Select a tag from suggestions
+        function selectTag(friend) {
+            const text = modalPostInput.value;
+            const textBeforeTag = text.substring(0, currentTaggingIndex);
+            const textAfterTag = text.substring(currentTaggingIndex).replace(/@[^\s]*/, '');
+            
+            // Update text with tagged user
+            modalPostInput.value = textBeforeTag + `@${friend.userName} ` + textAfterTag;
+            
+            // Add to tagged users
+            if (!taggedUsers.some(tagged => tagged.id === friend.id)) {
+                taggedUsers.push(friend);
+                updateTaggedUsersDisplay();
+            }
+            
+            // Hide suggestions and focus back on input
+            tagSuggestions.classList.add('hidden');
+            modalPostInput.focus();
+            
+            // Set cursor position after the tag
+            const newCursorPosition = textBeforeTag.length + friend.userName.length + 2;
+            modalPostInput.setSelectionRange(newCursorPosition, newCursorPosition);
+        }
+
+        // NEW: Update tagged users display
+        function updateTaggedUsersDisplay() {
+            taggedUsersContainer.innerHTML = '';
+            
+            taggedUsers.forEach(user => {
+                const tagElement = document.createElement('div');
+                tagElement.className = 'tagged-user';
+                tagElement.innerHTML = `
+                    <img src="${user.userAvatar}" alt="${user.userName}">
+                    <span>${user.userName}</span>
+                    <span class="remove-tag" data-user-id="${user.id}">×</span>
+                `;
+                taggedUsersContainer.appendChild(tagElement);
+            });
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-tag').forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.dataset.userId;
+                    taggedUsers = taggedUsers.filter(user => user.id !== userId);
+                    updateTaggedUsersDisplay();
+                    
+                    // Also remove from text
+                    const text = modalPostInput.value;
+                    const userName = this.previousElementSibling.textContent;
+                    modalPostInput.value = text.replace(`@${userName} `, '');
+                });
+            });
+        }
+
+        // NEW: Handle reel video upload
+        function handleReelVideoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Check if file is a video
+            if (!file.type.startsWith('video/')) {
+                alert('Please select a video file');
+                return;
+            }
+            
+            // Create a video element to check duration
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            
+            video.onloadedmetadata = function() {
+                window.URL.revokeObjectURL(video.src);
+                const duration = video.duration;
+                
+                // Check if video is within 6 seconds
+                if (duration > 6) {
+                    alert('Reel videos must be 6 seconds or shorter');
+                    return;
+                }
+                
+                // Store video file and duration
+                reelVideoFile = file;
+                reelVideoDuration = duration;
+                
+                // Show preview
+                reelPreviewVideo.src = URL.createObjectURL(file);
+                reelDuration.textContent = `Duration: ${duration.toFixed(1)}s`;
+                reelVideoPreview.classList.remove('hidden');
+                reelUploadArea.classList.add('hidden');
+            };
+            
+            video.src = URL.createObjectURL(file);
         }
 
         // Create Post Function
@@ -2078,8 +2920,13 @@
                 return;
             }
             
-            const mood = document.getElementById('postMood').value;
-            const audience = document.getElementById('postAudience').value;
+            // Get selected mood
+            const selectedMoodItem = document.querySelector('.mood-item.active');
+            const mood = selectedMoodItem ? selectedMoodItem.dataset.mood : '';
+            
+            // Get selected audience
+            const selectedAudienceOption = document.querySelector('.audience-option.active');
+            const audience = selectedAudienceOption ? selectedAudienceOption.dataset.audience : 'public';
             
             // Create post object
             const postData = {
@@ -2097,56 +2944,24 @@
                 viewsCount: 0,
                 hashtags: extractHashtags(content),
                 mentions: extractMentions(content),
+                // NEW: Tagged users
+                taggedUsers: taggedUsers.map(user => ({
+                    id: user.id,
+                    userName: user.userName,
+                    userAvatar: user.userAvatar
+                })),
                 // Kynecta Unique Feature: Post Energy
                 energy: calculatePostEnergy(content),
-                // Kynecta Unique Feature: AI Generated
-                aiGenerated: false,
-                // NEW: Vibe reactions
+                // Vibe reactions
                 vibeReactions: {
                     energy: 0,
                     deep: 0,
                     pure: 0,
                     creative: 0
                 },
-                // NEW: Appreciation count
+                // Appreciation count
                 appreciationCount: 0
             };
-            
-            // Add poll data if applicable
-            if (document.getElementById('pollCreator').classList.contains('hidden') === false) {
-                const pollQuestion = document.getElementById('pollQuestion').value;
-                const pollOptions = Array.from(document.querySelectorAll('#pollOptions input')).map(input => ({
-                    text: input.value,
-                    votes: 0,
-                    voters: []
-                }));
-                
-                if (pollQuestion && pollOptions.length >= 2) {
-                    postData.poll = {
-                        question: pollQuestion,
-                        options: pollOptions,
-                        multipleAnswers: document.getElementById('multiplePollAnswers').checked,
-                        totalVotes: 0
-                    };
-                }
-            }
-            
-            // Kynecta Unique Feature: Collaborative Post
-            if (!collaborativeSettings.classList.contains('hidden')) {
-                const collaborativeTitle = document.getElementById('collaborativeTitle').value;
-                const collaborativeType = document.getElementById('collaborativeType').value;
-                const allowEdits = document.getElementById('allowEdits').checked;
-                
-                if (collaborativeTitle) {
-                    postData.collaborative = {
-                        title: collaborativeTitle,
-                        type: collaborativeType,
-                        allowEdits: allowEdits,
-                        collaborators: [currentUser.uid],
-                        isActive: true
-                    };
-                }
-            }
             
             // Save to Firebase
             db.collection('posts').add(postData)
@@ -2161,14 +2976,77 @@
                     
                     // Kynecta Unique Feature: Update user energy
                     updateUserEnergy(5);
-                    
-                    // NEW: Update user streak
-                    updateUserStreak();
                 })
                 .catch(error => {
                     console.error('Error publishing post: ', error);
                     showNotification('Error publishing post: ' + error.message, 'error');
                 });
+        }
+
+        // NEW: Create Reel Function
+        function createReel() {
+            if (!currentUser) {
+                alert('Please sign in to create a reel');
+                return;
+            }
+
+            if (!reelVideoFile) {
+                alert('Please select a video for your reel');
+                return;
+            }
+            
+            // Upload video to Cloudinary
+            const formData = new FormData();
+            formData.append('file', reelVideoFile);
+            formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+            formData.append('cloud_name', cloudinaryConfig.cloudName);
+            
+            fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/video/upload`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.secure_url) {
+                    // Create reel object
+                    const reelData = {
+                        videoUrl: data.secure_url,
+                        userId: currentUser.uid,
+                        userName: userData?.userName || currentUser.displayName || 'Anonymous',
+                        userAvatar: userData?.userAvatar || currentUser.photoURL || '',
+                        duration: reelVideoDuration,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        likes: [],
+                        likesCount: 0,
+                        commentsCount: 0,
+                        sharesCount: 0,
+                        viewsCount: 0
+                    };
+                    
+                    // Save to Firebase
+                    return db.collection('reels').add(reelData);
+                } else {
+                    throw new Error('Upload failed');
+                }
+            })
+            .then(docRef => {
+                console.log('Reel published with ID: ', docRef.id);
+                showNotification('Reel published successfully!', 'success');
+                closeCreateReelModal();
+                
+                // Update user's post count
+                updateUserPostCount(1);
+                
+                // Kynecta Unique Feature: Update user energy
+                updateUserEnergy(5);
+                
+                // Reload reels
+                loadReels();
+            })
+            .catch(error => {
+                console.error('Error publishing reel: ', error);
+                showNotification('Error publishing reel: ' + error.message, 'error');
+            });
         }
 
         // Update user post count
@@ -2232,12 +3110,6 @@
             });
         }
 
-        // NEW: Update user streak
-        function updateUserStreak() {
-            // TODO: Implement streak tracking logic in Firebase
-            console.log('Updating user streak...');
-        }
-
         // Like Post Function
         function likePost(postId) {
             if (!currentUser) {
@@ -2285,13 +3157,16 @@
                 if (likeAdded) {
                     updateUserEnergy(1);
                 }
+                
+                // Mark post as viewed for automatic hiding
+                markPostAsViewed(postId);
             }).catch(error => {
                 console.error('Transaction failed: ', error);
                 showNotification('Error liking post: ' + error.message, 'error');
             });
         }
 
-        // NEW: Add vibe reaction to post
+        // Add vibe reaction to post
         function addVibeReaction(postId, vibeType) {
             if (!currentUser) {
                 alert('Please sign in to react to posts');
@@ -2330,47 +3205,29 @@
                 
                 // Update user energy
                 updateUserEnergy(1);
+                
+                // Mark post as viewed for automatic hiding
+                markPostAsViewed(postId);
             }).catch(error => {
                 console.error('Transaction failed: ', error);
                 showNotification('Error adding reaction: ' + error.message, 'error');
             });
         }
 
-        // NEW: Add appreciation to post
-        function addAppreciation(postId) {
-            if (!currentUser) {
-                alert('Please sign in to appreciate posts');
-                return;
-            }
-
-            const postRef = db.collection('posts').doc(postId);
+        // Mark post as viewed for automatic hiding
+        function markPostAsViewed(postId) {
+            viewedPosts.add(postId);
             
-            // Use a transaction to safely update the appreciation count
-            db.runTransaction(transaction => {
-                return transaction.get(postRef).then(postDoc => {
-                    if (!postDoc.exists) {
-                        throw new Error('Post does not exist!');
-                    }
-                    
-                    const postData = postDoc.data();
-                    const appreciationCount = postData.appreciationCount || 0;
-                    
-                    transaction.update(postRef, {
-                        appreciationCount: appreciationCount + 1
-                    });
-                    
-                    return true;
-                });
-            }).then(success => {
-                console.log('Added appreciation');
-                reloadPosts();
-                
-                // TODO: Process payment through Flutterwave/M-Pesa API
-                showNotification('Thank you for your appreciation!', 'success');
-            }).catch(error => {
-                console.error('Transaction failed: ', error);
-                showNotification('Error adding appreciation: ' + error.message, 'error');
-            });
+            // Hide the post after a short delay
+            setTimeout(() => {
+                const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+                if (postElement) {
+                    postElement.classList.add('hiding');
+                    setTimeout(() => {
+                        postElement.remove();
+                    }, 500);
+                }
+            }, 1000);
         }
 
         // Submit Comment Function
@@ -2391,9 +3248,7 @@
                 userAvatar: userData?.userAvatar || currentUser.photoURL || '',
                 content: commentText.trim(),
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                // NEW: Nested replies
                 replies: [],
-                // NEW: Voice comment placeholder
                 hasVoiceComment: false
             };
 
@@ -2419,6 +3274,9 @@
                     
                     // Kynecta Unique Feature: Update user energy
                     updateUserEnergy(2);
+                    
+                    // Mark post as viewed for automatic hiding
+                    markPostAsViewed(postId);
                 })
                 .catch(error => {
                     console.error('Error adding comment: ', error);
@@ -2426,157 +3284,13 @@
                 });
         }
 
-        // NEW: Submit nested reply to comment
-        function submitReply(postId, commentId, replyText) {
-            if (!currentUser) {
-                alert('Please sign in to reply');
-                return;
-            }
-
-            if (!replyText.trim()) {
-                alert('Please enter a reply');
-                return;
-            }
-
-            const replyData = {
-                userId: currentUser.uid,
-                userName: userData?.userName || currentUser.displayName || 'Anonymous',
-                userAvatar: userData?.userAvatar || currentUser.photoURL || '',
-                content: replyText.trim(),
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            const commentRef = db.collection('posts').doc(postId).collection('comments').doc(commentId);
-            
-            // Use a transaction to add the reply to the comment's replies array
-            db.runTransaction(transaction => {
-                return transaction.get(commentRef).then(commentDoc => {
-                    if (!commentDoc.exists) {
-                        throw new Error('Comment does not exist!');
-                    }
-                    
-                    const commentData = commentDoc.data();
-                    const replies = commentData.replies || [];
-                    
-                    // Add the new reply
-                    replies.push(replyData);
-                    
-                    transaction.update(commentRef, {
-                        replies: replies
-                    });
-                    
-                    return true;
-                });
-            }).then(success => {
-                console.log('Reply added successfully');
-                showNotification('Reply added!', 'success');
-                reloadPosts();
-                
-                // Update user energy
-                updateUserEnergy(1);
-            }).catch(error => {
-                console.error('Error adding reply: ', error);
-                showNotification('Error adding reply: ' + error.message, 'error');
-            });
-        }
-
-        // Toggle poll creator
-        function togglePollCreator() {
-            const pollCreator = document.getElementById('pollCreator');
-            pollCreator.classList.toggle('hidden');
-        }
-
-        // Toggle collaborative post
-        function toggleCollaborativePost() {
-            collaborativePost.classList.toggle('hidden');
-        }
-
-        // Add poll option
-        function addPollOption() {
-            const pollOptions = document.getElementById('pollOptions');
-            const optionCount = pollOptions.children.length;
-            
-            if (optionCount >= 6) {
-                alert('Maximum 6 options allowed');
-                return;
-            }
-            
-            const newOption = document.createElement('div');
-            newOption.className = 'flex items-center space-x-2';
-            newOption.innerHTML = `
-                <input type="text" placeholder="Option ${optionCount + 1}" class="flex-1 p-2 glass border border-purple-700 rounded-lg">
-                <button class="text-red-500 remove-poll-option"><i class="fas fa-times"></i></button>
-            `;
-            
-            pollOptions.appendChild(newOption);
-        }
-
-        // Add link to post
-        function addLinkToPost() {
-            const url = prompt('Enter URL:');
-            if (url) {
-                // In a real implementation, you would fetch the link metadata
-                // For this demo, we'll use placeholder data
-                document.getElementById('linkTitle').textContent = 'Example Website';
-                document.getElementById('linkDescription').textContent = 'This is an example website description that would be fetched from the provided URL.';
-                document.getElementById('linkDomain').textContent = new URL(url).hostname;
-                document.getElementById('linkImage').src = 'https://via.placeholder.com/150';
-                document.getElementById('linkPreview').classList.remove('hidden');
-            }
-        }
-
-        // Kynecta Unique Feature: Generate AI Suggestion
-        function generateAISuggestion() {
-            const content = modalPostInput.value.trim();
-            if (content.length > 10 && content.length < 100) {
-                // Simple AI suggestion logic - in a real app, this would call an AI API
-                const suggestions = [
-                    "Try adding a question to engage your audience!",
-                    "Consider adding relevant hashtags to increase visibility.",
-                    "This would be a great post to add a poll to!",
-                    "Your post might benefit from adding an image or video.",
-                    "This sounds like a perfect topic for a collaborative discussion!"
-                ];
-                
-                const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
-                aiSuggestionText.textContent = randomSuggestion;
-                aiSuggestion.classList.remove('hidden');
-            } else {
-                aiSuggestion.classList.add('hidden');
-            }
-        }
-
-        // Kynecta Unique Feature: Apply AI Suggestion
-        function applyAISuggestion() {
-            const suggestion = aiSuggestionText.textContent;
-            if (suggestion.includes("question")) {
-                modalPostInput.value += " What do you think?";
-            } else if (suggestion.includes("hashtags")) {
-                modalPostInput.value += " #Kynecta #SocialMedia";
-            } else if (suggestion.includes("poll")) {
-                togglePollCreator();
-            } else if (suggestion.includes("image") || suggestion.includes("video")) {
-                document.getElementById('modalAddPhoto').click();
-            } else if (suggestion.includes("collaborative")) {
-                toggleCollaborativePost();
-            }
-            
-            aiSuggestion.classList.add('hidden');
-        }
-
-        // Handle media upload
-        function handleMediaUpload(event) {
+        // Handle post media upload
+        function handlePostMediaUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
             
             const modalMediaPreview = document.getElementById('modalMediaPreview');
             modalMediaPreview.classList.remove('hidden');
-            
-            // Show upload progress
-            const uploadProgress = document.getElementById('uploadProgress');
-            const uploadProgressBar = document.getElementById('uploadProgressBar');
-            uploadProgress.classList.remove('hidden');
-            uploadProgressBar.style.width = '0%';
             
             // Determine file type
             const fileType = file.type.split('/')[0];
@@ -2584,7 +3298,6 @@
             // Hide all media previews first
             document.getElementById('modalPreviewImage').classList.add('hidden');
             document.getElementById('modalPreviewVideo').classList.add('hidden');
-            document.getElementById('modalPreviewAudio').classList.add('hidden');
             
             // Show appropriate preview
             if (fileType === 'image') {
@@ -2601,27 +3314,7 @@
                     document.getElementById('modalPreviewVideo').classList.remove('hidden');
                 };
                 reader.readAsDataURL(file);
-            } else if (fileType === 'audio') {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('modalPreviewAudio').src = e.target.result;
-                    document.getElementById('modalPreviewAudio').classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
             }
-            
-            // Simulate upload progress
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 5;
-                uploadProgressBar.style.width = `${progress}%`;
-                
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    uploadProgress.classList.add('hidden');
-                    // In a real implementation, you would upload to Firebase Storage here
-                }
-            }, 100);
         }
 
         // Handle search
@@ -2674,7 +3367,7 @@
                     const user = doc.data();
                     html += `
                         <div class="search-result-item p-3 rounded-lg glass mb-2 cursor-pointer hover:bg-purple-900/30 transition flex items-center">
-                            <img src="${user.userAvatar || 'https://via.placeholder.com/40'}" class="w-8 h-8 rounded-full mr-3">
+                            <img src="${user.userAvatar || ''}" class="w-8 h-8 rounded-full mr-3">
                             <div>
                                 <p class="font-medium">${highlightText(user.userName, query)}</p>
                                 <p class="text-xs text-theme-secondary">${user.bio || ''}</p>
@@ -2738,17 +3431,11 @@
                 query = query.where('mood', '==', currentEmotionFilter);
             }
             
-            // NEW: Apply mood-based filtering
+            // Apply mood-based filtering
             if (currentMoodFilter && currentMoodFilter !== 'all') {
-                // TODO: Implement mood-based filtering logic
-                // This would require posts to have mood metadata
+                // Filter by mood if posts have mood metadata
+                // This would require posts to have mood field
                 console.log('Filtering by mood:', currentMoodFilter);
-            }
-            
-            if (currentContentTypeFilter === 'poll') {
-                query = query.where('poll', '!=', null);
-            } else if (currentContentTypeFilter === 'collaborative') {
-                query = query.where('collaborative', '!=', null);
             }
             
             query.get()
@@ -2798,16 +3485,9 @@
                 query = query.where('mood', '==', currentEmotionFilter);
             }
             
-            // NEW: Apply mood-based filtering
+            // Apply mood-based filtering
             if (currentMoodFilter && currentMoodFilter !== 'all') {
-                // TODO: Implement mood-based filtering logic
                 console.log('Filtering by mood:', currentMoodFilter);
-            }
-            
-            if (currentContentTypeFilter === 'poll') {
-                query = query.where('poll', '!=', null);
-            } else if (currentContentTypeFilter === 'collaborative') {
-                query = query.where('collaborative', '!=', null);
             }
             
             query.get()
@@ -2858,6 +3538,9 @@
             }
             
             postsToDisplay.forEach(post => {
+                // Skip posts that have been viewed
+                if (viewedPosts.has(post.id)) return;
+                
                 const postElement = createPostElement(post);
                 feedContainer.appendChild(postElement);
             });
@@ -2868,72 +3551,6 @@
             const postElement = document.createElement('div');
             postElement.className = 'post-card p-5';
             postElement.dataset.postId = post.id;
-            
-            let mediaHtml = '';
-            if (post.media) {
-                if (post.media.type === 'image') {
-                    mediaHtml = `<img src="${post.media.url}" alt="Post image" class="w-full h-auto rounded-xl mt-3">`;
-                } else if (post.media.type === 'video') {
-                    mediaHtml = `
-                        <div class="relative mt-3">
-                            <video src="${post.media.url}" controls class="w-full h-auto rounded-xl"></video>
-                            <div class="absolute bottom-3 right-3 bg-black/50 text-white px-2 py-1 rounded-lg text-sm">
-                                <i class="fas fa-play mr-1"></i> Video
-                            </div>
-                        </div>
-                    `;
-                } else if (post.media.type === 'audio') {
-                    mediaHtml = `
-                        <div class="mt-3 p-4 glass rounded-xl">
-                            <audio src="${post.media.url}" controls class="w-full audio-player"></audio>
-                        </div>
-                    `;
-                }
-            }
-            
-            let pollHtml = '';
-            if (post.poll) {
-                const totalVotes = post.poll.totalVotes;
-                pollHtml = `
-                    <div class="mt-3 p-4 glass rounded-xl">
-                        <h4 class="font-semibold mb-3">${post.poll.question}</h4>
-                        <div class="space-y-2">
-                            ${post.poll.options.map((option, index) => {
-                                const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
-                                const hasVoted = post.poll.voters && post.poll.voters.includes(currentUser.uid);
-                                const isSelected = hasVoted && option.voters.includes(currentUser.uid);
-                                
-                                return `
-                                    <div class="poll-option ${isSelected ? 'selected' : ''}" data-option-index="${index}">
-                                        <div class="flex justify-between items-center">
-                                            <span>${option.text}</span>
-                                            <span class="text-xs">${option.votes} votes (${percentage.toFixed(1)}%)</span>
-                                        </div>
-                                        <div class="poll-bar" style="width: ${percentage}%"></div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                        <p class="text-xs text-theme-secondary mt-2">${totalVotes} total votes</p>
-                    </div>
-                `;
-            }
-            
-            let linkPreviewHtml = '';
-            if (post.linkPreview) {
-                linkPreviewHtml = `
-                    <div class="link-preview mt-3">
-                        <div class="flex">
-                            <div class="link-preview-content flex-1">
-                                <h4 class="font-semibold text-theme-primary">${post.linkPreview.title}</h4>
-                                <p class="text-sm text-theme-secondary mt-1">${post.linkPreview.description}</p>
-                                <p class="text-xs text-theme-secondary mt-2">${post.linkPreview.domain}</p>
-                            </div>
-                            <img src="${post.linkPreview.image}" alt="Link preview" class="w-24 h-24 object-cover rounded-r-lg">
-                        </div>
-                    </div>
-                `;
-            }
             
             // Format hashtags and mentions
             let content = post.content || '';
@@ -2958,7 +3575,7 @@
             // Check if current user liked the post
             const userLiked = post.likes && post.likes.includes(currentUser.uid);
             
-            // NEW: Vibe reactions
+            // Vibe reactions
             const vibeReactions = post.vibeReactions || {
                 energy: 0,
                 deep: 0,
@@ -2966,21 +3583,10 @@
                 creative: 0
             };
             
-            // NEW: Appreciation count
+            // Appreciation count
             const appreciationCount = post.appreciationCount || 0;
             
-            // Kynecta Unique Feature: Collaborative Post Indicator
-            let collaborativeHtml = '';
-            if (post.collaborative) {
-                collaborativeHtml = `
-                    <div class="collaboration-indicator mt-2">
-                        <i class="fas fa-users text-theme-accent"></i>
-                        <span>Collaborative: ${post.collaborative.title}</span>
-                    </div>
-                `;
-            }
-            
-            // Kynecta Unique Feature: Post Energy Indicator
+            // Post Energy Indicator
             let energyHtml = '';
             if (post.energy) {
                 const energyPercentage = Math.min(100, post.energy * 2);
@@ -2994,9 +3600,24 @@
                 `;
             }
             
+            // NEW: Tagged users display
+            let taggedUsersHtml = '';
+            if (post.taggedUsers && post.taggedUsers.length > 0) {
+                taggedUsersHtml = `
+                    <div class="tagged-users mt-2">
+                        ${post.taggedUsers.map(user => `
+                            <div class="tagged-user">
+                                <img src="${user.userAvatar}" alt="${user.userName}">
+                                <span>${user.userName}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
             postElement.innerHTML = `
                 <div class="flex items-start space-x-3">
-                    <img src="${post.userAvatar || 'https://via.placeholder.com/40'}" alt="${post.userName}'s avatar" class="w-10 h-10 rounded-2xl object-cover cursor-pointer">
+                    <img src="${post.userAvatar || ''}" alt="${post.userName}'s avatar" class="w-10 h-10 rounded-2xl object-cover cursor-pointer">
                     <div class="flex-1">
                         <div class="flex items-center justify-between">
                             <div>
@@ -3005,8 +3626,8 @@
                                     <span class="text-xs text-theme-secondary">${formatDate(post.timestamp?.toDate())}</span>
                                     ${post.mood ? `<span class="text-xs px-2 py-1 rounded-full bg-theme-accent/20 text-theme-accent">${getMoodEmoji(post.mood)} ${post.mood}</span>` : ''}
                                     ${post.audience === 'friends' ? '<span class="text-xs text-theme-secondary"><i class="fas fa-user-friends mr-1"></i>Friends</span>' : ''}
-                                    ${post.audience === 'private' ? '<span class="text-xs text-theme-secondary"><i class="fas fa-lock mr-1"></i>Only Me</span>' : ''}
-                                    ${post.aiGenerated ? '<span class="kynecta-badge bg-purple-500">AI Enhanced</span>' : ''}
+                                    ${post.audience === 'close-friends' ? '<span class="text-xs text-theme-secondary"><i class="fas fa-star mr-1"></i>Close Friends</span>' : ''}
+                                    ${post.audience === 'only-me' ? '<span class="text-xs text-theme-secondary"><i class="fas fa-lock mr-1"></i>Only Me</span>' : ''}
                                 </div>
                             </div>
                             <div class="relative">
@@ -3016,19 +3637,15 @@
                             </div>
                         </div>
                         
-                        ${collaborativeHtml}
-                        
                         <div class="mt-3 text-theme-primary">
                             ${content}
                         </div>
                         
+                        ${taggedUsersHtml}
+                        
                         ${energyHtml}
                         
-                        ${mediaHtml}
-                        ${pollHtml}
-                        ${linkPreviewHtml}
-                        
-                        <!-- NEW: Vibe Reactions -->
+                        <!-- Vibe Reactions -->
                         <div class="vibe-reactions mt-3">
                             <div class="vibe-reaction" data-vibe="energy" data-post-id="${post.id}">
                                 <span>🔥</span>
@@ -3064,11 +3681,6 @@
                                     <i class="fas fa-share"></i>
                                     <span>${post.sharesCount || 0}</span>
                                 </button>
-                                <!-- NEW: Appreciation Button -->
-                                <button class="appreciation-btn flex items-center space-x-1" data-post-id="${post.id}">
-                                    <i class="fas fa-gift"></i>
-                                    <span>${appreciationCount}</span>
-                                </button>
                             </div>
                             <button class="save-post-btn text-theme-secondary hover:text-theme-accent transition">
                                 <i class="far fa-bookmark"></i>
@@ -3078,15 +3690,9 @@
                         <!-- Comment Input -->
                         <div class="comment-input mt-4 hidden" data-post-id="${post.id}">
                             <div class="flex items-start space-x-2">
-                                <img src="${currentUser.photoURL || 'https://via.placeholder.com/32'}" alt="Your avatar" class="w-8 h-8 rounded-full object-cover">
+                                <img src="${currentUser.photoURL || ''}" alt="Your avatar" class="w-8 h-8 rounded-full object-cover">
                                 <div class="flex-1 flex space-x-2">
                                     <input type="text" placeholder="Write a comment..." class="flex-1 p-2 glass border border-purple-700 rounded-2xl text-sm">
-                                    <button class="emoji-picker-btn px-3 py-2 glass border border-purple-700 rounded-2xl text-sm">
-                                        <i class="far fa-smile"></i>
-                                    </button>
-                                    <button class="voice-comment-btn">
-                                        <i class="fas fa-microphone"></i>
-                                    </button>
                                     <button class="submit-comment px-3 py-2 rounded-2xl text-sm" style="background: var(--accent-color); color: white;" data-post-id="${post.id}">Post</button>
                                 </div>
                             </div>
@@ -3109,7 +3715,7 @@
                 likePost(post.id);
             });
             
-            // NEW: Vibe reaction buttons
+            // Vibe reaction buttons
             const vibeReactionBtns = postElement.querySelectorAll('.vibe-reaction');
             vibeReactionBtns.forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -3118,33 +3724,11 @@
                 });
             });
             
-            // NEW: Appreciation button
-            const appreciationBtn = postElement.querySelector('.appreciation-btn');
-            appreciationBtn.addEventListener('click', function() {
-                addAppreciation(post.id);
-            });
-            
             // Comment button
             const commentBtn = postElement.querySelector('.comment-btn');
             const commentInput = postElement.querySelector('.comment-input');
             commentBtn.addEventListener('click', function() {
                 commentInput.classList.toggle('hidden');
-            });
-            
-            // NEW: Emoji picker button
-            const emojiPickerBtn = postElement.querySelector('.emoji-picker-btn');
-            emojiPickerBtn.addEventListener('click', function() {
-                const rect = this.getBoundingClientRect();
-                emojiPicker.style.bottom = `${window.innerHeight - rect.top + 10}px`;
-                emojiPicker.style.left = `${rect.left}px`;
-                emojiPicker.classList.toggle('show');
-            });
-            
-            // NEW: Voice comment button
-            const voiceCommentBtn = postElement.querySelector('.voice-comment-btn');
-            voiceCommentBtn.addEventListener('click', function() {
-                // TODO: Implement voice recording functionality
-                showNotification('Voice comments coming soon!', 'success');
             });
             
             // Submit comment
@@ -3206,8 +3790,6 @@
                 return;
             }
 
-            // In a real implementation, you would generate a shareable link
-            // For this demo, we'll just show an alert and increment share count
             const postRef = db.collection('posts').doc(postId);
             postRef.update({
                 sharesCount: firebase.firestore.FieldValue.increment(1)
@@ -3215,6 +3797,9 @@
             .then(() => {
                 showNotification('Post shared!', 'success');
                 reloadPosts();
+                
+                // Mark post as viewed for automatic hiding
+                markPostAsViewed(postId);
             })
             .catch(error => {
                 console.error('Error sharing post:', error);
@@ -3229,7 +3814,6 @@
                 return;
             }
 
-            // In a real implementation, you would update the user's saved posts
             showNotification('Post saved to collections!', 'success');
         }
 
@@ -3237,57 +3821,491 @@
         function loadStories() {
             if (!currentUser) return;
             
-            // In a real implementation, you would fetch stories from Firebase
-            // For now, we'll just show a placeholder
-            storiesContainer.innerHTML = `
-                <div class="flex flex-col items-center space-y-2 flex-shrink-0">
-                    <div class="story-ring" id="createStoryBtn">
+            // Fetch stories from Firebase
+            db.collection('stories')
+                .where('expiresAt', '>', new Date())
+                .orderBy('expiresAt', 'asc')
+                .limit(20)
+                .get()
+                .then(snapshot => {
+                    currentStories = [];
+                    snapshot.forEach(doc => {
+                        currentStories.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    displayStories(currentStories);
+                })
+                .catch(error => {
+                    console.error('Error loading stories:', error);
+                    // Fallback to placeholder if no stories found
+                    displayStories([]);
+                });
+        }
+
+        // Display stories
+        function displayStories(stories) {
+            storiesContainer.innerHTML = '';
+            
+            // Add "Create Story" button
+            const createStoryElement = document.createElement('div');
+            createStoryElement.className = 'flex flex-col items-center space-y-2 flex-shrink-0';
+            createStoryElement.innerHTML = `
+                <div class="story-ring" id="createStoryBtn">
+                    <div class="story-content">
+                        <i class="fas fa-plus text-theme-accent"></i>
+                    </div>
+                </div>
+                <span class="text-xs font-semibold text-theme-accent">Your Story</span>
+            `;
+            storiesContainer.appendChild(createStoryElement);
+            
+            // Add user stories
+            stories.forEach(story => {
+                const storyElement = document.createElement('div');
+                storyElement.className = 'flex flex-col items-center space-y-2 flex-shrink-0';
+                storyElement.innerHTML = `
+                    <div class="story-ring" data-story-id="${story.id}">
                         <div class="story-content">
-                            <i class="fas fa-plus text-theme-accent"></i>
+                            <img src="${story.userAvatar || ''}" alt="${story.userName}'s story">
                         </div>
                     </div>
-                    <span class="text-xs font-semibold text-theme-accent">Your Story</span>
-                </div>
-                <div class="text-theme-secondary p-4">
-                    <p>No stories available</p>
-                </div>
-            `;
+                    <span class="text-xs font-semibold text-theme-primary">${story.userName}</span>
+                `;
+                storiesContainer.appendChild(storyElement);
+                
+                // Add click event to open story viewer
+                storyElement.querySelector('.story-ring').addEventListener('click', function() {
+                    openStoryViewer(story.id);
+                });
+            });
+            
+            // Add "Create Story" functionality
+            document.getElementById('createStoryBtn').addEventListener('click', function() {
+                openCreateStoryModal();
+            });
+        }
+
+        // Open create story modal
+        function openCreateStoryModal() {
+            if (!currentUser) {
+                alert('Please sign in to create a story');
+                return;
+            }
+            createStoryModal.classList.add('active');
+            resetStoryModal();
+        }
+
+        // Close create story modal
+        function closeCreateStoryModal() {
+            createStoryModal.classList.remove('active');
+            setTimeout(() => {
+                resetStoryModal();
+            }, 300);
+        }
+
+        // Reset story modal to initial state
+        function resetStoryModal() {
+            storyTextInput.classList.add('hidden');
+            storyMediaPreview.classList.add('hidden');
+            storyTextContent.value = '';
+            currentStoryType = null;
+        }
+
+        // Open story text input
+        function openStoryTextInput() {
+            storyTextInput.classList.remove('hidden');
+            storyMediaPreview.classList.add('hidden');
+            currentStoryType = 'text';
+            storyTextContent.focus();
+        }
+
+        // Handle story media upload
+        function handleStoryMediaUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Check file size and type
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                alert('File size must be less than 10MB');
+                return;
+            }
+            
+            const fileType = file.type.split('/')[0];
+            
+            // For videos, check duration (max 6 seconds)
+            if (fileType === 'video') {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                
+                video.onloadedmetadata = function() {
+                    window.URL.revokeObjectURL(video.src);
+                    if (video.duration > 6) {
+                        alert('Video must be 6 seconds or shorter');
+                        return;
+                    }
+                    
+                    displayStoryMediaPreview(file, fileType);
+                };
+                
+                video.src = URL.createObjectURL(file);
+            } else {
+                displayStoryMediaPreview(file, fileType);
+            }
+        }
+
+        // Display story media preview
+        function displayStoryMediaPreview(file, fileType) {
+            storyMediaPreview.classList.remove('hidden');
+            storyTextInput.classList.add('hidden');
+            currentStoryType = fileType;
+            
+            // Hide all media previews first
+            storyPreviewImage.classList.add('hidden');
+            storyPreviewVideo.classList.add('hidden');
+            
+            // Show appropriate preview
+            if (fileType === 'image') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    storyPreviewImage.src = e.target.result;
+                    storyPreviewImage.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            } else if (fileType === 'video') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    storyPreviewVideo.src = e.target.result;
+                    storyPreviewVideo.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Create Story Function
+        function createStory() {
+            if (!currentUser) {
+                alert('Please sign in to create a story');
+                return;
+            }
+
+            if (!currentStoryType) {
+                alert('Please add content to your story');
+                return;
+            }
+            
+            // Get selected audience
+            const selectedAudienceOption = document.querySelector('.audience-option.active');
+            const audience = selectedAudienceOption ? selectedAudienceOption.dataset.audience : 'public';
+            
+            // Create story object
+            const storyData = {
+                userId: currentUser.uid,
+                userName: userData?.userName || currentUser.displayName || 'Anonymous',
+                userAvatar: userData?.userAvatar || currentUser.photoURL || '',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
+                audience: audience,
+                views: [],
+                viewsCount: 0
+            };
+            
+            // Add content based on story type
+            if (currentStoryType === 'text') {
+                const content = storyTextContent.value.trim();
+                if (!content) {
+                    alert('Please add text to your story');
+                    return;
+                }
+                storyData.content = content;
+                storyData.mediaType = 'text';
+                
+                // Save text story to Firebase
+                saveStoryToFirebase(storyData);
+            } else if (currentStoryType === 'image' || currentStoryType === 'video') {
+                // Upload media to Cloudinary
+                const fileInput = currentStoryType === 'image' ? 
+                    document.getElementById('storyImageInput') : 
+                    document.getElementById('storyVideoInput');
+                
+                const file = fileInput.files[0];
+                if (!file) {
+                    alert('Please select a file');
+                    return;
+                }
+                
+                uploadToCloudinary(file, storyData);
+            }
+        }
+
+        // Upload media to Cloudinary
+        function uploadToCloudinary(file, storyData) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+            formData.append('cloud_name', cloudinaryConfig.cloudName);
+            
+            fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/${file.type.startsWith('video') ? 'video' : 'image'}/upload`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.secure_url) {
+                    storyData.mediaUrl = data.secure_url;
+                    storyData.mediaType = file.type.startsWith('video') ? 'video' : 'image';
+                    
+                    // Save story to Firebase
+                    saveStoryToFirebase(storyData);
+                } else {
+                    throw new Error('Upload failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading to Cloudinary:', error);
+                showNotification('Error uploading media: ' + error.message, 'error');
+            });
+        }
+
+        // Save story to Firebase
+        function saveStoryToFirebase(storyData) {
+            db.collection('stories').add(storyData)
+                .then(docRef => {
+                    console.log('Story published with ID: ', docRef.id);
+                    showNotification('Story published successfully!', 'success');
+                    closeCreateStoryModal();
+                    loadStories();
+                })
+                .catch(error => {
+                    console.error('Error publishing story: ', error);
+                    showNotification('Error publishing story: ' + error.message, 'error');
+                });
+        }
+
+        // Open story viewer
+        function openStoryViewer(storyId) {
+            const story = currentStories.find(s => s.id === storyId);
+            if (!story) return;
+            
+            // Set current story index
+            currentStoryIndex = currentStories.findIndex(s => s.id === storyId);
+            
+            // Display the story
+            displayStory(story);
+            
+            // Show the story viewer
+            storyViewer.classList.add('active');
+            
+            // Start auto-advance timer
+            startStoryTimer();
+            
+            // Mark story as viewed
+            markStoryAsViewed(storyId);
+        }
+
+        // Display a story in the viewer
+        function displayStory(story) {
+            // Clear previous content
+            storyContentViewer.innerHTML = '';
+            storyProgress.innerHTML = '';
+            
+            // Create progress bars for each story
+            currentStories.forEach((s, index) => {
+                const progressBar = document.createElement('div');
+                progressBar.className = 'story-progress-bar';
+                progressBar.innerHTML = `<div class="story-progress-fill" ${index === currentStoryIndex ? 'style="width: 0%"' : ''}></div>`;
+                storyProgress.appendChild(progressBar);
+            });
+            
+            // Display story content
+            if (story.mediaType === 'image') {
+                const img = document.createElement('img');
+                img.src = story.mediaUrl;
+                img.alt = 'Story image';
+                storyContentViewer.appendChild(img);
+            } else if (story.mediaType === 'video') {
+                const video = document.createElement('video');
+                video.src = story.mediaUrl;
+                video.controls = true;
+                video.autoplay = true;
+                video.muted = true; // Muted autoplay
+                storyContentViewer.appendChild(video);
+            } else {
+                // Text story
+                const textContainer = document.createElement('div');
+                textContainer.className = 'p-8 text-center';
+                textContainer.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-4">${story.userName}</h2>
+                    <p class="text-lg">${story.content}</p>
+                `;
+                textContainer.style.background = 'var(--card-bg)';
+                textContainer.style.color = 'var(--text-primary)';
+                textContainer.style.width = '100%';
+                textContainer.style.height = '100%';
+                textContainer.style.display = 'flex';
+                textContainer.style.flexDirection = 'column';
+                textContainer.style.justifyContent = 'center';
+                textContainer.style.alignItems = 'center';
+                storyContentViewer.appendChild(textContainer);
+            }
+        }
+
+        // Start story timer for auto-advance
+        function startStoryTimer() {
+            // Clear any existing timer
+            if (storyInterval) clearInterval(storyInterval);
+            
+            // Get current progress bar
+            const currentProgressBar = storyProgress.children[currentStoryIndex].querySelector('.story-progress-fill');
+            
+            // Reset progress
+            currentProgressBar.style.width = '0%';
+            
+            // Start timer
+            let progress = 0;
+            storyInterval = setInterval(() => {
+                progress += 1;
+                currentProgressBar.style.width = `${progress}%`;
+                
+                if (progress >= 100) {
+                    showNextStory();
+                }
+            }, 50); // 5 seconds total for each story
+        }
+
+        // Show next story
+        function showNextStory() {
+            if (currentStoryIndex < currentStories.length - 1) {
+                currentStoryIndex++;
+                displayStory(currentStories[currentStoryIndex]);
+                startStoryTimer();
+                
+                // Mark story as viewed
+                markStoryAsViewed(currentStories[currentStoryIndex].id);
+            } else {
+                closeStoryViewer();
+            }
+        }
+
+        // Show previous story
+        function showPreviousStory() {
+            if (currentStoryIndex > 0) {
+                currentStoryIndex--;
+                displayStory(currentStories[currentStoryIndex]);
+                startStoryTimer();
+            }
+        }
+
+        // Mark story as viewed
+        function markStoryAsViewed(storyId) {
+            if (!currentUser) return;
+            
+            const storyRef = db.collection('stories').doc(storyId);
+            
+            // Use a transaction to safely update the views
+            db.runTransaction(transaction => {
+                return transaction.get(storyRef).then(storyDoc => {
+                    if (!storyDoc.exists) {
+                        throw new Error('Story does not exist!');
+                    }
+                    
+                    const storyData = storyDoc.data();
+                    const views = storyData.views || [];
+                    
+                    // Add user to views if not already viewed
+                    if (!views.includes(currentUser.uid)) {
+                        views.push(currentUser.uid);
+                        transaction.update(storyRef, {
+                            views: views,
+                            viewsCount: views.length
+                        });
+                    }
+                    
+                    return true;
+                });
+            }).then(success => {
+                console.log('Story marked as viewed');
+            }).catch(error => {
+                console.error('Error marking story as viewed: ', error);
+            });
+        }
+
+        // Close story viewer
+        function closeStoryViewer() {
+            storyViewer.classList.remove('active');
+            if (storyInterval) clearInterval(storyInterval);
         }
 
         // Load trending topics from Firebase
         function loadTrendingTopics() {
             if (!currentUser) return;
             
-            // In a real implementation, you would fetch trending topics from Firebase
-            trendingTopicsContainer.innerHTML = `
-                <div class="text-theme-secondary p-4 text-center">
-                    <p>Trending topics will appear here</p>
-                </div>
-            `;
-        }
-
-        // Load leaderboard from Firebase
-        function loadLeaderboard() {
-            if (!currentUser) return;
-            
-            // In a real implementation, you would fetch leaderboard data from Firebase
-            leaderboardContainer.innerHTML = `
-                <div class="text-theme-secondary p-4 text-center">
-                    <p>Leaderboard will appear here</p>
-                </div>
-            `;
+            // Fetch trending topics from Firebase
+            db.collection('trending')
+                .orderBy('count', 'desc')
+                .limit(5)
+                .get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        trendingTopicsContainer.innerHTML = '<div class="text-theme-secondary p-4 text-center"><p>No trending topics</p></div>';
+                        return;
+                    }
+                    
+                    let html = '<div class="space-y-3">';
+                    snapshot.forEach(doc => {
+                        const topic = doc.data();
+                        html += `
+                            <div class="flex justify-between items-center">
+                                <span class="text-theme-primary">${topic.hashtag}</span>
+                                <span class="text-xs text-theme-secondary">${topic.count} posts</span>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    trendingTopicsContainer.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading trending topics:', error);
+                });
         }
 
         // Load suggested users from Firebase
         function loadSuggestedUsers() {
             if (!currentUser) return;
             
-            // In a real implementation, you would fetch suggested users from Firebase
-            suggestedUsersContainer.innerHTML = `
-                <div class="text-theme-secondary p-4 text-center">
-                    <p>Suggested users will appear here</p>
-                </div>
-            `;
+            // Fetch suggested users from Firebase
+            db.collection('users')
+                .where('userId', '!=', currentUser.uid)
+                .limit(5)
+                .get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        suggestedUsersContainer.innerHTML = '<div class="text-theme-secondary p-4 text-center"><p>No suggestions available</p></div>';
+                        return;
+                    }
+                    
+                    let html = '<div class="space-y-4">';
+                    snapshot.forEach(doc => {
+                        const user = doc.data();
+                        html += `
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <img src="${user.userAvatar || ''}" class="w-10 h-10 rounded-full">
+                                    <div>
+                                        <p class="text-sm font-semibold text-theme-primary">${user.userName}</p>
+                                        <p class="text-xs text-theme-secondary">${user.followersCount || 0} followers</p>
+                                    </div>
+                                </div>
+                                <button class="text-xs bg-theme-accent text-white px-3 py-1 rounded-full">Follow</button>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    suggestedUsersContainer.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading suggested users:', error);
+                });
         }
 
         // Utility Functions
@@ -3306,7 +4324,7 @@
             return mentions.map(mention => mention.substring(1));
         }
 
-        // Kynecta Unique Feature: Calculate post energy
+        // Calculate post energy
         function calculatePostEnergy(content) {
             // Simple algorithm to calculate post "energy" based on content
             let energy = 0;
@@ -3364,10 +4382,7 @@
         function showNotification(message, type) {
             // Create notification element
             const notification = document.createElement('div');
-            notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-2xl z-50 ${
-                type === 'success' ? 'bg-green-500' : 
-                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-            } text-white font-semibold shadow-lg`;
+            notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-2xl z-50 ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'} text-white font-semibold shadow-lg`;
             notification.textContent = message;
             
             document.body.appendChild(notification);
