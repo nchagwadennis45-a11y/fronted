@@ -12,6 +12,13 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     
     <style>
+        /* CSS Variables for Dynamic Colors */
+        :root {
+            --primary-color: #3B82F6;
+            --secondary-color: #8B5CF6;
+            --accent-color: #60A5FA;
+        }
+        
         /* Improved responsive base sizes */
         html {
             font-size: 14px;
@@ -56,7 +63,7 @@
         }
         
         .cyber-gradient {
-            background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
         }
         
         .quantum-glow {
@@ -72,7 +79,7 @@
         .loading-spinner {
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            border-top: 2px solid #3B82F6;
+            border-top: 2px solid var(--primary-color);
             width: 16px;
             height: 16px;
             animation: spin 1s linear infinite;
@@ -241,7 +248,7 @@
         }
         
         .gradient-text {
-            background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), #f472b6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -250,7 +257,7 @@
         .stats-counter {
             font-size: 1.5rem;
             font-weight: bold;
-            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -290,39 +297,46 @@
         
         /* Mood Theme Colors */
         .theme-calm {
+            --primary-color: #3B82F6;
+            --secondary-color: #8B5CF6;
+            --accent-color: #60A5FA;
             background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%) !important;
         }
         
         .theme-energetic {
+            --primary-color: #DC2626;
+            --secondary-color: #EA580C;
+            --accent-color: #F97316;
             background: linear-gradient(135deg, #431407 0%, #9a3412 50%, #431407 100%) !important;
         }
         
         .theme-creative {
+            --primary-color: #7C3AED;
+            --secondary-color: #DB2777;
+            --accent-color: #A855F7;
             background: linear-gradient(135deg, #1e1b4b 0%, #7e22ce 50%, #1e1b4b 100%) !important;
         }
         
         .theme-chill {
+            --primary-color: #059669;
+            --secondary-color: #10B981;
+            --accent-color: #34D399;
             background: linear-gradient(135deg, #064e3b 0%, #059669 50%, #064e3b 100%) !important;
         }
         
         .theme-romantic {
+            --primary-color: #DB2777;
+            --secondary-color: #BE185D;
+            --accent-color: #EC4899;
             background: linear-gradient(135deg, #831843 0%, #db2777 50%, #831843 100%) !important;
         }
         
-        /* Mood Selector - IMPROVED FOR MOBILE */
+        /* Mood Selector */
         .mood-selector {
             position: fixed;
             top: 10px;
             left: 10px;
             z-index: 1000;
-        }
-        
-        @media (max-width: 767px) {
-            .mood-selector {
-                top: 80px;
-                left: 10px;
-                z-index: 1000;
-            }
         }
         
         .mood-btn {
@@ -356,18 +370,6 @@
             min-width: 150px;
         }
         
-        @media (max-width: 767px) {
-            .mood-options {
-                position: fixed;
-                top: 120px;
-                left: 10px;
-                right: 10px;
-                grid-template-columns: repeat(6, 1fr);
-                min-width: auto;
-                z-index: 1000;
-            }
-        }
-        
         .mood-options.show {
             display: grid;
         }
@@ -392,6 +394,74 @@
         .mood-chill { background: linear-gradient(135deg, #059669, #10B981); }
         .mood-romantic { background: linear-gradient(135deg, #DB2777, #BE185D); }
         .mood-default { background: linear-gradient(135deg, #6B7280, #4B5563); }
+        
+        /* Mobile Mood Selector */
+        .mobile-mood-selector {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        
+        .mobile-mood-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .mobile-mood-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .mobile-mood-options {
+            position: absolute;
+            bottom: 60px;
+            left: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 12px;
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            min-width: 160px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        .mobile-mood-options.show {
+            display: grid;
+        }
+        
+        .mobile-mood-option {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-mood-option:hover {
+            transform: scale(1.1);
+            border-color: white;
+        }
+        
+        .mobile-mood-option.active {
+            border-color: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
         
         /* Forgot Password Modal Styles */
         .forgot-password-modal {
@@ -564,14 +634,6 @@
             z-index: 1000;
         }
         
-        @media (max-width: 767px) {
-            .mood-customizer {
-                top: 80px;
-                right: 10px;
-                z-index: 1000;
-            }
-        }
-        
         .mood-customizer-btn {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -631,12 +693,6 @@
             margin-bottom: 1.5rem;
         }
         
-        @media (max-width: 767px) {
-            .color-palette {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        
         .color-option {
             width: 100%;
             aspect-ratio: 1;
@@ -662,12 +718,6 @@
             margin-top: 1rem;
         }
         
-        @media (max-width: 767px) {
-            .custom-color-input {
-                flex-direction: column;
-            }
-        }
-        
         .custom-color-preview {
             width: 40px;
             height: 40px;
@@ -685,7 +735,7 @@
             height: 100px;
             border-radius: 10px;
             margin-top: 1rem;
-            background: linear-gradient(135deg, var(--primary-color, #3B82F6), var(--secondary-color, #8B5CF6));
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -693,11 +743,53 @@
             font-weight: bold;
             transition: all 0.3s ease;
         }
+        
+        /* Mobile-specific styles for mood customizer */
+        @media (max-width: 767px) {
+            .mood-customizer {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                top: auto;
+                left: auto;
+                z-index: 1000;
+            }
+            
+            .mood-customizer-btn {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+            }
+            
+            .mood-customizer-btn span {
+                display: none;
+            }
+            
+            .mood-customizer-content {
+                padding: 1rem;
+                max-height: 80vh;
+                overflow-y: auto;
+            }
+            
+            .color-palette {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            
+            .custom-color-input {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
     </style>
 </head>
 <body class="h-full dashboard-container bg-grid-pattern theme-calm">
-    <!-- Mood Theme Selector - IMPROVED FOR MOBILE -->
-    <div class="mood-selector">
+    <!-- Mood Theme Selector (Desktop) -->
+    <div class="mood-selector hidden lg:block">
         <button class="mood-btn flex items-center space-x-2">
             <i class="fas fa-palette"></i>
             <span class="hidden sm:inline">Mood</span>
@@ -712,7 +804,22 @@
         </div>
     </div>
 
-    <!-- Mood Customizer - IMPROVED FOR MOBILE -->
+    <!-- Mobile Mood Selector -->
+    <div class="mobile-mood-selector lg:hidden">
+        <button class="mobile-mood-btn">
+            <i class="fas fa-palette"></i>
+        </button>
+        <div class="mobile-mood-options">
+            <div class="mobile-mood-option mood-calm" data-theme="calm" title="Calm"></div>
+            <div class="mobile-mood-option mood-energetic" data-theme="energetic" title="Energetic"></div>
+            <div class="mobile-mood-option mood-creative" data-theme="creative" title="Creative"></div>
+            <div class="mobile-mood-option mood-chill" data-theme="chill" title="Chill"></div>
+            <div class="mobile-mood-option mood-romantic" data-theme="romantic" title="Romantic"></div>
+            <div class="mobile-mood-option mood-default" data-theme="default" title="Default"></div>
+        </div>
+    </div>
+
+    <!-- Mood Customizer -->
     <div class="mood-customizer">
         <button class="mood-customizer-btn flex items-center space-x-2" id="moodCustomizerBtn">
             <i class="fas fa-sliders-h"></i>
@@ -750,9 +857,15 @@
                 
                 <div class="custom-color-input">
                     <div class="custom-color-preview" id="customColorPreview" style="background: linear-gradient(135deg, #3B82F6, #8B5CF6);"></div>
-                    <input type="color" id="primaryColorPicker" value="#3B82F6" class="flex-1">
-                    <input type="color" id="secondaryColorPicker" value="#8B5CF6" class="flex-1">
-                    <button id="applyCustomColors" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                    <div class="flex flex-col w-full">
+                        <label class="text-white text-sm mb-1">Primary Color</label>
+                        <input type="color" id="primaryColorPicker" value="#3B82F6" class="w-full">
+                    </div>
+                    <div class="flex flex-col w-full">
+                        <label class="text-white text-sm mb-1">Secondary Color</label>
+                        <input type="color" id="secondaryColorPicker" value="#8B5CF6" class="w-full">
+                    </div>
+                    <button id="applyCustomColors" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition mt-4">
                         Apply
                     </button>
                 </div>
@@ -789,7 +902,7 @@
     <!-- Connection Status -->
     <div class="connection-status connecting" id="connectionStatus">
         <i class="fas fa-circle-notch fa-spin mr-2"></i>
-        <span id="connectionText">Connecting...</span>
+        <span id="connectionText">Connecting to kynecta...</span>
     </div>
 
     <!-- Toast Container -->
@@ -996,13 +1109,13 @@
                                 </div>
                                 <div class="flex-1">
                                     <h3 class="text-lg md:text-xl font-bold text-white mb-2">Interest-Based Marketplace</h3>
-                                    <p class="text-blue-300 text-sm md:text-base mb-3">Buy and sell items within communities that share your interests. Find unique products from like-minded people.</p>
+                                    <p class="text-blue-300 text-sm md:text-base mb-3">Buy and sell services, goods, and skills within communities that share your interests. Find unique offerings from like-minded people.</p>
                                     <div class="flex flex-wrap">
-                                        <span class="interest-badge"><i class="fas fa-gamepad mr-1"></i> Gaming</span>
-                                        <span class="interest-badge"><i class="fas fa-music mr-1"></i> Music</span>
-                                        <span class="interest-badge"><i class="fas fa-paint-brush mr-1"></i> Art</span>
-                                        <span class="interest-badge"><i class="fas fa-camera mr-1"></i> Photography</span>
-                                        <span class="interest-badge"><i class="fas fa-utensils mr-1"></i> Food</span>
+                                        <span class="interest-badge"><i class="fas fa-concierge-bell mr-1"></i> Services</span>
+                                        <span class="interest-badge"><i class="fas fa-box mr-1"></i> Goods</span>
+                                        <span class="interest-badge"><i class="fas fa-tools mr-1"></i> Skills</span>
+                                        <span class="interest-badge"><i class="fas fa-laptop-code mr-1"></i> Digital</span>
+                                        <span class="interest-badge"><i class="fas fa-hands-helping mr-1"></i> Consulting</span>
                                     </div>
                                 </div>
                             </div>
@@ -1214,11 +1327,11 @@
                                         </div>
                                         <div class="flex-1">
                                             <h4 class="text-base font-bold text-white mb-2">Marketplace</h4>
-                                            <p class="text-blue-300 text-xs mb-2">Buy & sell within interest-based communities.</p>
+                                            <p class="text-blue-300 text-xs mb-2">Buy & sell services, goods, and skills.</p>
                                             <div class="flex flex-wrap">
-                                                <span class="interest-badge"><i class="fas fa-gamepad mr-1"></i> Gaming</span>
-                                                <span class="interest-badge"><i class="fas fa-music mr-1"></i> Music</span>
-                                                <span class="interest-badge"><i class="fas fa-paint-brush mr-1"></i> Art</span>
+                                                <span class="interest-badge"><i class="fas fa-concierge-bell mr-1"></i> Services</span>
+                                                <span class="interest-badge"><i class="fas fa-box mr-1"></i> Goods</span>
+                                                <span class="interest-badge"><i class="fas fa-tools mr-1"></i> Skills</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1530,7 +1643,7 @@
             async init() {
                 try {
                     console.log('🔄 Starting Firebase initialization...');
-                    this.updateConnectionStatus('connecting', 'Connecting...');
+                    this.updateConnectionStatus('connecting', 'Connecting to kynecta...');
                     
                     // Check if Firebase is available
                     if (typeof firebase === 'undefined') {
@@ -1563,7 +1676,7 @@
                     });
                     
                     this.isInitialized = true;
-                    this.updateConnectionStatus('connected', '✓');
+                    this.updateConnectionStatus('connected', 'KYNECTA');
                     
                     // Show security status with checkmark
                     const securityStatus = document.getElementById('securityStatus');
@@ -1854,6 +1967,9 @@
                 // Initialize mood customizer
                 this.setupMoodCustomizer();
                 
+                // Initialize mobile mood selector
+                this.setupMobileMoodSelector();
+                
                 console.log('🚀 kynecta app initialized');
             }
 
@@ -1907,6 +2023,50 @@
             }
 
             /**
+             * Sets up mobile mood selector functionality
+             */
+            setupMobileMoodSelector() {
+                const mobileMoodBtn = document.querySelector('.mobile-mood-btn');
+                const mobileMoodOptions = document.querySelector('.mobile-mood-options');
+                const mobileMoodOptionsList = document.querySelectorAll('.mobile-mood-option');
+
+                // Toggle mobile mood options visibility
+                if (mobileMoodBtn) {
+                    mobileMoodBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        mobileMoodOptions.classList.toggle('show');
+                    });
+                }
+
+                // Close mobile mood options when clicking outside
+                document.addEventListener('click', () => {
+                    if (mobileMoodOptions) {
+                        mobileMoodOptions.classList.remove('show');
+                    }
+                });
+
+                // Prevent mobile mood options from closing when clicking inside
+                if (mobileMoodOptions) {
+                    mobileMoodOptions.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                }
+
+                // Handle mobile mood selection
+                if (mobileMoodOptionsList) {
+                    mobileMoodOptionsList.forEach(option => {
+                        option.addEventListener('click', () => {
+                            const theme = option.getAttribute('data-theme');
+                            this.changeTheme(theme);
+                            if (mobileMoodOptions) {
+                                mobileMoodOptions.classList.remove('show');
+                            }
+                        });
+                    });
+                }
+            }
+
+            /**
              * Sets up mood customizer functionality
              */
             setupMoodCustomizer() {
@@ -1942,6 +2102,9 @@
                         document.getElementById('secondaryColorPicker').value = this.customColors.secondary;
                         document.getElementById('customColorPreview').style.background = 
                             `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
+                        
+                        // Apply the colors immediately
+                        this.applyCustomColors();
                     });
                 });
                 
@@ -2015,10 +2178,20 @@
                 document.documentElement.style.setProperty('--secondary-color', this.customColors.secondary);
                 
                 // Update gradient elements
-                const gradientElements = document.querySelectorAll('.cyber-gradient, .quantum-glow, .feature-icon');
+                const gradientElements = document.querySelectorAll('.cyber-gradient, .stats-counter, .gradient-text');
                 gradientElements.forEach(el => {
                     if (el.classList.contains('cyber-gradient')) {
                         el.style.background = `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
+                    } else if (el.classList.contains('stats-counter')) {
+                        el.style.background = `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
+                        el.style.webkitBackgroundClip = 'text';
+                        el.style.webkitTextFillColor = 'transparent';
+                        el.style.backgroundClip = 'text';
+                    } else if (el.classList.contains('gradient-text')) {
+                        el.style.background = `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary}, #f472b6)`;
+                        el.style.webkitBackgroundClip = 'text';
+                        el.style.webkitTextFillColor = 'transparent';
+                        el.style.backgroundClip = 'text';
                     }
                 });
                 

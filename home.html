@@ -16,7 +16,12 @@
     <!-- Cloudinary -->
     <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
     
+    <!-- Emoji Picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.12.0/index.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.12.0/index.min.js"></script>
+    
     <style>
+        /* All existing CSS styles remain exactly the same */
         /* CSS Variables for Themes */
         :root {
             --primary-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -976,6 +981,130 @@
             background: var(--glass-border);
         }
 
+        /* NEW: Profile Cover Photo */
+        .profile-cover-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .profile-cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-cover-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .profile-cover-container:hover .profile-cover-overlay {
+            opacity: 1;
+        }
+
+        .profile-avatar-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin-top: -60px;
+            margin-left: 20px;
+            z-index: 10;
+        }
+
+        .profile-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--card-bg);
+        }
+
+        .profile-avatar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            cursor: pointer;
+        }
+
+        .profile-avatar-container:hover .profile-avatar-overlay {
+            opacity: 1;
+        }
+
+        /* NEW: Horizontal Scroll Sections */
+        .horizontal-scroll-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 16px;
+            padding: 10px 0;
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .horizontal-scroll-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Edge */
+        }
+
+        .horizontal-card {
+            min-width: 280px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .horizontal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Emoji Picker Styles */
+        .emoji-picker-container {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            margin-bottom: 10px;
+            z-index: 100;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .emoji-picker-container.hidden {
+            display: none;
+        }
+
+        .emoji-trigger {
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s ease;
+        }
+
+        .emoji-trigger:hover {
+            background: var(--glass-bg);
+        }
+
         /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .masonry-grid {
@@ -1057,6 +1186,28 @@
             .space-actions {
                 flex-direction: column;
             }
+
+            /* NEW: Profile mobile responsiveness */
+            .profile-cover-container {
+                height: 200px;
+            }
+            
+            .profile-avatar-container {
+                width: 100px;
+                height: 100px;
+                margin-top: -50px;
+            }
+
+            /* Emoji Picker on Mobile */
+            .emoji-picker-container {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                top: auto;
+                margin-bottom: 0;
+                border-radius: 12px 12px 0 0;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1085,6 +1236,17 @@
             
             .audience-selector {
                 flex-direction: column;
+            }
+
+            /* NEW: Profile extra small screen */
+            .profile-cover-container {
+                height: 150px;
+            }
+            
+            .profile-avatar-container {
+                width: 80px;
+                height: 80px;
+                margin-top: -40px;
             }
         }
         
@@ -1384,17 +1546,45 @@
             <!-- Main Feed -->
             <main class="flex-1 overflow-y-auto bg-gradient-to-b from-purple-900/20 to-gray-900/50 custom-scrollbar">
                 <div class="container mx-auto px-4 py-4">
-                    <!-- Posts Section -->
-                    <div class="masonry-grid" id="feedContainer">
-                        <!-- Posts will be loaded dynamically from Firebase -->
+                    <!-- NEW: Profile Section -->
+                    <div class="post-card p-0 mb-6">
+                        <div class="profile-cover-container">
+                            <img id="profileCover" class="profile-cover" src="" alt="Cover Photo">
+                            <div class="profile-cover-overlay">
+                                <button id="changeCoverBtn" class="px-4 py-2 glass rounded-2xl text-theme-primary hover:text-theme-accent transition">
+                                    <i class="fas fa-camera mr-2"></i>Change Cover
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-end">
+                                    <div class="profile-avatar-container">
+                                        <img id="profileAvatar" class="profile-avatar" src="" alt="Profile Picture">
+                                        <div class="profile-avatar-overlay">
+                                            <button id="changeAvatarBtn" class="text-white">
+                                                <i class="fas fa-camera text-xl"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4 mb-2">
+                                        <h2 id="profileName" class="text-2xl font-bold text-theme-primary">Loading...</h2>
+                                        <p id="profileBio" class="text-theme-secondary">Welcome to my profile!</p>
+                                    </div>
+                                </div>
+                                <button id="editProfileBtn" class="px-4 py-2 glass border border-purple-700 rounded-2xl text-theme-secondary hover:text-theme-accent transition">
+                                    <i class="fas fa-edit mr-2"></i>Edit Profile
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    
+
                     <!-- NEW: Groups Section -->
                     <div class="section-header">
                         <h2 class="section-title">Your Groups</h2>
                         <a href="#" class="section-link">See All</a>
                     </div>
-                    <div id="groupsContainer">
+                    <div class="horizontal-scroll-container" id="groupsContainer">
                         <!-- Groups will be loaded dynamically from Firebase -->
                     </div>
                     
@@ -1403,7 +1593,7 @@
                         <h2 class="section-title">Collaborative Spaces</h2>
                         <a href="#" class="section-link">See All</a>
                     </div>
-                    <div id="spacesContainer">
+                    <div class="horizontal-scroll-container" id="spacesContainer">
                         <!-- Spaces will be loaded dynamically from Firebase -->
                     </div>
                     
@@ -1412,7 +1602,7 @@
                         <h2 class="section-title">Upcoming Events</h2>
                         <a href="#" class="section-link">See All</a>
                     </div>
-                    <div id="eventsContainer">
+                    <div class="horizontal-scroll-container" id="eventsContainer">
                         <!-- Events will be loaded dynamically from Firebase -->
                     </div>
                     
@@ -1421,7 +1611,7 @@
                         <h2 class="section-title">Reels</h2>
                         <a href="#" class="section-link">See All</a>
                     </div>
-                    <div id="reelsContainer">
+                    <div class="horizontal-scroll-container" id="reelsContainer">
                         <!-- Reels will be loaded dynamically from Firebase -->
                     </div>
                     
@@ -1432,6 +1622,14 @@
                     </div>
                     <div id="savedContainer">
                         <!-- Saved posts will be loaded dynamically from Firebase -->
+                    </div>
+                    
+                    <!-- Posts Section -->
+                    <div class="section-header">
+                        <h2 class="section-title">Recent Posts</h2>
+                    </div>
+                    <div class="masonry-grid" id="feedContainer">
+                        <!-- Posts will be loaded dynamically from Firebase -->
                     </div>
                     
                     <!-- Loading Indicator -->
@@ -1538,8 +1736,18 @@
                 
                 <!-- User Tagging System -->
                 <div class="tagging-container">
-                    <textarea id="modalPostInput" placeholder="What's on your mind? Tag friends with @..." 
-                              class="w-full p-4 glass border border-purple-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme-accent focus:border-transparent placeholder-theme-secondary h-32 resize-none"></textarea>
+                    <div class="relative">
+                        <textarea id="modalPostInput" placeholder="What's on your mind? Tag friends with @..." 
+                                  class="w-full p-4 glass border border-purple-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-theme-accent focus:border-transparent placeholder-theme-secondary h-32 resize-none"></textarea>
+                        <div class="absolute bottom-3 right-3 flex space-x-2">
+                            <button id="emojiTrigger" class="emoji-trigger">
+                                <i class="fas fa-smile text-theme-secondary"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="emoji-picker-container hidden" id="emojiPickerContainer">
+                        <emoji-picker></emoji-picker>
+                    </div>
                     <div class="tagged-users" id="taggedUsers">
                         <!-- Tagged users will appear here -->
                     </div>
@@ -1654,12 +1862,92 @@
         </div>
     </div>
 
+    <!-- Profile Picture Upload Modal -->
+    <div id="profilePictureModal" class="modal">
+        <div class="modal-container">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-theme-accent">Update Profile Picture</h2>
+                <button id="closeProfilePictureModal" class="text-theme-secondary hover:text-theme-accent transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex justify-center">
+                    <div class="relative w-40 h-40">
+                        <img id="profilePicturePreview" class="w-full h-full rounded-full object-cover" src="" alt="Profile Picture Preview">
+                        <div class="absolute inset-0 rounded-full border-4 border-theme-accent opacity-0" id="profilePictureFrame"></div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col items-center justify-center border-2 border-dashed border-purple-700 rounded-2xl p-8 text-center">
+                    <i class="fas fa-camera text-4xl text-theme-secondary mb-4"></i>
+                    <p class="text-theme-primary font-medium">Upload a new profile picture</p>
+                    <p class="text-theme-secondary text-sm mt-2">JPG, PNG or GIF - Max 5MB</p>
+                    <button id="uploadProfilePicture" class="mt-4 px-4 py-2 rounded-2xl font-semibold" style="background: var(--accent-color); color: white;">
+                        Select Image
+                    </button>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button id="cancelProfilePicture" class="px-4 py-2 glass border border-purple-700 rounded-2xl text-theme-secondary hover:text-theme-accent transition">
+                        Cancel
+                    </button>
+                    <button id="saveProfilePicture" class="px-6 py-2 rounded-2xl font-semibold hover:scale-105 transition" style="background: var(--accent-color); color: white;">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cover Photo Upload Modal -->
+    <div id="coverPhotoModal" class="modal">
+        <div class="modal-container">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-theme-accent">Update Cover Photo</h2>
+                <button id="closeCoverPhotoModal" class="text-theme-secondary hover:text-theme-accent transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex justify-center">
+                    <div class="relative w-full h-32">
+                        <img id="coverPhotoPreview" class="w-full h-full rounded-xl object-cover" src="" alt="Cover Photo Preview">
+                        <div class="absolute inset-0 rounded-xl border-4 border-theme-accent opacity-0" id="coverPhotoFrame"></div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col items-center justify-center border-2 border-dashed border-purple-700 rounded-2xl p-8 text-center">
+                    <i class="fas fa-image text-4xl text-theme-secondary mb-4"></i>
+                    <p class="text-theme-primary font-medium">Upload a new cover photo</p>
+                    <p class="text-theme-secondary text-sm mt-2">JPG or PNG - Max 10MB</p>
+                    <button id="uploadCoverPhoto" class="mt-4 px-4 py-2 rounded-2xl font-semibold" style="background: var(--accent-color); color: white;">
+                        Select Image
+                    </button>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button id="cancelCoverPhoto" class="px-4 py-2 glass border border-purple-700 rounded-2xl text-theme-secondary hover:text-theme-accent transition">
+                        Cancel
+                    </button>
+                    <button id="saveCoverPhoto" class="px-6 py-2 rounded-2xl font-semibold hover:scale-105 transition" style="background: var(--accent-color); color: white;">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- File Inputs (Hidden) -->
     <input type="file" id="modalPhotoInput" accept="image/*" class="hidden">
     <input type="file" id="modalVideoInput" accept="video/*" class="hidden">
     <input type="file" id="storyImageInput" accept="image/*" class="hidden">
     <input type="file" id="storyVideoInput" accept="video/*" class="hidden">
     <input type="file" id="reelVideoInput" accept="video/*" class="hidden">
+    <input type="file" id="profilePictureInput" accept="image/*" class="hidden">
+    <input type="file" id="coverPhotoInput" accept="image/*" class="hidden">
 
     <script>
         // Firebase Configuration
@@ -1717,6 +2005,10 @@
         let reels = [];
         let savedPosts = [];
 
+        // NEW: Profile Picture and Cover Photo Variables
+        let profilePictureFile = null;
+        let coverPhotoFile = null;
+
         // DOM Elements
         const connectionStatus = document.getElementById('connectionStatus');
         const connectionText = document.getElementById('connectionText');
@@ -1761,6 +2053,31 @@
         const eventsContainer = document.getElementById('eventsContainer');
         const reelsContainer = document.getElementById('reelsContainer');
         const savedContainer = document.getElementById('savedContainer');
+        
+        // NEW: Profile Elements
+        const profileCover = document.getElementById('profileCover');
+        const profileAvatar = document.getElementById('profileAvatar');
+        const profileName = document.getElementById('profileName');
+        const profileBio = document.getElementById('profileBio');
+        const changeCoverBtn = document.getElementById('changeCoverBtn');
+        const changeAvatarBtn = document.getElementById('changeAvatarBtn');
+        const editProfileBtn = document.getElementById('editProfileBtn');
+        
+        // NEW: Profile Picture Modal Elements
+        const profilePictureModal = document.getElementById('profilePictureModal');
+        const closeProfilePictureModal = document.getElementById('closeProfilePictureModal');
+        const profilePicturePreview = document.getElementById('profilePicturePreview');
+        const uploadProfilePicture = document.getElementById('uploadProfilePicture');
+        const cancelProfilePicture = document.getElementById('cancelProfilePicture');
+        const saveProfilePicture = document.getElementById('saveProfilePicture');
+        
+        // NEW: Cover Photo Modal Elements
+        const coverPhotoModal = document.getElementById('coverPhotoModal');
+        const closeCoverPhotoModal = document.getElementById('closeCoverPhotoModal');
+        const coverPhotoPreview = document.getElementById('coverPhotoPreview');
+        const uploadCoverPhoto = document.getElementById('uploadCoverPhoto');
+        const cancelCoverPhoto = document.getElementById('cancelCoverPhoto');
+        const saveCoverPhoto = document.getElementById('saveCoverPhoto');
         
         // Story Elements
         const storyViewer = document.getElementById('storyViewer');
@@ -1810,6 +2127,11 @@
         const uploadReelVideo = document.getElementById('uploadReelVideo');
         const modalAddReel = document.getElementById('modalAddReel');
 
+        // NEW: Emoji Picker Elements
+        const emojiTrigger = document.getElementById('emojiTrigger');
+        const emojiPickerContainer = document.getElementById('emojiPickerContainer');
+        const emojiPicker = document.querySelector('emoji-picker');
+
         // Mobile Navigation Elements
         const mobileNavToggle = document.getElementById('mobileNavToggle');
         const sidebar = document.getElementById('sidebar');
@@ -1827,7 +2149,7 @@
                     // Load user data from Firestore
                     loadUserData().then(() => {
                         updateUserUI();
-                        loadInitialPosts();
+                        loadFeed(); // Real-time feed listener
                         loadStories();
                         loadTrendingTopics();
                         loadSuggestedUsers();
@@ -1885,6 +2207,12 @@
             
             // NEW: Initialize reels system
             initializeReelsSystem();
+            
+            // NEW: Initialize emoji picker
+            initializeEmojiPicker();
+            
+            // NEW: Initialize profile picture and cover photo system
+            initializeProfilePhotoSystem();
         }
 
         // Initialize mood-based filtering
@@ -1968,6 +2296,62 @@
             
             // Handle reel video upload
             document.getElementById('reelVideoInput').addEventListener('change', handleReelVideoUpload);
+        }
+
+        // NEW: Initialize emoji picker
+        function initializeEmojiPicker() {
+            if (emojiPicker) {
+                emojiTrigger.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    emojiPickerContainer.classList.toggle('hidden');
+                });
+                
+                emojiPicker.addEventListener('emoji-click', event => {
+                    const emoji = event.detail.unicode;
+                    const textarea = modalPostInput;
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const text = textarea.value;
+                    const newText = text.substring(0, start) + emoji + text.substring(end);
+                    
+                    textarea.value = newText;
+                    textarea.focus();
+                    textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+                    
+                    // Hide the picker after selection
+                    emojiPickerContainer.classList.add('hidden');
+                });
+                
+                // Close emoji picker when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!emojiPickerContainer.contains(event.target) && !emojiTrigger.contains(event.target)) {
+                        emojiPickerContainer.classList.add('hidden');
+                    }
+                });
+            }
+        }
+
+        // NEW: Initialize profile picture and cover photo system
+        function initializeProfilePhotoSystem() {
+            // Set up event listeners for profile photo changes
+            changeAvatarBtn.addEventListener('click', openProfilePictureModal);
+            changeCoverBtn.addEventListener('click', openCoverPhotoModal);
+            
+            // Profile picture modal events
+            closeProfilePictureModal.addEventListener('click', closeProfilePictureModalFunc);
+            cancelProfilePicture.addEventListener('click', closeProfilePictureModalFunc);
+            saveProfilePicture.addEventListener('click', saveProfilePictureFunc);
+            uploadProfilePicture.addEventListener('click', () => document.getElementById('profilePictureInput').click());
+            
+            // Cover photo modal events
+            closeCoverPhotoModal.addEventListener('click', closeCoverPhotoModalFunc);
+            cancelCoverPhoto.addEventListener('click', closeCoverPhotoModalFunc);
+            saveCoverPhoto.addEventListener('click', saveCoverPhotoFunc);
+            uploadCoverPhoto.addEventListener('click', () => document.getElementById('coverPhotoInput').click());
+            
+            // Handle file inputs
+            document.getElementById('profilePictureInput').addEventListener('change', handleProfilePictureUpload);
+            document.getElementById('coverPhotoInput').addEventListener('change', handleCoverPhotoUpload);
         }
 
         // Set up event listeners
@@ -2092,6 +2476,8 @@
                         closeCreateStoryModal();
                         closeStoryViewer();
                         closeCreateReelModal();
+                        closeProfilePictureModalFunc();
+                        closeCoverPhotoModalFunc();
                         break;
                 }
             });
@@ -2200,6 +2586,8 @@
                 userId: currentUser.uid,
                 userName: currentUser.displayName || 'User',
                 userAvatar: currentUser.photoURL || '',
+                coverPhoto: '',
+                bio: 'Welcome to my profile!',
                 email: currentUser.email || '',
                 status: 'Online',
                 postsCount: 0,
@@ -2230,18 +2618,36 @@
             if (currentUser && userData) {
                 const displayName = userData.userName || currentUser.displayName || 'User';
                 const photoURL = userData.userAvatar || currentUser.photoURL || '';
+                const coverURL = userData.coverPhoto || '';
+                const bio = userData.bio || 'Welcome to my profile!';
                 
+                // Update all avatar images
                 userAvatar.src = photoURL;
-                userDisplayName.textContent = displayName;
                 sidebarUserAvatar.src = photoURL;
-                sidebarUserName.textContent = displayName;
                 currentUserAvatar.src = photoURL;
-                currentUserName.textContent = displayName;
                 storyUserAvatar.src = photoURL;
-                storyUserName.textContent = displayName;
                 reelUserAvatar.src = photoURL;
-                reelUserName.textContent = displayName;
+                profileAvatar.src = photoURL;
                 
+                // Update profile cover
+                if (coverURL) {
+                    profileCover.src = coverURL;
+                } else {
+                    // Set a default gradient if no cover photo
+                    profileCover.src = '';
+                    profileCover.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                }
+                
+                // Update display names
+                userDisplayName.textContent = displayName;
+                sidebarUserName.textContent = displayName;
+                currentUserName.textContent = displayName;
+                storyUserName.textContent = displayName;
+                reelUserName.textContent = displayName;
+                profileName.textContent = displayName;
+                profileBio.textContent = bio;
+                
+                // Update counts
                 postCount.textContent = userData.postsCount || 0;
                 followerCount.textContent = userData.followersCount || 0;
                 followingCount.textContent = userData.followingCount || 0;
@@ -2258,16 +2664,21 @@
                 const photoURL = currentUser.photoURL || '';
                 const displayName = currentUser.displayName || 'User';
                 
+                // Update all avatar images
                 userAvatar.src = photoURL;
-                userDisplayName.textContent = displayName;
                 sidebarUserAvatar.src = photoURL;
-                sidebarUserName.textContent = displayName;
                 currentUserAvatar.src = photoURL;
-                currentUserName.textContent = displayName;
                 storyUserAvatar.src = photoURL;
-                storyUserName.textContent = displayName;
                 reelUserAvatar.src = photoURL;
+                profileAvatar.src = photoURL;
+                
+                // Update display names
+                userDisplayName.textContent = displayName;
+                sidebarUserName.textContent = displayName;
+                currentUserName.textContent = displayName;
+                storyUserName.textContent = displayName;
                 reelUserName.textContent = displayName;
+                profileName.textContent = displayName;
             }
         }
 
@@ -2326,7 +2737,7 @@
             let html = '';
             groups.forEach(group => {
                 html += `
-                    <div class="group-card">
+                    <div class="horizontal-card">
                         <div class="group-header">
                             <img src="${group.avatar || ''}" alt="${group.name}" class="group-avatar">
                             <div class="group-info">
@@ -2337,7 +2748,6 @@
                         <div class="group-description">${group.description || 'No description available'}</div>
                         <div class="group-actions">
                             <div class="group-action-btn group-view-btn">View Group</div>
-                            <div class="group-action-btn group-join-btn">Leave Group</div>
                         </div>
                     </div>
                 `;
@@ -2377,7 +2787,7 @@
             let html = '';
             spaces.forEach(space => {
                 html += `
-                    <div class="space-card">
+                    <div class="horizontal-card">
                         <div class="space-header">
                             <img src="${space.avatar || ''}" alt="${space.name}" class="space-avatar">
                             <div class="space-info">
@@ -2388,7 +2798,6 @@
                         <div class="space-description">${space.description || 'No description available'}</div>
                         <div class="space-actions">
                             <div class="space-action-btn space-view-btn">View Space</div>
-                            <div class="space-action-btn space-join-btn">Leave Space</div>
                         </div>
                     </div>
                 `;
@@ -2434,7 +2843,7 @@
                 const day = eventDate.getDate();
                 
                 html += `
-                    <div class="event-card">
+                    <div class="horizontal-card">
                         <div class="event-header">
                             <div class="event-date">
                                 <div class="event-month">${month}</div>
@@ -2447,7 +2856,6 @@
                         </div>
                         <div class="event-description">${event.description || 'No description available'}</div>
                         <div class="event-actions">
-                            <div class="event-action-btn event-view-btn">View Event</div>
                             <div class="event-action-btn event-rsvp-btn">RSVP</div>
                         </div>
                     </div>
@@ -2488,7 +2896,7 @@
             let html = '';
             reels.forEach(reel => {
                 html += `
-                    <div class="post-card p-5">
+                    <div class="horizontal-card">
                         <div class="flex items-start space-x-3">
                             <img src="${reel.userAvatar || ''}" alt="${reel.userName}'s avatar" class="w-10 h-10 rounded-2xl object-cover cursor-pointer">
                             <div class="flex-1">
@@ -2601,7 +3009,7 @@
                 const userLiked = post.likes && post.likes.includes(currentUser.uid);
                 
                 html += `
-                    <div class="post-card p-5">
+                    <div class="post-card p-5 mb-4">
                         <div class="flex items-start space-x-3">
                             <img src="${post.userAvatar || ''}" alt="${post.userName}'s avatar" class="w-10 h-10 rounded-2xl object-cover cursor-pointer">
                             <div class="flex-1">
@@ -2644,6 +3052,168 @@
             });
             
             savedContainer.innerHTML = html;
+        }
+
+        // NEW: Open profile picture modal
+        function openProfilePictureModal() {
+            profilePictureModal.classList.add('active');
+            profilePicturePreview.src = profileAvatar.src;
+        }
+
+        // NEW: Close profile picture modal
+        function closeProfilePictureModalFunc() {
+            profilePictureModal.classList.remove('active');
+            profilePictureFile = null;
+        }
+
+        // NEW: Handle profile picture upload
+        function handleProfilePictureUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Check if file is an image
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            // Check file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB');
+                return;
+            }
+            
+            // Store file and show preview
+            profilePictureFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                profilePicturePreview.src = e.target.result;
+                document.getElementById('profilePictureFrame').style.opacity = '1';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // NEW: Save profile picture
+        function saveProfilePictureFunc() {
+            if (!profilePictureFile) {
+                alert('Please select a profile picture');
+                return;
+            }
+            
+            // Upload to Cloudinary
+            const formData = new FormData();
+            formData.append('file', profilePictureFile);
+            formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+            formData.append('cloud_name', cloudinaryConfig.cloudName);
+            
+            fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.secure_url) {
+                    // Update user document in Firebase
+                    return db.collection('users').doc(currentUser.uid).update({
+                        userAvatar: data.secure_url
+                    });
+                } else {
+                    throw new Error('Upload failed');
+                }
+            })
+            .then(() => {
+                console.log('Profile picture updated');
+                showNotification('Profile picture updated successfully!', 'success');
+                closeProfilePictureModalFunc();
+                
+                // Reload user data to reflect changes
+                loadUserData();
+            })
+            .catch(error => {
+                console.error('Error updating profile picture:', error);
+                showNotification('Error updating profile picture: ' + error.message, 'error');
+            });
+        }
+
+        // NEW: Open cover photo modal
+        function openCoverPhotoModal() {
+            coverPhotoModal.classList.add('active');
+            coverPhotoPreview.src = profileCover.src || '';
+        }
+
+        // NEW: Close cover photo modal
+        function closeCoverPhotoModalFunc() {
+            coverPhotoModal.classList.remove('active');
+            coverPhotoFile = null;
+        }
+
+        // NEW: Handle cover photo upload
+        function handleCoverPhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Check if file is an image
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            // Check file size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB');
+                return;
+            }
+            
+            // Store file and show preview
+            coverPhotoFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                coverPhotoPreview.src = e.target.result;
+                document.getElementById('coverPhotoFrame').style.opacity = '1';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // NEW: Save cover photo
+        function saveCoverPhotoFunc() {
+            if (!coverPhotoFile) {
+                alert('Please select a cover photo');
+                return;
+            }
+            
+            // Upload to Cloudinary
+            const formData = new FormData();
+            formData.append('file', coverPhotoFile);
+            formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+            formData.append('cloud_name', cloudinaryConfig.cloudName);
+            
+            fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.secure_url) {
+                    // Update user document in Firebase
+                    return db.collection('users').doc(currentUser.uid).update({
+                        coverPhoto: data.secure_url
+                    });
+                } else {
+                    throw new Error('Upload failed');
+                }
+            })
+            .then(() => {
+                console.log('Cover photo updated');
+                showNotification('Cover photo updated successfully!', 'success');
+                closeCoverPhotoModalFunc();
+                
+                // Reload user data to reflect changes
+                loadUserData();
+            })
+            .catch(error => {
+                console.error('Error updating cover photo:', error);
+                showNotification('Error updating cover photo: ' + error.message, 'error');
+            });
         }
 
         // Toggle theme
@@ -2717,6 +3287,9 @@
                     option.classList.remove('active');
                 }
             });
+            
+            // NEW: Hide emoji picker
+            emojiPickerContainer.classList.add('hidden');
         }
 
         // NEW: Open create reel modal
@@ -2907,8 +3480,8 @@
             video.src = URL.createObjectURL(file);
         }
 
-        // Create Post Function
-        function createPost() {
+        // Create Post Function - IMPLEMENTED
+        async function createPost() {
             if (!currentUser) {
                 alert('Please sign in to create a post');
                 return;
@@ -2963,28 +3536,140 @@
                 appreciationCount: 0
             };
             
+            // Handle media upload if present
+            const modalPreviewImage = document.getElementById('modalPreviewImage');
+            const modalPreviewVideo = document.getElementById('modalPreviewVideo');
+            
+            if (!modalPreviewImage.classList.contains('hidden')) {
+                // Upload image to Cloudinary
+                try {
+                    const imageUrl = await uploadMediaToCloudinary(modalPreviewImage.src, 'image');
+                    postData.mediaUrl = imageUrl;
+                    postData.mediaType = 'image';
+                } catch (error) {
+                    console.error('Error uploading image:', error);
+                    showNotification('Error uploading image: ' + error.message, 'error');
+                    return;
+                }
+            } else if (!modalPreviewVideo.classList.contains('hidden')) {
+                // Upload video to Cloudinary
+                try {
+                    const videoUrl = await uploadMediaToCloudinary(modalPreviewVideo.src, 'video');
+                    postData.mediaUrl = videoUrl;
+                    postData.mediaType = 'video';
+                } catch (error) {
+                    console.error('Error uploading video:', error);
+                    showNotification('Error uploading video: ' + error.message, 'error');
+                    return;
+                }
+            }
+            
             // Save to Firebase
-            db.collection('posts').add(postData)
-                .then(docRef => {
-                    console.log('Post published with ID: ', docRef.id);
-                    showNotification('Post published successfully!', 'success');
-                    closeCreatePostModal();
-                    reloadPosts();
-                    
-                    // Update user's post count
-                    updateUserPostCount(1);
-                    
-                    // Kynecta Unique Feature: Update user energy
-                    updateUserEnergy(5);
-                })
-                .catch(error => {
-                    console.error('Error publishing post: ', error);
-                    showNotification('Error publishing post: ' + error.message, 'error');
-                });
+            try {
+                const docRef = await db.collection('posts').add(postData);
+                console.log('Post published with ID: ', docRef.id);
+                showNotification('Post published successfully!', 'success');
+                closeCreatePostModal();
+                
+                // Update user's post count
+                await updateUserPostCount(1);
+                
+                // Kynecta Unique Feature: Update user energy
+                await updateUserEnergy(5);
+                
+                // The real-time listener will automatically update the feed
+            } catch (error) {
+                console.error('Error publishing post: ', error);
+                showNotification('Error publishing post: ' + error.message, 'error');
+            }
         }
 
-        // NEW: Create Reel Function
-        function createReel() {
+        // NEW: Upload media to Cloudinary
+        async function uploadMediaToCloudinary(fileData, type) {
+            const formData = new FormData();
+            
+            // Convert data URL to blob if needed
+            let file;
+            if (fileData.startsWith('data:')) {
+                const response = await fetch(fileData);
+                file = await response.blob();
+            } else {
+                // Handle file object
+                file = fileData;
+            }
+            
+            formData.append('file', file);
+            formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+            formData.append('cloud_name', cloudinaryConfig.cloudName);
+            
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/${type}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.secure_url) {
+                return data.secure_url;
+            } else {
+                throw new Error('Upload failed');
+            }
+        }
+
+        // NEW: Load Feed with Real-time Listener - IMPLEMENTED
+        function loadFeed() {
+            if (!currentUser) return;
+            
+            loadingIndicator.classList.remove('hidden');
+            endOfFeed.classList.add('hidden');
+            
+            let query = db.collection('posts')
+                .orderBy('timestamp', 'desc')
+                .limit(20);
+            
+            // Apply filters if set
+            if (currentFilter === 'top') {
+                query = query.orderBy('likesCount', 'desc');
+            } else if (currentFilter === 'trending') {
+                query = query.orderBy('viewsCount', 'desc');
+            }
+            
+            if (currentEmotionFilter) {
+                query = query.where('mood', '==', currentEmotionFilter);
+            }
+            
+            // Apply mood-based filtering
+            if (currentMoodFilter && currentMoodFilter !== 'all') {
+                // Filter by mood if posts have mood metadata
+                console.log('Filtering by mood:', currentMoodFilter);
+            }
+            
+            // Set up real-time listener
+            query.onSnapshot(snapshot => {
+                posts = [];
+                snapshot.forEach(doc => {
+                    posts.push({ id: doc.id, ...doc.data() });
+                });
+                
+                displayPosts(posts);
+                loadingIndicator.classList.add('hidden');
+                
+                if (snapshot.docs.length > 0) {
+                    lastPost = snapshot.docs[snapshot.docs.length - 1];
+                    hasMorePosts = true;
+                } else {
+                    hasMorePosts = false;
+                    endOfFeed.classList.remove('hidden');
+                }
+            }, error => {
+                console.error('Error loading posts:', error);
+                loadingIndicator.classList.add('hidden');
+                showNotification('Error loading posts: ' + error.message, 'error');
+            });
+        }
+
+        // NEW: Create Reel Function - IMPLEMENTED
+        async function createReel() {
             if (!currentUser) {
                 alert('Please sign in to create a reel');
                 return;
@@ -2995,90 +3680,74 @@
                 return;
             }
             
-            // Upload video to Cloudinary
-            const formData = new FormData();
-            formData.append('file', reelVideoFile);
-            formData.append('upload_preset', cloudinaryConfig.uploadPreset);
-            formData.append('cloud_name', cloudinaryConfig.cloudName);
-            
-            fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/video/upload`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.secure_url) {
-                    // Create reel object
-                    const reelData = {
-                        videoUrl: data.secure_url,
-                        userId: currentUser.uid,
-                        userName: userData?.userName || currentUser.displayName || 'Anonymous',
-                        userAvatar: userData?.userAvatar || currentUser.photoURL || '',
-                        duration: reelVideoDuration,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        likes: [],
-                        likesCount: 0,
-                        commentsCount: 0,
-                        sharesCount: 0,
-                        viewsCount: 0
-                    };
-                    
-                    // Save to Firebase
-                    return db.collection('reels').add(reelData);
-                } else {
-                    throw new Error('Upload failed');
-                }
-            })
-            .then(docRef => {
+            try {
+                // Upload video to Cloudinary
+                const videoUrl = await uploadMediaToCloudinary(reelVideoFile, 'video');
+                
+                // Create reel object
+                const reelData = {
+                    videoUrl: videoUrl,
+                    userId: currentUser.uid,
+                    userName: userData?.userName || currentUser.displayName || 'Anonymous',
+                    userAvatar: userData?.userAvatar || currentUser.photoURL || '',
+                    duration: reelVideoDuration,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    likes: [],
+                    likesCount: 0,
+                    commentsCount: 0,
+                    sharesCount: 0,
+                    viewsCount: 0
+                };
+                
+                // Save to Firebase
+                const docRef = await db.collection('reels').add(reelData);
                 console.log('Reel published with ID: ', docRef.id);
                 showNotification('Reel published successfully!', 'success');
                 closeCreateReelModal();
                 
                 // Update user's post count
-                updateUserPostCount(1);
+                await updateUserPostCount(1);
                 
                 // Kynecta Unique Feature: Update user energy
-                updateUserEnergy(5);
+                await updateUserEnergy(5);
                 
-                // Reload reels
-                loadReels();
-            })
-            .catch(error => {
+                // The real-time listener will automatically update the reels section
+            } catch (error) {
                 console.error('Error publishing reel: ', error);
                 showNotification('Error publishing reel: ' + error.message, 'error');
-            });
+            }
         }
 
         // Update user post count
-        function updateUserPostCount(increment) {
+        async function updateUserPostCount(increment) {
             if (!currentUser) return;
             
-            db.collection('users').doc(currentUser.uid).update({
-                postsCount: firebase.firestore.FieldValue.increment(increment)
-            })
-            .then(() => {
+            try {
+                await db.collection('users').doc(currentUser.uid).update({
+                    postsCount: firebase.firestore.FieldValue.increment(increment)
+                });
+                
                 // Reload user data to reflect changes
                 loadUserData();
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error updating user post count:', error);
-            });
+            }
         }
 
         // Kynecta Unique Feature: Update user energy
-        function updateUserEnergy(points) {
+        async function updateUserEnergy(points) {
             if (!currentUser) return;
             
-            db.collection('users').doc(currentUser.uid).update({
-                energy: firebase.firestore.FieldValue.increment(points)
-            })
-            .then(() => {
+            try {
+                await db.collection('users').doc(currentUser.uid).update({
+                    energy: firebase.firestore.FieldValue.increment(points)
+                });
+                
                 // Reload user data to reflect changes
                 loadUserData();
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error updating user energy:', error);
-            });
+            }
         }
 
         // Kynecta Unique Feature: Update user energy display
@@ -3110,108 +3779,96 @@
             });
         }
 
-        // Like Post Function
-        function likePost(postId) {
+        // Like Post Function - IMPLEMENTED
+        async function likePost(postId) {
             if (!currentUser) {
                 alert('Please sign in to like posts');
                 return;
             }
 
-            const postRef = db.collection('posts').doc(postId);
-            
-            // Use a transaction to safely update the likes
-            db.runTransaction(transaction => {
-                return transaction.get(postRef).then(postDoc => {
-                    if (!postDoc.exists) {
-                        throw new Error('Post does not exist!');
-                    }
-                    
-                    const postData = postDoc.data();
-                    const likes = postData.likes || [];
-                    const likesCount = postData.likesCount || 0;
-                    const userLiked = likes.includes(currentUser.uid);
-                    
-                    if (userLiked) {
-                        // Remove like
-                        const newLikes = likes.filter(uid => uid !== currentUser.uid);
-                        transaction.update(postRef, {
-                            likes: newLikes,
-                            likesCount: likesCount - 1
-                        });
-                        return false; // Unlike
-                    } else {
-                        // Add like
-                        const newLikes = [...likes, currentUser.uid];
-                        transaction.update(postRef, {
-                            likes: newLikes,
-                            likesCount: likesCount + 1
-                        });
-                        return true; // Like
-                    }
-                });
-            }).then(likeAdded => {
-                console.log(likeAdded ? 'Post liked' : 'Post unliked');
-                reloadPosts();
+            try {
+                const postRef = db.collection('posts').doc(postId);
+                const postDoc = await postRef.get();
                 
-                // Kynecta Unique Feature: Update user energy
-                if (likeAdded) {
-                    updateUserEnergy(1);
+                if (!postDoc.exists) {
+                    throw new Error('Post does not exist!');
+                }
+                
+                const postData = postDoc.data();
+                const likes = postData.likes || [];
+                const likesCount = postData.likesCount || 0;
+                const userLiked = likes.includes(currentUser.uid);
+                
+                if (userLiked) {
+                    // Remove like
+                    const newLikes = likes.filter(uid => uid !== currentUser.uid);
+                    await postRef.update({
+                        likes: newLikes,
+                        likesCount: likesCount - 1
+                    });
+                    console.log('Post unliked');
+                } else {
+                    // Add like
+                    const newLikes = [...likes, currentUser.uid];
+                    await postRef.update({
+                        likes: newLikes,
+                        likesCount: likesCount + 1
+                    });
+                    console.log('Post liked');
+                    
+                    // Kynecta Unique Feature: Update user energy
+                    await updateUserEnergy(1);
                 }
                 
                 // Mark post as viewed for automatic hiding
                 markPostAsViewed(postId);
-            }).catch(error => {
-                console.error('Transaction failed: ', error);
+            } catch (error) {
+                console.error('Error liking post: ', error);
                 showNotification('Error liking post: ' + error.message, 'error');
-            });
+            }
         }
 
-        // Add vibe reaction to post
-        function addVibeReaction(postId, vibeType) {
+        // Add vibe reaction to post - IMPLEMENTED
+        async function addVibeReaction(postId, vibeType) {
             if (!currentUser) {
                 alert('Please sign in to react to posts');
                 return;
             }
 
-            const postRef = db.collection('posts').doc(postId);
-            
-            // Use a transaction to safely update the vibe reactions
-            db.runTransaction(transaction => {
-                return transaction.get(postRef).then(postDoc => {
-                    if (!postDoc.exists) {
-                        throw new Error('Post does not exist!');
-                    }
-                    
-                    const postData = postDoc.data();
-                    const vibeReactions = postData.vibeReactions || {
-                        energy: 0,
-                        deep: 0,
-                        pure: 0,
-                        creative: 0
-                    };
-                    
-                    // Increment the selected vibe reaction
-                    vibeReactions[vibeType] = (vibeReactions[vibeType] || 0) + 1;
-                    
-                    transaction.update(postRef, {
-                        vibeReactions: vibeReactions
-                    });
-                    
-                    return true;
+            try {
+                const postRef = db.collection('posts').doc(postId);
+                const postDoc = await postRef.get();
+                
+                if (!postDoc.exists) {
+                    throw new Error('Post does not exist!');
+                }
+                
+                const postData = postDoc.data();
+                const vibeReactions = postData.vibeReactions || {
+                    energy: 0,
+                    deep: 0,
+                    pure: 0,
+                    creative: 0
+                };
+                
+                // Increment the selected vibe reaction
+                vibeReactions[vibeType] = (vibeReactions[vibeType] || 0) + 1;
+                
+                await postRef.update({
+                    vibeReactions: vibeReactions
                 });
-            }).then(success => {
+                
                 console.log(`Added ${vibeType} vibe reaction`);
-                reloadPosts();
                 
                 // Update user energy
-                updateUserEnergy(1);
+                await updateUserEnergy(1);
                 
                 // Mark post as viewed for automatic hiding
                 markPostAsViewed(postId);
-            }).catch(error => {
-                console.error('Transaction failed: ', error);
+            } catch (error) {
+                console.error('Error adding reaction: ', error);
                 showNotification('Error adding reaction: ' + error.message, 'error');
-            });
+            }
         }
 
         // Mark post as viewed for automatic hiding
@@ -3230,8 +3887,8 @@
             }, 1000);
         }
 
-        // Submit Comment Function
-        function submitComment(postId, commentText) {
+        // Submit Comment Function - IMPLEMENTED
+        async function submitComment(postId, commentText) {
             if (!currentUser) {
                 alert('Please sign in to comment');
                 return;
@@ -3252,36 +3909,35 @@
                 hasVoiceComment: false
             };
 
-            const postRef = db.collection('posts').doc(postId);
-            const commentRef = postRef.collection('comments').doc();
-            
-            // Use a batch write to update both the comment and the post's comment count
-            const batch = db.batch();
-            
-            // Add the comment
-            batch.set(commentRef, commentData);
-            
-            // Increment the post's comment count
-            batch.update(postRef, {
-                commentsCount: firebase.firestore.FieldValue.increment(1)
-            });
-            
-            batch.commit()
-                .then(() => {
-                    console.log('Comment added successfully');
-                    showNotification('Comment added!', 'success');
-                    reloadPosts();
-                    
-                    // Kynecta Unique Feature: Update user energy
-                    updateUserEnergy(2);
-                    
-                    // Mark post as viewed for automatic hiding
-                    markPostAsViewed(postId);
-                })
-                .catch(error => {
-                    console.error('Error adding comment: ', error);
-                    showNotification('Error adding comment: ' + error.message, 'error');
+            try {
+                const postRef = db.collection('posts').doc(postId);
+                const commentRef = postRef.collection('comments').doc();
+                
+                // Use a batch write to update both the comment and the post's comment count
+                const batch = db.batch();
+                
+                // Add the comment
+                batch.set(commentRef, commentData);
+                
+                // Increment the post's comment count
+                batch.update(postRef, {
+                    commentsCount: firebase.firestore.FieldValue.increment(1)
                 });
+                
+                await batch.commit();
+                
+                console.log('Comment added successfully');
+                showNotification('Comment added!', 'success');
+                
+                // Kynecta Unique Feature: Update user energy
+                await updateUserEnergy(2);
+                
+                // Mark post as viewed for automatic hiding
+                markPostAsViewed(postId);
+            } catch (error) {
+                console.error('Error adding comment: ', error);
+                showNotification('Error adding comment: ' + error.message, 'error');
+            }
         }
 
         // Handle post media upload
@@ -3409,60 +4065,6 @@
             return text.replace(regex, '<mark class="bg-yellow-300 text-black">$1</mark>');
         }
 
-        // Load initial posts from Firebase
-        function loadInitialPosts() {
-            if (!currentUser) return;
-            
-            loadingIndicator.classList.remove('hidden');
-            endOfFeed.classList.add('hidden');
-            
-            let query = db.collection('posts')
-                .orderBy('timestamp', 'desc')
-                .limit(10);
-            
-            // Apply filters if set
-            if (currentFilter === 'top') {
-                query = query.orderBy('likesCount', 'desc');
-            } else if (currentFilter === 'trending') {
-                query = query.orderBy('viewsCount', 'desc');
-            }
-            
-            if (currentEmotionFilter) {
-                query = query.where('mood', '==', currentEmotionFilter);
-            }
-            
-            // Apply mood-based filtering
-            if (currentMoodFilter && currentMoodFilter !== 'all') {
-                // Filter by mood if posts have mood metadata
-                // This would require posts to have mood field
-                console.log('Filtering by mood:', currentMoodFilter);
-            }
-            
-            query.get()
-                .then(snapshot => {
-                    posts = [];
-                    snapshot.forEach(doc => {
-                        posts.push({ id: doc.id, ...doc.data() });
-                    });
-                    
-                    displayPosts(posts);
-                    loadingIndicator.classList.add('hidden');
-                    
-                    if (snapshot.docs.length > 0) {
-                        lastPost = snapshot.docs[snapshot.docs.length - 1];
-                        hasMorePosts = true;
-                    } else {
-                        hasMorePosts = false;
-                        endOfFeed.classList.remove('hidden');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading posts:', error);
-                    loadingIndicator.classList.add('hidden');
-                    showNotification('Error loading posts: ' + error.message, 'error');
-                });
-        }
-
         // Load more posts for infinite scroll
         function loadMorePosts() {
             if (!hasMorePosts || !currentUser) return;
@@ -3519,7 +4121,7 @@
         function reloadPosts() {
             if (!currentUser) return;
             feedContainer.innerHTML = '';
-            loadInitialPosts();
+            loadFeed();
         }
 
         // Display posts in the feed
@@ -3615,13 +4217,23 @@
                 `;
             }
             
+            // Media content
+            let mediaHtml = '';
+            if (post.mediaUrl) {
+                if (post.mediaType === 'image') {
+                    mediaHtml = `<img src="${post.mediaUrl}" class="media-preview w-full mt-3 rounded-xl" alt="Post image">`;
+                } else if (post.mediaType === 'video') {
+                    mediaHtml = `<video src="${post.mediaUrl}" class="media-preview w-full mt-3 rounded-xl" controls></video>`;
+                }
+            }
+            
             postElement.innerHTML = `
                 <div class="flex items-start space-x-3">
-                    <img src="${post.userAvatar || ''}" alt="${post.userName}'s avatar" class="w-10 h-10 rounded-2xl object-cover cursor-pointer">
+                    <img src="${post.userAvatar || ''}" alt="${post.userName}'s avatar" class="w-10 h-10 rounded-2xl object-cover cursor-pointer" onclick="redirectToChat('${post.userId}')">
                     <div class="flex-1">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="font-semibold text-theme-primary cursor-pointer">${post.userName}</h3>
+                                <h3 class="font-semibold text-theme-primary cursor-pointer" onclick="redirectToChat('${post.userId}')">${post.userName}</h3>
                                 <div class="flex items-center space-x-2 mt-1">
                                     <span class="text-xs text-theme-secondary">${formatDate(post.timestamp?.toDate())}</span>
                                     ${post.mood ? `<span class="text-xs px-2 py-1 rounded-full bg-theme-accent/20 text-theme-accent">${getMoodEmoji(post.mood)} ${post.mood}</span>` : ''}
@@ -3640,6 +4252,8 @@
                         <div class="mt-3 text-theme-primary">
                             ${content}
                         </div>
+                        
+                        ${mediaHtml}
                         
                         ${taggedUsersHtml}
                         
@@ -3705,6 +4319,11 @@
             setupPostEventListeners(postElement, post);
             
             return postElement;
+        }
+
+        // NEW: Redirect to chat with user
+        function redirectToChat(userId) {
+            window.location.href = `chat.html?uid=${userId}`;
         }
 
         // Set up event listeners for a post element
@@ -3784,27 +4403,26 @@
         }
 
         // Share a post
-        function sharePost(postId) {
+        async function sharePost(postId) {
             if (!currentUser) {
                 alert('Please sign in to share posts');
                 return;
             }
 
-            const postRef = db.collection('posts').doc(postId);
-            postRef.update({
-                sharesCount: firebase.firestore.FieldValue.increment(1)
-            })
-            .then(() => {
+            try {
+                const postRef = db.collection('posts').doc(postId);
+                await postRef.update({
+                    sharesCount: firebase.firestore.FieldValue.increment(1)
+                });
+                
                 showNotification('Post shared!', 'success');
-                reloadPosts();
                 
                 // Mark post as viewed for automatic hiding
                 markPostAsViewed(postId);
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error sharing post:', error);
                 showNotification('Error sharing post: ' + error.message, 'error');
-            });
+            }
         }
 
         // Toggle save post

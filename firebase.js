@@ -1,55 +1,54 @@
+// firebase.js
 /**
- * UniConnect - Firebase Authentication Module
- * Handles user authentication with Firebase
+ * UniConnect - Firebase Authentication Service
+ * Handles all authentication business logic and user management
  */
 
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
-  authDomain: "uniconnect-ee95c.firebaseapp.com",
-  projectId: "uniconnect-ee95c",
-  storageBucket: "uniconnect-ee95c.firebasestorage.app",
-  messagingSenderId: "1003264444309",
-  appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
-};
+// Import from our config file and additional Firebase methods
+import { auth, db } from './firebase-config.js';
+import { 
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword, 
+  signOut, 
+  updateProfile,
+  sendPasswordResetEmail,
+  onAuthStateChanged,
+  updatePassword,
+  updateEmail
+} from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+import { 
+  doc, 
+  setDoc, 
+  updateDoc, 
+  getDoc,
+  serverTimestamp,
+  collection,
+  query,
+  where,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
 class FirebaseAuthService {
     constructor() {
-        this.app = null;
-        this.auth = null;
-        this.db = null;
+        this.app = auth.app;
+        this.auth = auth;
+        this.db = db;
         this.isInitialized = false;
         this.init();
     }
 
     /**
-     * Initializes Firebase authentication
+     * Initializes Firebase authentication service
      */
     async init() {
         try {
-            // Update connection status
             this.updateConnectionStatus('connecting', 'Connecting to Firebase...');
             
-            // Check if Firebase is available
-            if (typeof firebase === 'undefined') {
-                throw new Error('Firebase SDK not loaded');
-            }
+            console.log('🔥 Initializing Firebase Authentication Service...');
             
-            console.log('🔥 Firebase SDK loaded, initializing app...');
-            
-            // Initialize Firebase
-            this.app = firebase.initializeApp(firebaseConfig);
-            this.auth = firebase.auth();
-            this.db = firebase.firestore();
-            
-            // Set Firestore settings
-            this.db.settings({
-                cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
-            });
-            
-            // Test connection with timeout
+            // Test authentication connection
             await new Promise((resolve, reject) => {
-                const unsubscribe = this.auth.onAuthStateChanged((user) => {
+                const unsubscribe = onAuthStateChanged(this.auth, (user) => {
                     unsubscribe();
                     resolve(user);
                 }, (error) => {
@@ -57,21 +56,17 @@ class FirebaseAuthService {
                     reject(error);
                 });
                 
-                // Timeout after 8 seconds
                 setTimeout(() => reject(new Error('Connection timeout')), 8000);
             });
             
             this.isInitialized = true;
             this.updateConnectionStatus('connected', 'Secure Connection Established');
-            
-            // Show security status
             this.showSecurityStatus(true);
             
-            console.log('✅ Firebase initialized successfully!');
-            console.log('📊 Project: uniconnect-ee95c');
+            console.log('✅ Firebase Auth Service initialized successfully!');
             
         } catch (error) {
-            console.error('❌ Firebase initialization failed:', error);
+            console.error('❌ Firebase Auth Service initialization failed:', error);
             this.updateConnectionStatus('disconnected', 'Connection Failed');
             this.showSecurityStatus(false);
             this.handleFirebaseError(error, 'Firebase initialization');
@@ -86,7 +81,6 @@ class FirebaseAuthService {
         
         if (error.code) {
             switch (error.code) {
-                // Authentication errors
                 case 'auth/email-already-in-use':
                     userMessage = 'This email is already registered. Please try logging in.';
                     break;
@@ -95,9 +89,6 @@ class FirebaseAuthService {
                     break;
                 case 'auth/invalid-email':
                     userMessage = 'The email address is not valid.';
-                    break;
-                case 'auth/operation-not-allowed':
-                    userMessage = 'Email/password accounts are not enabled. Please contact support.';
                     break;
                 case 'auth/network-request-failed':
                     userMessage = 'Network error. Please check your internet connection.';
@@ -114,32 +105,12 @@ class FirebaseAuthService {
                 case 'auth/wrong-password':
                     userMessage = 'Incorrect password. Please try again.';
                     break;
-                    
-                // Firestore errors
                 case 'permission-denied':
                     userMessage = 'You do not have permission to perform this action.';
                     break;
                 case 'unavailable':
                     userMessage = 'Service is temporarily unavailable. Please try again later.';
                     break;
-                case 'failed-precondition':
-                    userMessage = 'Operation cannot be completed in the current state.';
-                    break;
-                case 'not-found':
-                    userMessage = 'The requested resource was not found.';
-                    break;
-                    
-                // Network and system errors
-                case 'auth/internal-error':
-                    userMessage = 'Internal server error. Please try again later.';
-                    break;
-                case 'auth/app-not-authorized':
-                    userMessage = 'Application not authorized to use Firebase Authentication.';
-                    break;
-                case 'auth/unauthorized-domain':
-                    userMessage = 'This domain is not authorized for login.';
-                    break;
-                    
                 default:
                     userMessage = `Error during ${context}: ${error.message || 'Please try again'}`;
             }
@@ -155,6 +126,266 @@ class FirebaseAuthService {
         }
         
         return userMessage;
+    }
+
+    /**
+     * Registers a new user with email and password
+     */
+    async registerUser(email, password, displayName) {
+        if (!this.isInitialized) {
+            throw new Error('Firebase not initialized. Please try again.');
+        }
+
+        try {
+            // Create user with email and password
+            const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
+            const user = userCredential.user;
+            
+            // Update user profile with display name
+            await updateProfile(user, {
+                displayName: displayName
+            });
+            
+            // Create user document in Firestore
+            const userDocRef = doc(this.db, 'users', user.uid);
+            await setDoc(userDocRef, {
+                uid: user.uid,
+                displayName: displayName,
+                email: user.email,
+                avatar: this.getDefaultAvatar(displayName),
+                status: 'Online',
+                statusType: 'online',
+                streak: 1,
+                unicoins: 100,
+                level: 1,
+                experience: 0,
+                posts: 0,
+                followers: 0,
+                following: 0,
+                isAnonymous: false,
+                isGuest: false,
+                authProvider: 'email',
+                emailVerified: user.emailVerified,
+                createdAt: serverTimestamp(),
+                lastSeen: serverTimestamp(),
+                lastLogin: serverTimestamp(),
+                preferences: {
+                    theme: 'dark',
+                    notifications: true,
+                    language: 'en'
+                },
+                gameStats: {
+                    gamesPlayed: 0,
+                    totalCoinsEarned: 0,
+                    favoriteGame: null
+                }
+            });
+            
+            // Store user info in localStorage
+            localStorage.setItem('uniconnect-user', JSON.stringify({
+                uid: user.uid,
+                email: user.email,
+                displayName: displayName,
+                isNewUser: true
+            }));
+            
+            console.log('✅ User registered successfully:', user.email);
+            return userCredential;
+            
+        } catch (error) {
+            console.error('❌ Registration failed:', error);
+            throw new Error(this.handleFirebaseError(error, 'user registration'));
+        }
+    }
+
+    /**
+     * Logs in a user with email and password
+     */
+    async loginUser(email, password) {
+        if (!this.isInitialized) {
+            throw new Error('Firebase not initialized. Please try again.');
+        }
+
+        try {
+            // Sign in user
+            const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
+            const user = userCredential.user;
+            
+            // Update last login timestamp and status in Firestore
+            const userDocRef = doc(this.db, 'users', user.uid);
+            await updateDoc(userDocRef, {
+                lastSeen: serverTimestamp(),
+                lastLogin: serverTimestamp(),
+                status: 'Online',
+                statusType: 'online'
+            });
+            
+            // Store user info in localStorage
+            localStorage.setItem('uniconnect-user', JSON.stringify({
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName || user.email.split('@')[0],
+                isNewUser: false
+            }));
+            
+            console.log('✅ User logged in successfully:', user.email);
+            return userCredential;
+            
+        } catch (error) {
+            console.error('❌ Login failed:', error);
+            throw new Error(this.handleFirebaseError(error, 'user login'));
+        }
+    }
+
+    /**
+     * Signs out the current user
+     */
+    async signOut() {
+        if (!this.isInitialized) {
+            throw new Error('Firebase not initialized.');
+        }
+
+        try {
+            // Update user status to offline before signing out
+            const user = this.getCurrentUser();
+            if (user && user.uid) {
+                const userDocRef = doc(this.db, 'users', user.uid);
+                await updateDoc(userDocRef, {
+                    status: 'Offline',
+                    statusType: 'offline',
+                    lastSeen: serverTimestamp()
+                });
+            }
+            
+            await signOut(this.auth);
+            
+            // Remove user data from localStorage
+            localStorage.removeItem('uniconnect-user');
+            localStorage.removeItem('uniconnect-email');
+            localStorage.removeItem('uniconnect-remember');
+            
+            console.log('✅ User signed out successfully');
+            
+        } catch (error) {
+            console.error('❌ Sign out failed:', error);
+            throw new Error(this.handleFirebaseError(error, 'user sign out'));
+        }
+    }
+
+    /**
+     * Gets the current authenticated user
+     */
+    getCurrentUser() {
+        if (!this.isInitialized) {
+            return null;
+        }
+
+        try {
+            // Check Firebase auth first
+            const firebaseUser = this.auth.currentUser;
+            if (firebaseUser) {
+                return {
+                    uid: firebaseUser.uid,
+                    email: firebaseUser.email,
+                    displayName: firebaseUser.displayName,
+                    emailVerified: firebaseUser.emailVerified,
+                    isNewUser: false
+                };
+            }
+            
+            // Fallback to localStorage
+            const userData = localStorage.getItem('uniconnect-user');
+            return userData ? JSON.parse(userData) : null;
+            
+        } catch (error) {
+            console.error('❌ Error getting current user:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Checks if user is authenticated
+     */
+    isAuthenticated() {
+        const user = this.getCurrentUser();
+        return user !== null;
+    }
+
+    /**
+     * Sends password reset email
+     */
+    async sendPasswordResetEmail(email) {
+        if (!this.isInitialized) {
+            throw new Error('Firebase not initialized.');
+        }
+
+        try {
+            await sendPasswordResetEmail(this.auth, email);
+            console.log('✅ Password reset email sent successfully');
+        } catch (error) {
+            console.error('❌ Password reset failed:', error);
+            throw new Error(this.handleFirebaseError(error, 'send password reset'));
+        }
+    }
+
+    /**
+     * Updates user profile information
+     */
+    async updateUserProfile(updates) {
+        if (!this.isInitialized) {
+            throw new Error('Firebase not initialized.');
+        }
+
+        try {
+            const user = this.auth.currentUser;
+            if (!user) throw new Error('No user logged in');
+
+            // Update Firebase auth profile
+            if (updates.displayName) {
+                await updateProfile(user, {
+                    displayName: updates.displayName
+                });
+            }
+
+            // Update Firestore user document
+            const userDocRef = doc(this.db, 'users', user.uid);
+            await updateDoc(userDocRef, updates);
+
+            // Update localStorage
+            const currentUserData = JSON.parse(localStorage.getItem('uniconnect-user') || '{}');
+            localStorage.setItem('uniconnect-user', JSON.stringify({
+                ...currentUserData,
+                ...updates
+            }));
+
+            console.log('✅ User profile updated successfully');
+        } catch (error) {
+            console.error('❌ Profile update failed:', error);
+            throw new Error(this.handleFirebaseError(error, 'profile update'));
+        }
+    }
+
+    /**
+     * Get user data from Firestore
+     */
+    async getUserData(uid) {
+        if (!this.isInitialized) {
+            throw new Error('Firebase not initialized.');
+        }
+
+        try {
+            const userDocRef = doc(this.db, 'users', uid);
+            const userDoc = await getDoc(userDocRef);
+            
+            if (userDoc.exists()) {
+                return userDoc.data();
+            } else {
+                throw new Error('User data not found');
+            }
+        } catch (error) {
+            console.error('❌ Get user data failed:', error);
+            throw new Error(this.handleFirebaseError(error, 'get user data'));
+        }
     }
 
     /**
@@ -207,201 +438,7 @@ class FirebaseAuthService {
     }
 
     /**
-     * Registers a new user with email and password
-     * @param {string} email - User's email
-     * @param {string} password - User's password
-     * @param {string} displayName - User's display name
-     * @returns {Promise<Object>} - User credentials
-     */
-    async registerUser(email, password, displayName) {
-        if (!this.isInitialized || !this.auth) {
-            throw new Error('Firebase not initialized. Please try again.');
-        }
-
-        try {
-            // Create user with email and password
-            const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-            const user = userCredential.user;
-            
-            // Update user profile with display name
-            await user.updateProfile({
-                displayName: displayName
-            });
-            
-            // Create comprehensive user document in Firestore
-            const userDocRef = this.db.collection('users').doc(user.uid);
-            await userDocRef.set({
-                uid: user.uid,
-                displayName: displayName,
-                email: user.email,
-                avatar: this.getDefaultAvatar(displayName),
-                status: 'Online',
-                statusType: 'online',
-                streak: 1,
-                unicoins: 100,
-                level: 1,
-                experience: 0,
-                posts: 0,
-                followers: 0,
-                following: 0,
-                isAnonymous: false,
-                isGuest: false,
-                authProvider: 'email',
-                emailVerified: user.emailVerified,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-                lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-                preferences: {
-                    theme: 'dark',
-                    notifications: true,
-                    language: 'en'
-                },
-                gameStats: {
-                    gamesPlayed: 0,
-                    totalCoinsEarned: 0,
-                    favoriteGame: null
-                }
-            });
-            
-            // Store user info in localStorage
-            localStorage.setItem('uniconnect-user', JSON.stringify({
-                uid: user.uid,
-                email: user.email,
-                displayName: displayName,
-                isNewUser: true
-            }));
-            
-            console.log('✅ User registered successfully:', user.email);
-            return userCredential;
-            
-        } catch (error) {
-            console.error('❌ Registration failed:', error);
-            throw new Error(this.handleFirebaseError(error, 'user registration'));
-        }
-    }
-
-    /**
-     * Logs in a user with email and password
-     * @param {string} email - User's email
-     * @param {string} password - User's password
-     * @returns {Promise<Object>} - User credentials
-     */
-    async loginUser(email, password) {
-        if (!this.isInitialized || !this.auth) {
-            throw new Error('Firebase not initialized. Please try again.');
-        }
-
-        try {
-            // Sign in user
-            const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-            const user = userCredential.user;
-            
-            // Update last login timestamp and status in Firestore
-            const userDocRef = this.db.collection('users').doc(user.uid);
-            await userDocRef.update({
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-                lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-                status: 'Online',
-                statusType: 'online'
-            });
-            
-            // Store user info in localStorage
-            localStorage.setItem('uniconnect-user', JSON.stringify({
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName || user.email.split('@')[0],
-                isNewUser: false
-            }));
-            
-            console.log('✅ User logged in successfully:', user.email);
-            return userCredential;
-            
-        } catch (error) {
-            console.error('❌ Login failed:', error);
-            throw new Error(this.handleFirebaseError(error, 'user login'));
-        }
-    }
-
-    /**
-     * Signs out the current user
-     * @returns {Promise<void>}
-     */
-    async signOut() {
-        if (!this.isInitialized || !this.auth) {
-            throw new Error('Firebase not initialized.');
-        }
-
-        try {
-            // Update user status to offline before signing out
-            const user = this.getCurrentUser();
-            if (user && user.uid) {
-                await this.db.collection('users').doc(user.uid).update({
-                    status: 'Offline',
-                    statusType: 'offline',
-                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            }
-            
-            await firebase.auth().signOut();
-            
-            // Remove user data from localStorage
-            localStorage.removeItem('uniconnect-user');
-            localStorage.removeItem('uniconnect-email');
-            localStorage.removeItem('uniconnect-remember');
-            
-            console.log('✅ User signed out successfully');
-            
-        } catch (error) {
-            console.error('❌ Sign out failed:', error);
-            throw new Error(this.handleFirebaseError(error, 'user sign out'));
-        }
-    }
-
-    /**
-     * Gets the current authenticated user
-     * @returns {Object|null} - The current user or null if not authenticated
-     */
-    getCurrentUser() {
-        if (!this.isInitialized || !this.auth) {
-            return null;
-        }
-
-        try {
-            // Check Firebase auth first
-            const firebaseUser = this.auth.currentUser;
-            if (firebaseUser) {
-                return {
-                    uid: firebaseUser.uid,
-                    email: firebaseUser.email,
-                    displayName: firebaseUser.displayName,
-                    emailVerified: firebaseUser.emailVerified,
-                    isNewUser: false
-                };
-            }
-            
-            // Fallback to localStorage
-            const userData = localStorage.getItem('uniconnect-user');
-            return userData ? JSON.parse(userData) : null;
-            
-        } catch (error) {
-            console.error('❌ Error getting current user:', error);
-            return null;
-        }
-    }
-
-    /**
-     * Checks if user is authenticated
-     * @returns {boolean} - True if user is authenticated
-     */
-    isAuthenticated() {
-        const user = this.getCurrentUser();
-        return user !== null;
-    }
-
-    /**
      * Updates the connection status display
-     * @param {string} status - The connection status (connected, connecting, disconnected)
-     * @param {string} message - The status message to display
      */
     updateConnectionStatus(status, message) {
         const statusElement = document.getElementById('connectionStatus');
@@ -410,7 +447,6 @@ class FirebaseAuthService {
         if (statusElement && textElement) {
             statusElement.className = `connection-status ${status}`;
             
-            // Update icon and text based on status
             if (status === 'connected') {
                 statusElement.innerHTML = '<i class="fas fa-check-circle mr-2"></i><span id="connectionText">' + message + '</span>';
             } else if (status === 'connecting') {
@@ -418,27 +454,6 @@ class FirebaseAuthService {
             } else {
                 statusElement.innerHTML = '<i class="fas fa-times-circle mr-2"></i><span id="connectionText">' + message + '</span>';
             }
-        }
-    }
-
-    /**
-     * Sends password reset email
-     * @param {string} email - User's email
-     * @returns {Promise<void>}
-     */
-    async sendPasswordResetEmail(email) {
-        if (!this.isInitialized || !this.auth) {
-            throw new Error('Firebase not initialized.');
-        }
-
-        try {
-            await firebase.auth().sendPasswordResetEmail(email);
-            
-            console.log('✅ Password reset email sent successfully');
-            
-        } catch (error) {
-            console.error('❌ Password reset failed:', error);
-            throw new Error(this.handleFirebaseError(error, 'send password reset'));
         }
     }
 

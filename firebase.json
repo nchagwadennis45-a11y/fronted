@@ -94,7 +94,42 @@
   },
   "firestore": {
     "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
+    "indexes": {
+      "indexes": [
+        {
+          "collectionGroup": "messages",
+          "queryScope": "COLLECTION",
+          "fields": [
+            {"fieldPath": "chatId", "order": "ASCENDING"},
+            {"fieldPath": "timestamp", "order": "ASCENDING"}
+          ]
+        },
+        {
+          "collectionGroup": "chats",
+          "queryScope": "COLLECTION",
+          "fields": [
+            {"fieldPath": "participants", "arrayConfig": "CONTAINS"},
+            {"fieldPath": "lastMessageTime", "order": "DESCENDING"}
+          ]
+        },
+        {
+          "collectionGroup": "friendships",
+          "queryScope": "COLLECTION",
+          "fields": [
+            {"fieldPath": "users", "arrayConfig": "CONTAINS"},
+            {"fieldPath": "status", "order": "ASCENDING"}
+          ]
+        },
+        {
+          "collectionGroup": "statuses",
+          "queryScope": "COLLECTION",
+          "fields": [
+            {"fieldPath": "userId", "order": "ASCENDING"},
+            {"fieldPath": "timestamp", "order": "DESCENDING"}
+          ]
+        }
+      ]
+    }
   },
   "storage": {
     "rules": "storage.rules"
