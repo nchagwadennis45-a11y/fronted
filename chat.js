@@ -180,35 +180,118 @@ function initApp() {
         }
     });
 }
+// Add this function before loadUserData
+function listenForIncomingCalls() {
+    if (!currentUser) {
+        console.warn('No current user for call listening');
+        return;
+    }
+
+    console.log('Setting up incoming call listeners for user:', currentUser.uid);
+
+    try {
+        const unsubscribe = db.collection('calls')
+            .where('calleeId', '==', currentUser.uid)
+            .where('status', '==', 'ringing')
+            .onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added') {
+                        const callData = change.doc.data();
+                        console.log('Incoming call detected:', callData);
+                        showIncomingCallNotification(callData);
+                    }
+                });
+            });
+
+        console.log('Call listeners activated');
+        return unsubscribe;
+
+    } catch (error) {
+        console.error('Error setting up call listeners:', error);
+    }
+}
+
+function showIncomingCallNotification(callData) {
+    // Remove any existing call notifications
+    const existingNotification = document.querySelector('.incoming-call-notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // Create incoming call UI
+    const callNotification = document.createElement('div');
+    callNotification.className = 'incoming-call-notification fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    callNotification.innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Incoming Call</h3>
+                <p class="text-gray-600 mb-1">${callData.callerName || 'Unknown Caller'}</p>
+                <p class="text-sm text-gray-500 mb-4">is calling you...</p>
+                <div class="flex gap-3 justify-center">
+                    <button onclick="answerCall('${callData.callId}')" class="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-full flex items-center gap-2 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                        </svg>
+                        Answer
+                    </button>
+                    <button onclick="rejectCall('${callData.callId}')" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-full flex items-center gap-2 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Decline
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(callNotification);
+}
+
+// Add answer and reject functions
+function answerCall(callId) {
+    console.log('Answering call:', callId);
+    // Update call status to answered
+    updateDoc(doc(db, 'calls', callId), {
+        status: 'answered',
+        answeredAt: serverTimestamp()
+    });
+    
+    // Remove notification
+    const notification = document.querySelector('.incoming-call-notification');
+    if (notification) {
+        notification.remove();
+    }
+    
+    // TODO: Initialize WebRTC call here
+    showToast('Call answered!', 'success');
+}
+
+function rejectCall(callId) {
+    console.log('Rejecting call:', callId);
+    // Update call status to rejected
+    updateDoc(doc(db, 'calls', callId), {
+        status: 'rejected',
+        endedAt: serverTimestamp()
+    });
+    
+    // Remove notification
+    const notification = document.querySelector('.incoming-call-notification');
+    if (notification) {
+        notification.remove();
+    }
+    
+    showToast('Call rejected', 'info');
+}
 
 async function loadUserData() {
     try {
         console.log('Loading user data for:', currentUser.uid);
-        async function loadUserData() {
-    try {
-        // ... existing code ...
         
-        showChatApp();
-        setupEventListeners();
-        loadUserSettings();
-        loadStatusUpdates();
-        loadFriends();
-        loadAllUsers();
-        initEmojiPicker();
-        loadChatsTemporary();
-        requestNotificationPermission();
-        
-        // Start listening for friend requests
-        listenForFriendRequests();
-        
-        // NEW: Start listening for incoming calls
-        listenForIncomingCalls();
-        
-    } catch (error) {
-        console.error('Error loading user data:', error);
-        showToast('Error loading user data', 'error');
-    }
-}
         // Get user document from Firestore
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
         
@@ -247,16 +330,19 @@ async function loadUserData() {
         initEmojiPicker();
         loadChatsTemporary();
         requestNotificationPermission();
-        
+        setupToolsListeners();
+
         // Start listening for friend requests
         listenForFriendRequests();
+        
+        // NEW: Start listening for incoming calls
+        listenForIncomingCalls();
         
     } catch (error) {
         console.error('Error loading user data:', error);
         showToast('Error loading user data', 'error');
     }
 }
-
 function initializeUserData() {
     console.log('Initializing UI with user data');
     // Set user info in UI
@@ -403,6 +489,7 @@ function applyChatSettings() {
     }
 }
 
+// Update the status rendering in loadStatusUpdates function
 function loadStatusUpdates() {
     const statusUpdates = document.getElementById('statusUpdates');
     if (!statusUpdates) return;
@@ -429,7 +516,8 @@ function loadStatusUpdates() {
             snapshot.forEach(doc => {
                 const status = doc.data();
                 const statusElement = document.createElement('div');
-                statusElement.className = 'flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer';
+                statusElement.className = 'status-item flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer';
+                statusElement.dataset.statusId = doc.id; // Add status ID
                 
                 let statusContent = '';
                 if (status.type === 'emoji') {
@@ -446,9 +534,15 @@ function loadStatusUpdates() {
                 
                 statusElement.innerHTML = `
                     ${statusContent}
-                    <div>
+                    <div class="flex-1">
                         <p class="font-medium">${status.userDisplayName}</p>
                         <p class="text-sm text-gray-500">${formatTimeAgo(status.timestamp)}</p>
+                        ${status.caption ? `<p class="text-sm text-gray-600 mt-1">${status.caption}</p>` : ''}
+                    </div>
+                    <div class="text-right">
+                        <button class="view-status-btn text-purple-600 hover:text-purple-800 text-sm">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
                 `;
                 
@@ -613,9 +707,9 @@ function loadFriends() {
                         const friendData = friendDoc.data();
                         console.log('Friend data loaded:', friendData.displayName);
                         friends.push({
-                            id: friendId,
-                            friendshipId: doc.id,
-                            ...friendData
+                       id: friendId,
+                       friendshipId: doc.id,
+                       ...friendData
                         });
                     }
                 });
@@ -1861,6 +1955,386 @@ function handleTypingIndicator() {
         }, 1000);
     }
 }
+// NEW: Open Status View Function
+async function openStatus(statusId) {
+    try {
+        console.log('Opening status:', statusId);
+        
+        // Get status data from Firestore
+        const statusDoc = await db.collection('statuses').doc(statusId).get();
+        
+        if (!statusDoc.exists) {
+            showToast('Status not found', 'error');
+            return;
+        }
+        
+        const status = statusDoc.data();
+        console.log('Status data:', status);
+        
+        // Update current user as viewer
+        await addViewerToStatus(statusId, currentUser.uid);
+        
+        // Display status in modal
+        displayStatusModal(status, statusId);
+        
+    } catch (error) {
+        console.error('Error opening status:', error);
+        showToast('Error loading status', 'error');
+    }
+}
+
+// NEW: Display Status Modal
+function displayStatusModal(status, statusId) {
+    // Create or get status modal
+    let statusModal = document.getElementById('statusModal');
+    
+    if (!statusModal) {
+        statusModal = document.createElement('div');
+        statusModal.id = 'statusModal';
+        statusModal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center hidden';
+        statusModal.innerHTML = `
+            <div class="status-modal-container bg-white rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-hidden">
+                <div class="status-header flex items-center justify-between p-4 border-b">
+                    <div class="flex items-center space-x-3">
+                        <img id="statusUserAvatar" class="w-10 h-10 rounded-full" src="" alt="">
+                        <div>
+                            <h3 id="statusUserName" class="font-semibold"></h3>
+                            <p id="statusTime" class="text-sm text-gray-500"></p>
+                        </div>
+                    </div>
+                    <button id="closeStatusModal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="status-content p-4">
+                    <div id="statusMedia" class="mb-4"></div>
+                    <div id="statusText" class="text-gray-800"></div>
+                </div>
+                
+                <div class="status-footer p-4 border-t">
+                    <div class="flex items-center justify-between text-sm text-gray-600">
+                        <div class="flex items-center space-x-4">
+                            <span id="viewersCount">
+                                <i class="fas fa-eye mr-1"></i>
+                                <span>0 viewers</span>
+                            </span>
+                            <button id="viewViewersBtn" class="text-purple-600 hover:text-purple-800">
+                                View all
+                            </button>
+                        </div>
+                        <button id="deleteStatusBtn" class="text-red-600 hover:text-red-800 hidden">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Viewers List Modal -->
+            <div id="viewersModal" class="fixed inset-0 bg-black bg-opacity-90 z-60 flex items-center justify-center hidden">
+                <div class="bg-white rounded-lg max-w-md w-full mx-4 max-h-[70vh] overflow-hidden">
+                    <div class="p-4 border-b flex justify-between items-center">
+                        <h3 class="font-semibold">Viewers</h3>
+                        <button id="closeViewersModal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="viewersList" class="p-4 overflow-y-auto max-h-96">
+                        <!-- Viewers will be listed here -->
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(statusModal);
+        
+        // Add event listeners for the modal
+        setupStatusModalListeners();
+    }
+    
+    // Populate status data
+    populateStatusModal(status, statusId);
+    
+    // Show modal
+    statusModal.classList.remove('hidden');
+}
+
+// NEW: Setup Status Modal Event Listeners
+function setupStatusModalListeners() {
+    const statusModal = document.getElementById('statusModal');
+    const viewersModal = document.getElementById('viewersModal');
+    
+    // Close status modal
+    const closeStatusModal = document.getElementById('closeStatusModal');
+    if (closeStatusModal) {
+        closeStatusModal.addEventListener('click', () => {
+            statusModal.classList.add('hidden');
+        });
+    }
+    
+    // Close viewers modal
+    const closeViewersModal = document.getElementById('closeViewersModal');
+    if (closeViewersModal) {
+        closeViewersModal.addEventListener('click', () => {
+            viewersModal.classList.add('hidden');
+        });
+    }
+    
+    // View viewers button
+    const viewViewersBtn = document.getElementById('viewViewersBtn');
+    if (viewViewersBtn) {
+        viewViewersBtn.addEventListener('click', () => {
+            const statusId = viewViewersBtn.dataset.statusId;
+            if (statusId) {
+                showViewersList(statusId);
+            }
+        });
+    }
+    
+    // Delete status button (only for owner)
+    const deleteStatusBtn = document.getElementById('deleteStatusBtn');
+    if (deleteStatusBtn) {
+        deleteStatusBtn.addEventListener('click', () => {
+            const statusId = deleteStatusBtn.dataset.statusId;
+            if (statusId) {
+                deleteStatus(statusId);
+            }
+        });
+    }
+    
+    // Close modal when clicking outside
+    statusModal.addEventListener('click', (e) => {
+        if (e.target === statusModal) {
+            statusModal.classList.add('hidden');
+        }
+    });
+    
+    viewersModal.addEventListener('click', (e) => {
+        if (e.target === viewersModal) {
+            viewersModal.classList.add('hidden');
+        }
+    });
+}
+
+// NEW: Populate Status Modal with Data
+function populateStatusModal(status, statusId) {
+    // User info
+    const statusUserAvatar = document.getElementById('statusUserAvatar');
+    const statusUserName = document.getElementById('statusUserName');
+    const statusTime = document.getElementById('statusTime');
+    
+    if (statusUserAvatar) statusUserAvatar.src = status.userPhotoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(status.userDisplayName)}&background=7C3AED&color=fff`;
+    if (statusUserName) statusUserName.textContent = status.userDisplayName;
+    if (statusTime) statusTime.textContent = formatTimeAgo(status.timestamp);
+    
+    // Status content
+    const statusMedia = document.getElementById('statusMedia');
+    const statusText = document.getElementById('statusText');
+    const viewViewersBtn = document.getElementById('viewViewersBtn');
+    const deleteStatusBtn = document.getElementById('deleteStatusBtn');
+    
+    if (statusMedia) {
+        statusMedia.innerHTML = '';
+        
+        switch (status.type) {
+            case 'emoji':
+                statusMedia.innerHTML = `
+                    <div class="text-8xl text-center py-8">${status.content}</div>
+                `;
+                break;
+            case 'text':
+                statusMedia.innerHTML = `
+                    <div class="text-2xl text-center py-8 font-semibold">${status.content}</div>
+                `;
+                break;
+            case 'image':
+                statusMedia.innerHTML = `
+                    <img src="${status.content}" alt="Status image" class="w-full h-64 object-cover rounded-lg">
+                `;
+                break;
+            case 'video':
+                statusMedia.innerHTML = `
+                    <video src="${status.content}" controls class="w-full h-64 object-cover rounded-lg"></video>
+                `;
+                break;
+            case 'audio':
+                statusMedia.innerHTML = `
+                    <audio src="${status.content}" controls class="w-full"></audio>
+                    <div class="text-center mt-2">
+                        <i class="fas fa-music text-4xl text-purple-600"></i>
+                    </div>
+                `;
+                break;
+        }
+    }
+    
+    if (statusText && status.caption) {
+        statusText.textContent = status.caption;
+    } else if (statusText) {
+        statusText.classList.add('hidden');
+    }
+    
+    // Set status ID for viewers button
+    if (viewViewersBtn) {
+        viewViewersBtn.dataset.statusId = statusId;
+    }
+    
+    // Show delete button only for status owner
+    if (deleteStatusBtn) {
+        if (status.userId === currentUser.uid) {
+            deleteStatusBtn.classList.remove('hidden');
+            deleteStatusBtn.dataset.statusId = statusId;
+        } else {
+            deleteStatusBtn.classList.add('hidden');
+        }
+    }
+    
+    // Load viewers count
+    loadViewersCount(statusId);
+}
+
+// NEW: Add Viewer to Status
+async function addViewerToStatus(statusId, userId) {
+    try {
+        console.log('Adding viewer to status:', statusId, userId);
+        
+        // Check if user already viewed this status
+        const existingView = await db.collection('statusViews')
+            .where('statusId', '==', statusId)
+            .where('userId', '==', userId)
+            .get();
+        
+        if (!existingView.empty) {
+            console.log('User already viewed this status');
+            return;
+        }
+        
+        // Add viewer
+        await db.collection('statusViews').add({
+            statusId: statusId,
+            userId: userId,
+            userDisplayName: currentUserData.displayName,
+            userPhotoURL: currentUserData.photoURL,
+            viewedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        console.log('Viewer added successfully');
+        
+    } catch (error) {
+        console.error('Error adding viewer to status:', error);
+    }
+}
+
+// NEW: Load Viewers Count
+async function loadViewersCount(statusId) {
+    try {
+        const viewersSnapshot = await db.collection('statusViews')
+            .where('statusId', '==', statusId)
+            .get();
+        
+        const viewersCount = viewersSnapshot.size;
+        const viewersCountElement = document.getElementById('viewersCount');
+        
+        if (viewersCountElement) {
+            viewersCountElement.innerHTML = `
+                <i class="fas fa-eye mr-1"></i>
+                <span>${viewersCount} ${viewersCount === 1 ? 'viewer' : 'viewers'}</span>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('Error loading viewers count:', error);
+    }
+}
+
+// NEW: Show Viewers List
+async function showViewersList(statusId) {
+    try {
+        const viewersModal = document.getElementById('viewersModal');
+        const viewersList = document.getElementById('viewersList');
+        
+        if (!viewersModal || !viewersList) return;
+        
+        // Show loading
+        viewersList.innerHTML = `
+            <div class="text-center text-gray-500 py-4">
+                <i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>
+                <p>Loading viewers...</p>
+            </div>
+        `;
+        
+        viewersModal.classList.remove('hidden');
+        
+        // Get viewers from Firestore
+        const viewersSnapshot = await db.collection('statusViews')
+            .where('statusId', '==', statusId)
+            .orderBy('viewedAt', 'desc')
+            .get();
+        
+        if (viewersSnapshot.empty) {
+            viewersList.innerHTML = '<p class="text-center text-gray-500 py-4">No viewers yet</p>';
+            return;
+        }
+        
+        viewersList.innerHTML = '';
+        
+        viewersSnapshot.forEach(doc => {
+            const view = doc.data();
+            const viewerItem = document.createElement('div');
+            viewerItem.className = 'flex items-center space-x-3 p-3 border-b border-gray-100 last:border-b-0';
+            viewerItem.innerHTML = `
+                <img class="w-10 h-10 rounded-full" src="${view.userPhotoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(view.userDisplayName)}&background=7C3AED&color=fff`}" alt="${view.userDisplayName}">
+                <div class="flex-1">
+                    <p class="font-medium">${view.userDisplayName}</p>
+                    <p class="text-sm text-gray-500">${formatTimeAgo(view.viewedAt)}</p>
+                </div>
+            `;
+            viewersList.appendChild(viewerItem);
+        });
+        
+    } catch (error) {
+        console.error('Error loading viewers list:', error);
+        const viewersList = document.getElementById('viewersList');
+        if (viewersList) {
+            viewersList.innerHTML = '<p class="text-center text-red-500 py-4">Error loading viewers</p>';
+        }
+    }
+}
+
+// NEW: Delete Status
+async function deleteStatus(statusId) {
+    if (!confirm('Are you sure you want to delete this status?')) {
+        return;
+    }
+    
+    try {
+        // Delete status document
+        await db.collection('statuses').doc(statusId).delete();
+        
+        // Delete all associated views
+        const viewsSnapshot = await db.collection('statusViews')
+            .where('statusId', '==', statusId)
+            .get();
+        
+        const batch = db.batch();
+        viewsSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+        
+        // Close modal
+        const statusModal = document.getElementById('statusModal');
+        if (statusModal) statusModal.classList.add('hidden');
+        
+        // Reload status updates
+        loadStatusUpdates();
+        
+        showToast('Status deleted successfully', 'success');
+        
+    } catch (error) {
+        console.error('Error deleting status:', error);
+        showToast('Error deleting status', 'error');
+    }
+}
 
 // FIXED: Push Notifications with proper permission handling
 async function requestNotificationPermission() {
@@ -1909,6 +2383,49 @@ async function sendPushNotification(userId, senderName, message) {
         console.error('Error sending push notification:', error);
     }
 }
+function setupToolsListeners() {
+
+    // FEATURES
+    document.getElementById("featuresBtn")?.addEventListener("click", () => {
+        document.getElementById("featuresModal").classList.remove("hidden", "opacity-0");
+    });
+    document.getElementById("closeFeatures")?.addEventListener("click", () => {
+        document.getElementById("featuresModal").classList.add("hidden");
+    });
+
+    // MOOD
+    document.getElementById("currentMoodBtn")?.addEventListener("click", () => {
+        document.getElementById("moodModal").classList.remove("hidden");
+    });
+    document.getElementById("closeMood")?.addEventListener("click", () => {
+        document.getElementById("moodModal").classList.add("hidden");
+    });
+
+    document.querySelectorAll(".mood-option").forEach(option => {
+        option.addEventListener("click", () => {
+            let selectedMood = option.dataset.mood;
+            showToast("Mood updated: " + selectedMood, "success");
+            document.getElementById("moodModal").classList.add("hidden");
+
+            // Save mood to Firestore
+            if (currentUser) {
+                firebase.firestore().collection("users").doc(currentUser.uid).update({
+                    mood: selectedMood
+                });
+            }
+        });
+    });
+
+    // QUICK ACTIONS
+    document.getElementById("quickActionsBtn")?.addEventListener("click", () => {
+        document.getElementById("quickActionsModal").classList.remove("hidden");
+    });
+    document.getElementById("closeQuickActions")?.addEventListener("click", () => {
+        document.getElementById("quickActionsModal").classList.add("hidden");
+    });
+}
+
+
 // FIXED: Add missing toggleMute function
 function toggleMute() {
     if (!localStream) return;
@@ -1964,43 +2481,53 @@ function toggleVideo() {
         showToast(isVideoOff ? 'Video turned off' : 'Video turned on', 'info');
     }
 }
+    // New enhanced friend list buttons are handled in renderFriends function
 // FIXED: Enhanced Event Listeners with proper mobile support
 function setupEventListeners() {
     console.log('Setting up event listeners');
     
     // Use event delegation for dynamic elements
-    // Use event delegation for dynamic elements
-document.addEventListener('click', function(e) {
-    // Handle message friend buttons (old style - keep for backward compatibility)
-    if (e.target.closest('.message-friend')) {
-        const btn = e.target.closest('.message-friend');
-        const friendId = btn.dataset.id;
-        const friendName = btn.dataset.name;
-        console.log('Message friend clicked:', friendName, friendId);
-        startChat(friendId, friendName);
-    }
+    document.addEventListener('click', function(e) {
+        // Handle message friend buttons (old style - keep for backward compatibility)
+        if (e.target.closest('.message-friend')) {
+            const btn = e.target.closest('.message-friend');
+            const friendId = btn.dataset.id;
+            const friendName = btn.dataset.name;
+            console.log('Message friend clicked:', friendName, friendId);
+            startChat(friendId, friendName);
+        }
+        
+        // Handle call friend buttons (old style - keep for backward compatibility)
+        if (e.target.closest('.call-friend')) {
+            const btn = e.target.closest('.call-friend');
+            const friendId = btn.dataset.id;
+            const friendName = btn.dataset.name;
+            console.log('Call friend clicked:', friendName, friendId);
+            startCall(friendId, friendName);
+        }
+        
+        // Handle edit friend buttons (old style - keep for backward compatibility)
+        if (e.target.closest('.edit-friend')) {
+            const btn = e.target.closest('.edit-friend');
+            const friendId = btn.dataset.id;
+            const friendName = btn.dataset.name;
+            const friendStatus = btn.dataset.status;
+            console.log('Edit friend clicked:', friendName, friendId);
+            openEditFriendModal(friendId, friendName, friendStatus);
+        }
+        
+        // NEW: Handle status item clicks
+        if (e.target.closest('.status-item')) {
+            const statusItem = e.target.closest('.status-item');
+            const statusId = statusItem.dataset.statusId;
+            console.log('Status item clicked:', statusId);
+            openStatus(statusId);
+        }
+        
+        // New enhanced friend list buttons are handled in renderFriends function
+    });
     
-    // Handle call friend buttons (old style - keep for backward compatibility)
-    if (e.target.closest('.call-friend')) {
-        const btn = e.target.closest('.call-friend');
-        const friendId = btn.dataset.id;
-        const friendName = btn.dataset.name;
-        console.log('Call friend clicked:', friendName, friendId);
-        startCall(friendId, friendName);
-    }
-    
-    // Handle edit friend buttons (old style - keep for backward compatibility)
-    if (e.target.closest('.edit-friend')) {
-        const btn = e.target.closest('.edit-friend');
-        const friendId = btn.dataset.id;
-        const friendName = btn.dataset.name;
-        const friendStatus = btn.dataset.status;
-        console.log('Edit friend clicked:', friendName, friendId);
-        openEditFriendModal(friendId, friendName, friendStatus);
-    }
-    
-    // New enhanced friend list buttons are handled in renderFriends function
-});
+
     
     // Theme toggle
     const themeToggle = document.getElementById('themeToggle');
@@ -2439,11 +2966,20 @@ document.addEventListener('click', function(e) {
         });
     }
 
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.status-item')) {
+        const statusItem = e.target.closest('.status-item');
+        const statusId = statusItem.dataset.statusId;
+        console.log('Status item clicked:', statusId);
+        openStatus(statusId);
+    }
+});
     // Add touch event listeners for mobile
     document.addEventListener('touchstart', function(e) {
         // Add active state for touch
         if (e.target.classList.contains('contact-item') || 
             e.target.closest('.contact-item') ||
+
             e.target.classList.contains('btn') ||
             e.target.closest('.btn')) {
             e.target.style.opacity = '0.7';
@@ -3103,4 +3639,4 @@ if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
     optimizeForMobile();
 }
 
-console.log('Chat application JavaScript loaded successfully');
+console.log('Chat application JavaScript loaded successfully')

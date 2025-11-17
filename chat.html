@@ -705,6 +705,7 @@
                 </div>
             </div>
             
+            
             <div class="overflow-y-auto max-h-[60vh] custom-scrollbar">
                 <!-- Profile Section -->
                 <div class="p-6 border-b border-gray-200">
@@ -2054,7 +2055,431 @@
             </div>
         </div>
     </div>
+<!-- Status Viewer Modal -->
+<div id="statusViewerModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
+        <div class="kynecta-header p-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-white">Status Updates</h3>
+                <button id="closeStatusViewer" class="text-white/80 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
+            <div id="statusViewerContent" class="space-y-4">
+                <!-- Status updates will be populated from Firebase -->
+                <div class="text-center text-gray-500 py-8">
+                    <i class="fas fa-eye-slash text-4xl mb-3 text-gray-300 block"></i>
+                    <p>No status updates to view</p>
+                    <p class="text-sm mt-1">When friends post status updates, they'll appear here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="statusList">
+    <!-- Example status -->
+    <div class="status-item" data-status-id="STATUS_ID_HERE">
+        <img src="IMAGE_URL" class="w-12 h-12 rounded-full" />
+        <div class="ml-3">
+            <p class="font-semibold">User Name</p>
+            <p class="text-sm text-gray-500">Just now</p>
+        </div>
+    </div>
+</div>
+<div id="featuresModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white w-11/12 max-w-md rounded-2xl p-6 shadow-lg">
+        <h2 class="text-xl font-bold mb-4">Available Features</h2>
 
-    <script src="chat.js"></script>
+        <ul class="space-y-3 text-gray-700">
+            <li>• Voice & Video Calling</li>
+            <li>• Status Updates (Photo, Text, Audio)</li>
+            <li>• Mood System</li>
+            <li>• Quick Actions</li>
+            <li>• Cloud Chat Backup</li>
+            <li>• Real-time Typing Indicator</li>
+        </ul>
+
+        <button class="w-full mt-6 bg-purple-600 text-white p-3 rounded-xl" id="closeFeatures">
+            Close
+        </button>
+    </div>
+</div>
+<div id="moodModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white w-11/12 max-w-md rounded-2xl p-6 shadow-lg">
+        <h2 class="text-xl font-bold mb-4">Select Your Mood</h2>
+
+        <div class="grid grid-cols-3 gap-4 text-center">
+            <div class="p-4 rounded-xl bg-yellow-100 cursor-pointer mood-option" data-mood="happy">😊 Happy</div>
+            <div class="p-4 rounded-xl bg-blue-100 cursor-pointer mood-option" data-mood="calm">😌 Calm</div>
+            <div class="p-4 rounded-xl bg-red-100 cursor-pointer mood-option" data-mood="energetic">🔥 Energetic</div>
+            <div class="p-4 rounded-xl bg-green-100 cursor-pointer mood-option" data-mood="focused">🎯 Focused</div>
+            <div class="p-4 rounded-xl bg-purple-100 cursor-pointer mood-option" data-mood="creative">🎨 Creative</div>
+        </div>
+
+        <button class="w-full mt-6 bg-purple-600 text-white p-3 rounded-xl" id="closeMood">
+            Close
+        </button>
+    </div>
+</div>
+<div id="quickActionsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white w-11/12 max-w-md rounded-2xl p-6 shadow-lg">
+        <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
+
+        <div class="grid grid-cols-2 gap-4">
+            <button class="p-4 bg-purple-500 text-white rounded-xl">📸 Post Status</button>
+            <button class="p-4 bg-blue-500 text-white rounded-xl">📁 Share File</button>
+            <button class="p-4 bg-green-500 text-white rounded-xl">🗣 Voice Note</button>
+            <button class="p-4 bg-red-500 text-white rounded-xl">📞 Quick Call</button>
+        </div>
+
+        <button class="w-full mt-6 bg-gray-700 text-white p-3 rounded-xl" id="closeQuickActions">
+            Close
+        </button>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
+        <div class="kynecta-header p-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-white">Settings</h3>
+                <button id="closeSettings" class="text-white/80 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <!-- FEATURES -->
+<div id="featuresBtn" class="settings-item">
+    <div class="settings-item-content">
+        <div class="settings-item-title">Features</div>
+        <div class="settings-item-description">View available tools and upcoming updates</div>
+    </div>
+    <span class="settings-item-action">➜</span>
+</div>
+
+<!-- CURRENT MOOD -->
+<div id="currentMoodBtn" class="settings-item">
+    <div class="settings-item-content">
+        <div class="settings-item-title">Current Mood</div>
+        <div class="settings-item-description">Update your profile mood</div>
+    </div>
+    <span class="settings-item-action">😊</span>
+</div>
+
+<!-- QUICK ACTIONS -->
+<div id="quickActionsBtn" class="settings-item">
+    <div class="settings-item-content">
+        <div class="settings-item-title">Quick Actions</div>
+        <div class="settings-item-description">Shortcuts for fast tasks</div>
+    </div>
+    <span class="settings-item-action">⚡</span>
+</div>
+
+        <div class="overflow-y-auto max-h-[60vh] custom-scrollbar">
+            <!-- Profile Section -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center space-x-4 mb-4">
+                    <div class="profile-upload">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-green-500 flex items-center justify-center text-white text-xl font-bold">
+                            <img id="settingsProfilePic" class="w-full h-full rounded-full object-cover" src="" alt="Profile">
+                        </div>
+                        <input type="file" id="profilePicUpload" accept="image/*">
+                        <div class="profile-photo-edit">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-lg" id="settingsUserName">Loading...</h4>
+                        <p class="text-gray-500 text-sm" id="settingsUserBio">Loading...</p>
+                    </div>
+                </div>
+                
+                <div class="settings-item" id="profileSettingsBtn">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">Profile</div>
+                        <div class="settings-item-description">Edit your profile information</div>
+                    </div>
+                    <div class="settings-item-action">
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Section -->
+            <div class="settings-section">
+                <h4 class="font-semibold mb-4 text-lg text-gray-800">Account</h4>
+                <div class="space-y-1">
+                    <div class="settings-item" id="securitySettingsBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">Security notifications</div>
+                            <div class="settings-item-description">Passkeys, two-step verification</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-item" id="privacySettingsBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">Privacy</div>
+                            <div class="settings-item-description">Block contacts, disappearing messages</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-item" id="avatarSettingsBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">Avatar</div>
+                            <div class="settings-item-description">Create, edit, profile photo</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-item" id="favoritesSettingsBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">Favorites</div>
+                            <div class="settings-item-description">Add, reorder, remove</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-item" id="accessibilityBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">Accessibility</div>
+                            <div class="settings-item-description">Customize for your needs</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications Section -->
+            <div class="settings-section">
+                <h4 class="font-semibold mb-4 text-lg text-gray-800">Notifications</h4>
+                <div class="space-y-1">
+                    <div class="settings-item" id="notificationsSettingsBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">Notification Settings</div>
+                            <div class="settings-item-description">Customize message, group & call notifications</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storage & Data Section -->
+            <div class="settings-section">
+                <h4 class="font-semibold mb-4 text-lg text-gray-800">Storage & Data</h4>
+                <div class="space-y-1">
+                    <div class="settings-item" id="storageSettingsBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">Storage and data</div>
+                            <div class="settings-item-description">Network usage, auto-download</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- App Language Section -->
+            <div class="settings-section">
+                <h4 class="font-semibold mb-4 text-lg text-gray-800">App Language</h4>
+                <div class="space-y-1">
+                    <div class="settings-item" id="languageSettingsBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">Language</div>
+                            <div class="settings-item-description">Choose your preferred language</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chats Section -->
+            <div class="settings-section">
+                <h4 class="font-semibold mb-4 text-lg text-gray-800">Chats</h4>
+                <div class="space-y-1">
+                    <div class="settings-item" id="chatsSettingsBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">Chat settings</div>
+                            <div class="settings-item-description">Theme, wallpapers, chat history</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="settings-section">
+                <h4 class="font-semibold mb-4 text-lg text-gray-800">Help & Support</h4>
+                <div class="space-y-1">
+                    <div class="settings-item" id="helpCenterBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">Help Center</div>
+                            <div class="settings-item-description">Get help and tutorials</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-item" id="contactUsBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">Contact Us</div>
+                            <div class="settings-item-description">Reach out for support</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-item" id="appInfoBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">App Info</div>
+                            <div class="settings-item-description">Version and about</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invite Section -->
+            <div class="settings-section">
+                <h4 class="font-semibold mb-4 text-lg text-gray-800">Invite</h4>
+                <div class="space-y-1">
+                    <div class="settings-item" id="inviteContactBtn">
+                        <div class="settings-item-content">
+                            <div class="settings-item-title">Invite a Contact</div>
+                            <div class="settings-item-description">Share Kynecta with friends</div>
+                        </div>
+                        <div class="settings-item-action">
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logout -->
+        <div class="p-6 border-t border-gray-200">
+            <button id="logoutBtn" class="w-full py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
+                Log Out
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Incoming Call UI -->
+<div id="incomingCallUI" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden">
+        <div class="kynecta-header p-6">
+            <div class="flex items-center justify-center">
+                <div class="text-center">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-r from-purple-500 to-green-500 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+                        <img id="incomingCallAvatar" class="w-full h-full rounded-full object-cover" src="" alt="Caller">
+                    </div>
+                    <h3 id="incomingCallName" class="text-xl font-semibold text-white">Incoming Call</h3>
+                    <p id="incomingCallType" class="text-white/80">Voice Call</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-6">
+            <div class="flex justify-center space-x-6">
+                <button id="declineCall" class="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
+                    <i class="fas fa-phone-slash text-xl"></i>
+                </button>
+                <button id="acceptCall" class="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors">
+                    <i class="fas fa-phone text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Call UI -->
+<div id="videoCallUI" class="hidden fixed inset-0 bg-black z-50">
+    <div class="flex flex-col h-full">
+        <!-- Remote Video -->
+        <div class="flex-1 relative">
+            <video id="remoteVideo" class="w-full h-full object-cover" autoplay></video>
+            
+            <!-- Local Video (Picture-in-Picture) -->
+            <div class="absolute bottom-4 right-4 w-32 h-48 bg-gray-900 rounded-lg overflow-hidden">
+                <video id="localVideo" class="w-full h-full object-cover" autoplay muted></video>
+            </div>
+            
+            <!-- Call Info -->
+            <div class="absolute top-4 left-4 bg-black/50 text-white p-3 rounded-lg">
+                <h3 id="videoCallName" class="font-semibold">Calling...</h3>
+                <p id="videoCallDuration" class="text-sm">00:00</p>
+            </div>
+        </div>
+        
+        <!-- Call Controls -->
+        <div class="bg-black/80 p-6">
+            <div class="flex justify-center space-x-6">
+                <button id="videoCallMute" class="w-14 h-14 bg-gray-700 text-white rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-microphone text-xl"></i>
+                </button>
+                <button id="videoCallVideoToggle" class="w-14 h-14 bg-gray-700 text-white rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-video text-xl"></i>
+                </button>
+                <button id="videoCallEnd" class="w-14 h-14 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
+                    <i class="fas fa-phone-slash text-xl"></i>
+                </button>
+                <button id="videoCallSpeaker" class="w-14 h-14 bg-gray-700 text-white rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-volume-up text-xl"></i>
+                </button>
+                <button id="videoCallMore" class="w-14 h-14 bg-gray-700 text-white rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-ellipsis-h text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video/Voice Call UI -->
+<div id="videoCallContainer" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center p-4">
+    <video id="localVideo" autoplay muted playsinline class="w-full max-w-md rounded-lg mb-4"></video>
+
+    <div class="flex space-x-4">
+        <button id="muteBtn" class="bg-gray-600 text-white p-3 rounded-full">
+            <i class="fas fa-microphone"></i>
+        </button>
+
+        <button id="videoToggleBtn" class="bg-gray-600 text-white p-3 rounded-full">
+            <i class="fas fa-video"></i>
+        </button>
+
+        <button onclick="endCall()" class="bg-red-600 text-white p-3 rounded-full">
+            <i class="fas fa-phone-slash"></i>
+        </button>
+    </div>
+</div>
+
+<script src="chat.js"></script>
 </body>
 </html>
