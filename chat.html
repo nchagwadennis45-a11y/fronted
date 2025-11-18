@@ -972,6 +972,26 @@ document.getElementById('shareQR')?.addEventListener('click', function() {
                     </div>
                 </div>
 
+                <!-- Add to settings modal -->
+<div class="setting-item">
+    <label>Call Ringtone</label>
+    <select id="ringtoneSelect" class="setting-select">
+        <!-- Options will be populated by JavaScript -->
+    </select>
+</div>
+
+<!-- Add to status modal for reactions -->
+<div class="status-reactions mt-4">
+    <div id="statusReactions" class="mb-2"></div>
+    <div class="reaction-buttons flex space-x-2">
+        <button onclick="addReactionToStatus(currentStatusId, '👍')" class="p-2 hover:bg-gray-100 rounded">👍</button>
+        <button onclick="addReactionToStatus(currentStatusId, '❤️')" class="p-2 hover:bg-gray-100 rounded">❤️</button>
+        <button onclick="addReactionToStatus(currentStatusId, '😂')" class="p-2 hover:bg-gray-100 rounded">😂</button>
+        <button onclick="addReactionToStatus(currentStatusId, '😮')" class="p-2 hover:bg-gray-100 rounded">😮</button>
+        <button onclick="addReactionToStatus(currentStatusId, '😢')" class="p-2 hover:bg-gray-100 rounded">😢</button>
+    </div>
+</div>
+
                 <!-- Account Section -->
                 <div class="settings-section">
                     <h4 class="font-semibold mb-4 text-lg text-gray-800">Account</h4>
