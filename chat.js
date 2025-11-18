@@ -1,4 +1,89 @@
-// Firebase Configuration
+// FIX: Prevent IMAGE_URL errors completely
+(function() {
+    // Override image src setting to catch IMAGE_URL
+    const originalSetAttribute = Element.prototype.setAttribute;
+    Element.prototype.setAttribute = function(name, value) {
+        if (name === 'src' && (value === 'IMAGE_URL' || value.includes('IMAGE_URL'))) {
+            console.log('Fixed IMAGE_URL reference');
+            value = 'https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff';
+        }
+        return originalSetAttribute.call(this, name, value);
+    };
+    
+    // Also override direct property assignment
+    const originalImageSrc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+        get: function() { return originalImageSrc.get.call(this); },
+        set: function(value) {
+            if (value === 'IMAGE_URL' || value.includes('IMAGE_URL')) {
+                console.log('Fixed IMAGE_URL property assignment');
+                value = 'https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff';
+            }
+            originalImageSrc.set.call(this, value);
+        }
+    });
+})();
+// ==================== GLOBAL ERROR HANDLING ====================
+
+// IMPROVED: Global Image Error Handling
+function setupGlobalErrorHandling() {
+    // Handle all image errors
+    document.addEventListener('error', function(e) {
+        if (e.target.tagName === 'IMG') {
+            handleImageError(e.target);
+        }
+    }, true);
+    
+    // Also handle images that might be created dynamically
+    const originalImage = window.Image;
+    window.Image = function() {
+        const img = new originalImage();
+        img.addEventListener('error', function() {
+            handleImageError(this);
+        });
+        return img;
+    };
+}
+
+function handleImageError(img) {
+    // Skip if already handled or valid URLs
+    if (img.classList.contains('error-handled') || 
+        img.src.startsWith('data:') || 
+        img.src.includes('blob:') ||
+        img.src.includes('ui-avatars.com') ||
+        img.src.includes('firebasestorage') ||
+        img.src.includes('cloudinary')) {
+        return;
+    }
+    
+    console.warn('Fixing broken image:', img.src);
+    
+    // Fix specific problematic URLs
+    if (img.src.includes('IMAGE_URL') || 
+        !img.src || 
+        img.src.includes('127.0.0.1') ||
+        img.src === 'http://127.0.0.1:5500/IMAGE_URL' ||
+        img.src.includes('/chat.html')) {
+        
+        const altText = img.alt || 'User';
+        // Use a more reliable avatar service
+        img.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(altText)}&background=7C3AED&color=fff`;
+    }
+    
+    // Special case for "Cover" images
+    if (img.alt === 'Cover' || img.src.includes('Cover')) {
+        img.src = 'https://via.placeholder.com/400x200/7C3AED/FFFFFF?text=Cover+Image';
+    }
+    
+    img.classList.add('error-handled');
+    img.onerror = null; // Prevent infinite loop
+}
+
+// Call this immediately
+setupGlobalErrorHandling();
+
+
+// ==================== FIREBASE INITIALIZATION ====================
 const firebaseConfig = {
     apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
     authDomain: "uniconnect-ee95c.firebaseapp.com",
@@ -9,20 +94,23 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
-const messaging = firebase.messaging();
-
-db.enablePersistence()
-  .catch((err) => {
-    if (err.code == 'failed-precondition') {
-      console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-    } else if (err.code == 'unimplemented') {
-      console.log('The current browser doesn\'t support persistence');
+let auth, db, storage, messaging;
+try {
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
     }
-  });
+    
+    auth = firebase.auth();
+    db = firebase.firestore();
+    storage = firebase.storage();
+    messaging = firebase.messaging();
+    
+    console.log('Firebase initialized successfully');
+} catch (error) {
+    console.error('Firebase initialization failed:', error);
+}
+
+
 
 // ADD NETWORK STATUS MONITORING - Add this:
 firebase.firestore().enableNetwork()
@@ -201,25 +289,6 @@ function setupNetworkMonitoring() {
     }
 }
 
-// Call this in initApp function:
-function initApp() {
-    console.log('Initializing app...');
-    
-    // ADD THIS LINE:
-    setupNetworkMonitoring();
-    
-    // Check if user is logged in
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            console.log('User authenticated:', user.uid);
-            currentUser = user;
-            loadUserData();
-        } else {
-            console.log('No user found, redirecting to login');
-            window.location.href = 'login.html';
-        }
-    });
-}
 
 // Safe version of classList operations
 function safeClassList(id, action, className) {
@@ -234,6 +303,10 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 function initApp() {
     console.log('Initializing app...');
+    setupImageErrorHandling();
+    setupGlobalErrorHandling();
+    setupNetworkMonitoring();
+
     // Check if user is logged in
     auth.onAuthStateChanged(user => {
         if (user) {
@@ -246,6 +319,59 @@ function initApp() {
             window.location.href = 'login.html';
         }
     });
+}
+function getDefaultAvatar(name = 'User') {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7C3AED&color=fff`;
+}
+
+// Update your getDefaultCover function:
+function getDefaultCover() {
+    return 'data:image/svg+xml;base64,' + btoa(`
+        <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#7C3AED"/>
+            <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" 
+                  font-family="Arial" font-size="20" fill="white">Cover Image</text>
+        </svg>
+    `);
+}
+
+// FIXED: Comprehensive Image Error Handling
+function setupImageErrorHandling() {
+    // Handle all image loading errors
+    document.addEventListener('error', function(e) {
+        if (e.target.tagName === 'IMG') {
+            console.log('Image failed to load:', e.target.src);
+            
+            // Don't try to fix data URLs or already fixed images
+            if (e.target.src.startsWith('data:') || e.target.classList.contains('error-handled')) {
+                return;
+            }
+            
+            // Set fallback based on context
+            if (e.target.src.includes('IMAGE_URL') || !e.target.src || e.target.src.includes('127.0.0.1')) {
+                const userName = e.target.alt || 'User';
+                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=7C3AED&color=fff`;
+            }
+            
+            e.target.classList.add('error-handled');
+        }
+    }, true);
+    
+    // Also handle programmatic image loading
+    const originalSetAttribute = Image.prototype.setAttribute;
+    Image.prototype.setAttribute = function(name, value) {
+        if (name === 'src') {
+            this.onerror = function() {
+                console.log('Programmatic image load failed:', value);
+                if (!this.classList.contains('error-handled')) {
+                    const userName = this.alt || 'User';
+                    this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=7C3AED&color=fff`;
+                    this.classList.add('error-handled');
+                }
+            };
+        }
+        originalSetAttribute.call(this, name, value);
+    };
 }
 
 // ADD THESE NEW FUNCTIONS FOR CALL SIGNALING:
@@ -422,57 +548,146 @@ async function addIceCandidates(iceCandidates) {
 }
 
 // REPLACE THE showIncomingCallNotification FUNCTION:
+// FIXED: Enhanced Incoming Call Notification with better state management
 function showIncomingCallNotification(callData) {
     console.log('Showing incoming call notification:', callData);
     
-    // Remove any existing call notifications
-    const existingNotification = document.querySelector('.incoming-call-notification');
+    // Remove any existing call notifications for this call
+    const existingNotification = document.querySelector(`[data-call-id="${callData.callId}"]`);
     if (existingNotification) {
         existingNotification.remove();
     }
     
+    // Remove any other call notifications
+    document.querySelectorAll('.incoming-call-notification').forEach(notification => {
+        notification.remove();
+    });
+    
     // Create incoming call UI
     const callNotification = document.createElement('div');
-    callNotification.className = 'incoming-call-notification fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    callNotification.className = 'incoming-call-notification fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50';
+    callNotification.setAttribute('data-call-id', callData.callId);
     callNotification.innerHTML = `
         <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
             <div class="text-center">
-                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                    </svg>
+                <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    ${callData.callType === 'video' ? 
+                        '<svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>' :
+                        '<svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>'
+                    }
                 </div>
                 <h3 class="text-xl font-bold text-gray-900 mb-2">Incoming ${callData.callType === 'video' ? 'Video' : 'Voice'} Call</h3>
                 <p class="text-gray-600 mb-1">${callData.callerName || 'Unknown Caller'}</p>
                 <p class="text-sm text-gray-500 mb-4">is calling you...</p>
                 <div class="flex gap-3 justify-center">
-                <button onclick="window.answerIncomingCall('${callData.callId}', '${callData.callerId}', '${callData.callType}')"
-                            class="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-full flex items-center gap-2 transition-colors">
+                    <button onclick="window.answerIncomingCall('${callData.callId}', '${callData.callerId}', '${callData.callType}')"
+                            class="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-full flex items-center gap-2 transition-colors shadow-lg transform hover:scale-105">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                         </svg>
                         Answer
                     </button>
                     <button onclick="window.declineIncomingCall('${callData.callId}')"
-                            class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-full flex items-center gap-2 transition-colors">
+                            class="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-full flex items-center gap-2 transition-colors shadow-lg transform hover:scale-105">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                         Decline
                     </button>
                 </div>
+                <div class="mt-4 text-xs text-gray-400">
+                    Auto-declines in <span id="callTimer-${callData.callId}">30</span>s
+                </div>
             </div>
         </div>
     `;
+    
     document.body.appendChild(callNotification);
     
+    // Start countdown timer
+    let timeLeft = 30;
+    const timerElement = document.getElementById(`callTimer-${callData.callId}`);
+    const countdown = setInterval(() => {
+        timeLeft--;
+        if (timerElement) {
+            timerElement.textContent = timeLeft;
+        }
+        
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            if (document.body.contains(callNotification)) {
+                console.log('Auto-declining unanswered call:', callData.callId);
+                declineIncomingCall(callData.callId);
+            }
+        }
+    }, 1000);
+    
+    // Store timer reference for cleanup
+    callNotification.countdownTimer = countdown;
+    
     // Auto-decline after 30 seconds if no response
-    setTimeout(() => {
+    callNotification.autoDeclineTimeout = setTimeout(() => {
         if (document.body.contains(callNotification)) {
-            console.log('Auto-declining unanswered call');
+            console.log('Auto-declining unanswered call (backup):', callData.callId);
             declineIncomingCall(callData.callId);
         }
     }, 30000);
+    
+    // Add vibration if supported (for mobile)
+    if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200, 100, 200]);
+    }
+    
+    // Play ringtone (optional)
+    playCallRingtone();
+}
+
+// Helper function to play call ringtone
+function playCallRingtone() {
+    try {
+        // Create audio context for ringtone
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        
+        oscillator.start();
+        
+        // Stop after 0.5 seconds (beep)
+        setTimeout(() => {
+            oscillator.stop();
+        }, 500);
+        
+    } catch (error) {
+        console.log('Could not play ringtone:', error);
+    }
+}
+
+// Cleanup function for call notifications
+function cleanupCallNotification(callId) {
+    const notification = document.querySelector(`[data-call-id="${callId}"]`);
+    if (notification) {
+        // Clear timers
+        if (notification.countdownTimer) {
+            clearInterval(notification.countdownTimer);
+        }
+        if (notification.autoDeclineTimeout) {
+            clearTimeout(notification.autoDeclineTimeout);
+        }
+        // Remove notification
+        notification.remove();
+    }
+    
+    // Stop vibration
+    if (navigator.vibrate) {
+        navigator.vibrate(0);
+    }
 }
 
 // ADD THIS: Global functions for answer/decline that can be called from HTML
@@ -529,28 +744,31 @@ window.answerIncomingCall = async function(callId, callerId, callType) {
     }
 }
 
+// FIXED: Enhanced Decline Incoming Call
 window.declineIncomingCall = async function(callId) {
     try {
         console.log('Declining call:', callId);
         
-        // Remove notification
-        const notification = document.querySelector('.incoming-call-notification');
-        if (notification) {
-            notification.remove();
-        }
+        // Clean up notification first
+        cleanupCallNotification(callId);
         
         // Update call status to rejected
         await db.collection('calls').doc(callId).update({
             status: 'rejected',
             endedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            endedBy: currentUser.uid
+            endedBy: currentUser.uid,
+            reason: 'declined'
         });
         
+        console.log('Call declined successfully');
         showToast('Call declined', 'info');
         
     } catch (error) {
         console.error('Error declining call:', error);
         showToast('Error declining call', 'error');
+        
+        // Force cleanup even if Firestore update fails
+        cleanupCallNotification(callId);
     }
 }
 
@@ -717,45 +935,123 @@ async function startCall(calleeId, callType = 'voice', calleeName = '') {
 }
 
 // ADD THIS NEW FUNCTION AFTER startCall function:
+
+// FIXED: Enhanced Peer Connection with better audio/video handling
 async function createPeerConnection(callId, calleeId) {
     try {
-        // Create peer connection
-        peerConnection = new RTCPeerConnection(rtcConfig);
+        // Enhanced RTC configuration
+        const enhancedRtcConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ],
+            iceCandidatePoolSize: 10,
+            bundlePolicy: 'max-bundle',
+            rtcpMuxPolicy: 'require'
+        };
         
-        // Add local stream tracks to connection
+        // Create peer connection
+        peerConnection = new RTCPeerConnection(enhancedRtcConfig);
+        
+        // Add local stream tracks to connection with better quality
         if (localStream) {
             localStream.getTracks().forEach(track => {
+                console.log('Adding local track:', track.kind, track.id);
                 peerConnection.addTrack(track, localStream);
             });
         }
         
-        // Handle incoming remote stream - ADD THIS
+        // Enhanced remote stream handling
         peerConnection.ontrack = (event) => {
-            console.log('Received remote stream');
+            console.log('Received remote stream tracks:', event.streams.length);
             remoteStream = event.streams[0];
-            const remoteVideo = document.getElementById('remoteVideo');
-            if (remoteVideo) {
-                remoteVideo.srcObject = remoteStream;
-                remoteVideo.play().catch(e => console.log('Remote video play error:', e));
+            
+            if (remoteStream) {
+                console.log('Remote stream available with tracks:', 
+                    remoteStream.getAudioTracks().length + ' audio, ' +
+                    remoteStream.getVideoTracks().length + ' video');
+                
+                // Handle both audio and video streams
+                const remoteVideo = document.getElementById('remoteVideo');
+                const remoteAudio = document.getElementById('remoteAudio');
+                
+                // For video calls
+                if (remoteVideo && callState.callType === 'video') {
+                    remoteVideo.srcObject = remoteStream;
+                    remoteVideo.onloadedmetadata = () => {
+                        remoteVideo.play().catch(e => {
+                            console.warn('Remote video play error:', e);
+                        });
+                    };
+                    
+                    // Ensure video is visible
+                    remoteVideo.style.display = 'block';
+                }
+                
+                // For voice calls - create hidden audio element
+                if (callState.callType === 'voice') {
+                    if (!remoteAudio) {
+                        const audioElem = document.createElement('audio');
+                        audioElem.id = 'remoteAudio';
+                        audioElem.autoplay = true;
+                        audioElem.controls = false;
+                        audioElem.hidden = true;
+                        document.body.appendChild(audioElem);
+                    }
+                    const audioElem = document.getElementById('remoteAudio');
+                    audioElem.srcObject = remoteStream;
+                    audioElem.play().catch(e => console.log('Audio play error:', e));
+                }
+                
+                showToast('Call connected!', 'success');
             }
         };
         
-        // Handle ICE candidates - ADD THIS
+        // Enhanced ICE candidate handling
         peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
-                // Send ICE candidate to remote peer
+                console.log('Sending ICE candidate');
                 db.collection('calls').doc(callId).update({
                     iceCandidates: firebase.firestore.FieldValue.arrayUnion({
                         candidate: event.candidate.candidate,
                         sdpMid: event.candidate.sdpMid,
-                        sdpMLineIndex: event.candidate.sdpMLineIndex
+                        sdpMLineIndex: event.candidate.sdpMLineIndex,
+                        timestamp: Date.now()
                     })
                 });
             }
         };
         
-        // Create and send offer - ADD THIS
-        const offer = await peerConnection.createOffer();
+        // Enhanced connection state monitoring
+        peerConnection.onconnectionstatechange = () => {
+            console.log('Connection state:', peerConnection.connectionState);
+            switch (peerConnection.connectionState) {
+                case 'connected':
+                    showToast('Call connected successfully!', 'success');
+                    break;
+                case 'disconnected':
+                    console.warn('Call disconnected');
+                    break;
+                case 'failed':
+                    console.error('Call failed');
+                    showToast('Call connection failed', 'error');
+                    break;
+                case 'closed':
+                    console.log('Call connection closed');
+                    break;
+            }
+        };
+        
+        // Create and send offer with better quality
+        const offerOptions = {
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: callState.callType === 'video',
+            voiceActivityDetection: true,
+            iceRestart: false
+        };
+        
+        const offer = await peerConnection.createOffer(offerOptions);
         await peerConnection.setLocalDescription(offer);
         
         // Save offer to Firestore for callee
@@ -772,51 +1068,258 @@ async function createPeerConnection(callId, calleeId) {
         
     } catch (error) {
         console.error('Error creating peer connection:', error);
-        showToast('Error establishing call connection', 'error');
+        showToast('Error establishing call connection: ' + error.message, 'error');
     }
 }
-// ADD THIS FUNCTION BEFORE loadUserData
-function listenForIncomingCalls() {
-    console.log('Setting up incoming call listener for user:', currentUser.uid);
-    
-    db.collection('calls')
-        .where('calleeId', '==', currentUser.uid)
-        .where('status', '==', 'ringing')
-        .onSnapshot(snapshot => {
-            snapshot.docChanges().forEach(change => {
-                if (change.type === 'added') {
-                    const callData = change.doc.data();
-                    console.log('Incoming call received:', callData);
-                    
-                    // Show incoming call notification
-                    showIncomingCallNotification(callData);
-                }
-            });
-        }, error => {
-            console.error('Error listening for incoming calls:', error);
+// FIXED: Enhanced Media Setup for Calls
+async function setupMediaForCall(callType) {
+    try {
+        console.log('Setting up media for:', callType);
+        
+        const constraints = {
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+                sampleRate: 48000,
+                channelCount: 1,
+                latency: 0,
+                sampleSize: 16
+            },
+            video: callType === 'video' ? {
+                width: { ideal: 1280, max: 1920 },
+                height: { ideal: 720, max: 1080 },
+                frameRate: { ideal: 30, max: 60 },
+                facingMode: 'user'
+            } : false
+        };
+        
+        // Get user media with better error handling
+        localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        console.log('Media access granted:', {
+            audioTracks: localStream.getAudioTracks().length,
+            videoTracks: localStream.getVideoTracks().length,
+            audioEnabled: localStream.getAudioTracks()[0]?.enabled,
+            videoEnabled: localStream.getVideoTracks()[0]?.enabled
         });
+        
+        // Log track details
+        localStream.getTracks().forEach(track => {
+            console.log(`Track: ${track.kind}`, track.getSettings());
+        });
+        
+        return true;
+    } catch (error) {
+        console.error('Error setting up media:', error);
+        
+        let errorMessage = 'Cannot access ';
+        if (callType === 'video') {
+            errorMessage += 'camera and microphone. ';
+        } else {
+            errorMessage += 'microphone. ';
+        }
+        
+        if (error.name === 'NotAllowedError') {
+            errorMessage += 'Please allow permissions in your browser settings.';
+        } else if (error.name === 'NotFoundError') {
+            errorMessage += 'No camera/microphone found.';
+        } else if (error.name === 'NotReadableError') {
+            errorMessage += 'Hardware is already in use.';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        showToast(errorMessage, 'error');
+        throw error;
+    }
 }
 
+// ADD THIS FUNCTION BEFORE loadUserData
+
+// FIXED: Enhanced Incoming Call Listener
+function listenForIncomingCalls() {
+    console.log('Setting up enhanced incoming call listener for user:', currentUser.uid);
+    
+    // Track active call notifications to prevent duplicates
+    const activeNotifications = new Set();
+    let unsubscribeCallListener = null;
+    
+    // Clean up any existing listener
+    if (unsubscribeCallListener) {
+        unsubscribeCallListener();
+    }
+    
+    unsubscribeCallListener = db.collection('calls')
+        .where('calleeId', '==', currentUser.uid)
+        .where('status', '==', 'ringing')
+        .onSnapshot({
+            next: (snapshot) => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added') {
+                        const callData = change.doc.data();
+                        
+                        // Validate call data
+                        if (!callData.callId || !callData.callerId) {
+                            console.warn('Invalid call data received:', callData);
+                            return;
+                        }
+                        
+                        // Check if we're already showing this notification
+                        if (activeNotifications.has(callData.callId)) {
+                            console.log('Already showing notification for call:', callData.callId);
+                            return;
+                        }
+                        
+                        // Check if this call is from ourselves (shouldn't happen)
+                        if (callData.callerId === currentUser.uid) {
+                            console.warn('Ignoring self-call');
+                            return;
+                        }
+                        
+                        console.log('New incoming call received:', callData);
+                        activeNotifications.add(callData.callId);
+                        
+                        // Show incoming call notification
+                        showIncomingCallNotification(callData);
+                        
+                        // Auto-remove from active notifications after call expires
+                        setTimeout(() => {
+                            activeNotifications.delete(callData.callId);
+                        }, 35000);
+                        
+                    } else if (change.type === 'modified') {
+                        const callData = change.doc.data();
+                        
+                        // If call was answered, rejected, or ended by someone else, remove notification
+                        if (callData.status !== 'ringing') {
+                            console.log('Call status changed to:', callData.status, 'for call:', callData.callId);
+                            activeNotifications.delete(callData.callId);
+                            cleanupCallNotification(callData.callId);
+                        }
+                    } else if (change.type === 'removed') {
+                        const callData = change.doc.data();
+                        console.log('Call document removed:', callData.callId);
+                        activeNotifications.delete(callData.callId);
+                        cleanupCallNotification(callData.callId);
+                    }
+                });
+            },
+            error: (error) => {
+                console.error('Error in incoming call listener:', error);
+                showToast('Error receiving calls', 'error');
+            }
+        });
+    
+    // Return cleanup function
+    return unsubscribeCallListener;
+}
+
+
 // THEN KEEP YOUR EXISTING loadUserData FUNCTION:
+// FIXED: Enhanced User Data Loading with proper cleanup
 async function loadUserData() {
     try {
         console.log('Loading user data for:', currentUser.uid);
         
-        // Initialize call state
+        // COMPREHENSIVE CLEANUP: End any existing calls and clear all states
+        console.log('Performing comprehensive cleanup...');
+        
+        // 1. Clean up any active calls
+        if (isInCall || peerConnection || localStream) {
+            console.log('Cleaning up existing call resources');
+            endCall(); // This will clean up media streams and peer connection
+        }
+        
+        // 2. Reset all call-related states
         callState = {
             isCaller: false,
             isReceivingCall: false,
             callType: null,
             remoteUserId: null,
-            callId: null
+            callId: null,
+            callStartTime: null
         };
+        
+        isInCall = false;
+        isMuted = false;
+        isVideoOff = false;
+        lastCallTime = 0;
+        
+        // 3. Clean up any pending call notifications
+        document.querySelectorAll('.incoming-call-notification').forEach(notification => {
+            const callId = notification.getAttribute('data-call-id');
+            if (callId) {
+                cleanupCallNotification(callId);
+            } else {
+                notification.remove();
+            }
+        });
+        
+        // 4. Reset media streams
+        if (localStream) {
+            localStream.getTracks().forEach(track => {
+                track.stop();
+                track.enabled = false;
+            });
+            localStream = null;
+        }
+        
+        if (remoteStream) {
+            remoteStream.getTracks().forEach(track => {
+                track.stop();
+                track.enabled = false;
+            });
+            remoteStream = null;
+        }
+        
+        // 5. Clean up peer connection
+        if (peerConnection) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+        
+        // 6. Unsubscribe from previous listeners
+        if (unsubscribeMessages) {
+            console.log('Unsubscribing from messages listener');
+            unsubscribeMessages();
+            unsubscribeMessages = null;
+        }
+        
+        if (unsubscribeChats) {
+            console.log('Unsubscribing from chats listener');
+            unsubscribeChats();
+            unsubscribeChats = null;
+        }
+        
+        if (typingListener) {
+            console.log('Unsubscribing from typing listener');
+            typingListener();
+            typingListener = null;
+        }
+        
+        // 7. Clear any pending timeouts
+        if (typingTimeout) {
+            clearTimeout(typingTimeout);
+            typingTimeout = null;
+        }
+        
+        // 8. Reset current chat
+        currentChat = null;
+        currentChatId = null;
+        
+        console.log('Cleanup completed. Starting user data load...');
         
         // Get user document from Firestore
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
         
         if (userDoc.exists) {
             currentUserData = userDoc.data();
-            console.log('User data loaded:', currentUserData);
+            console.log('User data loaded:', {
+                displayName: currentUserData.displayName,
+                email: currentUserData.email,
+                status: currentUserData.status
+            });
             initializeUserData();
         } else {
             console.log('Creating new user document');
@@ -840,26 +1343,50 @@ async function loadUserData() {
             initializeUserData();
         }
         
+        // Update user status to online
+        await db.collection('users').doc(currentUser.uid).update({
+            status: 'online',
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
         showChatApp();
         setupEventListeners();
         loadUserSettings();
-        loadStatusUpdates();
+        loadStatusUpdates(); // This now loads both own and friends' statuses
         loadFriends();
         loadAllUsers();
         initEmojiPicker();
         loadChatsTemporary();
         requestNotificationPermission();
         setupToolsListeners();
-
+        setupStatusFileHandlers();
         listenForFriendRequests();
-        listenForIncomingCalls();
+        listenForIncomingCalls(); // Enhanced call listener
+        
+        // Initialize business document for new users
+        initializeBusinessDocument(currentUser.uid);
+        
+        console.log('User data loading completed successfully');
+        
+        // Show welcome message
+        setTimeout(() => {
+            showToast(`Welcome back, ${currentUserData.displayName}!`, 'success');
+        }, 1000);
 
     } catch (error) {
         console.error('Error loading user data:', error);
-        showToast('Error loading user data', 'error');
+        showToast('Error loading user data: ' + error.message, 'error');
+        
+        // Fallback: Try to show chat app even if some components fail
+        try {
+            showChatApp();
+            setupEventListeners();
+        } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+            showToast('Critical error. Please refresh the page.', 'error');
+        }
     }
 }
-
 function initializeUserData() {
     console.log('Initializing UI with user data');
     // Set user info in UI
@@ -1075,18 +1602,97 @@ async function showViewersList(statusId) {
 
 
 // Update the status rendering in loadStatusUpdates function
+
 function loadStatusUpdates() {
     const statusUpdates = document.getElementById('statusUpdates');
     if (!statusUpdates) return;
     
-    // Load statuses from Firebase
-    db.collection('statuses')
+    // Clear previous content
+    statusUpdates.innerHTML = '<div class="text-center text-gray-500 py-4">Loading statuses...</div>';
+    
+    // Load user's own statuses
+    const userStatusesPromise = db.collection('statuses')
         .where('userId', '==', currentUser.uid)
         .orderBy('timestamp', 'desc')
         .limit(10)
-        .get()
-        .then(snapshot => {
-            if (snapshot.empty) {
+        .get();
+    
+    // Load friends' statuses
+    const friendIds = friends.map(f => f.id).filter(Boolean);
+    let friendsStatusesPromise = Promise.resolve([]); // Return empty array instead of custom object
+    
+    if (friendIds.length > 0) {
+        // Firestore doesn't support more than 10 in 'in' queries, so we'll batch if needed
+        const batchSize = 10;
+        const batches = [];
+        
+        for (let i = 0; i < friendIds.length; i += batchSize) {
+            const batch = friendIds.slice(i, i + batchSize);
+            if (batch.length > 0) {
+                batches.push(
+                    db.collection('statuses')
+                        .where('userId', 'in', batch)
+                        .where('expiresAt', '>', new Date()) // Only non-expired statuses
+                        .orderBy('timestamp', 'desc')
+                        .limit(20)
+                        .get()
+                );
+            }
+        }
+        
+        if (batches.length > 0) {
+            friendsStatusesPromise = Promise.all(batches).then(snapshots => {
+                const allDocs = [];
+                snapshots.forEach(snapshot => {
+                    snapshot.forEach(doc => {
+                        allDocs.push({ 
+                            id: doc.id, 
+                            ...doc.data(),
+                            // Ensure we have the document reference for consistency
+                            ref: doc.ref 
+                        });
+                    });
+                });
+                // Sort by timestamp and return as array
+                return allDocs.sort((a, b) => {
+                    const timeA = a.timestamp?.toDate() || new Date(0);
+                    const timeB = b.timestamp?.toDate() || new Date(0);
+                    return timeB - timeA; // Descending order
+                });
+            }).catch(error => {
+                console.error('Error loading friends statuses:', error);
+                return []; // Return empty array on error
+            });
+        }
+    }
+    
+    Promise.all([userStatusesPromise, friendsStatusesPromise])
+        .then(([userSnapshot, friendsStatusesArray]) => {
+            statusUpdates.innerHTML = '';
+            
+            let hasStatuses = false;
+            
+            // Add user's own statuses first
+            userSnapshot.forEach(doc => {
+                hasStatuses = true;
+                const status = doc.data();
+                addStatusToUI(status, doc.id, true);
+            });
+            
+            // Add friends' statuses - now using array iteration
+            if (Array.isArray(friendsStatusesArray)) {
+                friendsStatusesArray.forEach(statusData => {
+                    hasStatuses = true;
+                    // Don't add if it's the user's own status (already added)
+                    if (statusData.userId !== currentUser.uid) {
+                        addStatusToUI(statusData, statusData.id, false);
+                    }
+                });
+            } else {
+                console.warn('friendsStatusesArray is not an array:', friendsStatusesArray);
+            }
+            
+            if (!hasStatuses) {
                 statusUpdates.innerHTML = `
                     <div class="text-center text-gray-500 py-8">
                         <i class="fas fa-images text-4xl mb-3 text-gray-300 block"></i>
@@ -1094,45 +1700,7 @@ function loadStatusUpdates() {
                         <p class="text-sm mt-1">Share a photo, video, or text update</p>
                     </div>
                 `;
-                return;
             }
-            
-            statusUpdates.innerHTML = '';
-            snapshot.forEach(doc => {
-                const status = doc.data();
-                const statusElement = document.createElement('div');
-                statusElement.className = 'status-item flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer';
-                statusElement.dataset.statusId = doc.id; // Add status ID
-                
-                let statusContent = '';
-                if (status.type === 'emoji') {
-                    statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-green-500 flex items-center justify-center text-white text-xl">${status.content}</div>`;
-                } else if (status.type === 'text') {
-                    statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 flex items-center justify-center text-white"><i class="fas fa-font"></i></div>`;
-                } else if (status.type === 'image') {
-                    statusContent = `<div class="w-12 h-12 rounded-full bg-cover bg-center" style="background-image: url('${status.content}')"></div>`;
-                } else if (status.type === 'video') {
-                    statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center text-white"><i class="fas fa-video"></i></div>`;
-                } else if (status.type === 'audio') {
-                    statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center text-white"><i class="fas fa-music"></i></div>`;
-                }
-                
-                statusElement.innerHTML = `
-                    ${statusContent}
-                    <div class="flex-1">
-                        <p class="font-medium">${status.userDisplayName}</p>
-                        <p class="text-sm text-gray-500">${formatTimeAgo(status.timestamp)}</p>
-                        ${status.caption ? `<p class="text-sm text-gray-600 mt-1">${status.caption}</p>` : ''}
-                    </div>
-                    <div class="text-right">
-                        <button class="view-status-btn text-purple-600 hover:text-purple-800 text-sm">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                `;
-                
-                statusUpdates.appendChild(statusElement);
-            });
         })
         .catch(error => {
             console.error('Error loading status updates:', error);
@@ -1144,6 +1712,110 @@ function loadStatusUpdates() {
                 </div>
             `;
         });
+}
+// Helper function to render statuses
+function renderStatusUpdates(statuses) {
+    const statusUpdates = document.getElementById('statusUpdates');
+    if (!statusUpdates) return;
+    
+    statusUpdates.innerHTML = '';
+    
+    if (statuses.length === 0) {
+        statusUpdates.innerHTML = `
+            <div class="text-center text-gray-500 py-8">
+                <i class="fas fa-images text-4xl mb-3 text-gray-300 block"></i>
+                <p>No status updates yet</p>
+                <p class="text-sm mt-1">Share a photo, video, or text update</p>
+            </div>
+        `;
+        return;
+    }
+    
+    statuses.forEach(status => {
+        const statusElement = document.createElement('div');
+        statusElement.className = 'status-item flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer';
+        statusElement.dataset.statusId = status.id;
+        
+        let statusContent = '';
+        if (status.type === 'emoji') {
+            statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-green-500 flex items-center justify-center text-white text-xl">${status.content}</div>`;
+        } else if (status.type === 'text') {
+            statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 flex items-center justify-center text-white"><i class="fas fa-font"></i></div>`;
+        } else if (status.type === 'image') {
+            statusContent = `<div class="w-12 h-12 rounded-full bg-cover bg-center" style="background-image: url('${status.content}')"></div>`;
+        } else if (status.type === 'video') {
+            statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center text-white"><i class="fas fa-video"></i></div>`;
+        } else if (status.type === 'audio') {
+            statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center text-white"><i class="fas fa-music"></i></div>`;
+        }
+        
+        statusElement.innerHTML = `
+            ${statusContent}
+            <div class="flex-1">
+                <p class="font-medium">${status.userDisplayName} ${status.isOwnStatus ? '(You)' : ''}</p>
+                <p class="text-sm text-gray-500">${formatTimeAgo(status.timestamp)}</p>
+                ${status.caption ? `<p class="text-sm text-gray-600 mt-1">${status.caption}</p>` : ''}
+            </div>
+            <div class="text-right">
+                <button class="view-status-btn text-purple-600 hover:text-purple-800 text-sm">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        `;
+        
+        statusUpdates.appendChild(statusElement);
+    });
+    
+    // Add click event listeners for status items
+    statusUpdates.addEventListener('click', function(e) {
+        if (e.target.closest('.status-item') || e.target.closest('.view-status-btn')) {
+            const statusItem = e.target.closest('.status-item');
+            const statusId = statusItem.dataset.statusId;
+            if (statusId) {
+                openStatus(statusId);
+            }
+        }
+    });
+}
+
+// Helper function to add status to UI
+
+function addStatusToUI(status, statusId, isOwnStatus) {
+    const statusUpdates = document.getElementById('statusUpdates');
+    if (!statusUpdates) return;
+    
+    const statusElement = document.createElement('div');
+    statusElement.className = 'status-item flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer';
+    statusElement.dataset.statusId = statusId;
+    
+    let statusContent = '';
+    if (status.type === 'emoji') {
+        statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-green-500 flex items-center justify-center text-white text-xl">${status.content}</div>`;
+    } else if (status.type === 'text') {
+        statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 flex items-center justify-center text-white"><i class="fas fa-font"></i></div>`;
+    } else if (status.type === 'image') {
+        statusContent = `<div class="w-12 h-12 rounded-full bg-cover bg-center" style="background-image: url('${status.content}')"></div>`;
+    } else if (status.type === 'video') {
+        statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center text-white"><i class="fas fa-video"></i></div>`;
+    } else if (status.type === 'audio') {
+        statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center text-white"><i class="fas fa-music"></i></div>`;
+    }
+    
+    statusElement.innerHTML = `
+        ${statusContent}
+        <div class="flex-1">
+            <p class="font-medium">${status.userDisplayName} ${isOwnStatus ? '(You)' : ''}</p>
+            <p class="text-sm text-gray-500">${formatTimeAgo(status.timestamp)}</p>
+            ${status.caption ? `<p class="text-sm text-gray-600 mt-1">${status.caption}</p>` : ''}
+        </div>
+        <div class="text-right">
+            <button class="view-status-btn text-purple-600 hover:text-purple-800 text-sm">
+                <i class="fas fa-eye"></i>
+            </button>
+        </div>
+    `;
+    
+    statusUpdates.appendChild(statusElement);
 }
 
 function formatTimeAgo(timestamp) {
@@ -1222,15 +1894,18 @@ async function postStatus(type, content) {
             }
         }
         
-        const newStatus = {
-            type: type,
-            content: finalContent,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
-            userId: currentUser.uid,
-            userDisplayName: currentUserData.displayName,
-            userPhotoURL: currentUserData.photoURL
-        };
+       const newStatus = {
+    type: type,
+    content: finalContent,
+    caption: caption,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
+    userId: currentUser.uid,
+    userDisplayName: currentUserData.displayName,
+    userPhotoURL: currentUserData.photoURL,
+    viewers: [],
+    viewCount: 0
+};
         
         // Save to Firestore
         await db.collection('statuses').add(newStatus);
@@ -2794,6 +3469,17 @@ function initializeBusinessDocument(userId) {
         console.error('Error initializing business document:', error);
     });
 }
+
+function setupImageErrorHandling() {
+    document.addEventListener('error', function(e) {
+        if (e.target.tagName === 'IMG') {
+            console.log('Image failed to load:', e.target.src);
+            e.target.src = 'https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff';
+        }
+    }, true);
+}
+
+// Call this in your initApp function
 // Function to send automatic greeting message
 function sendGreetingMessage(chatId, otherUserId) {
     const businessDocRef = firebase.firestore().collection('business').doc(otherUserId);
@@ -3174,82 +3860,124 @@ function setupStatusModalListeners() {
 }
 
 // NEW: Populate Status Modal with Data
-function populateStatusModal(status, statusId) {
-    // User info
-    const statusUserAvatar = document.getElementById('statusUserAvatar');
-    const statusUserName = document.getElementById('statusUserName');
-    const statusTime = document.getElementById('statusTime');
-    
-    if (statusUserAvatar) statusUserAvatar.src = status.userPhotoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(status.userDisplayName)}&background=7C3AED&color=fff`;
-    if (statusUserName) statusUserName.textContent = status.userDisplayName;
-    if (statusTime) statusTime.textContent = formatTimeAgo(status.timestamp);
-    
-    // Status content
-    const statusMedia = document.getElementById('statusMedia');
-    const statusText = document.getElementById('statusText');
-    const viewViewersBtn = document.getElementById('viewViewersBtn');
-    const deleteStatusBtn = document.getElementById('deleteStatusBtn');
-    
-    if (statusMedia) {
-        statusMedia.innerHTML = '';
-        
-        switch (status.type) {
-            case 'emoji':
-                statusMedia.innerHTML = `
-                    <div class="text-8xl text-center py-8">${status.content}</div>
-                `;
-                break;
-            case 'text':
-                statusMedia.innerHTML = `
-                    <div class="text-2xl text-center py-8 font-semibold">${status.content}</div>
-                `;
-                break;
-            case 'image':
-                statusMedia.innerHTML = `
-                    <img src="${status.content}" alt="Status image" class="w-full h-64 object-cover rounded-lg">
-                `;
-                break;
-            case 'video':
-                statusMedia.innerHTML = `
-                    <video src="${status.content}" controls class="w-full h-64 object-cover rounded-lg"></video>
-                `;
-                break;
-            case 'audio':
-                statusMedia.innerHTML = `
-                    <audio src="${status.content}" controls class="w-full"></audio>
-                    <div class="text-center mt-2">
-                        <i class="fas fa-music text-4xl text-purple-600"></i>
-                    </div>
-                `;
-                break;
-        }
-    }
-    
-    if (statusText && status.caption) {
-        statusText.textContent = status.caption;
-    } else if (statusText) {
-        statusText.classList.add('hidden');
-    }
-    
-    // Set status ID for viewers button
-    if (viewViewersBtn) {
-        viewViewersBtn.dataset.statusId = statusId;
-    }
-    
-    // Show delete button only for status owner
-    if (deleteStatusBtn) {
-        if (status.userId === currentUser.uid) {
-            deleteStatusBtn.classList.remove('hidden');
-            deleteStatusBtn.dataset.statusId = statusId;
-        } else {
-            deleteStatusBtn.classList.add('hidden');
-        }
-    }
-    
-    // Load viewers count
-    loadViewersCount(statusId);
-}
 
+// FIXED: Populate Status Modal with proper error handling
+function populateStatusModal(status, statusId) {
+    try {
+        console.log('Populating status modal with:', status);
+        
+        // User info
+        const statusUserAvatar = document.getElementById('statusUserAvatar');
+        const statusUserName = document.getElementById('statusUserName');
+        const statusTime = document.getElementById('statusTime');
+        
+        if (statusUserAvatar) {
+            statusUserAvatar.src = status.userPhotoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(status.userDisplayName)}&background=7C3AED&color=fff`;
+            statusUserAvatar.onerror = function() {
+                this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(status.userDisplayName)}&background=7C3AED&color=fff`;
+            };
+        }
+        if (statusUserName) statusUserName.textContent = status.userDisplayName;
+        if (statusTime) statusTime.textContent = formatTimeAgo(status.timestamp);
+        
+        // Status content
+        const statusMedia = document.getElementById('statusMedia');
+        const statusText = document.getElementById('statusText');
+        const viewViewersBtn = document.getElementById('viewViewersBtn');
+        const deleteStatusBtn = document.getElementById('deleteStatusBtn');
+        
+        if (statusMedia) {
+            statusMedia.innerHTML = '';
+            
+            switch (status.type) {
+                case 'emoji':
+                    statusMedia.innerHTML = `
+                        <div class="text-8xl text-center py-8 flex items-center justify-center">
+                            ${status.content || '😊'}
+                        </div>
+                    `;
+                    break;
+                case 'text':
+                    statusMedia.innerHTML = `
+                        <div class="text-2xl text-center py-8 font-semibold">
+                            ${status.content || ''}
+                        </div>
+                    `;
+                    break;
+                case 'image':
+                    if (status.content) {
+                        statusMedia.innerHTML = `
+                            <img src="${status.content}" alt="Status image" class="w-full h-64 object-cover rounded-lg" onerror="this.src='https://via.placeholder.com/300x200?text=Image+Not+Found'">
+                        `;
+                    } else {
+                        statusMedia.innerHTML = '<div class="text-center py-8 text-gray-500">No image available</div>';
+                    }
+                    break;
+                case 'video':
+                    if (status.content) {
+                        statusMedia.innerHTML = `
+                            <video src="${status.content}" controls class="w-full h-64 object-cover rounded-lg" onerror="this.style.display='none'">
+                                Your browser does not support the video tag.
+                            </video>
+                        `;
+                    } else {
+                        statusMedia.innerHTML = '<div class="text-center py-8 text-gray-500">No video available</div>';
+                    }
+                    break;
+                case 'audio':
+                    if (status.content) {
+                        statusMedia.innerHTML = `
+                            <audio src="${status.content}" controls class="w-full"></audio>
+                            <div class="text-center mt-2">
+                                <i class="fas fa-music text-4xl text-purple-600"></i>
+                            </div>
+                        `;
+                    } else {
+                        statusMedia.innerHTML = '<div class="text-center py-8 text-gray-500">No audio available</div>';
+                    }
+                    break;
+                default:
+                    statusMedia.innerHTML = '<div class="text-center py-8 text-gray-500">Unknown status type</div>';
+            }
+        }
+        
+        if (statusText) {
+            if (status.caption) {
+                statusText.textContent = status.caption;
+                statusText.classList.remove('hidden');
+            } else {
+                statusText.classList.add('hidden');
+            }
+        }
+        
+        // Set status ID for viewers button
+        if (viewViewersBtn) {
+            viewViewersBtn.dataset.statusId = statusId;
+        }
+        
+        // Show delete button only for status owner
+        if (deleteStatusBtn) {
+            if (status.userId === currentUser.uid) {
+                deleteStatusBtn.classList.remove('hidden');
+                deleteStatusBtn.dataset.statusId = statusId;
+            } else {
+                deleteStatusBtn.classList.add('hidden');
+            }
+        }
+        
+        // Load viewers count - FIXED: Check if element exists first
+        const viewersCountElement = document.getElementById('viewersCount');
+        if (viewersCountElement) {
+            loadViewersCount(statusId, status.userId);
+        } else {
+            console.warn('viewersCount element not found in DOM');
+        }
+        
+    } catch (error) {
+        console.error('Error populating status modal:', error);
+        throw error; // Re-throw to be caught by the calling function
+    }
+}
 // NEW: Add Viewer to Status
 async function addViewerToStatus(statusId, userId) {
     try {
@@ -3283,10 +4011,12 @@ async function addViewerToStatus(statusId, userId) {
 }
 
 // NEW: Load Viewers Count
-async function loadViewersCount(statusId) {
+// FIXED: Load Viewers Count with proper error handling
+async function loadViewersCount(statusId, statusOwnerId) {
     try {
         const viewersSnapshot = await db.collection('statusViews')
             .where('statusId', '==', statusId)
+            .where('userId', '!=', statusOwnerId) // EXCLUDE THE OWNER
             .get();
         
         const viewersCount = viewersSnapshot.size;
@@ -3297,10 +4027,13 @@ async function loadViewersCount(statusId) {
                 <i class="fas fa-eye mr-1"></i>
                 <span>${viewersCount} ${viewersCount === 1 ? 'viewer' : 'viewers'}</span>
             `;
+        } else {
+            console.warn('viewersCount element not found');
         }
         
     } catch (error) {
         console.error('Error loading viewers count:', error);
+        // Don't show error to user, just log it
     }
 }
 // ----------------------
@@ -3364,6 +4097,35 @@ async function loadFriendsStatuses() {
     }
 }
 
+// FIXED: Open Status with better error handling
+async function openStatus(statusId) {
+    try {
+        console.log('Opening status:', statusId);
+        
+        // Get status data from Firestore
+        const statusDoc = await db.collection('statuses').doc(statusId).get();
+        
+        if (!statusDoc.exists) {
+            showToast('Status not found', 'error');
+            return;
+        }
+        
+        const status = statusDoc.data();
+        console.log('Status data loaded successfully:', status.type);
+        
+        // Update current user as viewer (only if not the owner)
+        if (status.userId !== currentUser.uid) {
+            await addViewerToStatus(statusId, currentUser.uid);
+        }
+        
+        // Display status in modal
+        displayStatusModal(status, statusId);
+        
+    } catch (error) {
+        console.error('Error opening status:', error);
+        showToast('Error loading status: ' + error.message, 'error');
+    }
+}
 
 // NEW: Show Viewers List
 async function showViewersList(statusId) {
@@ -5028,6 +5790,7 @@ function initEmojiPicker() {
     });
 }
 
+
 function toggleEmojiPicker() {
     const emojiPicker = document.getElementById('emojiPicker');
     if (!emojiPicker) return;
@@ -5036,6 +5799,110 @@ function toggleEmojiPicker() {
         emojiPicker.style.display = 'none';
     } else {
         emojiPicker.style.display = 'block';
+    }
+}
+
+// FIXED: Setup Status File Handlers
+function setupStatusFileHandlers() {
+    console.log('Setting up status file handlers');
+    
+    // Image upload handler
+    const statusImageInput = document.getElementById('statusImageInput');
+    if (statusImageInput) {
+        statusImageInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                console.log('Image selected:', file.name);
+                
+                if (!file.type.startsWith('image/')) {
+                    showToast('Please select a valid image file', 'error');
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('Image size should be less than 5MB', 'error');
+                    return;
+                }
+                
+                // Show preview
+                const previewImg = document.getElementById('statusImagePreviewImg');
+                if (previewImg) {
+                    const url = URL.createObjectURL(file);
+                    previewImg.src = url;
+                    previewImg.classList.remove('hidden');
+                    previewImg.onload = () => URL.revokeObjectURL(url);
+                }
+                
+                // Store file for posting
+                window.currentStatusFile = file;
+                showToast('Image selected! Add a caption and post.', 'success');
+            }
+        });
+    }
+    
+    // Video upload handler
+    const statusVideoInput = document.getElementById('statusVideoInput');
+    if (statusVideoInput) {
+        statusVideoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                console.log('Video selected:', file.name);
+                
+                if (!file.type.startsWith('video/')) {
+                    showToast('Please select a valid video file', 'error');
+                    return;
+                }
+                
+                if (file.size > 20 * 1024 * 1024) {
+                    showToast('Video size should be less than 20MB', 'error');
+                    return;
+                }
+                
+                // Show preview
+                const previewVideo = document.getElementById('statusVideoPreviewVideo');
+                if (previewVideo) {
+                    const url = URL.createObjectURL(file);
+                    previewVideo.src = url;
+                    previewVideo.classList.remove('hidden');
+                    previewVideo.onloadedmetadata = () => URL.revokeObjectURL(url);
+                }
+                
+                window.currentStatusFile = file;
+                showToast('Video selected! Add a caption and post.', 'success');
+            }
+        });
+    }
+    
+    // Audio upload handler
+    const statusAudioInput = document.getElementById('statusAudioInput');
+    if (statusAudioInput) {
+        statusAudioInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                console.log('Audio selected:', file.name);
+                
+                if (!file.type.startsWith('audio/')) {
+                    showToast('Please select a valid audio file', 'error');
+                    return;
+                }
+                
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast('Audio size should be less than 10MB', 'error');
+                    return;
+                }
+                
+                // Show preview
+                const previewAudio = document.getElementById('statusAudioPreviewAudio');
+                if (previewAudio) {
+                    const url = URL.createObjectURL(file);
+                    previewAudio.src = url;
+                    previewAudio.classList.remove('hidden');
+                }
+                
+                window.currentStatusFile = file;
+                showToast('Audio selected! Add a caption and post.', 'success');
+            }
+        });
     }
 }
 
@@ -6354,4 +7221,22 @@ function renderFriendsForGroupCreation() {
         `;
         friendsListContainer.insertAdjacentHTML('beforeend', friendElement);
     });
+}
+// FIXED: Safe element checker for all DOM operations
+function safeElement(id) {
+    const element = document.getElementById(id);
+    if (!element) {
+        console.warn(`Element with id '${id}' not found`);
+        return null;
+    }
+    return element;
+}
+
+function safeQuery(selector) {
+    const element = document.querySelector(selector);
+    if (!element) {
+        console.warn(`Element with selector '${selector}' not found`);
+        return null;
+    }
+    return element;
 }

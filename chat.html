@@ -5,8 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kynecta - Advanced Mood-Based Chat</title>
     <!-- Add this to your HTML head -->
-     <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+     <script src="https://cdn.tailwindcss.com"></script>
+     
+
+<script>
+// Simple QR code fallback - no external dependencies
+function generateSimpleQR(text) {
+    showToast('QR code generation would go here', 'info');
+    // For now, just copy the text to clipboard
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Invite link copied to clipboard!', 'success');
+    });
+}
+
+// Update your shareQR event listener
+document.getElementById('shareQR')?.addEventListener('click', function() {
+    const inviteLink = `https://yourapp.com/invite/${currentUser?.uid || 'user'}`;
+    generateSimpleQR(inviteLink);
+});
+</script>
+
+        
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <!-- Firebase SDK -->
@@ -22,7 +42,7 @@
         // Suppress Tailwind CDN warning
         window.tailwindConfig = { ignoreCDNWarning: true };
     </script>
-    <link rel="stylesheet" href="./chat.css">
+    <link rel="stylesheet" href= "chat.css">
     
 </head>
 <body class="h-full overflow-hidden" data-theme="light">
@@ -627,73 +647,287 @@
         </div>
     </div>
 
-    <!-- Status Creation Modal -->
-    <div id="statusCreation" class="status-creation">
-        <div class="status-creation-content">
-            <div class="kynecta-header p-4">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">Create Status Update</h3>
-                    <button id="closeStatusCreation" class="text-white/80 hover:text-white transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+    <!-- Status Creation Modal (You already have this) -->
+<div id="statusCreation" class="status-creation">
+    <div class="status-creation-content">
+        <div class="kynecta-header p-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-semibold text-white">Create Status Update</h3>
+                <button id="closeStatusCreation" class="text-white/80 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Hidden file inputs -->
+        <input type="file" id="statusImageInput" accept="image/*" class="hidden">
+        <input type="file" id="statusVideoInput" accept="video/*" class="hidden">
+        <input type="file" id="statusAudioInput" accept="audio/*" class="hidden">
+        
+        <div class="status-options">
+            <div class="status-option active" data-type="emoji">
+                <i class="fas fa-smile text-xl mb-2"></i>
+                <p>Emoji</p>
+            </div>
+            <div class="status-option" data-type="text">
+                <i class="fas fa-font text-xl mb-2"></i>
+                <p>Text</p>
+            </div>
+            <div class="status-option" data-type="image">
+                <i class="fas fa-image text-xl mb-2"></i>
+                <p>Image</p>
+            </div>
+            <div class="status-option" data-type="video">
+                <i class="fas fa-video text-xl mb-2"></i>
+                <p>Video</p>
+            </div>
+            <div class="status-option" data-type="audio">
+                <i class="fas fa-music text-xl mb-2"></i>
+                <p>Audio</p>
+            </div>
+        </div>
+        
+        <div class="status-previews p-4">
+            <!-- Emoji Preview -->
+            <div id="emojiPreview" class="status-preview">
+                <div class="text-center">
+                    <div class="text-8xl mb-4" contenteditable="true">😊</div>
+                    <p class="text-gray-500 text-sm">Click to change emoji</p>
                 </div>
             </div>
             
-            <div class="status-options">
-                <div class="status-option active" data-type="emoji">
-                    <i class="fas fa-smile text-xl mb-2"></i>
-                    <p>Emoji</p>
-                </div>
-                <div class="status-option" data-type="text">
-                    <i class="fas fa-font text-xl mb-2"></i>
-                    <p>Text</p>
-                </div>
-                <div class="status-option" data-type="image">
-                    <i class="fas fa-image text-xl mb-2"></i>
-                    <p>Image</p>
-                </div>
-                <div class="status-option" data-type="video">
-                    <i class="fas fa-video text-xl mb-2"></i>
-                    <p>Video</p>
-                </div>
-                <div class="status-option" data-type="audio">
-                    <i class="fas fa-music text-xl mb-2"></i>
-                    <p>Audio</p>
+            <!-- Text Preview -->
+            <div id="textPreview" class="status-preview hidden">
+                <textarea 
+                    id="statusTextInput" 
+                    class="w-full p-4 border border-gray-300 rounded-xl resize-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" 
+                    placeholder="What's on your mind?"
+                    rows="4"
+                ></textarea>
+            </div>
+            
+            <!-- Image Preview -->
+            <div id="imagePreviewContainer" class="status-preview hidden">
+                <div class="text-center">
+                    <img id="statusImagePreviewImg" class="max-w-full max-h-64 mx-auto rounded-lg mb-4 hidden" alt="Image preview">
+                    <input 
+                        type="text" 
+                        id="statusImageCaption" 
+                        placeholder="Add a caption for your image..." 
+                        class="w-full p-3 border border-gray-300 rounded-lg mb-3 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    >
+                    <button onclick="document.getElementById('statusImageInput').click()" class="bg-purple-600 text-white px-6 py-3 rounded-xl hover:bg-purple-700 transition-colors font-medium">
+                        <i class="fas fa-upload mr-2"></i>Choose Image
+                    </button>
+                    <p class="text-gray-500 text-sm mt-2">Supported: JPG, PNG, GIF</p>
                 </div>
             </div>
             
-            <div class="status-preview">
-                <div id="emojiPreview" class="status-emoji-input" contenteditable="true">😊</div>
-                <div id="textPreview" class="hidden">
-                    <textarea id="statusTextInput" class="status-text-input" placeholder="What's on your mind?"></textarea>
-                </div>
-                <div id="imagePreview" class="hidden">
-                    <img id="statusImagePreview" class="status-media-preview hidden" alt="Status image preview">
-                    <button id="uploadImageBtn" class="bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-colors">
-                        <i class="fas fa-upload mr-2"></i>Upload Image
+            <!-- Video Preview -->
+            <div id="videoPreviewContainer" class="status-preview hidden">
+                <div class="text-center">
+                    <video id="statusVideoPreviewVideo" controls class="max-w-full max-h-64 mx-auto rounded-lg mb-4 hidden"></video>
+                    <input 
+                        type="text" 
+                        id="statusVideoCaption" 
+                        placeholder="Add a caption for your video..." 
+                        class="w-full p-3 border border-gray-300 rounded-lg mb-3 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    >
+                    <button onclick="document.getElementById('statusVideoInput').click()" class="bg-purple-600 text-white px-6 py-3 rounded-xl hover:bg-purple-700 transition-colors font-medium">
+                        <i class="fas fa-upload mr-2"></i>Choose Video
                     </button>
-                </div>
-                <div id="videoPreview" class="hidden">
-                    <video id="statusVideoPreview" class="status-video-preview hidden" controls></video>
-                    <button id="uploadVideoBtn" class="bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-colors">
-                        <i class="fas fa-upload mr-2"></i>Upload Video (6s max)
-                    </button>
-                </div>
-                <div id="audioPreview" class="hidden">
-                    <audio id="statusAudioPreview" class="status-audio-preview hidden" controls></audio>
-                    <button id="uploadAudioBtn" class="bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-colors">
-                        <i class="fas fa-upload mr-2"></i>Upload Audio (6s max)
-                    </button>
+                    <p class="text-gray-500 text-sm mt-2">Max duration: 30 seconds</p>
                 </div>
             </div>
             
-            <div class="p-4 border-t border-gray-200">
-                <button id="postStatus" class="w-full py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
-                    Post Status
+            <!-- Audio Preview -->
+            <div id="audioPreviewContainer" class="status-preview hidden">
+                <div class="text-center">
+                    <audio id="statusAudioPreviewAudio" controls class="w-full mb-4 hidden"></audio>
+                    <input 
+                        type="text" 
+                        id="statusAudioCaption" 
+                        placeholder="Add a caption for your audio..." 
+                        class="w-full p-3 border border-gray-300 rounded-lg mb-3 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    >
+                    <button onclick="document.getElementById('statusAudioInput').click()" class="bg-purple-600 text-white px-6 py-3 rounded-xl hover:bg-purple-700 transition-colors font-medium">
+                        <i class="fas fa-upload mr-2"></i>Choose Audio
+                    </button>
+                    <p class="text-gray-500 text-sm mt-2">Supported: MP3, WAV, M4A</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-4 border-t border-gray-200">
+            <button id="postStatus" class="w-full py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
+                Post Status
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ENHANCED STATUS VIEWING MODAL ==================== -->
+<!-- Enhanced Status Viewing Modal with Reactions and Sharing -->
+<div id="enhancedStatusModal" class="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center hidden">
+    <div class="status-modal-container bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+        <div class="status-header flex items-center justify-between p-4 border-b">
+            <div class="flex items-center space-x-3">
+                <img id="statusUserAvatar" class="w-12 h-12 rounded-full" src="" alt="">
+                <div>
+                    <h3 id="statusUserName" class="font-semibold"></h3>
+                    <p id="statusTime" class="text-sm text-gray-500"></p>
+                </div>
+            </div>
+            <button id="closeEnhancedStatusModal" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="status-content p-6">
+            <div id="statusMedia" class="mb-4"></div>
+            <div id="statusText" class="text-gray-800 mb-4"></div>
+            
+            <!-- Stats Bar -->
+            <div class="status-stats flex justify-between items-center text-sm text-gray-600 border-t border-b py-3">
+                <div class="flex space-x-4">
+                    <span id="viewersCount" class="flex items-center">
+                        <i class="fas fa-eye mr-1"></i>
+                        <span>0 views</span>
+                    </span>
+                    <span id="reactionsCount" class="flex items-center">
+                        <i class="fas fa-heart mr-1"></i>
+                        <span>0 reactions</span>
+                    </span>
+                    <span id="sharesCount" class="flex items-center">
+                        <i class="fas fa-share mr-1"></i>
+                        <span>0 shares</span>
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="status-actions flex justify-around py-4 border-b">
+                <button id="likeBtn" class="flex items-center space-x-2 text-gray-600 hover:text-red-500 transition-colors">
+                    <i class="far fa-heart text-xl"></i>
+                    <span>Like</span>
+                </button>
+                <button id="reactionBtn" class="flex items-center space-x-2 text-gray-600 hover:text-yellow-500 transition-colors">
+                    <i class="far fa-smile text-xl"></i>
+                    <span>React</span>
+                </button>
+                <button id="shareBtn" class="flex items-center space-x-2 text-gray-600 hover:text-green-500 transition-colors">
+                    <i class="far fa-share-square text-xl"></i>
+                    <span>Share</span>
+                </button>
+                <button id="viewReactionsBtn" class="flex items-center space-x-2 text-gray-600 hover:text-purple-500 transition-colors">
+                    <i class="far fa-thumbs-up text-xl"></i>
+                    <span>Reactions</span>
+                </button>
+            </div>
+            
+            <!-- Quick Reactions -->
+            <div id="quickReactions" class="flex justify-center space-x-4 py-3 hidden">
+                <button class="quick-reaction text-2xl hover:scale-125 transition-transform" data-emoji="👍">👍</button>
+                <button class="quick-reaction text-2xl hover:scale-125 transition-transform" data-emoji="❤️">❤️</button>
+                <button class="quick-reaction text-2xl hover:scale-125 transition-transform" data-emoji="😂">😂</button>
+                <button class="quick-reaction text-2xl hover:scale-125 transition-transform" data-emoji="😮">😮</button>
+                <button class="quick-reaction text-2xl hover:scale-125 transition-transform" data-emoji="😢">😢</button>
+                <button class="quick-reaction text-2xl hover:scale-125 transition-transform" data-emoji="🎉">🎉</button>
+            </div>
+        </div>
+        
+        <div class="status-footer p-4 border-t">
+            <button id="viewViewersBtn" class="w-full text-center text-purple-600 hover:text-purple-800 py-2">
+                <i class="fas fa-users mr-2"></i>View All Viewers and Reactions
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Viewers & Reactions Modal -->
+<div id="enhancedViewersModal" class="fixed inset-0 bg-black bg-opacity-90 z-60 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+        <div class="p-4 border-b flex justify-between items-center">
+            <h3 class="font-semibold text-lg">Viewers & Reactions</h3>
+            <button id="closeEnhancedViewersModal" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="flex border-b">
+            <button class="tab-button active w-1/2 py-3 text-center border-b-2 border-purple-600 text-purple-600" data-tab="viewers">
+                <i class="fas fa-eye mr-2"></i>Viewers (<span id="viewersTabCount">0</span>)
+            </button>
+            <button class="tab-button w-1/2 py-3 text-center text-gray-600" data-tab="reactions">
+                <i class="fas fa-heart mr-2"></i>Reactions (<span id="reactionsTabCount">0</span>)
+            </button>
+        </div>
+        
+        <div class="p-4 max-h-96 overflow-y-auto">
+            <div id="enhancedViewersList" class="tab-content active">
+                <div class="text-center text-gray-500 py-4">Loading viewers...</div>
+            </div>
+            <div id="enhancedReactionsList" class="tab-content hidden">
+                <div class="text-center text-gray-500 py-4">Loading reactions...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Simple Status Modal (Fallback - keep for compatibility) -->
+<div id="statusModal" class="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center hidden">
+    <div class="status-modal-container bg-white rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-hidden">
+        <div class="status-header flex items-center justify-between p-4 border-b">
+            <div class="flex items-center space-x-3">
+                <img id="simpleStatusUserAvatar" class="w-10 h-10 rounded-full" src="" alt="">
+                <div>
+                    <h3 id="simpleStatusUserName" class="font-semibold"></h3>
+                    <p id="simpleStatusTime" class="text-sm text-gray-500"></p>
+                </div>
+            </div>
+            <button id="closeStatusModal" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="status-content p-4">
+            <div id="simpleStatusMedia" class="mb-4"></div>
+            <div id="simpleStatusText" class="text-gray-800"></div>
+        </div>
+        
+        <div class="status-footer p-4 border-t">
+            <div class="flex items-center justify-between text-sm text-gray-600">
+                <div class="flex items-center space-x-4">
+                    <span id="simpleViewersCount">
+                        <i class="fas fa-eye mr-1"></i>
+                        <span>0 viewers</span>
+                    </span>
+                    <button id="simpleViewViewersBtn" class="text-purple-600 hover:text-purple-800">
+                        View all
+                    </button>
+                </div>
+                <button id="simpleDeleteStatusBtn" class="text-red-600 hover:text-red-800 hidden">
+                    <i class="fas fa-trash"></i>
                 </button>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Simple Viewers List Modal (Fallback) -->
+<div id="viewersModal" class="fixed inset-0 bg-black bg-opacity-90 z-60 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg max-w-md w-full mx-4 max-h-[70vh] overflow-hidden">
+        <div class="p-4 border-b flex justify-between items-center">
+            <h3 class="font-semibold">Viewers</h3>
+            <button id="closeViewersModal" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="viewersList" class="p-4 overflow-y-auto max-h-96">
+            <!-- Viewers will be listed here -->
+        </div>
+    </div>
+</div>
 
     <!-- Settings Modal -->
     <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
