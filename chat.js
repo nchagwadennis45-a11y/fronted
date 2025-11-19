@@ -1029,11 +1029,12 @@ async function setupMediaForCall(callType) {
 }
 
 // FIXED: Enhanced Incoming Call Listener with No Repeat
+
+// FIXED: Enhanced Incoming Call Listener
 function listenForIncomingCalls() {
-    console.log('Setting up enhanced incoming call listener');
+    console.log('Setting up enhanced incoming call listener for user:', currentUser.uid);
     
     const activeNotifications = new Set();
-    let processedCalls = new Set(); // Track processed calls
     
     return db.collection('calls')
         .where('calleeId', '==', currentUser.uid)
@@ -1044,27 +1045,23 @@ function listenForIncomingCalls() {
                     if (change.type === 'added') {
                         const callData = change.doc.data();
                         
-                        // Check if we've already processed this call
-                        if (processedCalls.has(callData.callId)) {
-                            console.log('Call already processed:', callData.callId);
-                            return;
-                        }
+                        console.log('📞 New incoming call detected:', callData.callId, 'from:', callData.callerId);
                         
                         // Validate call data
                         if (!callData.callId || !callData.callerId || callData.callerId === currentUser.uid) {
+                            console.log('Invalid call data, skipping');
                             return;
                         }
                         
-                        // Check if we're already showing notification
+                        // Check if we're already showing notification for this call
                         if (activeNotifications.has(callData.callId)) {
+                            console.log('Call notification already active:', callData.callId);
                             return;
                         }
                         
-                        console.log('New incoming call:', callData.callId);
                         activeNotifications.add(callData.callId);
-                        processedCalls.add(callData.callId);
                         
-                        // Show notification
+                        // Show notification immediately
                         showIncomingCallNotification(callData);
                         
                         // Auto-remove from active after timeout
@@ -1081,15 +1078,20 @@ function listenForIncomingCalls() {
                             activeNotifications.delete(callData.callId);
                             cleanupCallNotification(callData.callId);
                         }
+                    } else if (change.type === 'removed') {
+                        const callData = change.doc.data();
+                        console.log('Call document removed:', callData.callId);
+                        activeNotifications.delete(callData.callId);
+                        cleanupCallNotification(callData.callId);
                     }
                 });
             },
             error: (error) => {
-                console.error('Error in call listener:', error);
+                console.error('❌ Error in call listener:', error);
+                showToast('Error listening for calls', 'error');
             }
         });
 }
-
 // FIXED: Enhanced User Data Loading with proper cleanup
 async function loadUserData() {
     try {
@@ -1244,7 +1246,14 @@ if (typeof unsubscribeIncomingCalls === 'function') {
   unsubscribeIncomingCalls();
 }
 unsubscribeIncomingCalls = listenForIncomingCalls();
-
+     
+setTimeout(() => {
+    if (typeof unsubscribeIncomingCalls === 'function') {
+        unsubscribeIncomingCalls(); // Cleanup any existing
+    }
+    unsubscribeIncomingCalls = listenForIncomingCalls();
+    console.log('📞 Call listener activated for user:', currentUser.uid);
+}, 2000);
         console.log('User data loading completed successfully');
         
         // Show welcome message
@@ -2523,29 +2532,76 @@ function renderFriends(friendsToRender) {
         }
     });
 }
-function startVoiceCallWithFriend(friendId, friendName) {
-    // Prevent multiple calls
-    if (isInCall) {
-        showToast('You are already in a call', 'warning');
-        return;
+
+// FIXED: Start Voice Call with better error handling
+async function startVoiceCallWithFriend(friendId, friendName) {
+    try {
+        // Prevent multiple calls
+        if (isInCall) {
+            showToast('You are already in a call', 'warning');
+            return;
+        }
+        
+        // Check cooldown
+        const now = Date.now();
+        if (now - lastCallTime < CALL_COOLDOWN) {
+            showToast('Please wait before making another call', 'warning');
+            return;
+        }
+        
+        lastCallTime = now;
+        
+        console.log('Starting voice call with friend:', friendName, friendId);
+        
+        // Set current chat for the call
+        const chatId = [currentUser.uid, friendId].sort().join('_');
+        currentChat = {
+            id: chatId,
+            friendId: friendId,
+            name: friendName
+        };
+        
+        // Create call document
+        const callId = await createCallDoc(currentUser.uid, friendId, 'voice');
+        
+        if (!callId) {
+            throw new Error('Failed to create call document');
+        }
+        
+        showToast(`Calling ${friendName}...`, 'info');
+        
+        // Setup media and start call
+        await setupMediaForCall('voice');
+        await startCall(callId, friendId, friendName);
+        
+    } catch (error) {
+        console.error('Error starting voice call:', error);
+        showToast('Error starting call: ' + error.message, 'error');
+        lastCallTime = 0; // Reset cooldown on error
+    }
+}
+
+// Add this to your setupEventListeners function or initApp
+function fixChatInputSize() {
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput) {
+        messageInput.style.minHeight = '60px';
+        messageInput.style.padding = '15px';
+        messageInput.style.fontSize = '16px';
+        messageInput.style.lineHeight = '1.5';
     }
     
-    console.log('Starting voice call with friend:', friendName, friendId);
-    
-    // Disable call buttons temporarily
-    disableCallButtons(true);
-    
-    // Set current chat for the call
-    const chatId = [currentUser.uid, friendId].sort().join('_');
-    currentChat = {
-        id: chatId,
-        friendId: friendId,
-        name: friendName
-    };
-    
-    showToast(`Calling ${friendName}...`, 'info');
-    startVoiceCall();
+    const inputArea = document.getElementById('inputArea');
+    if (inputArea) {
+        inputArea.style.minHeight = '80px';
+        inputArea.style.padding = '10px';
+    }
 }
+
+// Call this function in your initApp
+document.addEventListener('DOMContentLoaded', function() {
+    fixChatInputSize();
+});
 
 function disableCallButtons(disabled) {
     const callButtons = document.querySelectorAll('.friend-call-btn, .friend-video-call-btn');
@@ -2704,6 +2760,8 @@ async function startChat(friendId, friendName) {
     }
 }
 // FIXED: Real-Time Message Loading with proper error handling
+
+// FIXED: Real-Time Message Loading with duplicate prevention
 function loadMessages(chatId) {
     console.log('Loading messages for chat:', chatId);
     
@@ -2711,10 +2769,13 @@ function loadMessages(chatId) {
     if (unsubscribeMessages) {
         console.log('Unsubscribing from previous message listener');
         unsubscribeMessages();
+        unsubscribeMessages = null;
     }
+    
     if (typingListener) {
         console.log('Unsubscribing from previous typing listener');
         typingListener();
+        typingListener = null;
     }
     
     const messagesContainer = document.getElementById('messagesContainer');
@@ -2731,6 +2792,9 @@ function loadMessages(chatId) {
         </div>
     `;
     
+    let isFirstLoad = true;
+    let loadedMessageIds = new Set(); // Track loaded messages to prevent duplicates
+    
     // Subscribe to messages for this chat
     unsubscribeMessages = db.collection('messages')
         .where('chatId', '==', chatId)
@@ -2741,7 +2805,12 @@ function loadMessages(chatId) {
                 
                 if (!messagesContainer) return;
                 
-                messagesContainer.innerHTML = '';
+                // Only clear container on first load
+                if (isFirstLoad) {
+                    messagesContainer.innerHTML = '';
+                    loadedMessageIds.clear();
+                    isFirstLoad = false;
+                }
                 
                 if (snapshot.empty) {
                     messagesContainer.innerHTML = `
@@ -2755,26 +2824,21 @@ function loadMessages(chatId) {
                 }
                 
                 let lastDate = null;
-                const messages = [];
+                let hasNewMessages = false;
                 
-                // First, collect all messages
-                snapshot.forEach(doc => {
-                    const message = doc.data();
-                    messages.push({
-                        id: doc.id,
-                        ...message
-                    });
-                });
-                
-                // Sort by timestamp to ensure correct order
-                messages.sort((a, b) => {
-                    const timeA = a.timestamp ? a.timestamp.toDate() : new Date(0);
-                    const timeB = b.timestamp ? b.timestamp.toDate() : new Date(0);
-                    return timeA - timeB;
-                });
-                
-                // Then render them
-                messages.forEach(message => {
+                // Process each message
+                snapshot.docChanges().forEach(change => {
+                    const messageId = change.doc.id;
+                    const message = change.doc.data();
+                    
+                    // Skip if already loaded
+                    if (loadedMessageIds.has(messageId)) {
+                        return;
+                    }
+                    
+                    loadedMessageIds.add(messageId);
+                    hasNewMessages = true;
+                    
                     // Check if we need to add a date separator
                     const messageDate = message.timestamp ? message.timestamp.toDate().toDateString() : new Date().toDateString();
                     if (messageDate !== lastDate) {
@@ -2782,15 +2846,17 @@ function loadMessages(chatId) {
                         lastDate = messageDate;
                     }
                     
-                    addMessageToUI(message, message.id);
+                    addMessageToUI(message, messageId);
                 });
                 
-                // Scroll to bottom
-                setTimeout(() => {
-                    if (messagesContainer) {
-                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                    }
-                }, 100);
+                // Scroll to bottom only if new messages were added
+                if (hasNewMessages) {
+                    setTimeout(() => {
+                        if (messagesContainer) {
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        }
+                    }, 100);
+                }
                 
                 // Mark messages as read
                 markMessagesAsRead(chatId);

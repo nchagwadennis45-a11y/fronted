@@ -736,7 +736,7 @@ input:checked + .toggle-slider:before {
     display: none;
 }
 #addParticipantBox {
-    z-index: 50; /* make sure it’s above other elements */
+    z-index: 50; /* make sure it's above other elements */
     position: absolute; /* or relative depending on layout */
 }
 
@@ -1454,4 +1454,203 @@ input:checked + .toggle-slider:before {
 
 .toast {
     z-index: 10000;
+}
+
+/* ========== IMPROVED CHAT INPUT AREA ========== */
+
+/* Improved Chat Input Area */
+#inputArea {
+    min-height: 80px;
+    max-height: 200px;
+    transition: all 0.3s ease;
+    background: var(--kynecta-light);
+    border-top: 1px solid var(--kynecta-border);
+    padding: 12px 16px;
+}
+
+#messageInput {
+    min-height: 50px;
+    max-height: 150px;
+    resize: vertical;
+    padding: 12px;
+    font-size: 16px; /* Better for mobile */
+    line-height: 1.4;
+    border: 1px solid var(--kynecta-border);
+    border-radius: 12px;
+    background: var(--kynecta-light);
+    color: var(--kynecta-dark);
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#messageInput:focus {
+    outline: none;
+    border-color: var(--kynecta-primary);
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1);
+}
+
+/* Better message display */
+.messages-container {
+    padding: 10px;
+    min-height: 400px;
+    background: var(--kynecta-light);
+}
+
+.message-bubble {
+    max-width: 70%;
+    padding: 12px 16px;
+    margin: 5px 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Dark mode adjustments for input area */
+[data-theme="dark"] #inputArea {
+    background: #1F2937;
+    border-top-color: #374151;
+}
+
+[data-theme="dark"] #messageInput {
+    background: #374151;
+    color: #F9FAFB;
+    border-color: #4B5563;
+}
+
+[data-theme="dark"] #messageInput:focus {
+    border-color: var(--kynecta-primary);
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+/* Mobile responsive improvements */
+@media (max-width: 768px) {
+    #inputArea {
+        min-height: 70px;
+        padding: 10px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--kynecta-light);
+        border-top: 1px solid var(--kynecta-border);
+        z-index: 1000;
+    }
+    
+    #messageInput {
+        min-height: 45px;
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 10px 12px;
+    }
+    
+    .message-bubble {
+        max-width: 85%;
+        padding: 10px 14px;
+        margin: 4px 0;
+    }
+    
+    .messages-container {
+        padding-bottom: 80px; /* Space for input area */
+        min-height: calc(100vh - 140px);
+    }
+    
+    /* Adjust for mobile keyboard */
+    @media (max-height: 600px) {
+        #inputArea {
+            min-height: 60px;
+            padding: 8px;
+        }
+        
+        #messageInput {
+            min-height: 40px;
+            font-size: 14px;
+        }
+    }
+}
+
+/* Input area animations */
+#inputArea.expanded {
+    min-height: 120px;
+}
+
+#inputArea.collapsed {
+    min-height: 70px;
+}
+
+/* Send button improvements */
+.send-button {
+    background: var(--kynecta-primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.send-button:hover {
+    background: var(--kynecta-secondary);
+    transform: scale(1.05);
+}
+
+.send-button:disabled {
+    background: var(--kynecta-border);
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Input action buttons */
+.input-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.input-action-btn {
+    background: transparent;
+    border: none;
+    color: var(--kynecta-dark);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.input-action-btn:hover {
+    background: var(--kynecta-border);
+    color: var(--kynecta-primary);
+}
+
+/* Input area focus states */
+.input-focused #inputArea {
+    border-top-color: var(--kynecta-primary);
+    background: rgba(124, 58, 237, 0.02);
+}
+
+/* Character counter */
+.char-counter {
+    font-size: 0.75rem;
+    color: var(--kynecta-dark);
+    opacity: 0.6;
+    text-align: right;
+    margin-top: 4px;
+}
+
+.char-counter.warning {
+    color: var(--kynecta-accent);
+}
+
+.char-counter.error {
+    color: #EF4444;
 }
