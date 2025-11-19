@@ -509,73 +509,129 @@ async function addIceCandidates(iceCandidates) {
 
 // FIXED: Enhanced Incoming Call Notification with better state management
 
-// FIXED: Enhanced showIncomingCallNotification
-function showIncomingCallNotification(callData) {
-    console.log('🎯 Showing incoming call notification:', callData);
-    
-    // First, cleanup any existing notifications
-    cleanupAllCallNotifications();
-    
-    // Validate required data
-    if (!callData.callId || !callData.callerId) {
-        console.error('Invalid call data for notification:', callData);
-        return;
+// Map to keep track of active incoming call notifications by callId
+const activeCallNotifications = new Map();
+
+function showIncomingCallNotification({ callId, callerId, callerName, callType, offer }) {
+  console.log("Showing incoming call notification:", callId, callerId, callType);
+
+  // If a notification for this callId is already shown, skip
+  if (activeCallNotifications.has(callId)) {
+    console.log("Incoming call notification already exists for:", callId);
+    return;
+  }
+
+  // Create container DIV for notification
+  const container = document.createElement("div");
+  container.classList.add("incoming-call-notification");
+  container.setAttribute("data-call-id", callId);
+
+  // Style it (you may want to move styles to your CSS)
+  container.style.position = "fixed";
+  container.style.top = "20px";
+  container.style.right = "20px";
+  container.style.zIndex = "10000";
+  container.style.padding = "16px";
+  container.style.background = "rgba(0,0,0,0.8)";
+  container.style.color = "#fff";
+  container.style.borderRadius = "8px";
+  container.style.boxShadow = "0 4px 10px rgba(0,0,0,0.3)";
+  container.style.maxWidth = "300px";
+  container.style.fontFamily = "sans-serif";
+
+  // Caller name
+  const title = document.createElement("div");
+  title.textContent = callerName;
+  title.style.fontSize = "16px";
+  title.style.fontWeight = "bold";
+  container.appendChild(title);
+
+  // Call type text
+  const typeText = document.createElement("div");
+  typeText.textContent = callType === "video" ? "Video call" : "Audio call";
+  typeText.style.margin = "8px 0";
+  container.appendChild(typeText);
+
+  // Buttons container
+  const btnContainer = document.createElement("div");
+  btnContainer.style.display = "flex";
+  btnContainer.style.justifyContent = "space-between";
+
+  // Answer button
+  const btnAnswer = document.createElement("button");
+  btnAnswer.textContent = "Answer";
+  btnAnswer.style.marginRight = "8px";
+  btnAnswer.style.padding = "8px 12px";
+  btnAnswer.style.background = "#4CAF50";
+  btnAnswer.style.color = "#fff";
+  btnAnswer.style.border = "none";
+  btnAnswer.style.borderRadius = "4px";
+  btnAnswer.style.cursor = "pointer";
+  
+  // Decline button
+  const btnDecline = document.createElement("button");
+  btnDecline.textContent = "Decline";
+  btnDecline.style.padding = "8px 12px";
+  btnDecline.style.background = "#f44336";
+  btnDecline.style.color = "#fff";
+  btnDecline.style.border = "none";
+  btnDecline.style.borderRadius = "4px";
+  btnDecline.style.cursor = "pointer";
+
+  btnContainer.appendChild(btnAnswer);
+  btnContainer.appendChild(btnDecline);
+  container.appendChild(btnContainer);
+
+  // Append to body
+  document.body.appendChild(container);
+
+  // Play ringtone
+  const audio = new Audio("your_ringtone_file_url.mp3"); // <-- replace with your ringtone URL
+  audio.loop = true;
+  audio.play().catch(err => {
+    console.warn("Could not play ringtone:", err);
+  });
+
+  // Setup a timeout to auto-decline if user doesn't answer
+  const AUTO_DECLINE_MS = 30000; // for example, 30 seconds
+  const timeoutId = setTimeout(() => {
+    console.log("Auto-declining call (timeout):", callId);
+    cleanupNotification();
+    declineCall(callId);
+  }, AUTO_DECLINE_MS);
+
+  // Handler to cleanup DOM and sound
+  function cleanupNotification() {
+    console.log("Cleaning up call notification UI:", callId);
+    clearTimeout(timeoutId);
+    audio.pause();
+    audio.currentTime = 0;
+    if (container.parentNode) {
+      container.parentNode.removeChild(container);
     }
-    
-    // Create incoming call UI
-    const callNotification = document.createElement('div');
-    callNotification.className = 'incoming-call-notification fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50';
-    callNotification.setAttribute('data-call-id', callData.callId);
-    callNotification.setAttribute('id', 'activeCallNotification');
-    
-    callNotification.innerHTML = `
-        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
-            <div class="text-center">
-                <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    ${callData.callType === 'video' ? 
-                        '<svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>' :
-                        '<svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>'
-                    }
-                </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">Incoming ${callData.callType === 'video' ? 'Video' : 'Voice'} Call</h3>
-                <p class="text-gray-600 mb-1">${callData.callerName || 'Unknown Caller'}</p>
-                <p class="text-sm text-gray-500 mb-4">is calling you...</p>
-                <div class="flex gap-3 justify-center">
-                    <button onclick="window.answerIncomingCall('${callData.callId}', '${callData.callerId}', '${callData.callType}')"
-                            class="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-full flex items-center gap-2 transition-colors shadow-lg transform hover:scale-105">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                        </svg>
-                        Answer
-                    </button>
-                    <button onclick="window.declineIncomingCall('${callData.callId}')"
-                            class="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-full flex items-center gap-2 transition-colors shadow-lg transform hover:scale-105">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                        Decline
-                    </button>
-                </div>
-                <div class="mt-4 text-xs text-gray-400">
-                    Auto-declines in <span id="callTimer-${callData.callId}">30</span>s
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(callNotification);
-    
-    // Start countdown timer
-    startCallTimer(callData.callId, callNotification);
-    
-    // Add vibration if supported (for mobile)
-    if (navigator.vibrate) {
-        navigator.vibrate([200, 100, 200, 100, 200]);
-    }
-    
-    // Play ringtone
-    playCallRingtone();
+    activeCallNotifications.delete(callId);
+  }
+
+  // Button event listeners
+  btnAnswer.addEventListener("click", () => {
+    console.log("Answer clicked for call:", callId);
+    cleanupNotification();
+    answerCall(callId, offer); // <-- your existing answerCall logic
+  });
+
+  btnDecline.addEventListener("click", () => {
+    console.log("Decline clicked for call:", callId);
+    cleanupNotification();
+    declineCall(callId); // <-- your existing declineCall logic
+  });
+
+  // Save into our map
+  activeCallNotifications.set(callId, {
+    container,
+    cleanup: cleanupNotification
+  });
 }
+
 
 // Helper function to cleanup all notifications
 function cleanupAllCallNotifications() {
@@ -704,7 +760,7 @@ async function createCallDoc(callerId, calleeId, callType = 'voice') {
             status: 'ringing', // Use only one status field
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             participants: [callerId, calleeId]
-            // Remove callStatus field to avoid confusion
+            // Remove status field to avoid confusion
         };
         
         await callRef.set(payload);
@@ -882,7 +938,7 @@ db.collection('calls').doc(callId).set(updateObj, { merge: true })
         type: offer.type,
         sdp: offer.sdp
     },
-    callStatus: 'ringing',
+    status: 'ringing',
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
 }, { merge: true });
 
@@ -1016,75 +1072,62 @@ async function setupMediaForCall(callType) {
 
 // FIXED: Enhanced Incoming Call Listener with No Repeat
 
-// FIXED: Enhanced Incoming Call Listener with No Delay
+// FIXED & STABLE Incoming Call Listener
 function listenForIncomingCalls() {
-    console.log('🚨 Setting up REAL-TIME incoming call listener for user:', currentUser.uid);
-    
-    const activeNotifications = new Set();
-    
-    // Use the correct field name and simpler status filtering
-    return db.collection('calls')
-        .where('calleeId', '==', currentUser.uid)
-        .where('status', '==', 'ringing') // Only listen for ringing calls
-        .onSnapshot({
-            next: (snapshot) => {
-                console.log('📞 REAL-TIME Call listener snapshot received:', snapshot.size, 'calls');
-                
-                snapshot.docChanges().forEach(change => {
-                    if (change.type === 'added') {
-                        const callData = change.doc.data();
-                        
-                        console.log('🚨 IMMEDIATE incoming call detected:', {
-                            callId: callData.callId,
-                            callerId: callData.callerId,
-                            status: callData.status,
-                            callType: callData.callType,
-                            timestamp: callData.createdAt
-                        });
-                        
-                        // Validate call data
-                        if (!callData.callId || !callData.callerId || callData.callerId === currentUser.uid) {
-                            console.log('Invalid call data, skipping');
-                            return;
-                        }
-                        
-                        // Check if we're already showing notification for this call
-                        if (activeNotifications.has(callData.callId)) {
-                            console.log('Call notification already active:', callData.callId);
-                            return;
-                        }
-                        
-                        activeNotifications.add(callData.callId);
-                        
-                        // Show notification IMMEDIATELY - no delay
-                        showIncomingCallNotification(callData);
-                        
-                        // Auto-remove from active after timeout
-                        setTimeout(() => {
-                            activeNotifications.delete(callData.callId);
-                        }, 35000);
-                        
-                    } else if (change.type === 'modified') {
-                        const callData = change.doc.data();
-                        
-                        // Remove notification if call is no longer ringing
-                        if (callData.status !== 'ringing') {
-                            console.log('Call ended or answered:', callData.callId, callData.status);
-                            activeNotifications.delete(callData.callId);
-                            cleanupCallNotification(callData.callId);
-                        }
-                    } else if (change.type === 'removed') {
-                        const callData = change.doc.data();
-                        console.log('Call document removed:', callData.callId);
-                        activeNotifications.delete(callData.callId);
-                        cleanupCallNotification(callData.callId);
-                    }
-                });
-            },
-            error: (error) => {
-                console.error('❌ Error in call listener:', error);
-                showToast('Error listening for calls', 'error');
+    console.log("📡 Incoming call listener initialized for:", currentUser.uid);
+
+    // Track handled call IDs to avoid duplicates
+    const handledCalls = new Set();
+
+    return db.collection("calls")
+        .where("calleeId", "==", currentUser.uid)
+        .where("status", "==", "ringing")
+        .onSnapshot((snapshot) => {
+
+            if (snapshot.empty) {
+                console.log("📭 No incoming calls at the moment.");
             }
+
+            snapshot.docChanges().forEach((change) => {
+                const callId = change.doc.id;
+                const callData = change.doc.data();
+
+                console.log("📡 Change detected:", {
+                    type: change.type,
+                    callId,
+                    callData
+                });
+
+                // ---- 1. Validate essential data ----
+                if (!callData || !callData.callerId) {
+                    console.warn("⚠️ Skipping invalid call data.");
+                    return;
+                }
+
+                // ---- 2. Prevent duplicates ----
+                if (handledCalls.has(callId)) {
+                    console.log("⛔ Duplicate incoming call ignored:", callId);
+                    return;
+                }
+
+                // ---- 3. Only handle ADDED or first MODIFIED ----
+                if (change.type === "added" || change.type === "modified") {
+                    console.log("📞 Incoming call detected:", callData);
+
+                    handledCalls.add(callId);
+
+                    // ---- 4. Trigger your notification UI ----
+                    showIncomingCallNotification({
+                        callId,
+                        callerId: callData.callerId,
+                        callerName: callData.callerName || "Unknown Caller",
+                        callType: callData.callType || "audio",
+                        offer: callData.offer || null,
+                    });
+                }
+            });
+        }, (error) => {
+            console.error("❌ Incoming call listener error:", error);
         });
 }
 
@@ -1116,22 +1159,20 @@ async function testIncomingCall() {
 
 // Call this function from browser console to test:
 // testIncomingCall();
-
-// FIXED: Enhanced User Data Loading with proper cleanup
+// FIXED & CLEANED: Enhanced User Data Loading with proper cleanup
 async function loadUserData() {
     try {
         console.log('Loading user data for:', currentUser.uid);
-        
-        // COMPREHENSIVE CLEANUP: End any existing calls and clear all states
+
         console.log('Performing comprehensive cleanup...');
-        
+
         // 1. Clean up any active calls
         if (isInCall || peerConnection || localStream) {
             console.log('Cleaning up existing call resources');
-            endCall(); // This will clean up media streams and peer connection
+            endCall();
         }
-        
-        // 2. Reset all call-related states
+
+        // 2. Reset call state
         callState = {
             isCaller: false,
             isReceivingCall: false,
@@ -1140,95 +1181,78 @@ async function loadUserData() {
             callId: null,
             callStartTime: null
         };
-        
+
         isInCall = false;
         isMuted = false;
         isVideoOff = false;
         lastCallTime = 0;
-        
-        // 3. Clean up any pending call notifications
-        document.querySelectorAll('.incoming-call-notification').forEach(notification => {
-            const callId = notification.getAttribute('data-call-id');
-            if (callId) {
-                cleanupCallNotification(callId);
-            } else {
-                notification.remove();
-            }
+
+        // 3. Remove all incoming call notifications
+        document.querySelectorAll('.incoming-call-notification').forEach(n => {
+            const id = n.getAttribute('data-call-id');
+            if (id) cleanupCallNotification(id);
+            else n.remove();
         });
-        
+
         // 4. Reset media streams
         if (localStream) {
-            localStream.getTracks().forEach(track => {
-                track.stop();
-                track.enabled = false;
-            });
+            localStream.getTracks().forEach(t => t.stop());
             localStream = null;
         }
-        
+
         if (remoteStream) {
-            remoteStream.getTracks().forEach(track => {
-                track.stop();
-                track.enabled = false;
-            });
+            remoteStream.getTracks().forEach(t => t.stop());
             remoteStream = null;
         }
-        
-        // 5. Clean up peer connection
+
+        // 5. Reset PeerConnection
         if (peerConnection) {
             peerConnection.close();
             peerConnection = null;
         }
-        
-        // 6. Unsubscribe from previous listeners
-        if (unsubscribeMessages) {
-            console.log('Unsubscribing from messages listener');
-            unsubscribeMessages();
-            unsubscribeMessages = null;
-        }
-        
-        if (unsubscribeChats) {
-            console.log('Unsubscribing from chats listener');
-            unsubscribeChats();
-            unsubscribeChats = null;
-        }
-        
-        if (typingListener) {
-            console.log('Unsubscribing from typing listener');
-            typingListener();
-            typingListener = null;
-        }
-        
-        // 7. Clear any pending timeouts
+
+        // 6. Unsubscribe from listeners
+        if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
+        if (unsubscribeChats) { unsubscribeChats(); unsubscribeChats = null; }
+        if (typingListener) { typingListener(); typingListener = null; }
+
+        // 7. Clear typing timeout
         if (typingTimeout) {
             clearTimeout(typingTimeout);
             typingTimeout = null;
         }
-        
-        // 8. Reset current chat
+
+        // 8. Reset chat state
         currentChat = null;
         currentChatId = null;
-        
+
         console.log('Cleanup completed. Starting user data load...');
-        
-        // Get user document from Firestore
+
+        // Load user document
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
-        
+
         if (userDoc.exists) {
             currentUserData = userDoc.data();
+
             console.log('User data loaded:', {
                 displayName: currentUserData.displayName,
                 email: currentUserData.email,
                 status: currentUserData.status
             });
+
             initializeUserData();
+
         } else {
             console.log('Creating new user document');
-            // Create user document if it doesn't exist
+
             currentUserData = {
                 uid: currentUser.uid,
                 email: currentUser.email,
                 displayName: currentUser.displayName || currentUser.email.split('@')[0],
-                photoURL: currentUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.displayName || currentUser.email)}&background=7C3AED&color=fff`,
+                photoURL: currentUser.photoURL ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        currentUser.displayName || currentUser.email
+                    )}&background=7C3AED&color=fff`,
                 coverURL: '',
                 about: 'Life without Christ is motion without meaning',
                 phone: '',
@@ -1237,22 +1261,24 @@ async function loadUserData() {
                 status: 'online',
                 mood: 'happy'
             };
-            
+
             await db.collection('users').doc(currentUser.uid).set(currentUserData);
+
             console.log('New user document created');
             initializeUserData();
         }
-        
-        // Update user status to online
+
+        // Update status
         await db.collection('users').doc(currentUser.uid).update({
             status: 'online',
             lastSeen: firebase.firestore.FieldValue.serverTimestamp()
         });
-        
+
+        // Load UI & listeners
         showChatApp();
         setupEventListeners();
         loadUserSettings();
-        loadStatusUpdates(); // This now loads both own and friends' statuses
+        loadStatusUpdates();
         loadFriends();
         loadAllUsers();
         initEmojiPicker();
@@ -1261,72 +1287,57 @@ async function loadUserData() {
         setupToolsListeners();
         setupStatusFileHandlers();
         listenForFriendRequests();
-         listenForIncomingCalls(); // Enhanced call listener
-        unsubscribeIncomingCalls?.()
 
-        // Initialize business document for new users
-        initializeBusinessDocument(currentUser.uid);
-        // store unsubscribe so we can remove it later
-if (typeof unsubscribeIncomingCalls === 'function') {
-  unsubscribeIncomingCalls();
-}
-unsubscribeIncomingCalls = listenForIncomingCalls();
-     
-setTimeout(() => {
-    if (typeof unsubscribeIncomingCalls === 'function') {
-        unsubscribeIncomingCalls(); // Cleanup any existing
-    }
-    unsubscribeIncomingCalls = listenForIncomingCalls();
-    console.log('📞 Call listener activated for user:', currentUser.uid);
-}, 2000);
-        console.log('User data loading completed successfully');
-        
-    } catch (error) {
-        console.error('Error loading user data:', error);
-        showToast('Error loading user data: ' + error.message, 'error');
-        
-        // Fallback: Try to show chat app even if some components fail
+        // 🔥 FIXED: SINGLE, STABLE INCOMING CALL LISTENER
         try {
-            showChatApp();
-            setupEventListeners();
-        } catch (fallbackError) {
-            console.error('Fallback also failed:', fallbackError);
-            showToast('Critical error. Please refresh the page.', 'error');
+            if (typeof unsubscribeIncomingCalls === "function") {
+                unsubscribeIncomingCalls();
+                unsubscribeIncomingCalls = null;
+            }
+
+            unsubscribeIncomingCalls = listenForIncomingCalls();
+            console.log("📞 Incoming call listener active for user:", currentUser.uid);
+
+        } catch (err) {
+            console.error("Failed to initialize incoming call listener:", err);
         }
+
+        // Initialize business fields
+        initializeBusinessDocument(currentUser.uid);
+
+    } catch (error) {
+        console.error('Error in loadUserData:', error);
     }
 }
+
+// KEEP YOUR ORIGINAL initializeUserData
 function initializeUserData() {
     console.log('Initializing UI with user data');
-    // Set user info in UI
+
     const userName = document.getElementById('userName');
     const userAvatar = document.getElementById('userAvatar');
-    
     if (userName) userName.textContent = currentUserData.displayName;
     if (userAvatar) userAvatar.src = currentUserData.photoURL;
-    
-    // Update settings modal with user data
+
     const settingsUserName = document.getElementById('settingsUserName');
     const settingsProfilePic = document.getElementById('settingsProfilePic');
-    
     if (settingsUserName) settingsUserName.textContent = currentUserData.displayName;
     if (settingsProfilePic) settingsProfilePic.src = currentUserData.photoURL;
-    
-    // Update profile settings with user data
+
     const profileName = document.getElementById('profileName');
     const profileAbout = document.getElementById('profileAbout');
     const profileEmail = document.getElementById('profileEmail');
     const profilePhone = document.getElementById('profilePhone');
     const profilePicPreview = document.getElementById('profilePicPreview');
     const profileCoverPreview = document.getElementById('profileCoverPreview');
-    
+
     if (profileName) profileName.value = currentUserData.displayName;
     if (profileAbout) profileAbout.value = currentUserData.about || '';
     if (profileEmail) profileEmail.value = currentUserData.email;
     if (profilePhone) profilePhone.value = currentUserData.phone || '';
     if (profilePicPreview) profilePicPreview.src = currentUserData.photoURL;
     if (profileCoverPreview) profileCoverPreview.src = currentUserData.coverURL || '';
-    
-    // Load user preferences
+
     loadUserPreferences();
 }
 
@@ -6365,6 +6376,13 @@ function endCall() {
         localStream = null;
     }
     
+if (callState.callId) {
+   db.collection("calls").doc(callState.callId).update({
+      status: "ended"
+   });
+}
+
+
     // Stop remote stream if exists
     if (remoteStream) {
         remoteStream.getTracks().forEach(track => {
