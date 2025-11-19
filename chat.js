@@ -508,24 +508,26 @@ async function addIceCandidates(iceCandidates) {
 
 
 // FIXED: Enhanced Incoming Call Notification with better state management
+
+// FIXED: Enhanced showIncomingCallNotification
 function showIncomingCallNotification(callData) {
-    console.log('Showing incoming call notification:', callData);
+    console.log('🎯 Showing incoming call notification:', callData);
     
-    // Remove any existing call notifications for this call
-    const existingNotification = document.querySelector(`[data-call-id="${callData.callId}"]`);
-    if (existingNotification) {
-        existingNotification.remove();
+    // First, cleanup any existing notifications
+    cleanupAllCallNotifications();
+    
+    // Validate required data
+    if (!callData.callId || !callData.callerId) {
+        console.error('Invalid call data for notification:', callData);
+        return;
     }
-    
-    // Remove any other call notifications
-    document.querySelectorAll('.incoming-call-notification').forEach(notification => {
-        notification.remove();
-    });
     
     // Create incoming call UI
     const callNotification = document.createElement('div');
     callNotification.className = 'incoming-call-notification fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50';
     callNotification.setAttribute('data-call-id', callData.callId);
+    callNotification.setAttribute('id', 'activeCallNotification');
+    
     callNotification.innerHTML = `
         <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
             <div class="text-center">
@@ -564,8 +566,30 @@ function showIncomingCallNotification(callData) {
     document.body.appendChild(callNotification);
     
     // Start countdown timer
+    startCallTimer(callData.callId, callNotification);
+    
+    // Add vibration if supported (for mobile)
+    if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200, 100, 200]);
+    }
+    
+    // Play ringtone
+    playCallRingtone();
+}
+
+// Helper function to cleanup all notifications
+function cleanupAllCallNotifications() {
+    document.querySelectorAll('.incoming-call-notification').forEach(notification => {
+        const callId = notification.getAttribute('data-call-id');
+        cleanupCallNotification(callId);
+    });
+}
+
+// Helper function for timer
+function startCallTimer(callId, notificationElement) {
     let timeLeft = 30;
-    const timerElement = document.getElementById(`callTimer-${callData.callId}`);
+    const timerElement = document.getElementById(`callTimer-${callId}`);
+    
     const countdown = setInterval(() => {
         timeLeft--;
         if (timerElement) {
@@ -574,53 +598,15 @@ function showIncomingCallNotification(callData) {
         
         if (timeLeft <= 0) {
             clearInterval(countdown);
-            if (document.body.contains(callNotification)) {
-                console.log('Auto-declining unanswered call:', callData.callId);
-                declineIncomingCall(callData.callId);
+            if (document.body.contains(notificationElement)) {
+                console.log('Auto-declining unanswered call:', callId);
+                declineIncomingCall(callId);
             }
         }
     }, 1000);
     
     // Store timer reference for cleanup
-    callNotification.countdownTimer = countdown;
-    
-    // Auto-decline after 30 seconds if no response
-    callNotification.autoDeclineTimeout = setTimeout(() => {
-        if (document.body.contains(callNotification)) {
-            console.log('Auto-declining unanswered call (backup):', callData.callId);
-            declineIncomingCall(callData.callId);
-        }
-    }, 30000);
-    
-    // Add vibration if supported (for mobile)
-    if (navigator.vibrate) {
-        navigator.vibrate([200, 100, 200, 100, 200]);
-    }
-    
-    // Play ringtone (optional)
-    playCallRingtone();
-}
-
-
-// Cleanup function for call notifications
-function cleanupCallNotification(callId) {
-    const notification = document.querySelector(`[data-call-id="${callId}"]`);
-    if (notification) {
-        // Clear timers
-        if (notification.countdownTimer) {
-            clearInterval(notification.countdownTimer);
-        }
-        if (notification.autoDeclineTimeout) {
-            clearTimeout(notification.autoDeclineTimeout);
-        }
-        // Remove notification
-        notification.remove();
-    }
-    
-    // Stop vibration
-    if (navigator.vibrate) {
-        navigator.vibrate(0);
-    }
+    notificationElement.countdownTimer = countdown;
 }
 
 // ADD THIS: Global functions for answer/decline that can be called from HTML
@@ -707,29 +693,30 @@ window.declineIncomingCall = async function(callId) {
 
 async function createCallDoc(callerId, calleeId, callType = 'voice') {
     try {
-        const callRef = db.collection('calls').doc(); // auto id
+        const callRef = db.collection('calls').doc();
         const callId = callRef.id;
         const payload = {
-            callId,
-            callerId,
-            callerName: currentUserData?.displayName || callerId,
-            calleeId,
-            callType,
+            callId: callId,
+            callerId: callerId,
+            callerName: currentUserData?.displayName || 'Unknown',
+            calleeId: calleeId,
+            callType: callType,
             status: 'ringing',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            // Add these fields for better tracking
+            participants: [callerId, calleeId],
+            callStatus: 'ringing'
         };
+        
         await callRef.set(payload);
-        console.log('Call document created:', callId, payload);
+        console.log('📞 Call document created:', callId, payload);
         return callId;
     } catch (err) {
-        console.error('createCallDoc error', err);
+        console.error('❌ createCallDoc error', err);
         throw err;
     }
 }
 
-/**
- * Update call doc status (answered, rejected, ended)
- */
 async function updateCallStatus(callId, newStatus) {
     try {
         await db.collection('calls').doc(callId).update({
@@ -1030,22 +1017,29 @@ async function setupMediaForCall(callType) {
 
 // FIXED: Enhanced Incoming Call Listener with No Repeat
 
-// FIXED: Enhanced Incoming Call Listener
 function listenForIncomingCalls() {
     console.log('Setting up enhanced incoming call listener for user:', currentUser.uid);
     
     const activeNotifications = new Set();
     
+    // Use the correct field name and add more status options
     return db.collection('calls')
         .where('calleeId', '==', currentUser.uid)
-        .where('status', '==', 'ringing')
+        .where('status', 'in', ['ringing', 'pending', 'initiated']) // Add more status types
         .onSnapshot({
             next: (snapshot) => {
+                console.log('📞 Call listener snapshot received:', snapshot.size, 'calls');
+                
                 snapshot.docChanges().forEach(change => {
                     if (change.type === 'added') {
                         const callData = change.doc.data();
                         
-                        console.log('📞 New incoming call detected:', callData.callId, 'from:', callData.callerId);
+                        console.log('📞 New incoming call detected:', {
+                            callId: callData.callId,
+                            callerId: callData.callerId,
+                            status: callData.status,
+                            callType: callData.callType
+                        });
                         
                         // Validate call data
                         if (!callData.callId || !callData.callerId || callData.callerId === currentUser.uid) {
@@ -1073,8 +1067,8 @@ function listenForIncomingCalls() {
                         const callData = change.doc.data();
                         
                         // Remove notification if call is no longer ringing
-                        if (callData.status !== 'ringing') {
-                            console.log('Call ended or answered:', callData.callId);
+                        if (!['ringing', 'pending', 'initiated'].includes(callData.status)) {
+                            console.log('Call ended or answered:', callData.callId, callData.status);
                             activeNotifications.delete(callData.callId);
                             cleanupCallNotification(callData.callId);
                         }
@@ -1092,6 +1086,36 @@ function listenForIncomingCalls() {
             }
         });
 }
+
+// Add this function to debug call creation
+async function testIncomingCall() {
+    console.log('Testing incoming call...');
+    
+    // Create a test call document
+    const testCallId = 'test_' + Date.now();
+    const testCallData = {
+        callId: testCallId,
+        callerId: 'test_caller_id',
+        callerName: 'Test Caller',
+        calleeId: currentUser.uid, // This should be your user ID
+        callType: 'voice',
+        status: 'ringing',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    try {
+        await db.collection('calls').doc(testCallId).set(testCallData);
+        console.log('✅ Test call created successfully');
+        showToast('Test call created - check for notification', 'info');
+    } catch (error) {
+        console.error('❌ Error creating test call:', error);
+        showToast('Error creating test call', 'error');
+    }
+}
+
+// Call this function from browser console to test:
+// testIncomingCall();
+
 // FIXED: Enhanced User Data Loading with proper cleanup
 async function loadUserData() {
     try {
@@ -1256,11 +1280,6 @@ setTimeout(() => {
 }, 2000);
         console.log('User data loading completed successfully');
         
-        // Show welcome message
-        setTimeout(() => {
-            showToast(`Welcome back, ${currentUserData.displayName}!`, 'success');
-        }, 1000);
-
     } catch (error) {
         console.error('Error loading user data:', error);
         showToast('Error loading user data: ' + error.message, 'error');
