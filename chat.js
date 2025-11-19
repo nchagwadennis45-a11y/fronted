@@ -701,11 +701,10 @@ async function createCallDoc(callerId, calleeId, callType = 'voice') {
             callerName: currentUserData?.displayName || 'Unknown',
             calleeId: calleeId,
             callType: callType,
-            status: 'ringing',
+            status: 'ringing', // Use only one status field
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            // Add these fields for better tracking
-            participants: [callerId, calleeId],
-            callStatus: 'ringing'
+            participants: [callerId, calleeId]
+            // Remove callStatus field to avoid confusion
         };
         
         await callRef.set(payload);
@@ -720,7 +719,7 @@ async function createCallDoc(callerId, calleeId, callType = 'voice') {
 async function updateCallStatus(callId, newStatus) {
     try {
         await db.collection('calls').doc(callId).update({
-            status: newStatus,
+            status: newStatus, // Update only the main status field
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         console.log('Call status updated', callId, newStatus);
@@ -1017,28 +1016,30 @@ async function setupMediaForCall(callType) {
 
 // FIXED: Enhanced Incoming Call Listener with No Repeat
 
+// FIXED: Enhanced Incoming Call Listener with No Delay
 function listenForIncomingCalls() {
-    console.log('Setting up enhanced incoming call listener for user:', currentUser.uid);
+    console.log('🚨 Setting up REAL-TIME incoming call listener for user:', currentUser.uid);
     
     const activeNotifications = new Set();
     
-    // Use the correct field name and add more status options
+    // Use the correct field name and simpler status filtering
     return db.collection('calls')
         .where('calleeId', '==', currentUser.uid)
-        .where('status', 'in', ['ringing', 'pending', 'initiated']) // Add more status types
+        .where('status', '==', 'ringing') // Only listen for ringing calls
         .onSnapshot({
             next: (snapshot) => {
-                console.log('📞 Call listener snapshot received:', snapshot.size, 'calls');
+                console.log('📞 REAL-TIME Call listener snapshot received:', snapshot.size, 'calls');
                 
                 snapshot.docChanges().forEach(change => {
                     if (change.type === 'added') {
                         const callData = change.doc.data();
                         
-                        console.log('📞 New incoming call detected:', {
+                        console.log('🚨 IMMEDIATE incoming call detected:', {
                             callId: callData.callId,
                             callerId: callData.callerId,
                             status: callData.status,
-                            callType: callData.callType
+                            callType: callData.callType,
+                            timestamp: callData.createdAt
                         });
                         
                         // Validate call data
@@ -1055,7 +1056,7 @@ function listenForIncomingCalls() {
                         
                         activeNotifications.add(callData.callId);
                         
-                        // Show notification immediately
+                        // Show notification IMMEDIATELY - no delay
                         showIncomingCallNotification(callData);
                         
                         // Auto-remove from active after timeout
@@ -1067,7 +1068,7 @@ function listenForIncomingCalls() {
                         const callData = change.doc.data();
                         
                         // Remove notification if call is no longer ringing
-                        if (!['ringing', 'pending', 'initiated'].includes(callData.status)) {
+                        if (callData.status !== 'ringing') {
                             console.log('Call ended or answered:', callData.callId, callData.status);
                             activeNotifications.delete(callData.callId);
                             cleanupCallNotification(callData.callId);
