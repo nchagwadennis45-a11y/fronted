@@ -23,7 +23,8 @@ window.callState = {
     isMuted: false,
     isVideoOff: false,
     isInCall: false,
-    currentCamera: 'user'
+    currentCamera: 'user',
+    ringtoneUrl: null // Custom ringtone support
 };
 
 // WebRTC Configuration
@@ -64,6 +65,7 @@ window.initializeCallSystem = function() {
             listenForIncomingCalls();
             addCallButtonsToFriendList();
             addCallButtonsToChat();
+            loadUserPreferences();
         } else {
             console.log('❌ User not authenticated, cleaning up call system');
             cleanupCallSystem();
@@ -125,6 +127,53 @@ function setupCallEventListeners() {
     
     console.log('✅ Call event listeners setup complete with event delegation');
 }
+
+// Load user preferences including custom ringtone
+function loadUserPreferences() {
+    try {
+        const savedRingtone = localStorage.getItem('kynecta_ringtone_url');
+        if (savedRingtone) {
+            window.callState.ringtoneUrl = savedRingtone;
+            console.log('🔔 Loaded custom ringtone:', savedRingtone);
+        }
+    } catch (error) {
+        console.warn('⚠️ Could not load user preferences:', error);
+    }
+}
+
+// Save custom ringtone URL
+window.setCustomRingtone = function(url) {
+    try {
+        // Validate URL
+        if (!url || typeof url !== 'string') {
+            throw new Error('Invalid ringtone URL');
+        }
+        
+        // Test if it's a valid audio URL
+        const audio = new Audio();
+        audio.src = url;
+        audio.onerror = () => {
+            throw new Error('Invalid audio file URL');
+        };
+        
+        window.callState.ringtoneUrl = url;
+        localStorage.setItem('kynecta_ringtone_url', url);
+        console.log('✅ Custom ringtone saved:', url);
+        showToast('Custom ringtone set successfully', 'success');
+        
+    } catch (error) {
+        console.error('❌ Error setting custom ringtone:', error);
+        showToast('Failed to set custom ringtone: ' + error.message, 'error');
+    }
+};
+
+// Reset to default ringtone
+window.resetToDefaultRingtone = function() {
+    window.callState.ringtoneUrl = null;
+    localStorage.removeItem('kynecta_ringtone_url');
+    console.log('✅ Ringtone reset to default');
+    showToast('Ringtone reset to default', 'info');
+};
 
 // Main call initiation function
 window.startCall = async function(friendId, friendName, callType = 'voice') {
@@ -288,6 +337,24 @@ async function createPeerConnection() {
         window.callState.peerConnection.onconnectionstatechange = () => {
             console.log('🔗 Connection state:', window.callState.peerConnection.connectionState);
             updateCallStatus(window.callState.peerConnection.connectionState);
+            
+            // Auto-cleanup on failure
+            if (window.callState.peerConnection.connectionState === 'failed') {
+                console.error('❌ Connection failed, cleaning up');
+                showToast('Connection failed', 'error');
+                endCall();
+            }
+        };
+        
+        // Handle ICE connection state
+        window.callState.peerConnection.oniceconnectionstatechange = () => {
+            console.log('❄️ ICE connection state:', window.callState.peerConnection.iceConnectionState);
+            
+            if (window.callState.peerConnection.iceConnectionState === 'failed') {
+                console.error('❌ ICE connection failed');
+                showToast('Network connection failed', 'error');
+                endCall();
+            }
         };
         
         console.log('✅ Peer connection created successfully');
@@ -427,7 +494,7 @@ async function handleRemoteIceCandidates(candidates) {
     }
 }
 
-// Listen for incoming calls
+// Listen for incoming calls with better cleanup
 window.listenForIncomingCalls = function() {
     console.log('👂 Listening for incoming calls');
     
@@ -436,25 +503,99 @@ window.listenForIncomingCalls = function() {
         return;
     }
     
+    // Clean up any existing listeners first
+    cleanupCallListeners();
+    
     const incomingCallsUnsub = firebase.firestore().collection('calls')
         .where('receiverId', '==', window.callState.currentUser.uid)
-        .where('status', '==', 'ringing')
+        .where('status', 'in', ['ringing', 'answered']) // Include answered to handle page reloads
         .onSnapshot((snapshot) => {
             snapshot.docChanges().forEach((change) => {
                 if (change.type === 'added') {
                     const callData = change.doc.data();
-                    console.log('📞 Incoming call from:', callData.callerName);
                     
-                    // Only show popup if not already in a call
-                    if (!window.callState.isInCall) {
-                        showIncomingCallPopup(callData.callerName, callData.callType, callData.callId, callData.callerId);
+                    // Skip old calls (older than 5 minutes)
+                    const callAge = Date.now() - (callData.createdAt?.toDate?.()?.getTime() || Date.now());
+                    if (callAge > 5 * 60 * 1000) {
+                        console.log('⏰ Skipping old call:', callData.callId);
+                        // Auto-cleanup old call
+                        firebase.firestore().collection('calls').doc(callData.callId).update({
+                            status: 'ended',
+                            reason: 'timeout'
+                        }).catch(console.error);
+                        return;
+                    }
+                    
+                    console.log('📞 Incoming call from:', callData.callerName, 'Status:', callData.status);
+                    
+                    if (callData.status === 'ringing') {
+                        // Only show popup if not already in a call
+                        if (!window.callState.isInCall) {
+                            showIncomingCallPopup(callData.callerName, callData.callType, callData.callId, callData.callerId);
+                        }
+                    } else if (callData.status === 'answered' && window.callState.callId === callData.callId) {
+                        // Handle reconnection for existing call
+                        console.log('🔁 Reconnecting to existing call');
+                        handleCallReconnection(callData);
                     }
                 }
             });
+        }, (error) => {
+            console.error('❌ Error in incoming calls listener:', error);
         });
     
     window.callState.unsubscribers.push(incomingCallsUnsub);
 };
+
+// Handle call reconnection when user returns to page
+async function handleCallReconnection(callData) {
+    if (window.callState.isInCall) return; // Already handling the call
+    
+    try {
+        console.log('🔁 Attempting call reconnection');
+        
+        window.callState.isCaller = false;
+        window.callState.remoteUserId = callData.callerId;
+        window.callState.callId = callData.callId;
+        window.callState.callType = callData.callType;
+        window.callState.isInCall = true;
+        
+        // Get local media
+        await getLocalMediaStream(callData.callType);
+        
+        // Create peer connection
+        await createPeerConnection();
+        
+        if (callData.offer) {
+            await window.callState.peerConnection.setRemoteDescription(callData.offer);
+            
+            // Create and send answer again
+            const answer = await window.callState.peerConnection.createAnswer();
+            await window.callState.peerConnection.setLocalDescription(answer);
+            
+            await firebase.firestore().collection('calls').doc(callData.callId).update({
+                answer: answer,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            console.log('✅ Reconnection answer sent');
+            
+            // Set up listeners for ICE candidates
+            setupAnswerListeners(callData.callId);
+            
+            // Show call UI
+            showCallUI(callData.callerName, callData.callType);
+            startCallTimer();
+            
+            showToast('Call reconnected', 'success');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error reconnecting to call:', error);
+        showToast('Failed to reconnect call', 'error');
+        endCall();
+    }
+}
 
 // Show incoming call popup
 function showIncomingCallPopup(callerName, callType, callId, callerId) {
@@ -682,6 +823,7 @@ window.switchCamera = async function() {
         
         if (videoDevices.length < 2) {
             console.warn('⚠️ Only one camera available');
+            showToast('Only one camera available', 'info');
             return;
         }
         
@@ -726,6 +868,7 @@ window.switchCamera = async function() {
         newStream.getAudioTracks().forEach(track => track.stop());
         
         console.log('📷 Switched camera to:', newFacingMode);
+        showToast('Camera switched', 'success');
         
     } catch (error) {
         console.error('❌ Error switching camera:', error);
@@ -820,6 +963,7 @@ function stopCallTimer() {
     }
 }
 
+// Enhanced ringtone with custom URL support
 function playRingtone() {
     // Only play ringtone after user has interacted with the page
     if (!window.userInteracted) {
@@ -832,12 +976,20 @@ function playRingtone() {
         ringtone = document.createElement('audio');
         ringtone.id = 'callRingtone';
         ringtone.loop = true;
-        // Use a simple base64 encoded beep as fallback
+        document.body.appendChild(ringtone);
+    }
+    
+    // Use custom ringtone if available, otherwise fallback
+    if (window.callState.ringtoneUrl) {
+        ringtone.src = window.callState.ringtoneUrl;
+        console.log('🔔 Using custom ringtone:', window.callState.ringtoneUrl);
+    } else {
+        // Use default ringtone
         ringtone.innerHTML = `
             <source src="/sounds/ringtone.mp3" type="audio/mpeg">
             <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUgBjiN1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUgBjiN1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUgBjiN1/LMeSw=" type="audio/wav">
         `;
-        document.body.appendChild(ringtone);
+        console.log('🔔 Using default ringtone');
     }
     
     ringtone.play().catch(e => {
@@ -902,6 +1054,27 @@ function stopRingtone() {
         ringtone.pause();
         ringtone.currentTime = 0;
     }
+    
+    if (window.ringtoneInterval) {
+        clearInterval(window.ringtoneInterval);
+        window.ringtoneInterval = null;
+    }
+}
+
+// Clean up call listeners specifically
+function cleanupCallListeners() {
+    console.log('🧹 Cleaning up call listeners');
+    
+    window.callState.unsubscribers.forEach((unsub, index) => {
+        if (unsub && typeof unsub === 'function') {
+            try {
+                unsub();
+            } catch (error) {
+                console.warn('⚠️ Error unsubscribing listener:', error);
+            }
+        }
+    });
+    window.callState.unsubscribers = [];
 }
 
 // Clean up call state and resources
@@ -921,15 +1094,13 @@ function cleanupCallState() {
     }
     
     // Unsubscribe from Firestore listeners
-    window.callState.unsubscribers.forEach(unsub => {
-        if (unsub && typeof unsub === 'function') {
-            unsub();
-        }
-    });
-    window.callState.unsubscribers = [];
+    cleanupCallListeners();
     
     // Stop timer
     stopCallTimer();
+    
+    // Stop ringtone
+    stopRingtone();
     
     // Reset state
     window.callState.isCaller = false;
@@ -951,10 +1122,11 @@ function cleanupCallSystem() {
     window.callState.currentUser = null;
 }
 
+// Enhanced friend list button addition with better error handling
 window.addCallButtonsToFriendList = function() {
     console.log('🔧 Adding call buttons to friend list');
     
-    const maxAttempts = 10;
+    const maxAttempts = 8; // Reduced from 10
     let attempts = 0;
     
     const tryAddButtons = () => {
@@ -967,146 +1139,173 @@ window.addCallButtonsToFriendList = function() {
             '[data-user-id]',
             '.friend-list-item',
             '#friendsList .flex.items-center',
-            '.friends-container .flex'
+            '.friends-container .flex',
+            '#onlineUsers .flex',
+            '.online-users .flex'
         ];
         
         let friendItems = [];
         selectors.forEach(selector => {
-            const items = document.querySelectorAll(selector);
-            if (items.length > 0) {
-                friendItems = [...friendItems, ...items];
+            try {
+                const items = document.querySelectorAll(selector);
+                if (items.length > 0) {
+                    friendItems = [...friendItems, ...Array.from(items)];
+                }
+            } catch (error) {
+                console.warn('⚠️ Error querying selector:', selector, error);
             }
         });
         
         // Remove duplicates
-        friendItems = [...new Set(friendItems)];
+        friendItems = friendItems.filter((item, index, self) => 
+            self.findIndex(i => i === item) === index
+        );
         
         console.log(`👥 Found ${friendItems.length} friend items on attempt ${attempts}`);
         
         if (friendItems.length > 0) {
+            let buttonsAdded = 0;
+            
             friendItems.forEach((item, index) => {
-                const userId = item.dataset.userId || item.dataset.friendId || item.dataset.uid;
-                const userNameElement = item.querySelector('.friend-name, .user-name, [data-user-name], .username, .name');
-                const userName = userNameElement?.textContent?.trim() || 'Friend';
-                
-                if (!userId) {
-                    console.warn('⚠️ Friend item missing user ID:', item);
-                    return;
+                try {
+                    const userId = item.dataset.userId || item.dataset.friendId || item.dataset.uid;
+                    const userNameElement = item.querySelector('.friend-name, .user-name, [data-user-name], .username, .name, .text-sm.font-medium');
+                    const userName = userNameElement?.textContent?.trim() || 'Friend';
+                    
+                    if (!userId) {
+                        return; // Skip items without user ID
+                    }
+                    
+                    // Check if buttons already exist
+                    if (item.querySelector('.call-buttons-container')) {
+                        return;
+                    }
+                    
+                    // Create call buttons container
+                    const buttonsContainer = document.createElement('div');
+                    buttonsContainer.className = 'call-buttons-container flex space-x-2 ml-2';
+                    
+                    // Voice call button
+                    const voiceCallBtn = document.createElement('button');
+                    voiceCallBtn.className = 'voice-call-btn w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors text-sm';
+                    voiceCallBtn.innerHTML = '📞';
+                    voiceCallBtn.title = 'Voice Call';
+                    voiceCallBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        console.log('📞 Voice call button clicked for:', userName, userId);
+                        window.startVoiceCallWithFriend(userId, userName);
+                    };
+                    
+                    // Video call button
+                    const videoCallBtn = document.createElement('button');
+                    videoCallBtn.className = 'video-call-btn w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors text-sm';
+                    videoCallBtn.innerHTML = '📹';
+                    videoCallBtn.title = 'Video Call';
+                    videoCallBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        console.log('📹 Video call button clicked for:', userName, userId);
+                        window.startVideoCallWithFriend(userId, userName);
+                    };
+                    
+                    buttonsContainer.appendChild(voiceCallBtn);
+                    buttonsContainer.appendChild(videoCallBtn);
+                    
+                    // Add to friend item with better styling
+                    item.style.display = 'flex';
+                    item.style.alignItems = 'center';
+                    item.style.justifyContent = 'space-between';
+                    item.style.position = 'relative';
+                    item.appendChild(buttonsContainer);
+                    
+                    buttonsAdded++;
+                    console.log(`✅ Added call buttons to friend ${index + 1}: ${userName}`);
+                    
+                } catch (error) {
+                    console.warn('⚠️ Error adding buttons to friend item:', error);
                 }
-                
-                // Check if buttons already exist
-                if (item.querySelector('.call-buttons-container')) {
-                    return;
-                }
-                
-                // Create call buttons container
-                const buttonsContainer = document.createElement('div');
-                buttonsContainer.className = 'call-buttons-container flex space-x-2 ml-2';
-                
-                // Voice call button
-                const voiceCallBtn = document.createElement('button');
-                voiceCallBtn.className = 'voice-call-btn w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors text-sm';
-                voiceCallBtn.innerHTML = '📞';
-                voiceCallBtn.title = 'Voice Call';
-                voiceCallBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    console.log('📞 Voice call button clicked for:', userName, userId);
-                    window.startVoiceCallWithFriend(userId, userName);
-                };
-                
-                // Video call button
-                const videoCallBtn = document.createElement('button');
-                videoCallBtn.className = 'video-call-btn w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors text-sm';
-                videoCallBtn.innerHTML = '📹';
-                videoCallBtn.title = 'Video Call';
-                videoCallBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    console.log('📹 Video call button clicked for:', userName, userId);
-                    window.startVideoCallWithFriend(userId, userName);
-                };
-                
-                buttonsContainer.appendChild(voiceCallBtn);
-                buttonsContainer.appendChild(videoCallBtn);
-                
-                // Add to friend item
-                item.style.display = 'flex';
-                item.style.alignItems = 'center';
-                item.style.justifyContent = 'space-between';
-                item.appendChild(buttonsContainer);
-                
-                console.log(`✅ Added call buttons to friend ${index + 1}: ${userName}`);
             });
+            
+            console.log(`🎉 Successfully added call buttons to ${buttonsAdded} friends`);
+            
         } else if (attempts < maxAttempts) {
             console.log(`⏳ No friend items found, retrying in 500ms... (${attempts}/${maxAttempts})`);
             setTimeout(tryAddButtons, 500);
         } else {
-            console.warn('❌ Failed to find friend items after maximum attempts');
+            console.log('ℹ️ No friend items found after attempts - this is normal if no friends are online');
         }
     };
     
     tryAddButtons();
 };
 
-// Add call buttons to chat header
+// Add call buttons to chat header with better error handling
 window.addCallButtonsToChat = function() {
     console.log('🔧 Adding call buttons to chat header');
     
     setTimeout(() => {
-        const chatHeaders = document.querySelectorAll('.chat-header, .message-header, [data-chat-user]');
-        console.log(`💬 Found ${chatHeaders.length} chat headers`);
-        
-        chatHeaders.forEach((header, index) => {
-            const userId = header.dataset.chatUser || header.dataset.userId;
-            const userName = header.querySelector('.chat-title, .user-name')?.textContent || 'User';
+        try {
+            const chatHeaders = document.querySelectorAll('.chat-header, .message-header, [data-chat-user], #chatHeader, .chat-title-bar');
+            console.log(`💬 Found ${chatHeaders.length} chat headers`);
             
-            if (!userId) {
-                console.warn('⚠️ Chat header missing user ID:', header);
-                return;
-            }
-            
-            // Check if buttons already exist
-            if (header.querySelector('.chat-call-buttons')) {
-                return;
-            }
-            
-            // Create call buttons container
-            const buttonsContainer = document.createElement('div');
-            buttonsContainer.className = 'chat-call-buttons flex space-x-2';
-            
-            // Voice call button
-            const voiceCallBtn = document.createElement('button');
-            voiceCallBtn.className = 'chat-voice-call-btn w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors';
-            voiceCallBtn.innerHTML = '📞';
-            voiceCallBtn.title = 'Voice Call';
-            voiceCallBtn.onclick = () => {
-                console.log('📞 Chat voice call clicked for:', userName, userId);
-                window.startVoiceCallWithFriend?.(userId, userName);
-            };
-            
-            // Video call button
-            const videoCallBtn = document.createElement('button');
-            videoCallBtn.className = 'chat-video-call-btn w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors';
-            videoCallBtn.innerHTML = '📹';
-            videoCallBtn.title = 'Video Call';
-            videoCallBtn.onclick = () => {
-                console.log('📹 Chat video call clicked for:', userName, userId);
-                window.startVideoCallWithFriend?.(userId, userName);
-            };
-            
-            buttonsContainer.appendChild(voiceCallBtn);
-            buttonsContainer.appendChild(videoCallBtn);
-            
-            // Add to chat header
-            header.style.display = 'flex';
-            header.style.alignItems = 'center';
-            header.style.justifyContent = 'space-between';
-            header.appendChild(buttonsContainer);
-            
-            console.log(`✅ Added call buttons to chat header ${index + 1}: ${userName}`);
-        });
-    }, 1500);
+            chatHeaders.forEach((header, index) => {
+                try {
+                    const userId = header.dataset.chatUser || header.dataset.userId || header.dataset.recipientId;
+                    const userName = header.querySelector('.chat-title, .user-name, .recipient-name, .text-lg.font-semibold')?.textContent?.trim() || 'User';
+                    
+                    if (!userId) {
+                        return; // Skip headers without user ID
+                    }
+                    
+                    // Check if buttons already exist
+                    if (header.querySelector('.chat-call-buttons')) {
+                        return;
+                    }
+                    
+                    // Create call buttons container
+                    const buttonsContainer = document.createElement('div');
+                    buttonsContainer.className = 'chat-call-buttons flex space-x-2 ml-4';
+                    
+                    // Voice call button
+                    const voiceCallBtn = document.createElement('button');
+                    voiceCallBtn.className = 'chat-voice-call-btn w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors';
+                    voiceCallBtn.innerHTML = '📞';
+                    voiceCallBtn.title = 'Voice Call';
+                    voiceCallBtn.onclick = () => {
+                        console.log('📞 Chat voice call clicked for:', userName, userId);
+                        window.startVoiceCallWithFriend?.(userId, userName);
+                    };
+                    
+                    // Video call button
+                    const videoCallBtn = document.createElement('button');
+                    videoCallBtn.className = 'chat-video-call-btn w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors';
+                    videoCallBtn.innerHTML = '📹';
+                    videoCallBtn.title = 'Video Call';
+                    videoCallBtn.onclick = () => {
+                        console.log('📹 Chat video call clicked for:', userName, userId);
+                        window.startVideoCallWithFriend?.(userId, userName);
+                    };
+                    
+                    buttonsContainer.appendChild(voiceCallBtn);
+                    buttonsContainer.appendChild(videoCallBtn);
+                    
+                    // Add to chat header
+                    header.style.display = 'flex';
+                    header.style.alignItems = 'center';
+                    header.style.justifyContent = 'space-between';
+                    header.appendChild(buttonsContainer);
+                    
+                    console.log(`✅ Added call buttons to chat header ${index + 1}: ${userName}`);
+                    
+                } catch (error) {
+                    console.warn('⚠️ Error adding buttons to chat header:', error);
+                }
+            });
+        } catch (error) {
+            console.error('❌ Error in addCallButtonsToChat:', error);
+        }
+    }, 2000); // Increased delay for better DOM readiness
 };
 
 // Expose friend call functions to window for chat.js integration
@@ -1120,13 +1319,118 @@ window.startVideoCallWithFriend = function(friendId, friendName) {
     window.startCall(friendId, friendName, 'video');
 };
 
+// Add ringtone management UI
+window.showRingtoneSettings = function() {
+    const modalHtml = `
+        <div id="ringtoneSettingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-96 max-w-full">
+                <h3 class="text-lg font-semibold mb-4">🔔 Ringtone Settings</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Custom Ringtone URL</label>
+                        <input type="url" id="ringtoneUrlInput" 
+                               placeholder="https://example.com/ringtone.mp3" 
+                               class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               value="${window.callState.ringtoneUrl || ''}">
+                        <p class="text-xs text-gray-500 mt-1">Enter a direct URL to an MP3 or WAV file</p>
+                    </div>
+                    
+                    <div class="flex space-x-2">
+                        <button onclick="testRingtone()" 
+                                class="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                            Test Ringtone
+                        </button>
+                        <button onclick="resetToDefaultRingtone()" 
+                                class="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                            Reset to Default
+                        </button>
+                    </div>
+                    
+                    <div class="flex space-x-2 mt-4">
+                        <button onclick="saveRingtoneSettings()" 
+                                class="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors">
+                            Save
+                        </button>
+                        <button onclick="closeRingtoneSettings()" 
+                                class="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('ringtoneSettingsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+};
+
+// Test ringtone function
+window.testRingtone = function() {
+    const urlInput = document.getElementById('ringtoneUrlInput');
+    const testUrl = urlInput.value.trim();
+    
+    if (!testUrl) {
+        showToast('Please enter a ringtone URL to test', 'warning');
+        return;
+    }
+    
+    try {
+        const testAudio = new Audio();
+        testAudio.src = testUrl;
+        testAudio.play().then(() => {
+            showToast('Ringtone test successful!', 'success');
+            // Stop after 3 seconds
+            setTimeout(() => {
+                testAudio.pause();
+                testAudio.currentTime = 0;
+            }, 3000);
+        }).catch(error => {
+            console.error('Ringtone test failed:', error);
+            showToast('Failed to play ringtone: Invalid URL or file format', 'error');
+        });
+    } catch (error) {
+        showToast('Invalid ringtone URL', 'error');
+    }
+};
+
+// Save ringtone settings
+window.saveRingtoneSettings = function() {
+    const urlInput = document.getElementById('ringtoneUrlInput');
+    const ringtoneUrl = urlInput.value.trim();
+    
+    if (ringtoneUrl) {
+        window.setCustomRingtone(ringtoneUrl);
+    } else {
+        window.resetToDefaultRingtone();
+    }
+    
+    closeRingtoneSettings();
+};
+
+// Close ringtone settings
+window.closeRingtoneSettings = function() {
+    const modal = document.getElementById('ringtoneSettingsModal');
+    if (modal) {
+        modal.remove();
+    }
+};
+
 // Initialize when script loads
 console.log('🚀 call.js loaded, waiting for authentication...');
 
 // Auto-initialize if user is already authenticated
 if (window.currentUser) {
     console.log('✅ User already authenticated, initializing call system');
-    window.initializeCallSystem();
+    setTimeout(() => {
+        window.initializeCallSystem();
+    }, 1000);
 }
 
 // Export functions for global access

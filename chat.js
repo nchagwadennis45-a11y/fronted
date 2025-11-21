@@ -674,31 +674,270 @@ function showToast(message, type = 'info') {
         }, 300);
     }, 3000);
 }
-
 function loadUserSettings() {
-    // Load settings from localStorage or use defaults
-    const savedSettings = localStorage.getItem('kynecta-settings');
-    if (savedSettings) {
-        userSettings = JSON.parse(savedSettings);
+    try {
+        // Try to load from localStorage first
+        const savedSettings = localStorage.getItem('kynecta-settings');
+        if (savedSettings) {
+            userSettings = JSON.parse(savedSettings);
+            console.log('Settings loaded from localStorage');
+        }
+        
+        // Then try to load from Firestore
+        if (currentUser) {
+            db.collection('users').doc(currentUser.uid).get().then(doc => {
+                if (doc.exists && doc.data().settings) {
+                    userSettings = { ...userSettings, ...doc.data().settings };
+                    console.log('Settings loaded from Firestore');
+                    
+                    // Save merged settings back to localStorage
+                    localStorage.setItem('kynecta-settings', JSON.stringify(userSettings));
+                }
+                
+                // Apply settings and update UI
+                applyUserSettings();
+                updateSettingsUI();
+            }).catch(error => {
+                console.error('Error loading settings from Firestore:', error);
+                // Still apply whatever settings we have
+                applyUserSettings();
+                updateSettingsUI();
+            });
+        } else {
+            // Apply settings for non-logged in users
+            applyUserSettings();
+            updateSettingsUI();
+        }
+        
+    } catch (error) {
+        console.error('Error loading settings:', error);
+        // Use default settings
+        userSettings = getDefaultSettings();
+        applyUserSettings();
     }
-    
-    // Apply settings to UI
-    applyUserSettings();
 }
 
+// NEW FUNCTION: Update Settings UI with current values
+function updateSettingsUI() {
+    if (!userSettings) {
+        console.log('No user settings to update UI');
+        return;
+    }
+    
+    console.log('Updating settings UI...');
+    
+    // Update theme selector
+    const themeSelect = document.getElementById('themeSelect');
+    if (themeSelect) {
+        themeSelect.value = userSettings.chat?.displayTheme || 'light';
+        console.log('Theme selector updated:', themeSelect.value);
+    }
+    
+    // Update notification toggles
+    const notificationToggle = document.getElementById('notificationToggle');
+    if (notificationToggle) {
+        notificationToggle.checked = userSettings.security?.notifications !== false;
+    }
+    
+    // Update privacy settings
+    const lastSeenPrivacy = document.getElementById('lastSeenPrivacy');
+    if (lastSeenPrivacy) {
+        lastSeenPrivacy.value = userSettings.privacy?.lastSeen || 'everyone';
+    }
+    
+    const readReceiptsPrivacy = document.getElementById('readReceiptsPrivacy');
+    if (readReceiptsPrivacy) {
+        readReceiptsPrivacy.checked = userSettings.privacy?.readReceipts !== false;
+    }
+    
+    // Update chat settings
+    const enterKeySendsToggle = document.getElementById('enterKeySendsToggle');
+    if (enterKeySendsToggle) {
+        enterKeySendsToggle.checked = userSettings.chat?.enterKeySends !== false;
+    }
+    
+    // Update accessibility settings
+    const largeTextToggle = document.getElementById('largeTextToggle');
+    if (largeTextToggle) {
+        largeTextToggle.checked = userSettings.accessibility?.largeText || false;
+    }
+    
+    const highContrastToggle = document.getElementById('highContrastToggle');
+    if (highContrastToggle) {
+        highContrastToggle.checked = userSettings.accessibility?.highContrast || false;
+    }
+    
+    // Update font size selector
+    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    if (fontSizeSelect) {
+        fontSizeSelect.value = userSettings.chat?.fontSize || 'medium';
+    }
+    
+    console.log('Settings UI updated successfully');
+}
+
+// NEW FUNCTION: Get default settings
+function getDefaultSettings() {
+    return {
+        security: {
+            notifications: true,
+            passkeys: false,
+            twoStepVerification: false
+        },
+        privacy: {
+            lastSeen: 'everyone',
+            profilePhoto: 'everyone',
+            about: 'everyone',
+            status: 'everyone',
+            readReceipts: true,
+            disappearingMessages: 'off',
+            groups: 'everyone',
+            avatarStickers: true,
+            calls: 'everyone',
+            contact: 'everyone',
+            appLock: false,
+            cameraEffects: true
+        },
+        notifications: {
+            conversationTones: true,
+            reminders: true,
+            vibrate: true,
+            notificationLight: true,
+            lightColor: '#7C3AED',
+            highPriorityNotifications: true,
+            reactionNotifications: true
+        },
+        storage: {
+            lessDataCalls: false,
+            proxyEnabled: false,
+            mediaUploadQuality: 'auto',
+            autoDownloadQuality: 'standard'
+        },
+        chat: {
+            displayTheme: 'light',
+            defaultChatTheme: 'purple',
+            fontSize: 'medium',
+            enterKeySends: true,
+            mediaVisibility: true
+        },
+        accessibility: {
+            largeText: false,
+            highContrast: false,
+            screenReader: true,
+            reducedMotion: false,
+            voiceControl: false
+        },
+        language: {
+            appLanguage: 'en'
+        },
+        favorites: []
+    };
+}
+
+// NEW FUNCTION: Save all settings
+function saveSettings() {
+    try {
+        console.log('Saving settings...');
+        
+        // Collect all settings from the UI
+        const settings = {
+            security: {
+                notifications: document.getElementById('notificationToggle')?.checked ?? true,
+                passkeys: document.getElementById('passkeyToggle')?.checked ?? false,
+                twoStepVerification: document.getElementById('twoStepToggle')?.checked ?? false
+            },
+            privacy: {
+                lastSeen: document.getElementById('lastSeenPrivacy')?.value || 'everyone',
+                profilePhoto: document.getElementById('profilePhotoPrivacy')?.value || 'everyone',
+                about: document.getElementById('aboutPrivacy')?.value || 'everyone',
+                status: document.getElementById('statusPrivacy')?.value || 'everyone',
+                readReceipts: document.getElementById('readReceiptsPrivacy')?.checked ?? true,
+                disappearingMessages: document.getElementById('disappearingMessagesPrivacy')?.value || 'off',
+                groups: document.getElementById('groupsPrivacy')?.value || 'everyone',
+                calls: document.getElementById('callsPrivacy')?.value || 'everyone'
+            },
+            chat: {
+                displayTheme: document.getElementById('themeSelect')?.value || 'light',
+                defaultChatTheme: document.getElementById('chatThemeSelect')?.value || 'purple',
+                fontSize: document.getElementById('fontSizeSelect')?.value || 'medium',
+                enterKeySends: document.getElementById('enterKeySendsToggle')?.checked ?? true,
+                mediaVisibility: document.getElementById('mediaVisibilityToggle')?.checked ?? true
+            },
+            accessibility: {
+                largeText: document.getElementById('largeTextToggle')?.checked ?? false,
+                highContrast: document.getElementById('highContrastToggle')?.checked ?? false,
+                screenReader: document.getElementById('screenReaderToggle')?.checked ?? true,
+                reducedMotion: document.getElementById('reducedMotionToggle')?.checked ?? false,
+                voiceControl: document.getElementById('voiceControlToggle')?.checked ?? false
+            }
+        };
+
+        // Save to localStorage
+        localStorage.setItem('kynecta-settings', JSON.stringify(settings));
+        
+        // Update global settings object
+        userSettings = settings;
+        
+        // Apply settings immediately
+        applyUserSettings();
+        
+        // Save to Firestore if user is logged in
+        if (currentUser) {
+            db.collection('users').doc(currentUser.uid).update({
+                settings: settings,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(error => {
+                console.error('Error saving settings to Firestore:', error);
+            });
+        }
+        
+        showToast('Settings saved successfully!', 'success');
+        return true;
+        
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        showToast('Error saving settings', 'error');
+        return false;
+    }
+}
 function saveUserSettings() {
     localStorage.setItem('kynecta-settings', JSON.stringify(userSettings));
 }
 
 function applyUserSettings() {
+    if (!userSettings) return;
+    
     // Apply theme
     setTheme(userSettings.chat.displayTheme);
     
-    // Apply accessibility settings
-    applyAccessibilitySettings();
+    // Apply font size
+    document.body.style.fontSize = userSettings.accessibility.largeText ? '18px' : '16px';
     
-    // Apply chat settings
-    applyChatSettings();
+    // Apply high contrast
+    if (userSettings.accessibility.highContrast) {
+        document.body.classList.add('high-contrast');
+    } else {
+        document.body.classList.remove('high-contrast');
+    }
+    
+    // Apply reduced motion
+    if (userSettings.accessibility.reducedMotion) {
+        document.body.classList.add('reduce-motion');
+    } else {
+        document.body.classList.remove('reduce-motion');
+    }
+    
+    // Update enter key behavior
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput) {
+        if (userSettings.chat.enterKeySends) {
+            messageInput.setAttribute('data-enter-sends', 'true');
+        } else {
+            messageInput.setAttribute('data-enter-sends', 'false');
+        }
+    }
+    
+    console.log('Settings applied successfully');
 }
 
 function applyAccessibilitySettings() {
@@ -4263,10 +4502,10 @@ document.getElementById("saveChatSettings")?.addEventListener("click", () => {
 });
 
 // SECURITY SETTINGS SAVE (if you have this modal)
-document.getElementById("saveSecurity")?.addEventListener("click", () => {
-    // Add security settings save logic here
-    showToast("Security settings saved!", "success");
-    document.getElementById("securitySettingsModal").classList.add("hidden");
+document.getElementById("saveSettings")?.addEventListener("click", () => {
+    if (saveSettings()) {
+        document.getElementById("settingsModal").classList.add("hidden");
+    }
 });
 
 // CANCEL BUTTONS
@@ -4979,7 +5218,24 @@ document.addEventListener('click', function(e) {
 
     console.log('Event listeners setup completed');
 });
+// ADD THIS SECTION:
+    console.log('Setting up settings save button...');
+    
+    // Settings save button
+    const saveSettingsBtn = document.getElementById('saveSettings');
+    if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', function() {
+            console.log('Save settings button clicked');
+            if (saveSettings()) {
+                document.getElementById('settingsModal').classList.add('hidden');
+            }
+        });
+    } else {
+        console.warn('Save settings button not found in DOM');
+    }
+
 }
+
 
 // FIXED: Add missing renderFriendsForGroupCreation function
 function renderFriendsForGroupCreation() {

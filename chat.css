@@ -327,28 +327,86 @@ body {
     color: #9CA3AF;
 }
 
-/* ========== FIXED SETTINGS PANEL STYLES ========== */
+/* ========== IMPROVED SETTINGS PANEL STYLES ========== */
 .settings-section {
-    padding: 12px 16px;
+    padding: 0;
     border-bottom: 1px solid var(--kynecta-border);
-    min-height: auto;
+    background: var(--kynecta-light);
 }
 
 .settings-section:last-child {
     border-bottom: none;
 }
 
+.settings-section-header {
+    padding: 16px;
+    background: var(--kynecta-light);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid transparent;
+}
+
+.settings-section-header:hover {
+    background: rgba(124, 58, 237, 0.05);
+}
+
+.settings-section.expanded .settings-section-header {
+    border-bottom-color: var(--kynecta-border);
+    background: rgba(124, 58, 237, 0.08);
+}
+
+.settings-section-title {
+    font-weight: 600;
+    color: var(--kynecta-primary);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.settings-section-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    background: var(--kynecta-light);
+}
+
+.settings-section.expanded .settings-section-content {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.settings-section-toggle {
+    transition: transform 0.3s ease;
+    color: var(--kynecta-dark);
+    opacity: 0.6;
+    font-size: 0.9rem;
+}
+
+.settings-section.expanded .settings-section-toggle {
+    transform: rotate(180deg);
+}
+
 .settings-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
+    padding: 14px 16px;
     cursor: pointer;
-    min-height: 44px;
+    min-height: 52px;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid var(--kynecta-border);
 }
 
-.settings-item:not(:last-child) {
-    border-bottom: 1px solid var(--kynecta-border);
+.settings-item:hover {
+    background: rgba(124, 58, 237, 0.05);
+}
+
+.settings-item:last-child {
+    border-bottom: none;
 }
 
 .settings-item-content {
@@ -358,14 +416,15 @@ body {
 
 .settings-item-title {
     font-weight: 500;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
     font-size: 0.9rem;
+    color: var(--kynecta-dark);
 }
 
 .settings-item-description {
     font-size: 0.75rem;
     color: #6B7280;
-    line-height: 1.3;
+    line-height: 1.4;
 }
 
 .settings-item-action {
@@ -380,7 +439,20 @@ body {
 .settings-panel {
     max-height: 70vh;
     overflow-y: auto;
-    padding: 8px 0;
+    padding: 0;
+}
+
+.settings-modal {
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
 }
 
 .toggle-switch {
@@ -1674,6 +1746,41 @@ input:checked + .toggle-slider:before {
         width: 28px !important;
         height: 28px !important;
     }
+    
+    /* ========== FIXED LAPTOP ICONS POSITIONING ========== */
+    /* Move action icons to bottom of chat input area on desktop */
+    .desktop-input-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+        border-top: 1px solid var(--kynecta-border);
+        background: var(--kynecta-light);
+    }
+    
+    .desktop-input-action {
+        background: transparent;
+        border: none;
+        color: var(--kynecta-dark);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    
+    .desktop-input-action:hover {
+        background: var(--kynecta-border);
+        color: var(--kynecta-primary);
+    }
+    
+    /* Hide mobile input actions on desktop */
+    .mobile-input-actions {
+        display: none;
+    }
 }
 
 /* Mobile layout */
@@ -1760,7 +1867,38 @@ input:checked + .toggle-slider:before {
     
     /* Ensure proper spacing for mobile */
     #chatInterface {
-        height: calc(100vh - 70px);
+        height: calc(100vh - 140px);
+    }
+    
+    /* Show mobile input actions on mobile */
+    .mobile-input-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    
+    .mobile-input-action {
+        background: transparent;
+        border: none;
+        color: var(--kynecta-dark);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .mobile-input-action:hover {
+        background: var(--kynecta-border);
+        color: var(--kynecta-primary);
+    }
+    
+    /* Hide desktop input actions on mobile */
+    .desktop-input-actions {
+        display: none;
     }
 }
 
@@ -2211,4 +2349,200 @@ textarea:focus {
 
 .call-button:hover {
     transform: scale(1.1);
+}
+
+/* ========== FIXED SETTINGS PANEL HEIGHT ========== */
+.settings-panel {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.settings-modal {
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+}
+
+/* ========== FIXED ICON POSITIONING FOR LAPTOP ========== */
+@media (min-width: 769px) {
+    /* Ensure icons are visible and properly positioned */
+    .action-icons-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+        background: var(--kynecta-light);
+        border-top: 1px solid var(--kynecta-border);
+    }
+    
+    .action-icon {
+        background: transparent;
+        border: none;
+        color: var(--kynecta-dark);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    
+    .action-icon:hover {
+        background: var(--kynecta-border);
+        color: var(--kynecta-primary);
+        transform: scale(1.1);
+    }
+    
+    /* Fix for settings panel icons */
+    .settings-item-action {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-width: 44px !important;
+        height: 44px !important;
+    }
+    
+    .settings-item-action i,
+    .settings-item-action svg {
+        font-size: 1.2rem !important;
+        width: 24px !important;
+        height: 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+}
+
+/* ========== GENERAL LAYOUT IMPROVEMENTS ========== */
+.chat-area-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--kynecta-border);
+    background: var(--kynecta-light);
+    min-height: 64px;
+}
+
+.chat-area-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Improved scroll behavior */
+.messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    scroll-behavior: smooth;
+}
+
+/* Better spacing for message bubbles */
+.message-container {
+    margin-bottom: 16px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+/* Improved input area layout */
+.input-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--kynecta-light);
+    border-top: 1px solid var(--kynecta-border);
+}
+
+.message-input-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Enhanced button styles */
+.btn-primary {
+    background: var(--kynecta-primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary:hover {
+    background: var(--kynecta-secondary);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--kynecta-dark);
+    border: 1px solid var(--kynecta-border);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: var(--kynecta-border);
+    border-color: var(--kynecta-primary);
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid var(--kynecta-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error states */
+.error-message {
+    color: #EF4444;
+    font-size: 0.875rem;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Success states */
+.success-message {
+    color: #10B981;
+    font-size: 0.875rem;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
