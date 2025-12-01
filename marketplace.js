@@ -1129,6 +1129,60 @@ function setupEventListeners() {
             this.classList.add('active');
         });
     });
+    // Fix: Category buttons and cards
+document.addEventListener('click', function(e) {
+    // Handle category cards
+    if (e.target.closest('.category-card')) {
+        const categoryCard = e.target.closest('.category-card');
+        const category = categoryCard.getAttribute('data-category');
+        console.log('Category card clicked:', category);
+        filterByCategory(category);
+    }
+    
+    // Handle category tabs
+    if (e.target.closest('.tab-button')) {
+        const tabButton = e.target.closest('.tab-button');
+        const category = tabButton.getAttribute('data-category');
+        console.log('Category tab clicked:', category);
+        
+        // Update active states
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        tabButton.classList.add('active');
+        
+        filterByCategory(category);
+    }
+});
+
+// Fix: Header icon functionality
+document.addEventListener('click', function(e) {
+    // Cart button
+    if (e.target.closest('#cartBtn') || e.target.closest('.cart-btn')) {
+        openCartModal();
+    }
+    
+    // Wishlist button
+    if (e.target.closest('#wishlistBtn') || e.target.closest('.wishlist-btn')) {
+        openWishlistModal();
+    }
+    
+    // Notifications button
+    if (e.target.closest('#notificationBtn') || e.target.closest('.notification-btn')) {
+        openNotificationsModal();
+    }
+    
+    // Messages button
+    if (e.target.closest('#messagesBtn') || e.target.closest('.messages-btn')) {
+        openMessagesModal();
+    }
+    
+    // Orders button
+    if (e.target.closest('#ordersBtn') || e.target.closest('.orders-btn')) {
+        openOrdersModal();
+    }
+});
+
 
     // Fix: Bottom Navigation (Mobile) - CRITICAL FIX
     document.querySelectorAll('.bottom-nav-item[data-section]').forEach(item => {
@@ -1804,33 +1858,31 @@ function handleCategorySearch() {
 
 // Enhanced category filtering
 async function filterByCategory(category) {
-    console.log('Filtering by category:', category);
-    
-    // Update active states
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.getAttribute('data-category') === category) {
-            btn.classList.add('active');
-        }
-    });
-    
-    currentCategory = category;
+    console.log('🔄 Filtering by category:', category);
     
     // Show loading state
     listingsContainer.innerHTML = `
         <div class="col-span-full text-center py-12">
             <div class="loading-spinner mx-auto mb-4" style="width: 40px; height: 40px;"></div>
-            <p class="text-gray-500 dark:text-gray-400">Loading ${category} items...</p>
+            <p class="text-gray-500 dark:text-gray-400">Loading ${getCategoryDisplayName(category)} items...</p>
         </div>
     `;
     
     try {
-        // Load listings for this specific category
-        let query = db.collection('listings')
-            .where('status', '==', 'active')
-            .where('category', '==', category)
-            .orderBy('createdAt', 'desc')
-            .limit(listingsPerPage);
+        let query;
+        
+        if (category === 'all') {
+            query = db.collection('listings')
+                .where('status', '==', 'active')
+                .orderBy('createdAt', 'desc')
+                .limit(listingsPerPage);
+        } else {
+            query = db.collection('listings')
+                .where('status', '==', 'active')
+                .where('category', '==', category)
+                .orderBy('createdAt', 'desc')
+                .limit(listingsPerPage);
+        }
 
         const querySnapshot = await query.get();
         
@@ -1853,10 +1905,19 @@ async function filterByCategory(category) {
         // Switch to home dashboard to see results
         switchDashboard('home');
         
+        // Update URL or state to reflect current category
+        currentCategory = category;
+        
         // Scroll to listings section
-        document.getElementById('listingsContainer').scrollIntoView({ 
-            behavior: 'smooth' 
-        });
+        setTimeout(() => {
+            const listingsSection = document.getElementById('listingsContainer');
+            if (listingsSection) {
+                listingsSection.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }, 300);
 
     } catch (error) {
         console.error('❌ Error loading category listings:', error);
@@ -1864,10 +1925,35 @@ async function filterByCategory(category) {
             <div class="col-span-full text-center py-12">
                 <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-4"></i>
                 <h3 class="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">Error Loading Items</h3>
-                <p class="text-gray-500 dark:text-gray-400">No ${category} items found or error loading</p>
+                <p class="text-gray-500 dark:text-gray-400">No ${getCategoryDisplayName(category)} items found</p>
+                <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition mt-4" onclick="filterByCategory('all')">
+                    View All Listings
+                </button>
             </div>
         `;
     }
+}
+
+// Helper function to get category display names
+function getCategoryDisplayName(category) {
+    const categoryNames = {
+        'all': 'All',
+        'electronics': 'Electronics',
+        'fashion': 'Fashion',
+        'phones': 'Phones & Tablets',
+        'home': 'Home & Office',
+        'health': 'Health & Beauty',
+        'books': 'Books & Media',
+        'gaming': 'Gaming',
+        'automotive': 'Automotive',
+        'pets': 'Pets',
+        'baby': 'Baby Products',
+        'grocery': 'Grocery',
+        'sports': 'Sports',
+        'services': 'Services',
+        'other': 'Other'
+    };
+    return categoryNames[category] || category;
 }
 
 // Open more categories modal

@@ -8,6 +8,7 @@ function setupGlobalErrorHandling() {
             handleImageError(e.target);
         }
     }, true);
+
     
     // Also handle images that might be created dynamically
     const originalImage = window.Image;
@@ -213,10 +214,7 @@ const favoritesSettingsModal = document.getElementById('favoritesSettingsModal')
 const helpCenterModal = document.getElementById('helpCenterModal');
 const appInfoModal = document.getElementById('appInfoModal');
 const inviteFriendsModal = document.getElementById('inviteFriendsModal');
-const statusCreation = document.getElementById('statusCreation');
 const emojiPicker = document.getElementById('emojiPicker');
-const createGroupModal = document.getElementById('createGroupModal');
-const joinGroupModal = document.getElementById('joinGroupModal');
 const allFriendsModal = document.getElementById('allFriendsModal');
 
 function formatFileSize(bytes) {
@@ -569,7 +567,6 @@ async function loadUserData() {
         showChatApp();
         setupEventListeners();
         loadUserSettings();
-        loadStatusUpdates();
         loadFriends();
         loadAllUsers();
         initEmojiPicker();
@@ -996,273 +993,7 @@ async function addViewerToStatus(statusId, viewerId) {
 }
 
 
-/**
- * Show viewer list in viewers modal. Your UI already includes a #viewersModal and #viewersList. :contentReference[oaicite:10]{index=10}
- */
-async function showViewersList(statusId) {
-    try {
-        const viewersList = document.getElementById('viewersList');
-        if (!viewersList) return;
-        viewersList.innerHTML = '<p class="text-center text-gray-500 py-4">Loading viewers...</p>';
 
-        const snapshot = await db.collection('statusViews').where('statusId', '==', statusId).orderBy('viewedAt', 'desc').get();
-        viewersList.innerHTML = '';
-
-        if (snapshot.empty) {
-            viewersList.innerHTML = '<p class="text-center text-gray-500 py-4">No viewers yet</p>';
-            return;
-        }
-
-        snapshot.forEach(doc => {
-            const v = doc.data();
-            const el = document.createElement('div');
-            el.className = 'flex items-center gap-3 p-2';
-            el.innerHTML = `
-                <img src="${v.userPhotoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(v.userDisplayName)}&background=7C3AED&color=fff`}" class="w-10 h-10 rounded-full object-cover" />
-                <div>
-                    <div class="font-medium">${v.userDisplayName}</div>
-                    <div class="text-xs text-gray-500">${formatTimeAgo(v.viewedAt)}</div>
-                </div>
-            `;
-            viewersList.appendChild(el);
-        });
-    } catch (err) {
-        console.error('showViewersList error', err);
-        const viewersList = document.getElementById('viewersList');
-        if (viewersList) viewersList.innerHTML = '<p class="text-center text-red-500 py-4">Error loading viewers</p>';
-    }
-}
-
-
-// Update the status rendering in loadStatusUpdates function
-// FIXED: Enhanced Status Loading
-function loadStatusUpdates() {
-    const statusUpdates = document.getElementById('statusUpdates');
-    if (!statusUpdates) return;
-    
-    statusUpdates.innerHTML = '<div class="text-center text-gray-500 py-4">Loading statuses...</div>';
-    
-    // Get current time for filtering expired statuses
-    const now = new Date();
-    
-    // Load user's own statuses
-    const userStatusesPromise = db.collection('statuses')
-        .where('userId', '==', currentUser.uid)
-        .orderBy('timestamp', 'desc')
-        .limit(10)
-        .get();
-    
-    // Load friends' statuses - FIXED QUERY
-    let friendsStatusesPromise = Promise.resolve({ empty: true });
-    
-    if (friends.length > 0) {
-        const friendIds = friends.map(f => f.id).filter(Boolean);
-        
-        if (friendIds.length > 0) {
-            // Use Promise.all for multiple queries to avoid Firestore 'in' limit
-            const statusPromises = [];
-            
-            for (let i = 0; i < friendIds.length; i += 10) {
-                const batch = friendIds.slice(i, i + 10);
-                if (batch.length > 0) {
-                    statusPromises.push(
-                        db.collection('statuses')
-                            .where('userId', 'in', batch)
-                            .where('expiresAt', '>', now)
-                            .orderBy('timestamp', 'desc')
-                            .limit(20)
-                            .get()
-                    );
-                }
-            }
-            
-            friendsStatusesPromise = Promise.all(statusPromises)
-                .then(snapshots => {
-                    const allStatuses = [];
-                    snapshots.forEach(snapshot => {
-                        snapshot.forEach(doc => {
-                            allStatuses.push({
-                                id: doc.id,
-                                ...doc.data()
-                            });
-                        });
-                    });
-                    // Sort by timestamp
-                    return allStatuses.sort((a, b) => {
-                        const timeA = a.timestamp?.toDate() || new Date(0);
-                        const timeB = b.timestamp?.toDate() || new Date(0);
-                        return timeB - timeA;
-                    });
-                })
-                .catch(error => {
-                    console.error('Error loading friends statuses:', error);
-                    return [];
-                });
-        }
-    }
-    
-    Promise.all([userStatusesPromise, friendsStatusesPromise])
-        .then(([userSnapshot, friendsStatuses]) => {
-            statusUpdates.innerHTML = '';
-            
-            let hasStatuses = false;
-            
-            // Add user's own statuses
-            userSnapshot.forEach(doc => {
-                hasStatuses = true;
-                const status = doc.data();
-                addStatusToUI(status, doc.id, true);
-            });
-            
-            // Add friends' statuses
-            if (Array.isArray(friendsStatuses)) {
-                friendsStatuses.forEach(status => {
-                    hasStatuses = true;
-                    if (status.userId !== currentUser.uid) {
-                        addStatusToUI(status, status.id, false);
-                    }
-                });
-            }
-            
-            if (!hasStatuses) {
-                statusUpdates.innerHTML = `
-                    <div class="text-center text-gray-500 py-8">
-                        <i class="fas fa-images text-4xl mb-3 text-gray-300 block"></i>
-                        <p>No status updates yet</p>
-                        <p class="text-sm mt-1">Share a photo, video, or text update</p>
-                    </div>
-                `;
-            }
-            
-            // Add click listeners for status items
-            setTimeout(() => {
-                document.querySelectorAll('.status-item').forEach(item => {
-                    item.addEventListener('click', function() {
-                        const statusId = this.dataset.statusId;
-                        if (statusId) {
-                            openStatus(statusId);
-                        }
-                    });
-                });
-            }, 100);
-            
-        })
-        .catch(error => {
-            console.error('Error loading status updates:', error);
-            statusUpdates.innerHTML = `
-                <div class="text-center text-gray-500 py-8">
-                    <i class="fas fa-exclamation-triangle text-4xl mb-3 text-gray-300 block"></i>
-                    <p>Error loading status updates</p>
-                    <p class="text-sm mt-1">Please try again later</p>
-                </div>
-            `;
-        });
-}
-
-// Helper function to render statuses
-function renderStatusUpdates(statuses) {
-    const statusUpdates = document.getElementById('statusUpdates');
-    if (!statusUpdates) return;
-    
-    statusUpdates.innerHTML = '';
-    
-    if (statuses.length === 0) {
-        statusUpdates.innerHTML = `
-            <div class="text-center text-gray-500 py-8">
-                <i class="fas fa-images text-4xl mb-3 text-gray-300 block"></i>
-                <p>No status updates yet</p>
-                <p class="text-sm mt-1">Share a photo, video, or text update</p>
-            </div>
-        `;
-        return;
-    }
-    
-    statuses.forEach(status => {
-        const statusElement = document.createElement('div');
-        statusElement.className = 'status-item flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer';
-        statusElement.dataset.statusId = status.id;
-        
-        let statusContent = '';
-        if (status.type === 'emoji') {
-            statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-green-500 flex items-center justify-center text-white text-xl">${status.content}</div>`;
-        } else if (status.type === 'text') {
-            statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 flex items-center justify-center text-white"><i class="fas fa-font"></i></div>`;
-        } else if (status.type === 'image') {
-            statusContent = `<div class="w-12 h-12 rounded-full bg-cover bg-center" style="background-image: url('${status.content}')"></div>`;
-        } else if (status.type === 'video') {
-            statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center text-white"><i class="fas fa-video"></i></div>`;
-        } else if (status.type === 'audio') {
-            statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center text-white"><i class="fas fa-music"></i></div>`;
-        }
-        
-        statusElement.innerHTML = `
-            ${statusContent}
-            <div class="flex-1">
-                <p class="font-medium">${status.userDisplayName} ${status.isOwnStatus ? '(You)' : ''}</p>
-                <p class="text-sm text-gray-500">${formatTimeAgo(status.timestamp)}</p>
-                ${status.caption ? `<p class="text-sm text-gray-600 mt-1">${status.caption}</p>` : ''}
-            </div>
-            <div class="text-right">
-                <button class="view-status-btn text-purple-600 hover:text-purple-800 text-sm">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </div>
-        `;
-        
-        statusUpdates.appendChild(statusElement);
-    });
-    
-    // Add click event listeners for status items
-    statusUpdates.addEventListener('click', function(e) {
-        if (e.target.closest('.status-item') || e.target.closest('.view-status-btn')) {
-            const statusItem = e.target.closest('.status-item');
-            const statusId = statusItem.dataset.statusId;
-            if (statusId) {
-                openStatus(statusId);
-            }
-        }
-    });
-}
-
-// Helper function to add status to UI
-
-function addStatusToUI(status, statusId, isOwnStatus) {
-    const statusUpdates = document.getElementById('statusUpdates');
-    if (!statusUpdates) return;
-    
-    const statusElement = document.createElement('div');
-    statusElement.className = 'status-item flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer';
-    statusElement.dataset.statusId = statusId;
-    
-    let statusContent = '';
-    if (status.type === 'emoji') {
-        statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-green-500 flex items-center justify-center text-white text-xl">${status.content}</div>`;
-    } else if (status.type === 'text') {
-        statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 flex items-center justify-center text-white"><i class="fas fa-font"></i></div>`;
-    } else if (status.type === 'image') {
-        statusContent = `<div class="w-12 h-12 rounded-full bg-cover bg-center" style="background-image: url('${status.content}')"></div>`;
-    } else if (status.type === 'video') {
-        statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-pink-500 flex items-center justify-center text-white"><i class="fas fa-video"></i></div>`;
-    } else if (status.type === 'audio') {
-        statusContent = `<div class="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center text-white"><i class="fas fa-music"></i></div>`;
-    }
-    
-    statusElement.innerHTML = `
-        ${statusContent}
-        <div class="flex-1">
-            <p class="font-medium">${status.userDisplayName} ${isOwnStatus ? '(You)' : ''}</p>
-            <p class="text-sm text-gray-500">${formatTimeAgo(status.timestamp)}</p>
-            ${status.caption ? `<p class="text-sm text-gray-600 mt-1">${status.caption}</p>` : ''}
-        </div>
-        <div class="text-right">
-            <button class="view-status-btn text-purple-600 hover:text-purple-800 text-sm">
-                <i class="fas fa-eye"></i>
-            </button>
-        </div>
-    `;
-    
-    statusUpdates.appendChild(statusElement);
-}
 
 function formatTimeAgo(timestamp) {
     if (!timestamp) return 'Just now';
@@ -1281,180 +1012,7 @@ function formatTimeAgo(timestamp) {
     return time.toLocaleDateString();
 }
 
-function openStatusCreation() {
-    if (statusCreation) statusCreation.style.display = 'flex';
-    resetStatusCreation();
-}
 
-function resetStatusCreation() {
-    // Reset all previews
-    const emojiPreview = document.getElementById('emojiPreview');
-    const textPreview = document.getElementById('textPreview');
-    const imagePreview = document.getElementById('imagePreview');
-    const videoPreview = document.getElementById('videoPreview');
-    const audioPreview = document.getElementById('audioPreview');
-    
-    if (emojiPreview) emojiPreview.classList.remove('hidden');
-    if (textPreview) textPreview.classList.add('hidden');
-    if (imagePreview) imagePreview.classList.add('hidden');
-    if (videoPreview) videoPreview.classList.add('hidden');
-    if (audioPreview) audioPreview.classList.add('hidden');
-    
-    // Reset active option
-    document.querySelectorAll('.status-option').forEach(option => {
-        option.classList.remove('active');
-    });
-    const emojiOption = document.querySelector('.status-option[data-type="emoji"]');
-    if (emojiOption) emojiOption.classList.add('active');
-    
-    // Reset content
-    if (emojiPreview) emojiPreview.textContent = '😊';
-    const statusTextInput = document.getElementById('statusTextInput');
-    if (statusTextInput) statusTextInput.value = '';
-    const statusImagePreview = document.getElementById('statusImagePreview');
-    if (statusImagePreview) statusImagePreview.classList.add('hidden');
-    const statusVideoPreview = document.getElementById('statusVideoPreview');
-    if (statusVideoPreview) statusVideoPreview.classList.add('hidden');
-    const statusAudioPreview = document.getElementById('statusAudioPreview');
-    if (statusAudioPreview) statusAudioPreview.classList.add('hidden');
-}
-
-// FIXED: Enhanced Post Status Function
-async function postStatus(type, content, caption = '') {
-    try {
-        let finalContent = content;
-        let mediaUrl = '';
-        
-        // Handle media uploads
-        if (window.currentStatusMedia && (type === 'image' || type === 'video' || type === 'audio')) {
-            showToast('Uploading media...', 'info');
-            mediaUrl = window.currentStatusMedia.url;
-            finalContent = mediaUrl;
-        }
-        
-        const newStatus = {
-            type: type,
-            content: finalContent,
-            caption: caption || document.getElementById('statusCaption')?.value || '',
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-            userId: currentUser.uid,
-            userDisplayName: currentUserData.displayName,
-            userPhotoURL: currentUserData.photoURL,
-            viewers: [],
-            viewCount: 0,
-            reactions: {} // Add reactions field
-        };
-        
-        // Save to Firestore
-        await db.collection('statuses').add(newStatus);
-        
-        // Clear current media
-        window.currentStatusMedia = null;
-        
-        // Reset form
-        resetStatusCreation();
-        
-        // Update UI
-        loadStatusUpdates();
-        showToast('Status posted successfully!', 'success');
-        
-        // Close modal
-        if (statusCreation) {
-            statusCreation.style.display = 'none';
-        }
-        
-    } catch (error) {
-        console.error('Error posting status:', error);
-        showToast('Error posting status: ' + error.message, 'error');
-    }
-}
-
-// FIXED: Post Status Button Handler
-document.getElementById('postStatus')?.addEventListener('click', function() {
-    const activeOption = document.querySelector('.status-option.active');
-    if (!activeOption) {
-        showToast('Please select a status type', 'error');
-        return;
-    }
-    
-    const type = activeOption.dataset.type;
-    let content = '';
-    const caption = document.getElementById('statusCaption')?.value || '';
-    
-    switch (type) {
-        case 'emoji':
-            const emojiPreview = document.getElementById('emojiPreview');
-            content = emojiPreview?.textContent || '😊';
-            break;
-        case 'text':
-            const statusTextInput = document.getElementById('statusTextInput');
-            content = statusTextInput?.value || '';
-            if (!content.trim()) {
-                showToast('Please enter text for your status', 'error');
-                return;
-            }
-            break;
-        case 'image':
-        case 'video':
-        case 'audio':
-            if (!window.currentStatusMedia) {
-                showToast(`Please select a ${type} file first`, 'error');
-                return;
-            }
-            content = window.currentStatusMedia.url;
-            break;
-    }
-    
-    if (content) {
-        postStatus(type, content, caption);
-    }
-});
-
-// NEW: Add Reaction to Status
-async function addReactionToStatus(statusId, reaction) {
-    try {
-        if (!statusId || !reaction) return;
-        
-        const reactionKey = `reactions.${currentUser.uid}`;
-        
-        await db.collection('statuses').doc(statusId).update({
-            [reactionKey]: reaction,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        console.log('Reaction added:', reaction);
-        
-    } catch (error) {
-        console.error('Error adding reaction:', error);
-    }
-}
-
-// NEW: Display Reactions in Status Modal
-function displayStatusReactions(status) {
-    const reactionsContainer = document.getElementById('statusReactions');
-    if (!reactionsContainer) return;
-    
-    reactionsContainer.innerHTML = '';
-    
-    if (!status.reactions || Object.keys(status.reactions).length === 0) {
-        reactionsContainer.innerHTML = '<p class="text-sm text-gray-500">No reactions yet</p>';
-        return;
-    }
-    
-    // Count reactions by type
-    const reactionCounts = {};
-    Object.values(status.reactions).forEach(reaction => {
-        reactionCounts[reaction] = (reactionCounts[reaction] || 0) + 1;
-    });
-    
-    let reactionsHTML = '';
-    Object.entries(reactionCounts).forEach(([reaction, count]) => {
-        reactionsHTML += `<span class="bg-gray-100 px-2 py-1 rounded-lg mx-1">${reaction} ${count}</span>`;
-    });
-    
-    reactionsContainer.innerHTML = reactionsHTML;
-}
 
 // FIXED: Real-time friend loading with proper listeners
 function loadFriends() {
@@ -3244,523 +2802,7 @@ async function generateSmartRepliesWithAPI(messages) {
         return generateSmartReplies(messages);
     }
 }
-// NEW: Open Status View Function
-async function openStatus(statusId) {
-    try {
-        console.log('Opening status:', statusId);
-        
-        // Get status data from Firestore
-        const statusDoc = await db.collection('statuses').doc(statusId).get();
-        
-        if (!statusDoc.exists) {
-            showToast('Status not found', 'error');
-            return;
-        }
-        
-        const status = statusDoc.data();
-        console.log('Status data:', status);
-        
-        // Update current user as viewer
-        await addViewerToStatus(statusId, currentUser.uid);
-        
-        // Display status in modal
-        displayStatusModal(status, statusId);
-        
-    } catch (error) {
-        console.error('Error opening status:', error);
-        showToast('Error loading status', 'error');
-    }
-}
 
-// NEW: Display Status Modal
-function displayStatusModal(status, statusId) {
-    // Create or get status modal
-    let statusModal = document.getElementById('statusModal');
-    
-    if (!statusModal) {
-        statusModal = document.createElement('div');
-        statusModal.id = 'statusModal';
-        statusModal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center hidden';
-        statusModal.innerHTML = `
-            <div class="status-modal-container bg-white rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-hidden">
-                <div class="status-header flex items-center justify-between p-4 border-b">
-                    <div class="flex items-center space-x-3">
-                        <img id="statusUserAvatar" class="w-10 h-10 rounded-full" src="" alt="">
-                        <div>
-                            <h3 id="statusUserName" class="font-semibold"></h3>
-                            <p id="statusTime" class="text-sm text-gray-500"></p>
-                        </div>
-                    </div>
-                    <button id="closeStatusModal" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <div class="status-content p-4">
-                    <div id="statusMedia" class="mb-4"></div>
-                    <div id="statusText" class="text-gray-800"></div>
-                </div>
-                
-                <div class="status-footer p-4 border-t">
-                    <div class="flex items-center justify-between text-sm text-gray-600">
-                        <div class="flex items-center space-x-4">
-                            <span id="viewersCount">
-                                <i class="fas fa-eye mr-1"></i>
-                                <span>0 viewers</span>
-                            </span>
-                            <button id="viewViewersBtn" class="text-purple-600 hover:text-purple-800">
-                                View all
-                            </button>
-                        </div>
-                        <button id="deleteStatusBtn" class="text-red-600 hover:text-red-800 hidden">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Viewers List Modal -->
-            <div id="viewersModal" class="fixed inset-0 bg-black bg-opacity-90 z-60 flex items-center justify-center hidden">
-                <div class="bg-white rounded-lg max-w-md w-full mx-4 max-h-[70vh] overflow-hidden">
-                    <div class="p-4 border-b flex justify-between items-center">
-                        <h3 class="font-semibold">Viewers</h3>
-                        <button id="closeViewersModal" class="text-gray-500 hover:text-gray-700">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div id="viewersList" class="p-4 overflow-y-auto max-h-96">
-                        <!-- Viewers will be listed here -->
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(statusModal);
-        
-        // Add event listeners for the modal
-        setupStatusModalListeners();
-    }
-    
-    // Populate status data
-    populateStatusModal(status, statusId);
-    
-    // Show modal
-    statusModal.classList.remove('hidden');
-}
-
-// NEW: Setup Status Modal Event Listeners
-function setupStatusModalListeners() {
-    const statusModal = document.getElementById('statusModal');
-    const viewersModal = document.getElementById('viewersModal');
-    
-    // Close status modal
-    const closeStatusModal = document.getElementById('closeStatusModal');
-    if (closeStatusModal) {
-        closeStatusModal.addEventListener('click', () => {
-            statusModal.classList.add('hidden');
-        });
-    }
-    
-    // Close viewers modal
-    const closeViewersModal = document.getElementById('closeViewersModal');
-    if (closeViewersModal) {
-        closeViewersModal.addEventListener('click', () => {
-            viewersModal.classList.add('hidden');
-        });
-    }
-    
-    // View viewers button
-    const viewViewersBtn = document.getElementById('viewViewersBtn');
-    if (viewViewersBtn) {
-        viewViewersBtn.addEventListener('click', () => {
-            const statusId = viewViewersBtn.dataset.statusId;
-            if (statusId) {
-                showViewersList(statusId);
-            }
-        });
-    }
-    
-    // Delete status button (only for owner)
-    const deleteStatusBtn = document.getElementById('deleteStatusBtn');
-    if (deleteStatusBtn) {
-        deleteStatusBtn.addEventListener('click', () => {
-            const statusId = deleteStatusBtn.dataset.statusId;
-            if (statusId) {
-                deleteStatus(statusId);
-            }
-        });
-    }
-    
-    // Close modal when clicking outside
-    statusModal.addEventListener('click', (e) => {
-        if (e.target === statusModal) {
-            statusModal.classList.add('hidden');
-        }
-    });
-    
-    viewersModal.addEventListener('click', (e) => {
-        if (e.target === viewersModal) {
-            viewersModal.classList.add('hidden');
-        }
-    });
-}
-
-// NEW: Populate Status Modal with Data
-
-// FIXED: Populate Status Modal with proper error handling
-function populateStatusModal(status, statusId) {
-    try {
-        console.log('Populating status modal with:', status);
-        
-        // User info
-        const statusUserAvatar = document.getElementById('statusUserAvatar');
-        const statusUserName = document.getElementById('statusUserName');
-        const statusTime = document.getElementById('statusTime');
-        
-        if (statusUserAvatar) {
-            statusUserAvatar.src = status.userPhotoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(status.userDisplayName)}&background=7C3AED&color=fff`;
-            statusUserAvatar.onerror = function() {
-                this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(status.userDisplayName)}&background=7C3AED&color=fff`;
-            };
-        }
-        if (statusUserName) statusUserName.textContent = status.userDisplayName;
-        if (statusTime) statusTime.textContent = formatTimeAgo(status.timestamp);
-        
-        // Status content
-        const statusMedia = document.getElementById('statusMedia');
-        const statusText = document.getElementById('statusText');
-        const viewViewersBtn = document.getElementById('viewViewersBtn');
-        const deleteStatusBtn = document.getElementById('deleteStatusBtn');
-        
-        if (statusMedia) {
-            statusMedia.innerHTML = '';
-            
-            switch (status.type) {
-                case 'emoji':
-                    statusMedia.innerHTML = `
-                        <div class="text-8xl text-center py-8 flex items-center justify-center">
-                            ${status.content || '😊'}
-                        </div>
-                    `;
-                    break;
-                case 'text':
-                    statusMedia.innerHTML = `
-                        <div class="text-2xl text-center py-8 font-semibold">
-                            ${status.content || ''}
-                        </div>
-                    `;
-                    break;
-                case 'image':
-                    if (status.content) {
-                        statusMedia.innerHTML = `
-                            <img src="${status.content}" alt="Status image" class="w-full h-64 object-cover rounded-lg" onerror="this.src='https://via.placeholder.com/300x200?text=Image+Not+Found'">
-                        `;
-                    } else {
-                        statusMedia.innerHTML = '<div class="text-center py-8 text-gray-500">No image available</div>';
-                    }
-                    break;
-                case 'video':
-                    if (status.content) {
-                        statusMedia.innerHTML = `
-                            <video src="${status.content}" controls class="w-full h-64 object-cover rounded-lg" onerror="this.style.display='none'">
-                                Your browser does not support the video tag.
-                            </video>
-                        `;
-                    } else {
-                        statusMedia.innerHTML = '<div class="text-center py-8 text-gray-500">No video available</div>';
-                    }
-                    break;
-                case 'audio':
-                    if (status.content) {
-                        statusMedia.innerHTML = `
-                            <audio src="${status.content}" controls class="w-full"></audio>
-                            <div class="text-center mt-2">
-                                <i class="fas fa-music text-4xl text-purple-600"></i>
-                            </div>
-                        `;
-                    } else {
-                        statusMedia.innerHTML = '<div class="text-center py-8 text-gray-500">No audio available</div>';
-                    }
-                    break;
-                default:
-                    statusMedia.innerHTML = '<div class="text-center py-8 text-gray-500">Unknown status type</div>';
-            }
-        }
-        
-        if (statusText) {
-            if (status.caption) {
-                statusText.textContent = status.caption;
-                statusText.classList.remove('hidden');
-            } else {
-                statusText.classList.add('hidden');
-            }
-        }
-        
-        // Set status ID for viewers button
-        if (viewViewersBtn) {
-            viewViewersBtn.dataset.statusId = statusId;
-        }
-        
-        // Show delete button only for status owner
-        if (deleteStatusBtn) {
-            if (status.userId === currentUser.uid) {
-                deleteStatusBtn.classList.remove('hidden');
-                deleteStatusBtn.dataset.statusId = statusId;
-            } else {
-                deleteStatusBtn.classList.add('hidden');
-            }
-        }
-        
-        // Load viewers count - FIXED: Check if element exists first
-        const viewersCountElement = document.getElementById('viewersCount');
-        if (viewersCountElement) {
-            loadViewersCount(statusId, status.userId);
-        } else {
-            console.warn('viewersCount element not found in DOM');
-        }
-        
-    } catch (error) {
-        console.error('Error populating status modal:', error);
-        throw error; // Re-throw to be caught by the calling function
-    }
-}
-// NEW: Add Viewer to Status
-async function addViewerToStatus(statusId, userId) {
-    try {
-        console.log('Adding viewer to status:', statusId, userId);
-        
-        // Check if user already viewed this status
-        const existingView = await db.collection('statusViews')
-            .where('statusId', '==', statusId)
-            .where('userId', '==', userId)
-            .get();
-        
-        if (!existingView.empty) {
-            console.log('User already viewed this status');
-            return;
-        }
-        
-        // Add viewer
-        await db.collection('statusViews').add({
-            statusId: statusId,
-            userId: userId,
-            userDisplayName: currentUserData.displayName,
-            userPhotoURL: currentUserData.photoURL,
-            viewedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        console.log('Viewer added successfully');
-        
-    } catch (error) {
-        console.error('Error adding viewer to status:', error);
-    }
-}
-
-// NEW: Load Viewers Count
-// FIXED: Load Viewers Count with proper error handling
-async function loadViewersCount(statusId, statusOwnerId) {
-    try {
-        const viewersSnapshot = await db.collection('statusViews')
-            .where('statusId', '==', statusId)
-            .where('userId', '!=', statusOwnerId) // EXCLUDE THE OWNER
-            .get();
-        
-        const viewersCount = viewersSnapshot.size;
-        const viewersCountElement = document.getElementById('viewersCount');
-        
-        if (viewersCountElement) {
-            viewersCountElement.innerHTML = `
-                <i class="fas fa-eye mr-1"></i>
-                <span>${viewersCount} ${viewersCount === 1 ? 'viewer' : 'viewers'}</span>
-            `;
-        } else {
-            console.warn('viewersCount element not found');
-        }
-        
-    } catch (error) {
-        console.error('Error loading viewers count:', error);
-        // Don't show error to user, just log it
-    }
-}
-// ----------------------
-// Load friends' statuses
-// ----------------------
-async function loadFriendsStatuses() {
-    try {
-        // gather friend IDs (friends[] is loaded by loadFriends())
-        const friendIds = friends.map(f => f.id).filter(Boolean);
-        if (!friendIds.length) {
-            // nothing to show
-            const statusUpdates = document.getElementById('statusUpdates');
-            if (statusUpdates) statusUpdates.innerHTML = '<p class="text-center text-gray-500 py-4">No friends statuses yet</p>';
-            return;
-        }
-
-        const q = db.collection('statuses')
-            .where('userId', 'in', friendIds)
-            .orderBy('timestamp', 'desc')
-            .limit(50);
-
-        const snapshot = await q.get();
-        const statusUpdates = document.getElementById('statusUpdates');
-        if (!statusUpdates) return;
-
-        statusUpdates.innerHTML = '';
-        if (snapshot.empty) {
-            statusUpdates.innerHTML = '<p class="text-center text-gray-500 py-4">No status updates from friends</p>';
-            return;
-        }
-
-        snapshot.forEach(doc => {
-            const status = doc.data();
-            const el = document.createElement('div');
-            el.className = 'status-item flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer';
-            el.dataset.statusId = doc.id;
-            el.innerHTML = `
-                <div class="w-12 h-12 rounded-full bg-cover bg-center" style="background-image:url('${status.userPhotoURL || ''}')"></div>
-                <div class="flex-1">
-                    <div class="font-medium">${status.userDisplayName || 'Unknown'}</div>
-                    <div class="text-sm text-gray-500">${formatTimeAgo(status.timestamp)}</div>
-                </div>
-                <div>
-                    <button class="view-status-btn text-purple-600 hover:text-purple-800 text-sm"><i class="fas fa-eye"></i></button>
-                </div>
-            `;
-            statusUpdates.appendChild(el);
-        });
-
-        // attach click delegation to statusUpdates for open/view
-        statusUpdates.addEventListener('click', function(e) {
-            const btn = e.target.closest('.view-status-btn') || e.target.closest('.status-item');
-            if (!btn) return;
-            const statusItem = btn.closest('.status-item') || btn;
-            const statusId = statusItem.dataset.statusId;
-            if (statusId) openStatus(statusId); // openStatus will call addViewerToStatus() and display modal. 
-        }, { once: false });
-
-    } catch (err) {
-        console.error('loadFriendsStatuses error', err);
-    }
-}
-
-// FIXED: Open Status with better error handling
-async function openStatus(statusId) {
-    try {
-        console.log('Opening status:', statusId);
-        
-        // Get status data from Firestore
-        const statusDoc = await db.collection('statuses').doc(statusId).get();
-        
-        if (!statusDoc.exists) {
-            showToast('Status not found', 'error');
-            return;
-        }
-        
-        const status = statusDoc.data();
-        console.log('Status data loaded successfully:', status.type);
-        
-        // Update current user as viewer (only if not the owner)
-        if (status.userId !== currentUser.uid) {
-            await addViewerToStatus(statusId, currentUser.uid);
-        }
-        
-        // Display status in modal
-        displayStatusModal(status, statusId);
-        
-    } catch (error) {
-        console.error('Error opening status:', error);
-        showToast('Error loading status: ' + error.message, 'error');
-    }
-}
-
-// NEW: Show Viewers List
-async function showViewersList(statusId) {
-    try {
-        const viewersModal = document.getElementById('viewersModal');
-        const viewersList = document.getElementById('viewersList');
-        
-        if (!viewersModal || !viewersList) return;
-        
-        // Show loading
-        viewersList.innerHTML = `
-            <div class="text-center text-gray-500 py-4">
-                <i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>
-                <p>Loading viewers...</p>
-            </div>
-        `;
-        
-        viewersModal.classList.remove('hidden');
-        
-        // Get viewers from Firestore
-        const viewersSnapshot = await db.collection('statusViews')
-            .where('statusId', '==', statusId)
-            .orderBy('viewedAt', 'desc')
-            .get();
-        
-        if (viewersSnapshot.empty) {
-            viewersList.innerHTML = '<p class="text-center text-gray-500 py-4">No viewers yet</p>';
-            return;
-        }
-        
-        viewersList.innerHTML = '';
-        
-        viewersSnapshot.forEach(doc => {
-            const view = doc.data();
-            const viewerItem = document.createElement('div');
-            viewerItem.className = 'flex items-center space-x-3 p-3 border-b border-gray-100 last:border-b-0';
-            viewerItem.innerHTML = `
-                <img class="w-10 h-10 rounded-full" src="${view.userPhotoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(view.userDisplayName)}&background=7C3AED&color=fff`}" alt="${view.userDisplayName}">
-                <div class="flex-1">
-                    <p class="font-medium">${view.userDisplayName}</p>
-                    <p class="text-sm text-gray-500">${formatTimeAgo(view.viewedAt)}</p>
-                </div>
-            `;
-            viewersList.appendChild(viewerItem);
-        });
-        
-    } catch (error) {
-        console.error('Error loading viewers list:', error);
-        const viewersList = document.getElementById('viewersList');
-        if (viewersList) {
-            viewersList.innerHTML = '<p class="text-center text-red-500 py-4">Error loading viewers</p>';
-        }
-    }
-}
-
-// NEW: Delete Status
-async function deleteStatus(statusId) {
-    if (!confirm('Are you sure you want to delete this status?')) {
-        return;
-    }
-    
-    try {
-        // Delete status document
-        await db.collection('statuses').doc(statusId).delete();
-        
-        // Delete all associated views
-        const viewsSnapshot = await db.collection('statusViews')
-            .where('statusId', '==', statusId)
-            .get();
-        
-        const batch = db.batch();
-        viewsSnapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        await batch.commit();
-        
-        // Close modal
-        const statusModal = document.getElementById('statusModal');
-        if (statusModal) statusModal.classList.add('hidden');
-        
-        // Reload status updates
-        loadStatusUpdates();
-        
-        showToast('Status deleted successfully', 'success');
-        
-    } catch (error) {
-        console.error('Error deleting status:', error);
-        showToast('Error deleting status', 'error');
-    }
-}
 
 // FIXED: Push Notifications with proper permission handling
 async function requestNotificationPermission() {
@@ -4533,115 +3575,6 @@ document.getElementById("cancelStorage")?.addEventListener("click", () => {
     document.getElementById("storageSettingsModal").classList.add("hidden");
 });
 
-
-// Add this to your setupEventListeners function
-function setupGroupsFunctionality() {
-    const groupsBtn = document.getElementById('groupsBtn'); // Add this ID to your groups icon
-    
-    if (groupsBtn) {
-        groupsBtn.addEventListener('click', function() {
-            showToast("Groups feature coming soon!", "info");
-            // You can implement groups modal here
-            openGroupsModal();
-        });
-    }
-}
-function addParticipant(groupId, userId) {
-    const groupRef = db.collection('groups').doc(groupId);
-    groupRef.get().then(doc => {
-        if (!doc.exists) return;
-        const groupData = doc.data();
-        if (groupData.adminId !== myUserId) {
-            showToast('Only admin can add participants', 'error');
-            return;
-        }
-
-        groupRef.update({
-            participants: firebase.firestore.FieldValue.arrayUnion(userId)
-        }).then(() => {
-            showToast('Participant added successfully', 'success');
-        }).catch(err => console.error(err));
-    });
-}
-
-function acceptInvite(groupId) {
-    const groupRef = db.collection('groups').doc(groupId);
-    groupRef.update({
-        invites: firebase.firestore.FieldValue.arrayRemove(myUserId),
-        participants: firebase.firestore.FieldValue.arrayUnion(myUserId)
-    }).then(() => {
-        showToast('You joined the group', 'success');
-    }).catch(err => console.error(err));
-}
-
-function rejectInvite(groupId) {
-    const groupRef = db.collection('groups').doc(groupId);
-    groupRef.update({
-        invites: firebase.firestore.FieldValue.arrayRemove(myUserId)
-    }).then(() => {
-        showToast('Invite rejected', 'info');
-    }).catch(err => console.error(err));
-}
-function requestJoin(groupId) {
-    const groupRef = db.collection('groups').doc(groupId);
-    groupRef.update({
-        pendingRequests: firebase.firestore.FieldValue.arrayUnion(myUserId)
-    }).then(() => {
-        showToast('Join request sent', 'info');
-    }).catch(err => console.error(err));
-}
-
-
-
-function openGroupsModal() {
-    // Create groups modal
-    const groupsModal = document.createElement('div');
-    groupsModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    groupsModal.innerHTML = `
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold">Groups</h3>
-                <button id="closeGroupsModal" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="space-y-3">
-                <button id="createGroupBtn" class="w-full p-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                    <i class="fas fa-plus mr-2"></i>Create New Group
-                </button>
-                <button id="joinGroupBtn" class="w-full p-3 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                    <i class="fas fa-sign-in-alt mr-2"></i>Join Group
-                </button>
-                <div id="groupsList" class="max-h-60 overflow-y-auto">
-                    <p class="text-center text-gray-500 py-4">No groups yet</p>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(groupsModal);
-    
-    // Add event listeners
-    document.getElementById('closeGroupsModal').addEventListener('click', () => {
-        document.body.removeChild(groupsModal);
-    });
-    
-    document.getElementById('createGroupBtn').addEventListener('click', () => {
-        createNewGroup();
-        document.body.removeChild(groupsModal);
-    });
-    
-    document.getElementById('joinGroupBtn').addEventListener('click', () => {
-        joinGroup();
-        document.body.removeChild(groupsModal);
-    });
-    
-    groupsModal.addEventListener('click', (e) => {
-        if (e.target === groupsModal) {
-            document.body.removeChild(groupsModal);
-        }
-    });
-}
 // FIXED: Enhanced Event Listeners with proper mobile support
 function setupEventListeners() {
     console.log('Setting up event listeners');
@@ -4676,18 +3609,7 @@ function setupEventListeners() {
             openEditFriendModal(friendId, friendName, friendStatus);
         }
         
-        // NEW: Handle status item clicks
-        if (e.target.closest('.status-item')) {
-            const statusItem = e.target.closest('.status-item');
-            const statusId = statusItem.dataset.statusId;
-            console.log('Status item clicked:', statusId);
-            openStatus(statusId);
-        }
-        
-        // New enhanced friend list buttons are handled in renderFriends function
-    });
     
-
     
     // Theme toggle
     const themeToggle = document.getElementById('themeToggle');
@@ -4700,28 +3622,35 @@ function setupEventListeners() {
     }
 
     
-    // Tab switching
     document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tab = btn.dataset.tab;
-            console.log('Switching to tab:', tab);
-            
-            // Update active tab
-            document.querySelectorAll('.tab-btn').forEach(b => {
-                b.classList.remove('tab-active');
-                b.classList.add('text-gray-500');
-            });
-            btn.classList.add('tab-active');
-            btn.classList.remove('text-gray-500');
-            
-            // Show active tab content
-            document.querySelectorAll('.tab-panel').forEach(panel => {
-                panel.classList.add('hidden');
-            });
+    btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        console.log('Switching to tab:', tab);
+        
+        // Update active tab
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('tab-active');
+            b.classList.add('text-gray-500');
+        });
+        btn.classList.add('tab-active');
+        btn.classList.remove('text-gray-500');
+        
+        // Show active tab content
+        document.querySelectorAll('.tab-panel').forEach(panel => {
+            panel.classList.add('hidden');
+        });
+        
+        // NEW CODE: For groups tab, check if group.js is loaded
+        if (tab === 'groups') {
+            const tabPanel = document.getElementById('groupsTab');
+            if (tabPanel) tabPanel.classList.remove('hidden');
+        } else {
+            // For other tabs (chats, friends, updates, calls)
             const tabPanel = document.getElementById(`${tab}Tab`);
             if (tabPanel) tabPanel.classList.remove('hidden');
-        });
+        }
     });
+});
 
     // Settings modal
     const menuBtn = document.getElementById('menuBtn');
@@ -4793,23 +3722,6 @@ function setupEventListeners() {
             if (friendSearchResultsModal) friendSearchResultsModal.classList.add('hidden');
         });
     }
-    document.addEventListener('click', function(e) {
-        // Handle status close button
-        if (e.target.closest('#closeStatusCreation') || e.target.id === 'closeStatusCreation') {
-            console.log('Closing status creation');
-            if (statusCreation) {
-                statusCreation.style.display = 'none';
-                resetStatusCreation();
-            }
-        }
-        
-        // Handle status modal close
-        if (e.target.closest('#closeStatusModal') || e.target.id === 'closeStatusModal') {
-            const statusModal = document.getElementById('statusModal');
-            if (statusModal) {
-                statusModal.classList.add('hidden');
-            }
-        }
 
 
     
@@ -4856,31 +3768,6 @@ function setupEventListeners() {
             }
         });
     }
-
-
-    // ------------------------------------------------------------------
-    // ✅ LINES TO ADD: Group Creation Listeners
-    // ------------------------------------------------------------------
-    const newGroupBtn = document.getElementById('newGroupBtn'); // ID of the group icon
-    const createGroupModal = document.getElementById('createGroupModal'); // ID of the modal
-
-    if (newGroupBtn && createGroupModal) {
-        newGroupBtn.addEventListener('click', () => {
-            // Action 1: When the group icon is clicked, show the modal
-            createGroupModal.classList.remove('hidden');
-        });
-    }
-
-       // Listener for closing the modal
-    const closeCreateGroupBtn = document.getElementById('closeCreateGroup');
-    if (closeCreateGroupBtn && createGroupModal) {
-        closeCreateGroupBtn.addEventListener('click', () => {
-            // Action 2: When the close button is clicked, hide the modal
-            createGroupModal.classList.add('hidden');
-            // FIXED: Removed the undefined function call that was causing the error
-        });
-    }
-    // ------------------------------------------------------------------
 
     // Profile settings
     const profileSettingsBtn = document.getElementById('profileSettingsBtn');
@@ -4949,23 +3836,7 @@ function setupEventListeners() {
         });
     }
 
-    // Status creation
-    const myStatus = document.getElementById('myStatus');
-    if (myStatus) {
-        myStatus.addEventListener('click', () => {
-            console.log('Opening status creation');
-            openStatusCreation();
-        });
-    }
-
-    const closeStatusCreation = document.getElementById('closeStatusCreation');
-    if (closeStatusCreation) {
-        closeStatusCreation.addEventListener('click', () => {
-            console.log('Closing status creation');
-            if (statusCreation) statusCreation.style.display = 'none';
-        });
-    }
-
+    
     document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('addParticipantBtn');
     const box = document.getElementById('addParticipantBox');
@@ -4980,96 +3851,16 @@ function setupEventListeners() {
 });
 
 
-    // Status type switching
-    // IN setupEventListeners function - REPLACE the status option handlers:
+const groupsBtn = document.getElementById('groupsBtn');
 
-// Status type switching - FIXED VERSION
-document.querySelectorAll('.status-option').forEach(option => {
-    option.addEventListener('click', () => {
-        const type = option.dataset.type;
-        console.log('Status type selected:', type);
-        
-        // Update active option
-        document.querySelectorAll('.status-option').forEach(opt => {
-            opt.classList.remove('active');
-        });
-        option.classList.add('active');
-        
-        // Show corresponding preview
-        const emojiPreview = document.getElementById('emojiPreview');
-        const textPreview = document.getElementById('textPreview');
-        const imagePreview = document.getElementById('imagePreview');
-        const videoPreview = document.getElementById('videoPreview');
-        const audioPreview = document.getElementById('audioPreview');
-        
-        if (emojiPreview) emojiPreview.classList.add('hidden');
-        if (textPreview) textPreview.classList.add('hidden');
-        if (imagePreview) imagePreview.classList.add('hidden');
-        if (videoPreview) videoPreview.classList.add('hidden');
-        if (audioPreview) audioPreview.classList.add('hidden');
-        
-        const activePreview = document.getElementById(`${type}Preview`);
-        if (activePreview) activePreview.classList.remove('hidden');
-        
-        // FIXED: Automatically trigger file input for media types
-        if (type === 'image') {
-            const statusImageInput = document.getElementById('statusImageInput');
-            if (statusImageInput) {
-                setTimeout(() => {
-                    statusImageInput.click();
-                }, 300);
-            }
-        } else if (type === 'video') {
-            const statusVideoInput = document.getElementById('statusVideoInput');
-            if (statusVideoInput) {
-                setTimeout(() => {
-                    statusVideoInput.click();
-                }, 300);
-            }
-        } else if (type === 'audio') {
-            const statusAudioInput = document.getElementById('statusAudioInput');
-            if (statusAudioInput) {
-                setTimeout(() => {
-                    statusAudioInput.click();
-                }, 300);
-            }
+if (groupsBtn) {
+    groupsBtn.addEventListener('click', function() {
+        // NEW: Switch to groups tab using group.js function
+        if (window.switchToTab) {
+            switchToTab('groups'); // This function is in group.js
         }
     });
-});
-
-    // Post status
-    const postStatus = document.getElementById('postStatus');
-    if (postStatus) {
-        postStatus.addEventListener('click', () => {
-            const activeOption = document.querySelector('.status-option.active');
-            if (!activeOption) return;
-            
-            const activeType = activeOption.dataset.type;
-            let content = '';
-            
-            if (activeType === 'emoji') {
-                const emojiPreview = document.getElementById('emojiPreview');
-                content = emojiPreview ? emojiPreview.textContent : '';
-            } else if (activeType === 'text') {
-                const statusTextInput = document.getElementById('statusTextInput');
-                content = statusTextInput ? statusTextInput.value : '';
-            } else if (activeType === 'image') {
-                content = 'Image status'; // In real implementation, this would be the image URL
-            } else if (activeType === 'video') {
-                content = 'Video status'; // In real implementation, this would be the video URL
-            } else if (activeType === 'audio') {
-                content = 'Audio status'; // In real implementation, this would be the audio URL
-            }
-            
-            if (content) {
-                console.log('Posting status:', activeType, content);
-                postStatus(activeType, content);
-                if (statusCreation) statusCreation.style.display = 'none';
-            } else {
-                showToast('Please add content to your status', 'error');
-            }
-        });
-    }
+}
 
     // Back to chats (mobile)
     const backToChats = document.getElementById('backToChats');
@@ -5186,14 +3977,6 @@ document.querySelectorAll('.status-option').forEach(option => {
         });
     }
 
-document.addEventListener('click', function(e) {
-    if (e.target.closest('.status-item')) {
-        const statusItem = e.target.closest('.status-item');
-        const statusId = statusItem.dataset.statusId;
-        console.log('Status item clicked:', statusId);
-        openStatus(statusId);
-    }
-});
     // Add touch event listeners for mobile
     document.addEventListener('touchstart', function(e) {
         // Add active state for touch
@@ -5237,42 +4020,13 @@ document.addEventListener('click', function(e) {
 }
 
 
-// FIXED: Add missing renderFriendsForGroupCreation function
-function renderFriendsForGroupCreation() {
-    const groupParticipantsList = document.getElementById('groupParticipantsList');
-    if (!groupParticipantsList) return;
-    
-    groupParticipantsList.innerHTML = '';
-    
-    if (friends.length === 0) {
-        groupParticipantsList.innerHTML = '<p class="text-center text-gray-500 py-4">No friends to add</p>';
-        return;
-    }
-    
-    friends.forEach(friend => {
-        const participantItem = document.createElement('div');
-        participantItem.className = 'flex items-center justify-between p-3 border-b border-gray-200';
-        participantItem.innerHTML = `
-            <div class="flex items-center space-x-3">
-                <img class="w-10 h-10 rounded-full" src="${friend.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName)}&background=7C3AED&color=fff`}" alt="${friend.displayName}">
-                <div>
-                    <p class="font-medium">${friend.displayName}</p>
-                    <p class="text-sm text-gray-500">${friend.about || 'Hey there! I am using Kynecta'}</p>
-                </div>
-            </div>
-            <input type="checkbox" class="participant-checkbox" value="${friend.id}" data-name="${friend.displayName}">
-        `;
-        groupParticipantsList.appendChild(participantItem);
-    });
-}
 // FIXED: Comprehensive modal event listeners setup
 function setupModalEventListeners() {
     console.log('Setting up modal event listeners...');
     
     // Close buttons for all modals
     const closeButtons = [
-        { id: 'closeCreateGroup', modal: 'createGroupModal' },
-        { id: 'closeJoinGroup', modal: 'joinGroupModal' },
+        
         { id: 'closeFeatures', modal: 'featuresModal' },
         { id: 'closeMood', modal: 'moodModal' },
         { id: 'closeQuickActions', modal: 'quickActionsModal' },
@@ -5511,119 +4265,6 @@ function toggleEmojiPicker() {
     }
 }
 
-// FIXED: Setup Status File Handlers
-// FIXED: Enhanced Status File Handlers
-function setupStatusFileHandlers() {
-    console.log('Setting up enhanced status file handlers');
-    
-    // Image upload handler
-    const statusImageInput = document.getElementById('statusImageInput');
-    if (statusImageInput) {
-        statusImageInput.addEventListener('change', function(e) {
-            if (e.target.files.length > 0) {
-                const file = e.target.files[0];
-                console.log('Image selected:', file.name, file.type, file.size);
-                
-                if (!file.type.startsWith('image/')) {
-                    showToast('Please select a valid image file', 'error');
-                    return;
-                }
-                
-                // Show preview immediately
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const statusImagePreview = document.getElementById('statusImagePreview');
-                    const statusImagePreviewImg = document.getElementById('statusImagePreviewImg');
-                    
-                    if (statusImagePreviewImg) {
-                        statusImagePreviewImg.src = e.target.result;
-                        statusImagePreview.classList.remove('hidden');
-                    }
-                    
-                    // Store file for upload when posting
-                    window.currentStatusMedia = {
-                        type: 'image',
-                        file: file,
-                        previewUrl: e.target.result
-                    };
-                    
-                    showToast('Image selected! Add caption and post.', 'success');
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    }
-    
-    // Video upload handler
-    const statusVideoInput = document.getElementById('statusVideoInput');
-    if (statusVideoInput) {
-        statusVideoInput.addEventListener('change', function(e) {
-            if (e.target.files.length > 0) {
-                const file = e.target.files[0];
-                console.log('Video selected:', file.name, file.type, file.size);
-                
-                if (!file.type.startsWith('video/')) {
-                    showToast('Please select a valid video file', 'error');
-                    return;
-                }
-                
-                // Show preview
-                const url = URL.createObjectURL(file);
-                const statusVideoPreview = document.getElementById('statusVideoPreview');
-                const statusVideoPreviewVideo = document.getElementById('statusVideoPreviewVideo');
-                
-                if (statusVideoPreviewVideo) {
-                    statusVideoPreviewVideo.src = url;
-                    statusVideoPreviewVideo.controls = true;
-                    statusVideoPreview.classList.remove('hidden');
-                }
-                
-                window.currentStatusMedia = {
-                    type: 'video',
-                    file: file,
-                    previewUrl: url
-                };
-                
-                showToast('Video selected! Add caption and post.', 'success');
-            }
-        });
-    }
-    
-    // Audio upload handler
-    const statusAudioInput = document.getElementById('statusAudioInput');
-    if (statusAudioInput) {
-        statusAudioInput.addEventListener('change', function(e) {
-            if (e.target.files.length > 0) {
-                const file = e.target.files[0];
-                console.log('Audio selected:', file.name, file.type, file.size);
-                
-                if (!file.type.startsWith('audio/')) {
-                    showToast('Please select a valid audio file', 'error');
-                    return;
-                }
-                
-                // Show preview
-                const url = URL.createObjectURL(file);
-                const statusAudioPreview = document.getElementById('statusAudioPreview');
-                const statusAudioPreviewAudio = document.getElementById('statusAudioPreviewAudio');
-                
-                if (statusAudioPreviewAudio) {
-                    statusAudioPreviewAudio.src = url;
-                    statusAudioPreviewAudio.controls = true;
-                    statusAudioPreview.classList.remove('hidden');
-                }
-                
-                window.currentStatusMedia = {
-                    type: 'audio',
-                    file: file,
-                    previewUrl: url
-                };
-                
-                showToast('Audio selected! Add caption and post.', 'success');
-            }
-        });
-    }
-}
 
 // ADD PERMISSION INSTRUCTIONS FUNCTION:
 function showPermissionInstructions() {
@@ -7272,44 +5913,6 @@ function safeQuery(selector) {
     }
     return element;
 }
-// ADD THIS: Test function for status buttons
-function testStatusButtons() {
-    console.log('Testing status buttons...');
-    
-    // Test close button
-    const closeBtn = document.getElementById('closeStatusCreation');
-    if (closeBtn) {
-        console.log('Close button found, adding listener');
-        closeBtn.addEventListener('click', function() {
-            console.log('Close button clicked!');
-            if (statusCreation) {
-                statusCreation.style.display = 'none';
-            }
-        });
-    } else {
-        console.log('Close button NOT found');
-    }
-    
-    // Test file inputs
-    const fileInputs = ['statusImageInput', 'statusVideoInput', 'statusAudioInput'];
-    fileInputs.forEach(id => {
-        const input = document.getElementById(id);
-        if (input) {
-            console.log('File input found:', id);
-            input.addEventListener('change', function(e) {
-                console.log('File input changed:', id, e.target.files[0]?.name);
-            });
-        } else {
-            console.log('File input NOT found:', id);
-        }
-    });
-}
-
-// Call this after DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(testStatusButtons, 1000);
-});
-
 function fixAllImagesOnLoad() {
     console.log('Scanning for broken images...');
     document.querySelectorAll('img').forEach(img => {
