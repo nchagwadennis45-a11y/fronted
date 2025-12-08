@@ -977,7 +977,6 @@
 }
 
 /* ========== EXISTING CSS CONTINUES BELOW ========== */
-/* [All your existing CSS content remains here unchanged] */
 
 /* ========== BASE STYLES ========== */
 body {
@@ -5252,6 +5251,7 @@ textarea:focus {
 [data-theme="dark"] .data-usage-meter {
   background: #374151;
 }
+
 /* Mood/Interest Filtering UI */
 .mood-filter-btn {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -5428,4 +5428,42 @@ textarea:focus {
     padding: 2px 8px;
     border-radius: 12px;
     margin-left: 8px;
+}
+
+/* ========== NEW MODAL CONTAINER STYLING ========== */
+
+/* Modal Container Styling */
+.modal-container {
+    max-height: 80vh !important; /* Limit height to 80% of viewport */
+    overflow-y: auto !important; /* Make it scrollable */
+}
+
+/* Settings Modal Specific */
+#settingsModal .modal-content {
+    max-height: calc(80vh - 100px) !important;
+    overflow-y: auto !important;
+}
+
+/* Make settings sections compact */
+.settings-section {
+    margin-bottom: 1rem !important;
+    padding: 0.75rem !important;
+}
+
+.settings-option {
+    padding: 0.5rem !important;
+    margin: 0.25rem 0 !important;
+}
+
+/* Responsive settings */
+@media (max-width: 768px) {
+    .modal-container {
+        max-height: 90vh !important;
+        width: 95% !important;
+        margin: 10px auto !important;
+    }
+    
+    #settingsModal .modal-content {
+        max-height: calc(90vh - 120px) !important;
+    }
 }

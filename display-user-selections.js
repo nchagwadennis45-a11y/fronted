@@ -29,10 +29,80 @@ class UserSelectionsDisplay {
             'education': { name: 'Education', icon: 'fas fa-graduation-cap', color: '#84CC16' }
         };
         
+        // Initialize userDataManager placeholder
+        this.initializeUserDataManager();
+        
         // Inject default styles
         this.injectStyles();
         
-        this.init();
+        // Initialize with a small delay to allow other scripts to load
+        setTimeout(() => this.init(), 100);
+    }
+
+    initializeUserDataManager() {
+        // Create a placeholder userDataManager if it doesn't exist
+        if (!window.userDataManager) {
+            console.log('Creating placeholder userDataManager');
+            window.userDataManager = {
+                currentUser: null,
+                userData: {
+                    selectedMoods: [],
+                    selectedInterests: [],
+                    moodDisplayNames: [],
+                    interestDisplayNames: []
+                },
+                getMoods: () => {
+                    // Try to get from localStorage as fallback
+                    try {
+                        const stored = localStorage.getItem('kynecta-selections');
+                        if (stored) {
+                            const data = JSON.parse(stored);
+                            return data.selectedMoods || [];
+                        }
+                    } catch (e) {
+                        console.warn('Could not parse stored selections:', e);
+                    }
+                    return window.userDataManager.userData.selectedMoods;
+                },
+                getInterests: () => {
+                    // Try to get from localStorage as fallback
+                    try {
+                        const stored = localStorage.getItem('kynecta-selections');
+                        if (stored) {
+                            const data = JSON.parse(stored);
+                            return data.selectedInterests || [];
+                        }
+                    } catch (e) {
+                        console.warn('Could not parse stored selections:', e);
+                    }
+                    return window.userDataManager.userData.selectedInterests;
+                },
+                getMoodDisplayNames: () => {
+                    return window.userDataManager.userData.moodDisplayNames;
+                },
+                getInterestDisplayNames: () => {
+                    return window.userDataManager.userData.interestDisplayNames;
+                },
+                loadFromLocalStorage: () => {
+                    try {
+                        const stored = localStorage.getItem('kynecta-selections');
+                        if (stored) {
+                            const data = JSON.parse(stored);
+                            window.userDataManager.userData = {
+                                ...window.userDataManager.userData,
+                                ...data
+                            };
+                            window.userDataManager.currentUser = data.currentUser || null;
+                        }
+                    } catch (e) {
+                        console.error('Error loading from localStorage:', e);
+                    }
+                }
+            };
+            
+            // Try to load existing data immediately
+            window.userDataManager.loadFromLocalStorage();
+        }
     }
 
     injectStyles() {
@@ -51,6 +121,7 @@ class UserSelectionsDisplay {
                 color: white;
                 transition: all 0.2s ease;
                 user-select: none;
+                cursor: default;
             }
             
             .selection-badge:hover {
@@ -139,6 +210,18 @@ class UserSelectionsDisplay {
                 font-weight: bold;
                 z-index: 10;
             }
+            
+            .recommendation-count {
+                margin: 0.5rem 0;
+                padding: 0.5rem 1rem;
+                background-color: #DBEAFE;
+                color: #1E40AF;
+                border-radius: 0.5rem;
+                font-size: 0.875rem;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
         `;
         
         const styleElement = document.createElement('style');
@@ -149,8 +232,12 @@ class UserSelectionsDisplay {
 
     async init() {
         try {
-            // Wait for user data to be loaded
-            await this.waitForUserData();
+            // Wait for DOM to be fully ready
+            if (document.readyState === 'loading') {
+                await new Promise(resolve => {
+                    document.addEventListener('DOMContentLoaded', resolve);
+                });
+            }
             
             // Display selections on page load
             this.displaySelections();
@@ -163,40 +250,6 @@ class UserSelectionsDisplay {
             console.error('Failed to initialize UserSelectionsDisplay:', error);
             this.showErrorState();
         }
-    }
-
-    waitForUserData() {
-        return new Promise((resolve, reject) => {
-            // If userDataManager doesn't exist after timeout, we'll work with empty data
-            const timeoutId = setTimeout(() => {
-                console.warn('userDataManager not found, proceeding with empty selections');
-                if (!window.userDataManager) {
-                    window.userDataManager = {
-                        currentUser: null,
-                        getMoods: () => [],
-                        getInterests: () => [],
-                        getMoodDisplayNames: () => [],
-                        getInterestDisplayNames: () => [],
-                        loadFromLocalStorage: () => {}
-                    };
-                }
-                resolve();
-            }, 5000);
-            
-            if (window.userDataManager && window.userDataManager.currentUser !== null) {
-                clearTimeout(timeoutId);
-                resolve();
-                return;
-            }
-            
-            const checkInterval = setInterval(() => {
-                if (window.userDataManager && window.userDataManager.currentUser !== null) {
-                    clearInterval(checkInterval);
-                    clearTimeout(timeoutId);
-                    resolve();
-                }
-            }, 100);
-        });
     }
 
     displaySelections() {
@@ -219,6 +272,10 @@ class UserSelectionsDisplay {
         if (!moodsContainer) {
             // Look for any element with data-display-moods attribute
             const moodElements = document.querySelectorAll('[data-display-moods]');
+            if (moodElements.length === 0) {
+                console.log('No mood display containers found');
+                return;
+            }
             moodElements.forEach(element => {
                 this.createMoodDisplay(element);
             });
@@ -272,6 +329,10 @@ class UserSelectionsDisplay {
         if (!interestsContainer) {
             // Look for any element with data-display-interests attribute
             const interestElements = document.querySelectorAll('[data-display-interests]');
+            if (interestElements.length === 0) {
+                console.log('No interest display containers found');
+                return;
+            }
             interestElements.forEach(element => {
                 this.createInterestDisplay(element);
             });
@@ -659,14 +720,40 @@ class UserSelectionsDisplay {
     }
 }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    window.userSelectionsDisplay = new UserSelectionsDisplay();
+// Initialize when DOM is loaded, but with a fallback
+function initializeUserSelections() {
+    // Check if already initialized
+    if (window.userSelectionsDisplay) {
+        console.log('UserSelectionsDisplay already initialized');
+        return;
+    }
     
+    // Wait a bit longer to ensure other scripts are loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                window.userSelectionsDisplay = new UserSelectionsDisplay();
+                setupGlobalAccess();
+            }, 500); // Give other scripts more time to load
+        });
+    } else {
+        setTimeout(() => {
+            window.userSelectionsDisplay = new UserSelectionsDisplay();
+            setupGlobalAccess();
+        }, 1000);
+    }
+}
+
+function setupGlobalAccess() {
     // Make it available globally
     if (!window.Kynecta) window.Kynecta = {};
     window.Kynecta.UserSelectionsDisplay = UserSelectionsDisplay;
     
     // Dispatch event when ready
     document.dispatchEvent(new CustomEvent('userSelectionsDisplayReady'));
-});
+    
+    console.log('UserSelectionsDisplay is ready and globally accessible');
+}
+
+// Start initialization
+initializeUserSelections();
