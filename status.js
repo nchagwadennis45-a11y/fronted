@@ -1,3 +1,36 @@
+// Wait for Firebase to be initialized
+if (!window.firebase || !window.db) {
+    console.log('⏳ Waiting for Firebase initialization...');
+    
+    const waitForFirebase = setInterval(() => {
+        if (window.firebase && window.db) {
+            clearInterval(waitForFirebase);
+            console.log('✅ Firebase ready in call.js/groups.js/status.js');
+            // Initialize your script here
+        }
+    }, 100);
+} else {
+    console.log('✅ Firebase already available');
+    // Initialize your script here
+}
+// status.js - ADD AT THE VERY TOP
+// Prevent duplicate declarations
+if (window.statusScriptLoaded) {
+    console.log('status.js already loaded');
+    // Don't re-execute
+    throw new Error('status.js already loaded');
+}
+window.statusScriptLoaded = true;
+
+// Use existing variables if they already exist from chat.js
+if (typeof closeStatusViewer !== 'undefined') {
+    // Use existing variable
+    console.log('Using closeStatusViewer from chat.js');
+} else {
+    // Define locally
+    let closeStatusViewer = null;
+    // ... rest of your code
+}
 // ==================== GLOBAL VARIABLES ====================
 let videoEditor = null;
 let audioRecorder = null;
@@ -44,6 +77,14 @@ let statusAudioInput = null;
 
 // DOM elements cache
 let domElements = {};
+
+// Status drafts storage
+let statusDrafts = [];
+let statusHighlights = [];
+
+// Current active statuses
+let activeStatuses = [];
+let myActiveStatuses = [];
 
 // ==================== STATUS PREFERENCES ====================
 const statusPreferences = {
@@ -95,10 +136,8 @@ const statusPreferences = {
     quickReplyNotification: true,
     shareToSocial: true,
     enableSearch: true,
-    // New expiry options
     expiryOptions: ['24h', '12h', '6h', 'custom'],
     defaultExpiry: '24h',
-    // Privacy integration
     statusPrivacy: 'myContacts',
     canReply: 'myContacts',
     canReact: 'myContacts'
@@ -151,70 +190,141 @@ let statusDraft = {
     draftId: null,
     createdAt: null,
     updatedAt: null,
-    // New fields for expiry
     expiryOption: '24h',
     expiryTime: null,
-    // New fields for background colors
     backgroundColor: '#667eea',
-    // New fields for reactions
     allowReactions: true,
-    // New fields for viewers
     viewerCount: 0,
-    // New fields for GIF support
     gifUrl: null,
-    // New fields for stickers
     stickerId: null,
-    // New fields for location
     locationName: null,
     locationCoordinates: null
 };
 
-// Status drafts storage
-let statusDrafts = [];
-let statusHighlights = [];
-
-// Current active statuses
-let activeStatuses = [];
-let myActiveStatuses = [];
-
 // ==================== INITIALIZATION ====================
 
 /**
- * Initialize the complete status system
+ * Initialize Status System
  */
 function initStatusSystem() {
-    console.log('🚀 Initializing COMPLETE WhatsApp Status System...');
-    
-    // Check if Firebase is available
-    if (typeof firebase === 'undefined') {
-        console.error('❌ Firebase not loaded');
-        showToast('Firebase initialization failed', 'error');
-        return;
-    }
+    console.log('🚀 Initializing WhatsApp Status System...');
     
     try {
-        // Initialize Firebase services
-        const firebaseApp = firebase.app();
-        db = firebaseApp.firestore();
-        storage = firebaseApp.storage();
-        auth = firebaseApp.auth();
+        // Check if user is logged in
+        if (!currentUser || !currentUser.uid) {
+            // Wait for DOM and Firebase
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🌐 Status system loading...');
+    
+    // Wait for Firebase
+    const checkFirebase = setInterval(() => {
+        if (window.firebase && window.firebase.auth) {
+            clearInterval(checkFirebase);
+            
+            // Listen for auth state
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    console.log('✅ User authenticated, initializing status system');
+                    initStatusSystem();
+                } else {
+                    console.log('⏳ Waiting for user login...');
+                    // Don't initialize yet
+                }
+            });
+        }
+    }, 500);
+});
+            return;
+        }
         
-        // Listen for auth state change
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                currentUser = user;
-                initializeUserData();
-            } else {
-                console.log('👤 No user authenticated');
-                showToast('Please login to use status features', 'info');
-            }
-        });
+        // Initialize user data
+        initializeUserData();
+        
+        // Create UI elements if they don't exist
+        createAllUIElements();
+        
+        // Cache DOM elements
+        cacheDOMElements();
+        
+        // Setup all event listeners
+        setupAllEventListeners();
+        
+        // Load initial data
+        loadAllInitialData();
+        
+        // Start background services
+        startBackgroundServices();
+        
+        console.log('✅ Status System initialized successfully');
         
     } catch (error) {
-        console.error('❌ Error initializing status system:', error);
+        console.error('❌ Error initializing Status System:', error);
         showToast('Error initializing status system', 'error');
     }
 }
+
+/**
+ * Initialize when both DOM is ready AND Firebase is ready
+ */
+function initializeStatusSystem() {
+    console.log('📱 Initializing Status System...');
+    
+    // Wait for both DOM ready and Firebase ready
+    const checkReady = () => {
+        // Check if DOM is ready
+        if (document.readyState !== 'loading') {
+            // Check if Firebase is ready
+            if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                initStatusSystem();
+                return true;
+            } else if (window.firebaseReady) {
+                initStatusSystem();
+                return true;
+            }
+        }
+        return false;
+    };
+    
+    // Try immediately
+    if (checkReady()) {
+        return;
+    }
+    
+    // Set up listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('📱 DOM loaded, checking Firebase...');
+        
+        if (checkReady()) {
+            return;
+        }
+        
+        // If Firebase not ready yet, wait for it
+        const checkInterval = setInterval(() => {
+            if (checkReady()) {
+                clearInterval(checkInterval);
+            }
+        }, 500);
+        
+        // Timeout after 10 seconds
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            if (typeof initStatusSystem === 'function') {
+                // Try one last time
+                if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+                    initStatusSystem();
+                } else {
+                    console.error('❌ Firebase not loaded after timeout.');
+                    showToast('Firebase initialization timeout. Please refresh.', 'error');
+                }
+            }
+        }, 10000);
+    });
+}
+
+// Start initialization
+initializeStatusSystem();
+
+console.log('✅ WhatsApp Status System module loaded');
 
 /**
  * Initialize user data and setup all components
@@ -349,7 +459,7 @@ function createAllUIElements() {
     }
     
     // Status viewer modal
-    if (!document.getElementById('statusViewerModal')) {
+    if (!document.getElementById('statusModal')) {
         createStatusViewerModal();
     }
     
@@ -750,7 +860,7 @@ function createStatusViewerModal() {
                         <!-- Status content will be loaded here -->
                         <div id="statusMedia"></div>
                         <div id="statusText" class="status-text-content"></div>
-                        <div id="statusCaption" class="status-caption-display"></div>
+                        <div id="statusCaptionDisplay" class="status-caption-display"></div>
                     </div>
                     
                     <div class="status-nav next">
@@ -983,14 +1093,19 @@ function createStatusExpiryModal() {
 function cacheDOMElements() {
     console.log('🔍 Caching DOM elements...');
     
-    // Status Creation Modal
+    // Status Creation Modal Elements
     domElements.statusCreationModal = document.getElementById('statusCreationModal');
     domElements.closeStatusCreation = document.getElementById('closeStatusCreation');
     domElements.closeStatusCreationBtn = document.getElementById('closeStatusCreationBtn');
-    domElements.myStatus = document.getElementById('myStatus');
+    domElements.postStatus = document.getElementById('postStatus');
+    domElements.statusCaption = document.getElementById('statusCaption');
+    
+    // File Inputs
     domElements.statusImageInput = document.getElementById('statusImageInput');
     domElements.statusVideoInput = document.getElementById('statusVideoInput');
     domElements.statusAudioInput = document.getElementById('statusAudioInput');
+    
+    // Status Options
     domElements.statusOptions = document.getElementById('statusOptions');
     domElements.statusOption = document.querySelectorAll('.status-option');
     
@@ -1001,6 +1116,9 @@ function cacheDOMElements() {
     domElements.imagePreview = document.getElementById('imagePreview');
     domElements.videoPreview = document.getElementById('videoPreview');
     domElements.audioPreview = document.getElementById('audioPreview');
+    domElements.gifPreview = document.getElementById('gifPreview');
+    domElements.stickerPreview = document.getElementById('stickerPreview');
+    domElements.locationPreview = document.getElementById('locationPreview');
     
     // Text Status Customization
     domElements.statusTextInput = document.getElementById('statusTextInput');
@@ -1011,34 +1129,54 @@ function cacheDOMElements() {
     domElements.textPreviewDisplay = document.getElementById('textPreviewDisplay');
     
     // Media Previews
-    domElements.statusImagePreview = document.getElementById('statusImagePreview');
     domElements.statusImagePreviewImg = document.getElementById('statusImagePreviewImg');
-    domElements.statusVideoPreview = document.getElementById('statusVideoPreview');
     domElements.statusVideoPreviewVideo = document.getElementById('statusVideoPreviewVideo');
-    domElements.statusAudioPreview = document.getElementById('statusAudioPreview');
     domElements.statusAudioPreviewAudio = document.getElementById('statusAudioPreviewAudio');
+    domElements.changeImageBtn = document.getElementById('changeImageBtn');
+    domElements.changeVideoBtn = document.getElementById('changeVideoBtn');
+    domElements.changeAudioBtn = document.getElementById('changeAudioBtn');
+    domElements.recordAudioBtn = document.getElementById('recordAudioBtn');
+    domElements.stopRecordingBtn = document.getElementById('stopRecordingBtn');
     
-    // Status Posting
-    domElements.statusCaption = document.getElementById('statusCaption');
-    domElements.postStatus = document.getElementById('postStatus');
+    // Status Options Footer
+    domElements.statusPrivacy = document.getElementById('statusPrivacy');
+    domElements.statusExpiry = document.getElementById('statusExpiry');
+    domElements.saveDraftBtn = document.getElementById('saveDraftBtn');
     
-    // Status Viewing Modal
+    // Status Viewer Modal Elements
     domElements.statusModal = document.getElementById('statusModal');
     domElements.statusUserAvatar = document.getElementById('statusUserAvatar');
     domElements.statusUserName = document.getElementById('statusUserName');
     domElements.statusTime = document.getElementById('statusTime');
-    domElements.statusMedia = document.getElementById('statusMedia');
-    domElements.statusText = document.getElementById('statusText');
-    domElements.statusCaptionDisplay = document.querySelector('.status-caption-display');
     domElements.closeStatusModal = document.getElementById('closeStatusModal');
     domElements.closeStatusModalOverlay = document.getElementById('closeStatusModalOverlay');
+    
+    // Status Display Elements
+    domElements.statusMedia = document.getElementById('statusMedia');
+    domElements.statusText = document.getElementById('statusText');
+    domElements.statusCaptionDisplay = document.getElementById('statusCaptionDisplay');
     
     // Status Expiry & Metrics
     domElements.statusExpiryProgress = document.getElementById('statusExpiryProgress');
     domElements.expiryTime = document.getElementById('expiryTime');
     domElements.viewersCount = document.getElementById('viewersCount');
     domElements.viewViewersBtn = document.getElementById('viewViewersBtn');
+    
+    // Status Navigation
+    domElements.prevStatusBtn = document.getElementById('prevStatusBtn');
+    domElements.nextStatusBtn = document.getElementById('nextStatusBtn');
+    
+    // Status Interaction Buttons
     domElements.deleteStatusBtn = document.getElementById('deleteStatusBtn');
+    domElements.replyStatusBtn = document.getElementById('replyStatusBtn');
+    domElements.forwardStatusBtn = document.getElementById('forwardStatusBtn');
+    domElements.saveStatusBtn = document.getElementById('saveStatusBtn');
+    
+    // Status Reactions
+    domElements.reactionBtns = document.querySelectorAll('.reaction-btn');
+    domElements.moreReactionsBtn = document.getElementById('moreReactionsBtn');
+    domElements.reactionPicker = document.getElementById('reactionPicker');
+    domElements.reactionOptions = document.querySelectorAll('.reaction-option');
     
     // Viewers & Reactions Modals
     domElements.viewersModal = document.getElementById('viewersModal');
@@ -1051,38 +1189,33 @@ function cacheDOMElements() {
     domElements.closeEnhancedViewersModal = document.getElementById('closeEnhancedViewersModal');
     domElements.closeEnhancedViewersModalBtn = document.getElementById('closeEnhancedViewersModalBtn');
     
-    // UI Tabs & Navigation
-    domElements.viewersTabCount = document.getElementById('viewersTabCount');
-    domElements.reactionsTabCount = document.getElementById('reactionsTabCount');
+    // Enhanced Viewers Tabs
     domElements.tabButtons = document.querySelectorAll('.tab-button');
     domElements.tabContents = document.querySelectorAll('.tab-content');
+    domElements.viewersTabCount = document.getElementById('viewersTabCount');
+    domElements.reactionsTabCount = document.getElementById('reactionsTabCount');
     
-    // Status Display Area
+    // My Status Elements
+    domElements.myStatus = document.getElementById('myStatus');
+    domElements.myStatusList = document.getElementById('myStatusList');
+    domElements.addFirstStatusBtn = document.getElementById('addFirstStatusBtn');
+    domElements.quickStatusBtn = document.getElementById('quickStatusBtn');
+    
+    // Status Updates List
     domElements.statusUpdates = document.getElementById('statusUpdates');
+    
+    // Status Ring
     domElements.statusRing = document.getElementById('statusRing');
     domElements.statusRingInner = document.querySelector('.status-ring-inner');
     
-    // Reaction Features
-    domElements.reactionPicker = document.getElementById('reactionPicker');
-    domElements.reactionOptions = document.querySelectorAll('.reaction-option');
-    domElements.reactionBtns = document.querySelectorAll('.reaction-btn');
-    domElements.moreReactionsBtn = document.getElementById('moreReactionsBtn');
-    
-    // Additional elements
-    domElements.prevStatusBtn = document.getElementById('prevStatusBtn');
-    domElements.nextStatusBtn = document.getElementById('nextStatusBtn');
-    domElements.saveDraftBtn = document.getElementById('saveDraftBtn');
-    domElements.replyStatusBtn = document.getElementById('replyStatusBtn');
-    domElements.forwardStatusBtn = document.getElementById('forwardStatusBtn');
-    domElements.saveStatusBtn = document.getElementById('saveStatusBtn');
-    domElements.changeImageBtn = document.getElementById('changeImageBtn');
-    domElements.changeVideoBtn = document.getElementById('changeVideoBtn');
-    domElements.changeAudioBtn = document.getElementById('changeAudioBtn');
-    domElements.recordAudioBtn = document.getElementById('recordAudioBtn');
-    domElements.stopRecordingBtn = document.querySelector('#stopRecordingBtn');
-    domElements.statusPrivacy = document.getElementById('statusPrivacy');
-    domElements.statusExpiry = document.getElementById('statusExpiry');
+    // Status Expiry Modal
     domElements.statusExpiryModal = document.getElementById('statusExpiryModal');
+    domElements.customHours = document.getElementById('customHours');
+    domElements.setExpiryBtn = document.getElementById('setExpiryBtn');
+    domElements.cancelExpiryBtn = document.getElementById('cancelExpiryBtn');
+    
+    // Drafts
+    domElements.draftsList = document.getElementById('draftsList');
     
     console.log('✅ DOM elements cached');
 }
@@ -1106,13 +1239,10 @@ function setupAllEventListeners() {
         // 3. Viewers & Reactions Event Listeners
         setupViewersReactionsListeners();
         
-        // 4. Media Interaction Event Listeners
-        setupMediaInteractionListeners();
-        
-        // 5. Status Reactions Event Listeners
+        // 4. Status Reactions Event Listeners
         setupStatusReactionsListeners();
         
-        // 6. Additional Event Listeners
+        // 5. Additional Event Listeners
         setupAdditionalListeners();
         
         console.log('✅ All event listeners setup complete');
@@ -1125,18 +1255,22 @@ function setupAllEventListeners() {
 function setupStatusCreationListeners() {
     console.log('🔧 Setting up status creation listeners...');
     
-    // 1. Status Creation
+    // My Status Button
     if (domElements.myStatus) {
         domElements.myStatus.addEventListener('click', openStatusCreation);
     }
     
     // Add First Status Button
-    const addFirstStatusBtn = document.getElementById('addFirstStatusBtn');
-    if (addFirstStatusBtn) {
-        addFirstStatusBtn.addEventListener('click', openStatusCreation);
+    if (domElements.addFirstStatusBtn) {
+        domElements.addFirstStatusBtn.addEventListener('click', openStatusCreation);
     }
     
-    // Status option clicks (data-type) - Switch between status types
+    // Quick Status Button
+    if (domElements.quickStatusBtn) {
+        domElements.quickStatusBtn.addEventListener('click', openQuickStatus);
+    }
+    
+    // Status option clicks
     if (domElements.statusOption) {
         domElements.statusOption.forEach(option => {
             option.addEventListener('click', function() {
@@ -1155,7 +1289,7 @@ function setupStatusCreationListeners() {
         domElements.closeStatusCreationBtn.addEventListener('click', closeStatusCreation);
     }
     
-    // 2. File input changes - Handle media selection
+    // File input changes
     if (domElements.statusImageInput) {
         domElements.statusImageInput.addEventListener('change', handleImageUpload);
     }
@@ -1168,7 +1302,7 @@ function setupStatusCreationListeners() {
         domElements.statusAudioInput.addEventListener('change', handleAudioUpload);
     }
     
-    // 3. Color selection clicks - Change text background
+    // Color selection
     if (domElements.colorButtons) {
         domElements.colorButtons.forEach(btn => {
             btn.addEventListener('click', function() {
@@ -1178,7 +1312,7 @@ function setupStatusCreationListeners() {
         });
     }
     
-    // Font/size changes - Update text styling
+    // Text customization
     if (domElements.textFont) {
         domElements.textFont.addEventListener('change', function() {
             customizeTextStatus({ font: this.value });
@@ -1203,7 +1337,7 @@ function setupStatusCreationListeners() {
         });
     }
     
-    // 4. Change media buttons
+    // Change media buttons
     if (domElements.changeImageBtn) {
         domElements.changeImageBtn.addEventListener('click', () => {
             domElements.statusImageInput.click();
@@ -1222,7 +1356,7 @@ function setupStatusCreationListeners() {
         });
     }
     
-    // 5. Audio recording
+    // Audio recording
     if (domElements.recordAudioBtn) {
         domElements.recordAudioBtn.addEventListener('click', startAudioRecording);
     }
@@ -1231,17 +1365,17 @@ function setupStatusCreationListeners() {
         domElements.stopRecordingBtn.addEventListener('click', stopAudioRecording);
     }
     
-    // 6. Post status
+    // Post status
     if (domElements.postStatus) {
         domElements.postStatus.addEventListener('click', postNewStatus);
     }
     
-    // 7. Save draft
+    // Save draft
     if (domElements.saveDraftBtn) {
         domElements.saveDraftBtn.addEventListener('click', saveStatusDraft);
     }
     
-    // 8. Status expiry selection
+    // Status expiry selection
     if (domElements.statusExpiry) {
         domElements.statusExpiry.addEventListener('change', function() {
             if (this.value === 'custom') {
@@ -1252,10 +1386,17 @@ function setupStatusCreationListeners() {
         });
     }
     
-    // 9. Status privacy selection
+    // Status privacy selection
     if (domElements.statusPrivacy) {
         domElements.statusPrivacy.addEventListener('change', function() {
             statusDraft.privacy = this.value;
+        });
+    }
+    
+    // Status caption
+    if (domElements.statusCaption) {
+        domElements.statusCaption.addEventListener('input', function() {
+            statusDraft.caption = this.value;
         });
     }
 }
@@ -1266,8 +1407,7 @@ function setupStatusCreationListeners() {
 function setupStatusViewingListeners() {
     console.log('🔧 Setting up status viewing listeners...');
     
-    // Status item clicks in statusUpdates - Open status viewer
-    // Using event delegation for dynamically loaded content
+    // Status item clicks in statusUpdates
     if (domElements.statusUpdates) {
         domElements.statusUpdates.addEventListener('click', function(e) {
             const statusItem = e.target.closest('.status-update-item');
@@ -1313,7 +1453,7 @@ function setupStatusViewingListeners() {
         });
     }
     
-    // Delete status button (only shown for own statuses)
+    // Delete status button
     if (domElements.deleteStatusBtn) {
         domElements.deleteStatusBtn.addEventListener('click', function() {
             if (currentStatusViewing && currentStatusViewing.statuses[currentStatusIndex]) {
@@ -1345,10 +1485,7 @@ function setupStatusViewingListeners() {
 function setupViewersReactionsListeners() {
     console.log('🔧 Setting up viewers & reactions listeners...');
     
-    // View viewers button (simple modal)
-    // This is already handled in setupStatusViewingListeners
-    
-    // Tab button clicks - Switch between viewers/reactions
+    // Tab button clicks
     if (domElements.tabButtons) {
         domElements.tabButtons.forEach(btn => {
             btn.addEventListener('click', function() {
@@ -1378,28 +1515,12 @@ function setupViewersReactionsListeners() {
 }
 
 /**
- * Setup media interaction event listeners
- */
-function setupMediaInteractionListeners() {
-    console.log('🔧 Setting up media interaction listeners...');
-    
-    // Media preview clicks - Zoom/enlarge media
-    // This will be handled dynamically when media is loaded
-    
-    // Status playback - Control audio/video playback
-    // This will be handled by the browser's native controls
-}
-
-/**
  * Setup status reactions event listeners
  */
 function setupStatusReactionsListeners() {
     console.log('🔧 Setting up status reactions listeners...');
     
-    // Reaction picker display - Show on message hover/long-press
-    // We'll use click for simplicity
-    
-    // Reaction selection - Add reaction to status
+    // Reaction buttons in viewer footer
     if (domElements.reactionBtns) {
         domElements.reactionBtns.forEach(btn => {
             btn.addEventListener('click', function() {
@@ -1465,6 +1586,8 @@ function setupAdditionalListeners() {
                 closeEnhancedViewersModal();
             } else if (domElements.reactionPicker && domElements.reactionPicker.style.display !== 'none') {
                 hideReactionPicker();
+            } else if (domElements.statusExpiryModal && domElements.statusExpiryModal.style.display !== 'none') {
+                closeStatusExpiryModal();
             }
         }
         
@@ -1478,19 +1601,20 @@ function setupAdditionalListeners() {
         }
     });
     
-    // Status expiry modal
+    // Status expiry modal listeners
     const closeExpiryModal = document.getElementById('closeExpiryModal');
     const closeExpiryModalBtn = document.getElementById('closeExpiryModalBtn');
-    const cancelExpiryBtn = document.getElementById('cancelExpiryBtn');
-    const setExpiryBtn = document.getElementById('setExpiryBtn');
     const expiryOptions = document.querySelectorAll('.expiry-option');
     
     if (closeExpiryModal) closeExpiryModal.addEventListener('click', closeStatusExpiryModal);
     if (closeExpiryModalBtn) closeExpiryModalBtn.addEventListener('click', closeStatusExpiryModal);
-    if (cancelExpiryBtn) cancelExpiryBtn.addEventListener('click', closeStatusExpiryModal);
     
-    if (setExpiryBtn) {
-        setExpiryBtn.addEventListener('click', function() {
+    if (domElements.cancelExpiryBtn) {
+        domElements.cancelExpiryBtn.addEventListener('click', closeStatusExpiryModal);
+    }
+    
+    if (domElements.setExpiryBtn) {
+        domElements.setExpiryBtn.addEventListener('click', function() {
             const customHours = document.getElementById('customHours');
             if (customHours && customHours.value) {
                 const hours = parseInt(customHours.value);
@@ -1528,6 +1652,15 @@ function setupAdditionalListeners() {
     if ('ontouchstart' in window) {
         setupTouchGestures();
     }
+    
+    // Status tabs
+    const statusTabs = document.querySelectorAll('.status-tab');
+    statusTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            switchStatusTab(tabName);
+        });
+    });
 }
 
 /**
@@ -1571,26 +1704,6 @@ function setupTouchGestures() {
             }
         }
     }
-    
-    // Long press for options
-    let longPressTimer;
-    
-    document.addEventListener('touchstart', function(e) {
-        const statusItem = e.target.closest('.status-update-item');
-        if (statusItem) {
-            longPressTimer = setTimeout(function() {
-                showStatusOptions(e, statusItem);
-            }, 800);
-        }
-    }, false);
-    
-    document.addEventListener('touchend', function() {
-        clearTimeout(longPressTimer);
-    }, false);
-    
-    document.addEventListener('touchmove', function() {
-        clearTimeout(longPressTimer);
-    }, false);
 }
 
 // ==================== STATUS CREATION FUNCTIONS ====================
@@ -1619,6 +1732,24 @@ function openStatusCreation() {
     
     // Update UI with current settings
     updateCreationUI();
+}
+
+/**
+ * Open quick status (camera mode)
+ */
+function openQuickStatus() {
+    console.log('📸 Opening quick status...');
+    quickStatusMode = true;
+    openStatusCreation();
+    switchStatusType('image');
+    
+    // In a real implementation, this would open the camera
+    // For now, we'll just trigger the image input
+    setTimeout(() => {
+        if (domElements.statusImageInput) {
+            domElements.statusImageInput.click();
+        }
+    }, 500);
 }
 
 /**
@@ -1697,7 +1828,6 @@ function resetStatusDraft() {
         draftId: generateId(),
         createdAt: new Date(),
         updatedAt: new Date(),
-        // New fields
         expiryOption: '24h',
         expiryTime: null,
         backgroundColor: '#667eea',
@@ -1722,6 +1852,11 @@ function updateCreationUI() {
     // Update expiry option
     if (domElements.statusExpiry) {
         domElements.statusExpiry.value = statusDraft.customDuration.toString();
+    }
+    
+    // Update caption
+    if (domElements.statusCaption) {
+        domElements.statusCaption.value = statusDraft.caption || '';
     }
     
     // Update text preview
@@ -1842,11 +1977,27 @@ async function handleVideoUpload(event) {
         return;
     }
     
-    // Preview video
-    await previewStatusMedia(file, 'video');
+    // Check duration (max 30 seconds)
+    const video = document.createElement('video');
+    video.preload = 'metadata';
     
-    // Reset input
-    event.target.value = '';
+    video.onloadedmetadata = function() {
+        window.URL.revokeObjectURL(video.src);
+        const duration = video.duration;
+        
+        if (duration > 30) {
+            showToast('Video too long (max 30 seconds)', 'error');
+            return;
+        }
+        
+        // Preview video if duration is valid
+        previewStatusMedia(file, 'video').then(() => {
+            // Reset input
+            event.target.value = '';
+        });
+    };
+    
+    video.src = URL.createObjectURL(file);
 }
 
 /**
@@ -1897,7 +2048,7 @@ async function previewStatusMedia(file, type) {
                         domElements.statusImagePreviewImg.src = result;
                         domElements.statusImagePreviewImg.style.display = 'block';
                         // Hide placeholder
-                        const placeholder = domElements.statusImagePreview.querySelector('.image-placeholder');
+                        const placeholder = document.querySelector('.image-placeholder');
                         if (placeholder) {
                             placeholder.style.display = 'none';
                         }
@@ -1918,7 +2069,7 @@ async function previewStatusMedia(file, type) {
                         domElements.statusVideoPreviewVideo.src = result;
                         domElements.statusVideoPreviewVideo.style.display = 'block';
                         // Hide placeholder
-                        const placeholder = domElements.statusVideoPreview.querySelector('.video-placeholder');
+                        const placeholder = document.querySelector('.video-placeholder');
                         if (placeholder) {
                             placeholder.style.display = 'none';
                         }
@@ -1939,7 +2090,7 @@ async function previewStatusMedia(file, type) {
                         domElements.statusAudioPreviewAudio.src = result;
                         domElements.statusAudioPreviewAudio.style.display = 'block';
                         // Hide placeholder
-                        const placeholder = domElements.statusAudioPreview.querySelector('.audio-placeholder');
+                        const placeholder = document.querySelector('.audio-placeholder');
                         if (placeholder) {
                             placeholder.style.display = 'none';
                         }
@@ -2135,7 +2286,7 @@ function clearMediaPreviews() {
     if (domElements.statusImagePreviewImg) {
         domElements.statusImagePreviewImg.src = '';
         domElements.statusImagePreviewImg.style.display = 'none';
-        const imagePlaceholder = domElements.statusImagePreview.querySelector('.image-placeholder');
+        const imagePlaceholder = document.querySelector('.image-placeholder');
         if (imagePlaceholder) {
             imagePlaceholder.style.display = 'flex';
         }
@@ -2145,7 +2296,7 @@ function clearMediaPreviews() {
     if (domElements.statusVideoPreviewVideo) {
         domElements.statusVideoPreviewVideo.src = '';
         domElements.statusVideoPreviewVideo.style.display = 'none';
-        const videoPlaceholder = domElements.statusVideoPreview.querySelector('.video-placeholder');
+        const videoPlaceholder = document.querySelector('.video-placeholder');
         if (videoPlaceholder) {
             videoPlaceholder.style.display = 'flex';
         }
@@ -2155,7 +2306,7 @@ function clearMediaPreviews() {
     if (domElements.statusAudioPreviewAudio) {
         domElements.statusAudioPreviewAudio.src = '';
         domElements.statusAudioPreviewAudio.style.display = 'none';
-        const audioPlaceholder = domElements.statusAudioPreview.querySelector('.audio-placeholder');
+        const audioPlaceholder = document.querySelector('.audio-placeholder');
         if (audioPlaceholder) {
             audioPlaceholder.style.display = 'flex';
         }
@@ -2438,6 +2589,26 @@ async function updateUserStats() {
 }
 
 // ==================== STATUS VIEWING FUNCTIONS ====================
+
+/**
+ * View user statuses
+ * @param {string} userId - User ID to view
+ */
+function viewUserStatuses(userId) {
+    console.log('Opening status viewer for user ID:', userId);
+    
+    // Show loading message
+    showToast('Loading user statuses...', 'info');
+    
+    // You can implement status viewing logic here
+    console.log('Would show statuses for user:', userId);
+    
+    return {
+        success: true,
+        message: 'Status viewer opened',
+        userId: userId
+    };
+}
 
 /**
  * Open status viewer
@@ -3320,11 +3491,6 @@ function switchEnhancedTab(tab) {
                 content.classList.remove('active');
             }
         });
-    }
-    
-    // Load tab content if needed
-    if (tab === 'reactions' && currentEnhancedModalStatusId) {
-        // Reactions are already loaded when modal opened
     }
 }
 
@@ -4775,40 +4941,39 @@ function generateId() {
  * Format time ago
  * @param {Date|Object} date - Date to format
  * @returns {string} Formatted time ago
- */
-function formatTimeAgo(date) {
-    if (!date) return 'Unknown';
+ function formatTimeAgo(date) {
+    // Ensure date is a Date object
+    if (!(date instanceof Date)) {
+        // Try to convert if it's a Firestore timestamp
+        if (date && typeof date.toDate === 'function') {
+            date = date.toDate();
+        } else if (date && date.seconds) {
+            // Firestore timestamp object
+            date = new Date(date.seconds * 1000);
+        } else if (date) {
+            // Try to parse as Date
+            date = new Date(date);
+        } else {
+            return 'Unknown time';
+        }
+    }
     
-    let dateObj;
-    if (date.toDate && typeof date.toDate === 'function') {
-        dateObj = date.toDate(); // Firestore Timestamp
-    } else if (date instanceof Date) {
-        dateObj = date;
-    } else if (typeof date === 'string' || typeof date === 'number') {
-        dateObj = new Date(date);
-    } else {
-        return 'Unknown';
+    // Check if valid date
+    if (isNaN(date.getTime())) {
+        return 'Invalid date';
     }
     
     const now = new Date();
-    const diffMs = now - dateObj;
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHour = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHour / 24);
+    const seconds = Math.floor((now - date) / 1000);
     
-    if (diffSec < 60) {
-        return 'Just now';
-    } else if (diffMin < 60) {
-        return `${diffMin}m ago`;
-    } else if (diffHour < 24) {
-        return `${diffHour}h ago`;
-    } else if (diffDay < 7) {
-        return `${diffDay}d ago`;
-    } else {
-        return dateObj.toLocaleDateString();
-    }
-}
+    if (seconds < 60) return 'just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+    
+    return date.toLocaleDateString();
+}*/
+
 
 /**
  * Get font family from font name
@@ -4981,6 +5146,21 @@ async function canViewStatus(status) {
 }
 
 /**
+ * Unmute all statuses
+ */
+function unmuteAllStatuses() {
+    console.log('Unmuting all statuses...');
+    statusPreferences.muteAllUntil = null;
+    showToast('All statuses unmuted', 'success');
+    loadStatusUpdates();
+    
+    return {
+        success: true,
+        message: 'All statuses unmuted'
+    };
+}
+
+/**
  * Record status view
  * @param {string} statusId - Status ID
  * @param {boolean} isOwnStatus - Whether it's the user's own status
@@ -5039,6 +5219,42 @@ function loadAllInitialData() {
     loadMyStatuses();
     updateDraftsList();
     updateStatusRing();
+}
+
+/**
+ * Switch status tab
+ * @param {string} tabName - Tab name to switch to
+ */
+function switchStatusTab(tabName) {
+    // Update tab buttons
+    const tabs = document.querySelectorAll('.status-tab');
+    tabs.forEach(tab => {
+        if (tab.dataset.tab === tabName) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    
+    // Update tab contents
+    const tabContents = document.querySelectorAll('.status-tab-content');
+    tabContents.forEach(content => {
+        if (content.id === `${tabName}Tab`) {
+            content.classList.add('active');
+        } else {
+            content.classList.remove('active');
+        }
+    });
+}
+
+/**
+ * Stop camera if active
+ */
+function stopCamera() {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
 }
 
 // ==================== EXPORTS ====================

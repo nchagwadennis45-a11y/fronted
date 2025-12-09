@@ -15,6 +15,7 @@
     /* Main app container - FILLS ENTIRE SCREEN */
     #chatApp {
         display: flex;
+        flex-direction: row;
         width: 100vw;
         height: 100vh;
         background: var(--kynecta-light);
@@ -26,125 +27,101 @@
     
     /* ========== FIXED HEADER STRUCTURE ========== */
     .chat-header {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        padding: 0 16px !important;
-        height: 64px !important;
-        min-height: 64px !important;
-        max-height: 64px !important;
-        flex-shrink: 0 !important;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        height: 64px;
+        min-height: 64px;
+        max-height: 64px;
+        flex-shrink: 0;
     }
     
     /* Contact info section - LEFT SIDE */
     .contact-info-section {
-        display: flex !important;
-        align-items: center !important;
-        gap: 12px !important;
-        flex: 1 !important;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
     }
     
     .contact-avatar {
-        width: 40px !important;
-        height: 40px !important;
-        border-radius: 50% !important;
-        overflow: hidden !important;
-        flex-shrink: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        background: var(--kynecta-primary) !important;
-        color: white !important;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--kynecta-primary);
+        color: white;
     }
     
     .contact-avatar img {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover !important;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     
     .contact-details {
-        flex: 1 !important;
-        min-width: 0 !important;
+        flex: 1;
+        min-width: 0;
     }
     
     .contact-name {
-        font-weight: 600 !important;
-        font-size: 1rem !important;
-        color: var(--kynecta-dark) !important;
-        margin-bottom: 2px !important;
-        display: block !important;
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--kynecta-dark);
+        margin-bottom: 2px;
+        display: block;
     }
     
     .contact-status {
-        font-size: 0.8125rem !important;
-        color: #6B7280 !important;
-        display: block !important;
+        font-size: 0.8125rem;
+        color: #6B7280;
+        display: block;
     }
     
     /* Header actions - RIGHT SIDE */
     .header-actions {
-        display: flex !important;
-        align-items: center !important;
-        gap: 8px !important;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     
     .header-action-btn {
-        background: transparent !important;
-        border: none !important;
-        color: var(--kynecta-dark) !important;
-        width: 40px !important;
-        height: 40px !important;
-        border-radius: 50% !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        cursor: pointer !important;
-        transition: all 0.2s ease !important;
-        font-size: 1.25rem !important;
+        background: transparent;
+        border: none;
+        color: var(--kynecta-dark);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 1.25rem;
     }
     
     .header-action-btn:hover {
-        background: var(--kynecta-border) !important;
+        background: var(--kynecta-border);
     }
     
     /* Group icon specific */
     .group-icon-btn {
-        position: relative !important;
+        position: relative;
     }
     
     /* Back button - hidden on desktop */
     .back-to-chats {
-        display: none !important;
+        display: none;
     }
     
-    /* Show/hide based on screen size */
-    .mobile-only {
-        display: none !important;
-    }
-    
-    .desktop-only {
-        display: flex !important;
-    }
-    
-    /* ========== FIX ICON DISPLAY ========== */
-    .material-icons,
-    .material-icons-outlined,
-    .fa,
-    .fas,
-    .far,
-    .fab {
-        font-family: 'Material Icons', 'Font Awesome 6 Free', sans-serif !important;
-        font-style: normal !important;
-        display: inline-block !important;
-        line-height: 1 !important;
-    }
-    
-    /* ========== FIXED SIDEBAR (LEFT PANEL) - PERFECT HEIGHT ========== */
+    /* ========== PERMANENT SIDEBAR (LEFT PANEL) - FIXED NAVIGATION ========== */
     .chat-list-container {
-        width: 30vw;
-        min-width: 320px;
-        max-width: 400px;
+        width: 380px;
         height: 100vh;
         background: var(--kynecta-light);
         border-right: 1px solid var(--kynecta-border);
@@ -153,12 +130,13 @@
         position: relative;
         z-index: 100;
         flex-shrink: 0;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
     
     /* ========== SIDEBAR TABS (DESKTOP VERSION) ========== */
     .sidebar-tabs {
-        display: flex !important;
+        display: flex;
         background: var(--kynecta-light);
         border-bottom: 1px solid var(--kynecta-border);
         padding: 0 16px;
@@ -900,15 +878,13 @@
         font-size: 20px;
     }
     
-    /* ========== CHAT AREA (RIGHT PANEL) - PERFECT FIT ========== */
+    /* ========== MAIN CHAT AREA (RIGHT PANEL) - PERFECT FIT ========== */
     .chat-area {
         flex: 1;
-        width: calc(100vw - 30vw);
-        min-width: 0;
-        height: 100vh;
-        background: var(--kynecta-light);
         display: flex;
         flex-direction: column;
+        height: 100vh;
+        background: var(--kynecta-light);
         position: relative;
         z-index: 50;
         overflow: hidden;
@@ -1032,14 +1008,14 @@
     
     /* Desktop input actions */
     .desktop-input-actions {
-        display: flex !important;
+        display: flex;
         align-items: center;
         gap: 8px;
     }
     
     /* Hide mobile input actions on desktop */
     .mobile-input-actions {
-        display: none !important;
+        display: none;
     }
     
     /* Message input wrapper */
@@ -1076,7 +1052,7 @@
         top: 0;
         right: -100%;
         width: 100%;
-        max-width: 420px; /* Professional width */
+        max-width: 420px;
         height: 100vh;
         background: var(--kynecta-light);
         z-index: 2000;
@@ -1347,16 +1323,12 @@
     
     /* ========== HIDE MOBILE-SPECIFIC ELEMENTS ========== */
     .bottom-nav {
-        display: none !important;
+        display: none;
     }
     
-    /* Show desktop elements */
-    .desktop-only {
-        display: flex !important;
-    }
-    
+    /* Hide mobile elements */
     .mobile-only {
-        display: none !important;
+        display: none;
     }
     
     /* ========== CALL INTERFACES ========== */
@@ -1436,10 +1408,6 @@
             max-width: 450px;
         }
         
-        .chat-area {
-            width: calc(100vw - 25vw);
-        }
-        
         .whatsapp-settings-sidebar {
             max-width: 450px;
         }
@@ -1484,8 +1452,8 @@
         /* Larger profile images for desktop */
         #userAvatar,
         #chatAvatar {
-            width: 56px !important;
-            height: 56px !important;
+            width: 56px;
+            height: 56px;
         }
         
         /* Larger tools grid for desktop */

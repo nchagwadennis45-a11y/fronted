@@ -62,11 +62,18 @@
                 modal.classList.remove('hidden');
             }
         }
+        
+        // Function to trigger file input
+        function triggerFileInput(inputId) {
+            const fileInput = document.getElementById(inputId);
+            if (fileInput) {
+                fileInput.click();
+            }
+        }
     </script>
     
     <link rel="stylesheet" href="chat.css">
-    <link rel="stylesheet" href="mobile.css" media="(max-width: 768px)">
-    <link rel="stylesheet" href="desktop.css" media="(min-width: 769px)">
+    <link rel="stylesheet" href="desktop.css">
 </head>
 <body class="h-full overflow-hidden" data-theme="light">
     <!-- Toast Notifications -->
@@ -85,31 +92,45 @@
 
     <!-- Main Chat App -->
     <div id="chatApp" class="h-full">
-        <!-- Bottom Navigation Tabs -->
-        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3 z-30 md:hidden shadow-lg">
-            <button class="tab-btn flex flex-col items-center text-purple-600 tab-active" data-tab="chats">
-                <i class="fas fa-comments text-xl"></i>
-                <span class="text-xs mt-1">Chats</span>
-            </button>
-            <button class="tab-btn flex flex-col items-center text-gray-500" data-tab="friends">
-                <i class="fas fa-user-friends text-xl"></i>
-                <span class="text-xs mt-1">Friends</span>
-            </button>
-            <button class="tab-btn flex flex-col items-center text-gray-500" data-tab="updates">
-                <i class="fas fa-bell text-xl"></i>
-                <span class="text-xs mt-1">Updates</span>
-            </button>
-            <button class="tab-btn flex flex-col items-center text-gray-500" data-tab="calls">
-                <i class="fas fa-phone text-xl"></i>
-                <span class="text-xs mt-1">Calls</span>
-            </button>
-            <button class="tab-btn flex flex-col items-center text-gray-500" data-tab="tools">
-                <i class="fas fa-tools text-xl"></i>
-                <span class="text-xs mt-1">Tools</span>
+        <!-- Permanent Left Sidebar Navigation -->
+        <div class="fixed left-0 top-0 bottom-0 w-20 bg-gray-900 z-40 flex flex-col items-center py-6 space-y-8">
+            <!-- App Logo -->
+            <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-green-500 rounded-2xl flex items-center justify-center">
+                <span class="text-white text-xl font-bold">K</span>
+            </div>
+            
+            <!-- Permanent Navigation Icons -->
+            <div class="flex-1 flex flex-col items-center space-y-8">
+                <button class="nav-icon text-white text-2xl p-3 rounded-2xl bg-purple-700" data-tab="chats" title="Chats">
+                    <i class="fas fa-comments"></i>
+                </button>
+                
+                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-tab="friends" title="Friends">
+                    <i class="fas fa-user-friends"></i>
+                </button>
+                
+                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-tab="updates" title="Updates">
+                    <i class="fas fa-bell"></i>
+                </button>
+                
+                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-tab="calls" title="Calls">
+                    <i class="fas fa-phone"></i>
+                </button>
+                
+                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-tab="tools" title="Tools">
+                    <i class="fas fa-tools"></i>
+                </button>
+            </div>
+            
+            <!-- Settings Icon at Bottom -->
+            <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" id="menuBtn" title="Settings">
+                <i class="fas fa-cog"></i>
             </button>
         </div>
 
-        <div class="flex h-full pb-16 md:pb-0">
+        <!-- REMOVED: Bottom Navigation Tabs (duplicate of sidebar) -->
+
+        <div class="flex h-full pb-0 ml-20">
             <!-- Sidebar/Friend List -->
             <div id="chatListContainer" class="chat-list-container w-full md:w-1/3 lg:w-1/4 bg-white flex flex-col border-r border-gray-200">
                 <!-- User Profile Header -->
@@ -123,7 +144,6 @@
                     </div>
                     <div class="flex space-x-3 text-white">
                         <i class="fas fa-users text-xl cursor-pointer hover:scale-110 transition-transform" id="newGroupBtn"></i>
-                        <i class="fas fa-cog text-xl cursor-pointer hover:scale-110 transition-transform" id="menuBtn"></i>
                         <button id="themeToggle" class="text-xl cursor-pointer hover:scale-110 transition-transform">
                             <i class="fas fa-moon" id="themeIcon"></i>
                         </button>
@@ -142,25 +162,6 @@
                         <div id="currentMoodsMini" class="flex flex-wrap gap-1"></div>
                         <div id="currentInterestsMini" class="flex flex-wrap gap-1"></div>
                     </div>
-                </div>
-
-                <!-- Tabs for Desktop -->
-                <div class="hidden md:flex bg-white border-b border-gray-200">
-                    <button class="tab-btn flex-1 py-4 text-center text-purple-600 tab-active font-semibold" data-tab="chats">
-                        <i class="fas fa-comments mr-2"></i>Chats
-                    </button>
-                    <button class="tab-btn flex-1 py-4 text-center text-gray-500 font-semibold" data-tab="friends">
-                        <i class="fas fa-user-friends mr-2"></i>Friends
-                    </button>
-                    <button class="tab-btn flex-1 py-4 text-center text-gray-500 font-semibold" data-tab="updates">
-                        <i class="fas fa-bell mr-2"></i>Updates
-                    </button>
-                    <button class="tab-btn flex-1 py-4 text-center text-gray-500 font-semibold" data-tab="calls">
-                        <i class="fas fa-phone mr-2"></i>Calls
-                    </button>
-                    <button class="tab-btn flex-1 py-4 text-center text-gray-500 font-semibold" data-tab="tools">
-                        <i class="fas fa-tools mr-2"></i>Tools
-                    </button>
                 </div>
 
                 <!-- Search -->
@@ -286,25 +287,53 @@
                                 <p class="text-xs text-gray-500">Your mood influences chat suggestions and themes</p>
                             </div>
 
-                            <!-- Quick Actions -->
+                            <!-- Quick Actions - Now linked to settings -->
                             <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
                                 <h3 class="font-semibold mb-3">Quick Actions</h3>
                                 <div class="grid grid-cols-2 gap-3">
-                                    <button class="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl text-center hover:shadow-md transition-all" id="privacyBtn">
+                                    <button class="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl text-center hover:shadow-md transition-all" onclick="showSettingsSection('privacy')">
                                         <i class="fas fa-shield-alt text-2xl mb-2 block text-purple-600"></i>
                                         <p class="text-sm font-medium">Privacy</p>
                                     </button>
-                                    <button class="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl text-center hover:shadow-md transition-all" id="settingsBtn">
+                                    <button class="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl text-center hover:shadow-md transition-all" onclick="openSettingsModal()">
                                         <i class="fas fa-cog text-2xl mb-2 block text-blue-600"></i>
                                         <p class="text-sm font-medium">Settings</p>
                                     </button>
-                                    <button class="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl text-center hover:shadow-md transition-all" id="storageBtn">
+                                    <button class="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl text-center hover:shadow-md transition-all" onclick="showSettingsSection('storage')">
                                         <i class="fas fa-database text-2xl mb-2 block text-gray-600"></i>
                                         <p class="text-sm font-medium">Storage</p>
                                     </button>
-                                    <button class="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl text-center hover:shadow-md transition-all" id="inviteBtn">
+                                    <button class="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl text-center hover:shadow-md transition-all" onclick="closeModal('settingsModal'); document.getElementById('inviteFriendsModal').classList.remove('hidden')">
                                         <i class="fas fa-user-plus text-2xl mb-2 block text-orange-600"></i>
                                         <p class="text-sm font-medium">Invite</p>
+                                    </button>
+                                    <button class="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl text-center hover:shadow-md transition-all" onclick="document.getElementById('catalogueModal').classList.remove('hidden')">
+                                        <i class="fas fa-shopping-cart text-2xl mb-2 block text-green-600"></i>
+                                        <p class="text-sm font-medium">Catalogue</p>
+                                    </button>
+                                    <button class="p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl text-center hover:shadow-md transition-all" onclick="document.getElementById('advertiseModal').classList.remove('hidden')">
+                                        <i class="fas fa-bullhorn text-2xl mb-2 block text-yellow-600"></i>
+                                        <p class="text-sm font-medium">Advertise</p>
+                                    </button>
+                                    <button class="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-xl text-center hover:shadow-md transition-all" onclick="document.getElementById('labelsModal').classList.remove('hidden')">
+                                        <i class="fas fa-tags text-2xl mb-2 block text-red-600"></i>
+                                        <p class="text-sm font-medium">Labels</p>
+                                    </button>
+                                    <button class="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl text-center hover:shadow-md transition-all" onclick="document.getElementById('greetingModal').classList.remove('hidden')">
+                                        <i class="fas fa-comment-dots text-2xl mb-2 block text-indigo-600"></i>
+                                        <p class="text-sm font-medium">Greeting</p>
+                                    </button>
+                                    <button class="p-4 bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl text-center hover:shadow-md transition-all" onclick="document.getElementById('awayModal').classList.remove('hidden')">
+                                        <i class="fas fa-clock text-2xl mb-2 block text-pink-600"></i>
+                                        <p class="text-sm font-medium">Away</p>
+                                    </button>
+                                    <button class="p-4 bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl text-center hover:shadow-md transition-all" onclick="document.getElementById('aiSummaryModal').classList.remove('hidden')">
+                                        <i class="fas fa-robot text-2xl mb-2 block text-teal-600"></i>
+                                        <p class="text-sm font-medium">AI Summary</p>
+                                    </button>
+                                    <button class="p-4 bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl text-center hover:shadow-md transition-all" onclick="document.getElementById('smartRepliesModal').classList.remove('hidden')">
+                                        <i class="fas fa-lightbulb text-2xl mb-2 block text-cyan-600"></i>
+                                        <p class="text-sm font-medium">Smart Replies</p>
                                     </button>
                                 </div>
                             </div>
@@ -562,7 +591,8 @@
                             </button>
                         </div>
                         <div class="flex-1 relative">
-                            <input type="text" id="messageInput" class="w-full bg-gray-100 py-3 px-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all" placeholder="Type a message..." disabled>
+                            <!-- Enlarged Text Input Area -->
+                            <textarea id="messageInput" class="w-full bg-gray-100 py-4 px-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all resize-none" placeholder="Type a message..." rows="3" disabled style="min-height: 80px; max-height: 150px;"></textarea>
                             <!-- Emoji Picker -->
                             <div id="emojiPicker" class="emoji-picker hidden absolute bottom-full mb-2 bg-white border border-gray-300 rounded-lg shadow-lg p-2 grid grid-cols-8 gap-1 max-h-48 overflow-y-auto">
                             </div>
@@ -999,9 +1029,9 @@
         </div>
     </div>
 
-    <!-- Optimized Settings Modal with 2-3 items visible, rest scrollable -->
+    <!-- Compact Settings Modal - Showing only 2 items at a time -->
     <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
+        <div class="bg-white rounded-2xl w-full max-w-md max-h-[70vh] overflow-hidden">
             <div class="kynecta-header p-6">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-semibold text-white">Settings</h3>
@@ -1011,188 +1041,151 @@
                 </div>
             </div>
             
-            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
-                <!-- Quick Access Settings (Visible by default) -->
-                <div class="settings-quick-access mb-6">
-                    <h4 class="font-semibold text-gray-700 mb-3 text-lg">Quick Access</h4>
-                    <div class="space-y-3">
-                        <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('profile')">
-                            <div class="flex items-center">
-                                <i class="fas fa-user text-purple-500 mr-3 text-xl"></i>
-                                <div>
-                                    <p class="font-medium">Profile</p>
-                                    <p class="text-sm text-gray-500">Edit your profile information</p>
-                                </div>
+            <div class="overflow-y-auto max-h-[50vh] custom-scrollbar p-0">
+                <!-- Settings List Container with fixed height for 2 items -->
+                <div class="settings-scroll-container">
+                    <!-- All Settings (Compact View) -->
+                    <div class="settings-full-list">
+                        <div class="space-y-0">
+                            <!-- Profile Section -->
+                            <div class="settings-section-item" data-section="profile">
+                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('profile')">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-user text-purple-500 mr-3 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium">Profile</p>
+                                            <p class="text-sm text-gray-500">Edit your profile information</p>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </button>
                             </div>
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </button>
-                        
-                        <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('privacy')">
-                            <div class="flex items-center">
-                                <i class="fas fa-lock text-blue-500 mr-3 text-xl"></i>
-                                <div>
-                                    <p class="font-medium">Privacy</p>
-                                    <p class="text-sm text-gray-500">Manage your privacy settings</p>
-                                </div>
+                            
+                            <!-- Privacy Section -->
+                            <div class="settings-section-item" data-section="privacy">
+                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('privacy')">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-lock text-blue-500 mr-3 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium">Privacy</p>
+                                            <p class="text-sm text-gray-500">Manage your privacy settings</p>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </button>
                             </div>
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </button>
-                        
-                        <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('notifications')">
-                            <div class="flex items-center">
-                                <i class="fas fa-bell text-green-500 mr-3 text-xl"></i>
-                                <div>
-                                    <p class="font-medium">Notifications</p>
-                                    <p class="text-sm text-gray-500">Configure notification preferences</p>
-                                </div>
+                            
+                            <!-- Notifications Section -->
+                            <div class="settings-section-item" data-section="notifications">
+                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('notifications')">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-bell text-green-500 mr-3 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium">Notifications</p>
+                                            <p class="text-sm text-gray-500">Configure notification preferences</p>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </button>
                             </div>
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- All Settings (Scrollable) -->
-                <div class="settings-full-list">
-                    <h4 class="font-semibold text-gray-700 mb-3 text-lg">All Settings</h4>
-                    <div class="space-y-3">
-                        <!-- Profile Section -->
-                        <div class="settings-section-item" data-section="profile">
-                            <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('profile')">
-                                <div class="flex items-center">
-                                    <i class="fas fa-user text-purple-500 mr-3 text-xl"></i>
-                                    <div>
-                                        <p class="font-medium">Profile</p>
-                                        <p class="text-sm text-gray-500">Edit your profile information</p>
+                            
+                            <!-- Account Section -->
+                            <div class="settings-section-item" data-section="account">
+                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('account')">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-key text-red-500 mr-3 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium">Account</p>
+                                            <p class="text-sm text-gray-500">Account security and settings</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-gray-400"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Privacy Section -->
-                        <div class="settings-section-item" data-section="privacy">
-                            <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('privacy')">
-                                <div class="flex items-center">
-                                    <i class="fas fa-lock text-blue-500 mr-3 text-xl"></i>
-                                    <div>
-                                        <p class="font-medium">Privacy</p>
-                                        <p class="text-sm text-gray-500">Manage your privacy settings</p>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Chat Section -->
+                            <div class="settings-section-item" data-section="chat">
+                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('chat')">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-comments text-indigo-500 mr-3 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium">Chat Settings</p>
+                                            <p class="text-sm text-gray-500">Configure chat preferences</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-gray-400"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Notifications Section -->
-                        <div class="settings-section-item" data-section="notifications">
-                            <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('notifications')">
-                                <div class="flex items-center">
-                                    <i class="fas fa-bell text-green-500 mr-3 text-xl"></i>
-                                    <div>
-                                        <p class="font-medium">Notifications</p>
-                                        <p class="text-sm text-gray-500">Configure notification preferences</p>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Storage Section -->
+                            <div class="settings-section-item" data-section="storage">
+                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('storage')">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-database text-gray-500 mr-3 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium">Storage & Data</p>
+                                            <p class="text-sm text-gray-500">Manage storage and data usage</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-gray-400"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Account Section -->
-                        <div class="settings-section-item" data-section="account">
-                            <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('account')">
-                                <div class="flex items-center">
-                                    <i class="fas fa-key text-red-500 mr-3 text-xl"></i>
-                                    <div>
-                                        <p class="font-medium">Account</p>
-                                        <p class="text-sm text-gray-500">Account security and settings</p>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Accessibility Section -->
+                            <div class="settings-section-item" data-section="accessibility">
+                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('accessibility')">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-universal-access text-orange-500 mr-3 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium">Accessibility</p>
+                                            <p class="text-sm text-gray-500">Accessibility and display settings</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-gray-400"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Chat Section -->
-                        <div class="settings-section-item" data-section="chat">
-                            <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('chat')">
-                                <div class="flex items-center">
-                                    <i class="fas fa-comments text-indigo-500 mr-3 text-xl"></i>
-                                    <div>
-                                        <p class="font-medium">Chat Settings</p>
-                                        <p class="text-sm text-gray-500">Configure chat preferences</p>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Language Section -->
+                            <div class="settings-section-item" data-section="language">
+                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('language')">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-language text-teal-500 mr-3 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium">Language</p>
+                                            <p class="text-sm text-gray-500">App language and region settings</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-gray-400"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Storage Section -->
-                        <div class="settings-section-item" data-section="storage">
-                            <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('storage')">
-                                <div class="flex items-center">
-                                    <i class="fas fa-database text-gray-500 mr-3 text-xl"></i>
-                                    <div>
-                                        <p class="font-medium">Storage & Data</p>
-                                        <p class="text-sm text-gray-500">Manage storage and data usage</p>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Help Section -->
+                            <div class="settings-section-item" data-section="help">
+                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('help')">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-question-circle text-yellow-500 mr-3 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium">Help Center</p>
+                                            <p class="text-sm text-gray-500">Help, support and FAQs</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-gray-400"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Accessibility Section -->
-                        <div class="settings-section-item" data-section="accessibility">
-                            <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('accessibility')">
-                                <div class="flex items-center">
-                                    <i class="fas fa-universal-access text-orange-500 mr-3 text-xl"></i>
-                                    <div>
-                                        <p class="font-medium">Accessibility</p>
-                                        <p class="text-sm text-gray-500">Accessibility and display settings</p>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- About Section -->
+                            <div class="settings-section-item" data-section="about">
+                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('about')">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-info-circle text-blue-500 mr-3 text-xl"></i>
+                                        <div>
+                                            <p class="font-medium">About</p>
+                                            <p class="text-sm text-gray-500">App information and version</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-gray-400"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Language Section -->
-                        <div class="settings-section-item" data-section="language">
-                            <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('language')">
-                                <div class="flex items-center">
-                                    <i class="fas fa-language text-teal-500 mr-3 text-xl"></i>
-                                    <div>
-                                        <p class="font-medium">Language</p>
-                                        <p class="text-sm text-gray-500">App language and region settings</p>
-                                    </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-gray-400"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Help Section -->
-                        <div class="settings-section-item" data-section="help">
-                            <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('help')">
-                                <div class="flex items-center">
-                                    <i class="fas fa-question-circle text-yellow-500 mr-3 text-xl"></i>
-                                    <div>
-                                        <p class="font-medium">Help Center</p>
-                                        <p class="text-sm text-gray-500">Help, support and FAQs</p>
-                                    </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-gray-400"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- About Section -->
-                        <div class="settings-section-item" data-section="about">
-                            <button class="settings-item w-full text-left p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-between" onclick="showSettingsSection('about')">
-                                <div class="flex items-center">
-                                    <i class="fas fa-info-circle text-blue-500 mr-3 text-xl"></i>
-                                    <div>
-                                        <p class="font-medium">About</p>
-                                        <p class="text-sm text-gray-500">App information and version</p>
-                                    </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-gray-400"></i>
-                            </button>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1284,7 +1277,7 @@
         </div>
     </div>
 
-    <!-- Profile Settings Modal -->
+    <!-- Profile Settings Modal with Cloudinary Integration -->
     <div id="profileSettingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
             <div class="kynecta-header p-6">
@@ -1298,21 +1291,22 @@
             
             <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
                 <div class="mb-6">
-                    <div class="profile-cover mb-4">
-                        <img id="profileCoverPreview" class="w-full h-full object-cover rounded-t-2xl" src="" alt="Cover">
-                        <div class="profile-cover-edit">
-                            <i class="fas fa-camera mr-2"></i>Edit Cover
+                    <div class="profile-cover mb-4 relative">
+                        <img id="profileCoverPreview" class="w-full h-32 object-cover rounded-t-2xl" src="" alt="Cover">
+                        <div class="profile-cover-edit absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer" onclick="triggerFileInput('coverPicUpload')">
+                            <i class="fas fa-camera mr-2 text-white"></i>
+                            <span class="text-white">Edit Cover</span>
                         </div>
                         <input type="file" id="coverPicUpload" accept="image/*" class="hidden">
                     </div>
                     
-                    <div class="flex justify-center -mt-12 mb-4">
-                        <div class="profile-upload">
-                            <div class="w-24 h-24 rounded-full bg-gradient-to-r from-purple-500 to-green-500 flex items-center justify-center text-white text-xl font-bold border-4 border-white">
+                    <div class="flex justify-center -mt-12 mb-4 relative">
+                        <div class="profile-upload relative">
+                            <div class="w-24 h-24 rounded-full bg-gradient-to-r from-purple-500 to-green-500 flex items-center justify-center text-white text-xl font-bold border-4 border-white overflow-hidden">
                                 <img id="profilePicPreview" class="w-full h-full rounded-full object-cover" src="" alt="Profile">
                             </div>
                             <input type="file" id="profilePictureUpload" accept="image/*" class="hidden">
-                            <div class="profile-photo-edit">
+                            <div class="profile-photo-edit absolute bottom-0 right-0 bg-purple-600 text-white p-2 rounded-full cursor-pointer hover:bg-purple-700 transition-colors" onclick="triggerFileInput('profilePictureUpload')">
                                 <i class="fas fa-camera"></i>
                             </div>
                         </div>
@@ -1619,48 +1613,49 @@
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="highContrastToggle">
-                            <span class="toggle-slider"></span>
-                        </label>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-medium">Screen Reader</p>
+                                <p class="text-sm text-gray-500">Enable screen reader support</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="screenReaderToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-medium">Reduce Animations</p>
+                                <p class="text-sm text-gray-500">Minimize motion effects</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="reduceAnimationsToggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-medium">Text-to-Speech</p>
+                                <p class="text-sm text-gray-500">Read messages aloud</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="textToSpeechToggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
                     </div>
                     
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Screen Reader</p>
-                            <p class="text-sm text-gray-500">Enable screen reader support</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="screenReaderToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
+                    <div class="mt-6">
+                        <button id="saveAccessibility" class="w-full py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
+                            Save Accessibility Settings
+                        </button>
                     </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Reduce Animations</p>
-                            <p class="text-sm text-gray-500">Minimize motion effects</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="reduceAnimationsToggle">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Text-to-Speech</p>
-                            <p class="text-sm text-gray-500">Read messages aloud</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="textToSpeechToggle">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="mt-6">
-                    <button id="saveAccessibility" class="w-full py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
-                        Save Accessibility Settings
-                    </button>
                 </div>
             </div>
         </div>
@@ -1687,97 +1682,96 @@
                         </div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="pushNotificationsToggle" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Message Notifications</p>
-                                <p class="text-sm text-gray-500">Notify on new messages</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="messageNotificationsToggle" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Group Notifications</p>
-                                <p class="text-sm text-gray-500">Notify on group activities</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="groupNotificationsToggle" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Call Notifications</p>
-                                <p class="text-sm text-gray-500">Notify on incoming calls</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="callNotificationsToggle" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Sound</p>
-                                <p class="text-sm text-gray-500">Play notification sounds</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="soundToggle" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Vibration</p>
-                                <p class="text-sm text-gray-500">Vibrate on notifications</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="vibrationToggle" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Do Not Disturb</p>
-                                <p class="text-sm text-gray-500">Silence notifications during set hours</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="doNotDisturbToggle">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div id="doNotDisturbSchedule" class="hidden space-y-2">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="font-medium">Start Time</p>
-                                </div>
-                                <input type="time" id="dndStartTime" class="p-2 border border-gray-300 rounded-lg" value="22:00">
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="font-medium">End Time</p>
-                                </div>
-                                <input type="time" id="dndEndTime" class="p-2 border border-gray-300 rounded-lg" value="07:00">
-                            </div>
-                        </div>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
                     
-                    <div class="mt-6">
-                        <button id="saveNotifications" class="w-full py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
-                            Save Notification Settings
-                        </button>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-medium">Message Notifications</p>
+                            <p class="text-sm text-gray-500">Notify on new messages</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="messageNotificationsToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-medium">Group Notifications</p>
+                            <p class="text-sm text-gray-500">Notify on group activities</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="groupNotificationsToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-medium">Call Notifications</p>
+                            <p class="text-sm text-gray-500">Notify on incoming calls</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="callNotificationsToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-medium">Sound</p>
+                            <p class="text-sm text-gray-500">Play notification sounds</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="soundToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-medium">Vibration</p>
+                            <p class="text-sm text-gray-500">Vibrate on notifications</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="vibrationToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-medium">Do Not Disturb</p>
+                            <p class="text-sm text-gray-500">Silence notifications during set hours</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="doNotDisturbToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div id="doNotDisturbSchedule" class="hidden space-y-2">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-medium">Start Time</p>
+                            </div>
+                            <input type="time" id="dndStartTime" class="p-2 border border-gray-300 rounded-lg" value="22:00">
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-medium">End Time</p>
+                            </div>
+                            <input type="time" id="dndEndTime" class="p-2 border border-gray-300 rounded-lg" value="07:00">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <button id="saveNotifications" class="w-full py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
+                        Save Notification Settings
+                    </button>
                 </div>
             </div>
         </div>
@@ -2990,6 +2984,7 @@
     <script src="call.js"></script>
     <script src="status.js"></script>
     <script src="groups.js"></script>
+    <script src="settings.js"></script>
     
 
 </body>

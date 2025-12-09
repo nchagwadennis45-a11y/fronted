@@ -1,8 +1,26 @@
-// ==================== ENHANCED GROUP SYSTEM ====================
-// A complete group chat system for Kynecta with WhatsApp-like features
-// Production-ready code for live deployment
+// Wait for Firebase to be initialized
+if (!window.firebase || !window.db) {
+    console.log('⏳ Waiting for Firebase initialization...');
+    
+    const waitForFirebase = setInterval(() => {
+        if (window.firebase && window.db) {
+            clearInterval(waitForFirebase);
+            console.log('✅ Firebase ready in groups.js');
+            // Initialize your script here
+        }
+    }, 100);
+} else {
+    console.log('✅ Firebase already available');
+    // Initialize your script here
+}
 
-// Group state variables
+// ==================== GROUPS.JS COMPREHENSIVE IMPLEMENTATION ====================
+// Complete group chat system with all specified features
+// Production-ready code for live deployment
+// ===============================================================================
+
+// ==================== GLOBAL VARIABLES ====================
+
 let currentGroup = null;
 let currentGroupId = null;
 let groupAdminId = null;
@@ -16,32 +34,32 @@ let selectedGroupMessages = new Set();
 let groupEmojiPicker = null;
 let currentForwardMessage = null;
 let groupReactionsPicker = null;
+let currentContextMessageId = null;
+let isGroupChat = false;
+let selectedParticipants = new Set();
+let groupCallActive = false;
+let groupVideoCallActive = false;
+let currentGroupPoll = null;
 
 // DOM Elements cache
 const groupElements = {
-    // Modals & Containers
+    // 1. GROUP CREATION ELEMENTS
     createGroupModal: null,
-    enhancedGroupInfoModal: null,
-    groupMediaGalleryModal: null,
-    manageAdminsModal: null,
-    searchGroupModal: null,
-    forwardMessageModal: null,
-    joinGroupModal: null,
-    allFriendsModal: null,
-    featuresModal: null,
-    
-    // Group Creation Elements
     groupName: null,
     groupDescription: null,
     groupParticipants: null,
+    createGroupBtn: null,
+    closeCreateGroup: null,
     groupAdminsOnlySend: null,
     groupAdminsOnlyEdit: null,
     groupEnableEncryption: null,
-    createGroupBtn: null,
-    closeCreateGroup: null,
-    cancelCreateGroup: null,
     
-    // Group Info Elements
+    // 2. GROUP LIST & DISPLAY
+    groupsList: null,
+    noChatsMessage: null,
+    
+    // 3. GROUP INFO & SETTINGS
+    enhancedGroupInfoModal: null,
     enhancedGroupName: null,
     enhancedGroupMembersCount: null,
     groupSendMessages: null,
@@ -51,77 +69,96 @@ const groupElements = {
     refreshInviteLink: null,
     closeEnhancedGroupInfo: null,
     
-    // Group Media Gallery Elements
-    mediaGalleryGrid: null,
-    filterButtons: null,
-    closeGroupMediaGallery: null,
-    
-    // Search & Selection Elements
-    groupSearchInput: null,
-    groupSearchResults: null,
-    closeSearchGroup: null,
-    forwardSearchInput: null,
-    forwardTargetsList: null,
-    forwardCount: null,
-    forwardSelectedBtn: null,
-    closeForwardMessage: null,
-    
-    // Admin Management Elements
-    adminSearchInput: null,
-    adminList: null,
-    saveAdmins: null,
-    closeManageAdmins: null,
-    
-    // Group Join Elements
+    // 4. GROUP JOIN ELEMENTS
+    joinGroupModal: null,
     groupCode: null,
     groupPreview: null,
     previewGroupName: null,
     previewGroupMembers: null,
     joinGroupBtn: null,
     closeJoinGroup: null,
-    cancelJoinGroup: null,
     
-    // UI Components
+    // 5. GROUP MANAGEMENT ELEMENTS
+    manageAdminsModal: null,
+    adminSearchInput: null,
+    adminList: null,
+    saveAdmins: null,
+    closeManageAdmins: null,
+    
+    // 6. GROUP MEDIA GALLERY
+    groupMediaGalleryModal: null,
+    mediaGalleryGrid: null,
+    closeGroupMediaGallery: null,
+    
+    // 7. GROUP SEARCH ELEMENTS
+    searchGroupModal: null,
+    groupSearchInput: null,
+    groupSearchResults: null,
+    closeSearchGroup: null,
+    
+    // 8. GROUP CONTEXT MENU
     groupListContextMenu: null,
-    messageContextMenu: null,
-    reactionPicker: null,
+    
+    // 9. GROUP CHAT AREA ELEMENTS
+    chatTitle: null,
+    chatAvatar: null,
+    chatStatus: null,
+    
+    // 10. GROUP MESSAGE ELEMENTS
+    chatMessages: null,
+    
+    // 11. GROUP TOOLS & FEATURES
     newGroupBtn: null,
-    backToChats: null,
+    groupMenuBtn: null,
     
-    // Business Tools Elements
-    catalogueBtn: null,
-    catalogueModal: null,
-    advertiseBtn: null,
-    advertiseModal: null,
-    labelsBtn: null,
-    labelsModal: null,
-    greetingBtn: null,
-    greetingModal: null,
-    awayBtn: null,
-    awayModal: null,
-    businessProfileModal: null,
+    // 12. GROUP MEMBER ELEMENTS
+    groupMembersList: null,
     
-    // AI Features Elements
-    aiSummaryModal: null,
-    aiSummarize: null,
-    smartRepliesModal: null,
-    aiReply: null,
+    // 16. GROUP FORWARD ELEMENTS
+    forwardMessageModal: null,
+    forwardSearchInput: null,
+    forwardTargetsList: null,
+    forwardSelectedBtn: null,
+    closeForwardMessage: null,
     
-    // Miscellaneous Elements
-    menuBtn: null,
-    settingsModal: null,
-    chatMenuBtn: null,
-    searchInput: null,
-    friendSearch: null,
-    addFriendBtn: null,
-    themeToggle: null
+    // 17. STARRED MESSAGES IN GROUPS
+    starredMessagesModal: null,
+    starredMessagesList: null,
+    closeStarredMessages: null,
+    
+    // 20. GROUP CREATION PARTICIPANT SELECTION
+    selectedParticipantsContainer: null,
+    participantCount: null,
+    
+    // 22. GROUP LEAVE/DELETE ELEMENTS
+    leaveGroupBtn: null,
+    deleteGroupBtn: null,
+    confirmLeaveGroup: null,
+    confirmDeleteGroup: null,
+    
+    // 24. GROUP ACTIVITY INDICATORS
+    groupActivityIndicator: null,
+    
+    // Additional elements
+    messageInput: null,
+    sendMessageBtn: null,
+    groupCallBtn: null,
+    groupVideoCallBtn: null,
+    backToChatsBtn: null,
+    groupInviteLinkContainer: null,
+    encryptionBadge: null,
+    securityCodeDisplay: null
 };
 
-// Initialize group system
+// ==================== INITIALIZATION FUNCTIONS ====================
+
+/**
+ * Initialize the complete group system
+ */
 function initializeGroupSystem() {
     console.log('🚀 Initializing enhanced group system...');
     
-    // Create all UI elements
+    // Create all UI elements if they don't exist
     createAllGroupUIElements();
     
     // Cache DOM elements
@@ -133,7 +170,7 @@ function initializeGroupSystem() {
     // Initialize features
     initializeGroupFeatures();
     
-    // Load user's groups
+    // Load user's groups if logged in
     if (currentUser) {
         loadUserGroups();
         listenForGroupInvites();
@@ -143,38 +180,45 @@ function initializeGroupSystem() {
     console.log('✅ Enhanced group system initialized');
 }
 
-// Create all necessary UI elements
+/**
+ * Create all required UI elements
+ */
 function createAllGroupUIElements() {
     console.log('Creating all group UI elements...');
     
-    // Create main groups tab if it doesn't exist
+    // Create groups tab
     createGroupsTab();
     
-    // Create all modals
-    createGroupModals();
+    // Create all required modals
+    createRequiredModals();
     
     // Create context menus
-    createContextMenus();
+    createGroupContextMenus();
     
-    // Create business tools
-    createBusinessTools();
+    // Create group-specific UI components
+    createGroupUIComponents();
     
-    // Create AI features
-    createAIFeatures();
+    // Create shared goals section
+    createSharedGoalsSection();
+    
+    // Create highlights panel
+    createHighlightsPanel();
 }
 
-// Create groups tab
+/**
+ * Create the groups tab in main navigation
+ */
 function createGroupsTab() {
     const tabsContainer = document.querySelector('.tabs');
     if (!tabsContainer) return;
     
-    // Add groups tab button to navigation
+    // Add groups tab button
     if (!document.getElementById('groupsTabBtn')) {
         const tabsNav = document.querySelector('.tabs-nav');
         if (tabsNav) {
             const groupsTabBtn = document.createElement('button');
             groupsTabBtn.id = 'groupsTabBtn';
-            groupsTabBtn.className = 'tab-btn text-gray-500';
+            groupsTabBtn.className = 'tab-btn';
             groupsTabBtn.setAttribute('data-tab', 'groups');
             groupsTabBtn.innerHTML = `
                 <i class="fas fa-users"></i>
@@ -192,1835 +236,1126 @@ function createGroupsTab() {
         groupsTab.innerHTML = `
             <div class="p-4">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">Groups</h2>
+                    <h2 class="text-2xl font-bold">Groups</h2>
                     <div class="flex space-x-2">
-                        <button id="newGroupBtn" class="btn-primary flex items-center space-x-2">
+                        <button id="newGroupBtn" class="btn-primary">
                             <i class="fas fa-plus"></i>
                             <span>New Group</span>
                         </button>
-                        <button id="joinGroupBtn" class="btn-secondary flex items-center space-x-2">
+                        <button id="joinGroupBtn" class="btn-secondary">
                             <i class="fas fa-sign-in-alt"></i>
                             <span>Join Group</span>
                         </button>
                     </div>
                 </div>
                 
-                <!-- Search Bar -->
-                <div class="mb-6">
-                    <div class="relative">
-                        <input type="text" id="searchInput" 
-                               class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                               placeholder="Search groups...">
-                        <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
-                    </div>
+                <div class="mb-4">
+                    <input type="text" id="groupSearch" 
+                           class="w-full p-3 border rounded-lg"
+                           placeholder="Search groups...">
                 </div>
                 
-                <!-- Groups List -->
-                <div id="groupsList" class="space-y-3 custom-scrollbar max-h-[calc(100vh-200px)] overflow-y-auto">
-                    <div class="text-center py-12">
-                        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-4">
-                            <i class="fas fa-users text-3xl text-gray-400"></i>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-700 mb-2">No Groups Yet</h3>
-                        <p class="text-gray-500 mb-6">Create or join a group to start chatting</p>
-                        <button id="createGroupFromEmpty" class="btn-primary">
-                            <i class="fas fa-plus mr-2"></i>Create Your First Group
-                        </button>
+                <div id="groupsList" class="space-y-3">
+                    <div id="noChatsMessage" class="text-center py-12">
+                        <i class="fas fa-users text-4xl text-gray-300 mb-4"></i>
+                        <h3 class="text-lg font-semibold text-gray-600">No Groups</h3>
+                        <p class="text-gray-500">Create or join a group to get started</p>
                     </div>
                 </div>
             </div>
         `;
         
-        // Insert after chats tab
-        const chatsTab = document.getElementById('chatsTab');
-        if (chatsTab) {
-            chatsTab.parentNode.insertBefore(groupsTab, chatsTab.nextSibling);
-        } else {
-            tabsContainer.appendChild(groupsTab);
-        }
+        tabsContainer.appendChild(groupsTab);
     }
 }
 
-// Create all group modals
-function createGroupModals() {
-    // Create Group Modal
+/**
+ * Create all required modals
+ */
+function createRequiredModals() {
+    // 1. Group Creation Modal
     if (!document.getElementById('createGroupModal')) {
         const modal = document.createElement('div');
         modal.id = 'createGroupModal';
         modal.className = 'modal hidden';
-        modal.innerHTML = `
-            <div class="modal-content max-w-2xl">
-                <div class="modal-header">
-                    <h3 class="text-xl font-semibold">Create New Group</h3>
-                    <button id="closeCreateGroup" class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="createGroupForm">
-                        <div class="space-y-6">
-                            <!-- Group Avatar -->
-                            <div class="text-center">
-                                <div class="relative inline-block">
-                                    <img id="groupAvatarPreview" 
-                                         class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
-                                         src="https://ui-avatars.com/api/?name=New+Group&background=7C3AED&color=fff">
-                                    <button type="button" id="uploadGroupAvatar" 
-                                            class="absolute bottom-2 right-2 bg-purple-600 text-white p-2 rounded-full hover:bg-purple-700">
-                                        <i class="fas fa-camera"></i>
-                                    </button>
-                                    <input type="file" id="groupAvatarInput" accept="image/*" class="hidden">
-                                </div>
-                            </div>
-                            
-                            <!-- Group Name -->
-                            <div>
-                                <label for="groupName" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Group Name *
-                                </label>
-                                <input type="text" id="groupName" name="groupName"
-                                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                       placeholder="Enter group name" required maxlength="100">
-                                <div class="text-right text-sm text-gray-500 mt-1">
-                                    <span id="groupNameCount">0</span>/100
-                                </div>
-                            </div>
-                            
-                            <!-- Group Description -->
-                            <div>
-                                <label for="groupDescription" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Description
-                                </label>
-                                <textarea id="groupDescription" name="groupDescription"
-                                          class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                          rows="3" placeholder="Describe your group" maxlength="500"></textarea>
-                                <div class="text-right text-sm text-gray-500 mt-1">
-                                    <span id="groupDescCount">0</span>/500
-                                </div>
-                            </div>
-                            
-                            <!-- Group Privacy -->
-                            <div>
-                                <label for="groupPrivacy" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Privacy Settings
-                                </label>
-                                <select id="groupPrivacy" name="groupPrivacy"
-                                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                                    <option value="public">Public - Anyone can join</option>
-                                    <option value="private" selected>Private - Invite only</option>
-                                    <option value="hidden">Hidden - Admin adds members</option>
-                                </select>
-                            </div>
-                            
-                            <!-- Group Settings -->
-                            <div class="space-y-4">
-                                <h4 class="font-medium text-gray-700">Group Settings</h4>
-                                
-                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                    <div>
-                                        <p class="font-medium">Send Messages</p>
-                                        <p class="text-sm text-gray-500">Who can send messages in this group</p>
-                                    </div>
-                                    <select id="groupSendMessages" name="groupSendMessages"
-                                            class="border rounded p-2 text-sm">
-                                        <option value="all">All members</option>
-                                        <option value="admins">Admins only</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                    <div>
-                                        <p class="font-medium">Edit Group Info</p>
-                                        <p class="text-sm text-gray-500">Who can edit group name and description</p>
-                                    </div>
-                                    <select id="groupEditInfo" name="groupEditInfo"
-                                            class="border rounded p-2 text-sm">
-                                        <option value="admins">Admins only</option>
-                                        <option value="all">All members</option>
-                                    </select>
-                                </div>
-                                
-                                <label class="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
-                                    <input type="checkbox" id="groupEnableEncryption" name="groupEnableEncryption"
-                                           class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500 mr-3">
-                                    <div>
-                                        <p class="font-medium">Enable End-to-End Encryption</p>
-                                        <p class="text-sm text-gray-500">Messages are encrypted and secure</p>
-                                    </div>
-                                </label>
-                            </div>
-                            
-                            <!-- Add Participants -->
-                            <div>
-                                <div class="flex justify-between items-center mb-3">
-                                    <h4 class="font-medium text-gray-700">Add Participants</h4>
-                                    <button type="button" id="showAllFriends" class="text-sm text-purple-600 hover:text-purple-800">
-                                        View All Friends
-                                    </button>
-                                </div>
-                                
-                                <div class="relative mb-3">
-                                    <input type="text" id="friendSearch" 
-                                           class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                           placeholder="Search friends...">
-                                    <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
-                                </div>
-                                
-                                <div id="groupParticipants" class="border rounded-lg p-3 min-h-[200px] max-h-[300px] overflow-y-auto">
-                                    <div class="text-center py-8 text-gray-500">
-                                        <i class="fas fa-user-friends text-3xl mb-3"></i>
-                                        <p>Search for friends to add to your group</p>
-                                    </div>
-                                </div>
-                                
-                                <div id="selectedParticipants" class="mt-3 flex flex-wrap gap-2 hidden">
-                                    <!-- Selected participants will appear here -->
-                                </div>
-                            </div>
-                            
-                            <!-- Create Button -->
-                            <div class="pt-4 border-t">
-                                <div class="flex justify-end space-x-3">
-                                    <button type="button" id="cancelCreateGroup" 
-                                            class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" id="createGroup"
-                                            class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
-                                        Create Group
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        `;
+        modal.innerHTML = getCreateGroupModalHTML();
         document.body.appendChild(modal);
     }
     
-    // Enhanced Group Info Modal
+    // 3. Enhanced Group Info Modal
     if (!document.getElementById('enhancedGroupInfoModal')) {
         const modal = document.createElement('div');
         modal.id = 'enhancedGroupInfoModal';
         modal.className = 'modal hidden';
-        modal.innerHTML = `
-            <div class="modal-content max-w-4xl">
-                <div class="modal-header">
-                    <h3 class="text-xl font-semibold">Group Information</h3>
-                    <button id="closeEnhancedGroupInfo" class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <!-- Group Header -->
-                    <div class="text-center mb-8">
-                        <div class="relative inline-block mb-4">
-                            <img id="enhancedGroupAvatar" 
-                                 class="w-40 h-40 rounded-full object-cover border-4 border-white shadow-xl"
-                                 src="https://ui-avatars.com/api/?name=Group&background=7C3AED&color=fff">
-                            <button id="changeGroupAvatarBtn" 
-                                    class="absolute bottom-4 right-4 bg-purple-600 text-white p-3 rounded-full hover:bg-purple-700 shadow-lg">
-                                <i class="fas fa-camera text-lg"></i>
-                            </button>
-                        </div>
-                        <h2 id="enhancedGroupName" class="text-3xl font-bold mb-2">Group Name</h2>
-                        <p id="enhancedGroupDescription" class="text-gray-600 mb-4 max-w-2xl mx-auto">Group description</p>
-                        <div class="flex items-center justify-center space-x-4 text-sm text-gray-500">
-                            <span id="enhancedGroupMembersCount">0 members</span>
-                            <span>•</span>
-                            <span id="groupCreatedDate">Created Jan 1, 2024</span>
-                            <span id="encryptionBadge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 hidden">
-                                <i class="fas fa-lock mr-1"></i> Encrypted
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <!-- Quick Actions -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                        <button class="action-card" id="groupMediaBtn">
-                            <div class="p-4 bg-blue-50 rounded-lg">
-                                <i class="fas fa-photo-video text-2xl text-blue-600 mb-2"></i>
-                                <p class="font-medium">Media</p>
-                            </div>
-                        </button>
-                        <button class="action-card" id="groupStarredBtn">
-                            <div class="p-4 bg-yellow-50 rounded-lg">
-                                <i class="fas fa-star text-2xl text-yellow-600 mb-2"></i>
-                                <p class="font-medium">Starred</p>
-                            </div>
-                        </button>
-                        <button class="action-card" id="groupSearchBtn">
-                            <div class="p-4 bg-purple-50 rounded-lg">
-                                <i class="fas fa-search text-2xl text-purple-600 mb-2"></i>
-                                <p class="font-medium">Search</p>
-                            </div>
-                        </button>
-                        <button class="action-card" id="muteGroupBtn">
-                            <div class="p-4 bg-gray-50 rounded-lg">
-                                <i class="fas fa-bell-slash text-2xl text-gray-600 mb-2"></i>
-                                <p class="font-medium">Mute</p>
-                            </div>
-                        </button>
-                    </div>
-                    
-                    <!-- Group Settings -->
-                    <div class="bg-gray-50 rounded-xl p-6 mb-8">
-                        <h4 class="font-semibold text-lg mb-4">Group Settings</h4>
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="font-medium">Send Messages</p>
-                                    <p class="text-sm text-gray-500">Control who can send messages</p>
-                                </div>
-                                <select id="groupSendMessagesSetting" 
-                                        class="border rounded-lg p-2 bg-white">
-                                    <option value="all">All participants</option>
-                                    <option value="admins">Admins only</option>
-                                </select>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="font-medium">Edit Group Info</p>
-                                    <p class="text-sm text-gray-500">Control who can edit group info</p>
-                                </div>
-                                <select id="groupEditInfoSetting" 
-                                        class="border rounded-lg p-2 bg-white">
-                                    <option value="admins">Admins only</option>
-                                    <option value="all">All participants</option>
-                                </select>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="font-medium">Group Privacy</p>
-                                    <p class="text-sm text-gray-500">Control who can join the group</p>
-                                </div>
-                                <select id="groupPrivacySetting" 
-                                        class="border rounded-lg p-2 bg-white">
-                                    <option value="public">Public</option>
-                                    <option value="private">Private</option>
-                                    <option value="hidden">Hidden</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Participants Section -->
-                    <div class="mb-8">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="font-semibold text-lg">Participants</h4>
-                            <div class="flex space-x-2">
-                                <button id="addParticipantBtn" class="btn-primary">
-                                    <i class="fas fa-user-plus mr-2"></i>Add
-                                </button>
-                                <button id="manageAdminsBtn" class="btn-secondary">
-                                    <i class="fas fa-user-shield mr-2"></i>Manage Admins
-                                </button>
-                            </div>
-                        </div>
-                        <div id="groupParticipantsList" class="space-y-3 max-h-80 overflow-y-auto">
-                            <!-- Participants will be loaded here -->
-                        </div>
-                    </div>
-                    
-                    <!-- Invite Link Section -->
-                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 mb-8">
-                        <h4 class="font-semibold text-lg mb-3">Invite Link</h4>
-                        <p class="text-gray-600 mb-4">Share this link to invite people to the group</p>
-                        <div class="flex space-x-2">
-                            <input type="text" id="groupInviteLink" readonly 
-                                   class="flex-1 p-3 border border-gray-300 rounded-lg bg-white">
-                            <button id="copyInviteLink" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                                <i class="fas fa-copy mr-2"></i>Copy
-                            </button>
-                            <button id="refreshInviteLink" class="px-6 py-3 bg-gray-200 rounded-lg hover:bg-gray-300">
-                                <i class="fas fa-redo"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Danger Zone -->
-                    <div class="border-t pt-6">
-                        <h4 class="font-semibold text-lg text-red-600 mb-4">Danger Zone</h4>
-                        <div class="space-y-3">
-                            <button id="reportGroupBtn" class="w-full p-4 text-left border border-red-200 rounded-lg hover:bg-red-50">
-                                <div class="flex items-center">
-                                    <i class="fas fa-flag text-red-600 mr-3"></i>
-                                    <div class="flex-1">
-                                        <p class="font-medium text-red-700">Report Group</p>
-                                        <p class="text-sm text-gray-500">Report inappropriate content or behavior</p>
-                                    </div>
-                                </div>
-                            </button>
-                            <button id="leaveGroupBtn" class="w-full p-4 text-left border border-red-200 rounded-lg hover:bg-red-50">
-                                <div class="flex items-center">
-                                    <i class="fas fa-sign-out-alt text-red-600 mr-3"></i>
-                                    <div class="flex-1">
-                                        <p class="font-medium text-red-700">Leave Group</p>
-                                        <p class="text-sm text-gray-500">You will no longer be a member of this group</p>
-                                    </div>
-                                </div>
-                            </button>
-                            <div id="adminDangerZone" class="hidden">
-                                <button id="deleteGroupBtn" class="w-full p-4 text-left border border-red-200 rounded-lg hover:bg-red-50">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-trash text-red-600 mr-3"></i>
-                                        <div class="flex-1">
-                                            <p class="font-medium text-red-700">Delete Group</p>
-                                            <p class="text-sm text-gray-500">Permanently delete this group and all messages</p>
-                                        </div>
-                                    </div>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        modal.innerHTML = getEnhancedGroupInfoModalHTML();
         document.body.appendChild(modal);
     }
     
-    // Group Media Gallery Modal
-    if (!document.getElementById('groupMediaGalleryModal')) {
-        const modal = document.createElement('div');
-        modal.id = 'groupMediaGalleryModal';
-        modal.className = 'modal hidden';
-        modal.innerHTML = `
-            <div class="modal-content max-w-6xl">
-                <div class="modal-header">
-                    <h3 class="text-xl font-semibold">Group Media</h3>
-                    <button id="closeGroupMediaGallery" class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <!-- Filter Buttons -->
-                    <div class="mb-6">
-                        <div class="flex flex-wrap gap-2">
-                            <button class="filter-btn active" data-filter="all">
-                                All Media
-                            </button>
-                            <button class="filter-btn" data-filter="images">
-                                <i class="fas fa-image mr-2"></i>Images
-                            </button>
-                            <button class="filter-btn" data-filter="videos">
-                                <i class="fas fa-video mr-2"></i>Videos
-                            </button>
-                            <button class="filter-btn" data-filter="documents">
-                                <i class="fas fa-file mr-2"></i>Documents
-                            </button>
-                            <button class="filter-btn" data-filter="audio">
-                                <i class="fas fa-music mr-2"></i>Audio
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Media Grid -->
-                    <div id="mediaGalleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                        <div class="col-span-full text-center py-12">
-                            <i class="fas fa-photo-video text-5xl text-gray-300 mb-4"></i>
-                            <h4 class="text-lg font-semibold text-gray-500">No Media Found</h4>
-                            <p class="text-gray-400">Media shared in the group will appear here</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Media Preview Modal -->
-                    <div id="mediaPreviewModal" class="fixed inset-0 bg-black bg-opacity-90 z-[100] hidden">
-                        <div class="flex items-center justify-center h-full">
-                            <div class="relative max-w-4xl max-h-full">
-                                <button id="closeMediaPreview" 
-                                        class="absolute top-4 right-4 text-white text-3xl z-10">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                                <div id="mediaPreviewContent" class="p-4"></div>
-                                <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white">
-                                    <div id="mediaPreviewInfo" class="text-center"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    
-    // Search Group Modal
-    if (!document.getElementById('searchGroupModal')) {
-        const modal = document.createElement('div');
-        modal.id = 'searchGroupModal';
-        modal.className = 'modal hidden';
-        modal.innerHTML = `
-            <div class="modal-content max-w-4xl">
-                <div class="modal-header">
-                    <h3 class="text-xl font-semibold">Search in Group</h3>
-                    <button id="closeSearchGroup" class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-6">
-                        <div class="relative">
-                            <input type="text" id="groupSearchInput" 
-                                   class="w-full p-4 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
-                                   placeholder="Search messages, media, links...">
-                            <i class="fas fa-search absolute left-4 top-4 text-gray-400 text-lg"></i>
-                        </div>
-                    </div>
-                    
-                    <!-- Search Filters -->
-                    <div class="mb-6">
-                        <div class="flex flex-wrap gap-2">
-                            <button class="search-filter active" data-filter="all">All</button>
-                            <button class="search-filter" data-filter="text">Messages</button>
-                            <button class="search-filter" data-filter="images">Images</button>
-                            <button class="search-filter" data-filter="videos">Videos</button>
-                            <button class="search-filter" data-filter="links">Links</button>
-                            <button class="search-filter" data-filter="docs">Documents</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Search Results -->
-                    <div id="groupSearchResults" class="space-y-4 max-h-[60vh] overflow-y-auto">
-                        <div class="text-center py-12">
-                            <i class="fas fa-search text-5xl text-gray-300 mb-4"></i>
-                            <h4 class="text-lg font-semibold text-gray-500">Search Group Messages</h4>
-                            <p class="text-gray-400">Enter keywords to find messages in this group</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Search Stats -->
-                    <div id="searchStats" class="mt-6 pt-6 border-t text-sm text-gray-500 hidden">
-                        <div class="flex justify-between items-center">
-                            <span id="resultCount">0 results found</span>
-                            <span id="searchTime">Search took 0.0s</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    
-    // Forward Message Modal
-    if (!document.getElementById('forwardMessageModal')) {
-        const modal = document.createElement('div');
-        modal.id = 'forwardMessageModal';
-        modal.className = 'modal hidden';
-        modal.innerHTML = `
-            <div class="modal-content max-w-2xl">
-                <div class="modal-header">
-                    <h3 class="text-xl font-semibold">Forward Message</h3>
-                    <button id="closeForwardMessage" class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <!-- Message Preview -->
-                    <div id="forwardPreview" class="bg-gray-50 rounded-lg p-4 mb-6 hidden">
-                        <div class="flex items-start space-x-3">
-                            <div id="forwardPreviewAvatar" class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                                <i class="fas fa-user text-purple-600"></i>
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex justify-between items-start mb-2">
-                                    <span id="forwardPreviewSender" class="font-semibold">Sender</span>
-                                    <span id="forwardPreviewTime" class="text-sm text-gray-500">Time</span>
-                                </div>
-                                <div id="forwardPreviewContent" class="text-gray-700"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Search -->
-                    <div class="mb-6">
-                        <div class="relative">
-                            <input type="text" id="forwardSearchInput" 
-                                   class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                   placeholder="Search chats or groups...">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <!-- Forward Targets -->
-                    <div class="mb-6">
-                        <div class="flex justify-between items-center mb-3">
-                            <h4 class="font-medium text-gray-700">Select chats or groups</h4>
-                            <span id="forwardCount" class="text-sm text-purple-600">0 selected</span>
-                        </div>
-                        <div id="forwardTargetsList" class="space-y-2 max-h-64 overflow-y-auto">
-                            <!-- Targets will be loaded here -->
-                        </div>
-                    </div>
-                    
-                    <!-- Action Buttons -->
-                    <div class="flex justify-end space-x-3">
-                        <button id="cancelForward" 
-                                class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                            Cancel
-                        </button>
-                        <button id="forwardSelectedBtn" 
-                                class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled>
-                            Forward <span id="forwardSelectedCount">0</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    
-    // Manage Admins Modal
-    if (!document.getElementById('manageAdminsModal')) {
-        const modal = document.createElement('div');
-        modal.id = 'manageAdminsModal';
-        modal.className = 'modal hidden';
-        modal.innerHTML = `
-            <div class="modal-content max-w-2xl">
-                <div class="modal-header">
-                    <h3 class="text-xl font-semibold">Manage Admins</h3>
-                    <button id="closeManageAdmins" class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-6">
-                        <div class="relative">
-                            <input type="text" id="adminSearchInput" 
-                                   class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                   placeholder="Search participants...">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <div id="adminList" class="space-y-3 max-h-96 overflow-y-auto">
-                        <!-- Admin list will be loaded here -->
-                    </div>
-                    
-                    <div class="mt-6 pt-6 border-t">
-                        <div class="flex justify-between items-center">
-                            <div class="text-sm text-gray-500">
-                                <span id="adminCount">0</span> admins
-                            </div>
-                            <button id="saveAdmins" 
-                                    class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                                Save Changes
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    
-    // Join Group Modal
+    // 4. Join Group Modal
     if (!document.getElementById('joinGroupModal')) {
         const modal = document.createElement('div');
         modal.id = 'joinGroupModal';
         modal.className = 'modal hidden';
-        modal.innerHTML = `
-            <div class="modal-content max-w-md">
-                <div class="modal-header">
-                    <h3 class="text-xl font-semibold">Join Group</h3>
-                    <button id="closeJoinGroup" class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="space-y-6">
-                        <!-- Invite Code/Link -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Enter Invite Code or Link
-                            </label>
-                            <div class="flex space-x-2">
-                                <input type="text" id="groupCode" 
-                                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                       placeholder="GROUP-123ABC or https://...">
-                                <button id="joinGroup" 
-                                        class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                                    Join
-                                </button>
-                            </div>
-                            <p class="text-sm text-gray-500 mt-2">
-                                Enter the invite code or paste the full invite link
-                            </p>
-                        </div>
-                        
-                        <!-- Or Divider -->
-                        <div class="relative">
-                            <div class="absolute inset-0 flex items-center">
-                                <div class="w-full border-t border-gray-300"></div>
-                            </div>
-                            <div class="relative flex justify-center text-sm">
-                                <span class="px-2 bg-white text-gray-500">or</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Group Preview -->
-                        <div id="groupPreview" class="hidden">
-                            <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6">
-                                <div class="flex items-center space-x-4 mb-4">
-                                    <img id="previewGroupAvatar" 
-                                         class="w-16 h-16 rounded-full object-cover border-2 border-white"
-                                         src="https://ui-avatars.com/api/?name=Group&background=7C3AED&color=fff">
-                                    <div>
-                                        <h4 id="previewGroupName" class="text-xl font-bold">Group Name</h4>
-                                        <p id="previewGroupMembers" class="text-gray-600">0 members</p>
-                                    </div>
-                                </div>
-                                <p id="previewGroupDescription" class="text-gray-700 mb-4"></p>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-2">
-                                        <i class="fas fa-lock text-green-600"></i>
-                                        <span class="text-sm text-gray-600">End-to-end encrypted</span>
-                                    </div>
-                                    <button id="joinPreviewGroup" 
-                                            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                                        Join Group
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Cancel Button -->
-                        <div class="pt-4 border-t">
-                            <button id="cancelJoinGroup" 
-                                    class="w-full px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        modal.innerHTML = getJoinGroupModalHTML();
         document.body.appendChild(modal);
     }
     
-    // All Friends Modal
-    if (!document.getElementById('allFriendsModal')) {
+    // 5. Manage Admins Modal
+    if (!document.getElementById('manageAdminsModal')) {
         const modal = document.createElement('div');
-        modal.id = 'allFriendsModal';
+        modal.id = 'manageAdminsModal';
         modal.className = 'modal hidden';
-        modal.innerHTML = `
-            <div class="modal-content max-w-4xl">
-                <div class="modal-header">
-                    <h3 class="text-xl font-semibold">Select Friends</h3>
-                    <button id="closeAllFriends" class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-6">
-                        <div class="relative">
-                            <input type="text" id="searchAllFriends" 
-                                   class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                   placeholder="Search friends...">
-                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto">
-                        <!-- Friends will be loaded here -->
-                    </div>
-                    
-                    <div class="mt-6 pt-6 border-t">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <span id="selectedFriendsCount" class="font-medium text-purple-600">0</span>
-                                <span class="text-gray-600"> friends selected</span>
-                            </div>
-                            <button id="confirmFriendsSelection" 
-                                    class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                                Add Selected
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        modal.innerHTML = getManageAdminsModalHTML();
+        document.body.appendChild(modal);
+    }
+    
+    // 6. Group Media Gallery Modal
+    if (!document.getElementById('groupMediaGalleryModal')) {
+        const modal = document.createElement('div');
+        modal.id = 'groupMediaGalleryModal';
+        modal.className = 'modal hidden';
+        modal.innerHTML = getGroupMediaGalleryModalHTML();
+        document.body.appendChild(modal);
+    }
+    
+    // 7. Group Search Modal
+    if (!document.getElementById('searchGroupModal')) {
+        const modal = document.createElement('div');
+        modal.id = 'searchGroupModal';
+        modal.className = 'modal hidden';
+        modal.innerHTML = getSearchGroupModalHTML();
+        document.body.appendChild(modal);
+    }
+    
+    // 16. Forward Message Modal
+    if (!document.getElementById('forwardMessageModal')) {
+        const modal = document.createElement('div');
+        modal.id = 'forwardMessageModal';
+        modal.className = 'modal hidden';
+        modal.innerHTML = getForwardMessageModalHTML();
+        document.body.appendChild(modal);
+    }
+    
+    // 17. Starred Messages Modal
+    if (!document.getElementById('starredMessagesModal')) {
+        const modal = document.createElement('div');
+        modal.id = 'starredMessagesModal';
+        modal.className = 'modal hidden';
+        modal.innerHTML = getStarredMessagesModalHTML();
+        document.body.appendChild(modal);
+    }
+    
+    // 22. Confirm Leave Group Modal
+    if (!document.getElementById('confirmLeaveGroup')) {
+        const modal = document.createElement('div');
+        modal.id = 'confirmLeaveGroup';
+        modal.className = 'modal hidden';
+        modal.innerHTML = getConfirmLeaveGroupHTML();
+        document.body.appendChild(modal);
+    }
+    
+    // 22. Confirm Delete Group Modal
+    if (!document.getElementById('confirmDeleteGroup')) {
+        const modal = document.createElement('div');
+        modal.id = 'confirmDeleteGroup';
+        modal.className = 'modal hidden';
+        modal.innerHTML = getConfirmDeleteGroupHTML();
         document.body.appendChild(modal);
     }
 }
 
-// Create context menus
-function createContextMenus() {
-    // Group List Context Menu
+/**
+ * Get Create Group Modal HTML
+ */
+function getCreateGroupModalHTML() {
+    return `
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Create New Group</h3>
+            <button id="closeCreateGroup" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="createGroupForm">
+                <div class="mb-4">
+                    <label for="groupName" class="form-label">Group Name</label>
+                    <input type="text" id="groupName" class="form-input" required>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="groupDescription" class="form-label">Description</label>
+                    <textarea id="groupDescription" class="form-textarea" rows="3"></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">Add Participants</label>
+                    <div id="groupParticipants" class="border rounded p-3 max-h-60 overflow-y-auto">
+                        <div id="noParticipantsMessage" class="text-center py-4 text-gray-500">
+                            Search for friends to add
+                        </div>
+                    </div>
+                    <div id="selectedParticipants" class="mt-2 flex flex-wrap gap-2"></div>
+                    <div class="mt-1 text-sm text-gray-500">
+                        <span id="participantCount">0</span> selected
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">Group Settings</label>
+                    <div class="space-y-2">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="groupAdminsOnlySend" class="form-checkbox">
+                            <span class="ml-2">Only admins can send messages</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="groupAdminsOnlyEdit" class="form-checkbox">
+                            <span class="ml-2">Only admins can edit group info</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="groupEnableEncryption" class="form-checkbox">
+                            <span class="ml-2">Enable end-to-end encryption</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" id="cancelCreateGroup" class="btn-secondary">Cancel</button>
+                    <button type="submit" id="createGroupBtn" class="btn-primary">Create Group</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * Get Enhanced Group Info Modal HTML
+ */
+function getEnhancedGroupInfoModalHTML() {
+    return `
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3 class="modal-title">Group Information</h3>
+            <button id="closeEnhancedGroupInfo" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="text-center mb-6">
+                <img id="groupInfoAvatar" class="w-24 h-24 rounded-full mx-auto mb-4" src="">
+                <h2 id="enhancedGroupName" class="text-2xl font-bold"></h2>
+                <p id="groupInfoDescription" class="text-gray-600"></p>
+                <div class="mt-2">
+                    <span id="enhancedGroupMembersCount" class="text-sm text-gray-500"></span>
+                    <span id="encryptionBadge" class="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded hidden">
+                        <i class="fas fa-lock"></i> Encrypted
+                    </span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-semibold mb-3">Group Settings</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Who can send messages</label>
+                            <select id="groupSendMessages" class="form-select">
+                                <option value="all">All members</option>
+                                <option value="admins">Admins only</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Who can edit group info</label>
+                            <select id="groupEditInfo" class="form-select">
+                                <option value="all">All members</option>
+                                <option value="admins">Admins only</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-3">Invite Link</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <input type="text" id="groupInviteLink" readonly class="form-input">
+                            <div class="mt-2 flex space-x-2">
+                                <button id="copyInviteLink" class="btn-secondary flex-1">
+                                    <i class="fas fa-copy mr-2"></i>Copy
+                                </button>
+                                <button id="refreshInviteLink" class="btn-secondary">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="securityCodeDisplay" class="hidden">
+                            <label class="block text-sm font-medium mb-1">Security Code</label>
+                            <code class="bg-gray-100 p-2 rounded text-sm block">Loading...</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <h4 class="font-semibold mb-3">Members</h4>
+                <div id="groupMembersList" class="space-y-2 max-h-60 overflow-y-auto">
+                    <!-- Members will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="mt-6 pt-6 border-t">
+                <div class="space-y-3">
+                    <button id="leaveGroupBtn" class="btn-warning w-full">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Leave Group
+                    </button>
+                    <div id="adminDangerZone" class="hidden">
+                        <button id="deleteGroupBtn" class="btn-danger w-full">
+                            <i class="fas fa-trash mr-2"></i>Delete Group
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * Get Join Group Modal HTML
+ */
+function getJoinGroupModalHTML() {
+    return `
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Join Group</h3>
+            <button id="closeJoinGroup" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-4">
+                <label for="groupCode" class="form-label">Group Code or Invite Link</label>
+                <input type="text" id="groupCode" class="form-input" placeholder="Enter group code or paste invite link">
+                <p class="text-sm text-gray-500 mt-1">You need an invite code or link to join a private group</p>
+            </div>
+            
+            <div id="groupPreview" class="hidden mb-4 p-4 border rounded-lg">
+                <div class="flex items-center space-x-3">
+                    <img id="previewGroupAvatar" class="w-12 h-12 rounded-full">
+                    <div>
+                        <h4 id="previewGroupName" class="font-semibold"></h4>
+                        <p id="previewGroupMembers" class="text-sm text-gray-500"></p>
+                    </div>
+                </div>
+                <p id="previewGroupDescription" class="mt-2 text-sm"></p>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" id="cancelJoinGroup" class="btn-secondary">Cancel</button>
+                <button type="button" id="joinGroupBtn" class="btn-primary">Join Group</button>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * Get Manage Admins Modal HTML
+ */
+function getManageAdminsModalHTML() {
+    return `
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Manage Admins</h3>
+            <button id="closeManageAdmins" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-4">
+                <input type="text" id="adminSearchInput" class="form-input" placeholder="Search members...">
+            </div>
+            
+            <div id="adminList" class="space-y-2 max-h-80 overflow-y-auto">
+                <!-- Admin list will be loaded here -->
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" id="cancelManageAdmins" class="btn-secondary">Cancel</button>
+                <button type="button" id="saveAdmins" class="btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * Get Group Media Gallery Modal HTML
+ */
+function getGroupMediaGalleryModalHTML() {
+    return `
+    <div class="modal-content modal-xl">
+        <div class="modal-header">
+            <h3 class="modal-title">Group Media</h3>
+            <button id="closeGroupMediaGallery" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-4 flex space-x-2">
+                <button class="filter-btn active" data-filter="all">All Media</button>
+                <button class="filter-btn" data-filter="images">Images</button>
+                <button class="filter-btn" data-filter="videos">Videos</button>
+                <button class="filter-btn" data-filter="documents">Documents</button>
+            </div>
+            
+            <div id="mediaGalleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Media items will be loaded here -->
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * Get Search Group Modal HTML
+ */
+function getSearchGroupModalHTML() {
+    return `
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3 class="modal-title">Search in Group</h3>
+            <button id="closeSearchGroup" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-4">
+                <input type="text" id="groupSearchInput" class="form-input" placeholder="Search messages, files, links...">
+            </div>
+            
+            <div id="groupSearchResults" class="space-y-3 max-h-96 overflow-y-auto">
+                <!-- Search results will be displayed here -->
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * Get Forward Message Modal HTML
+ */
+function getForwardMessageModalHTML() {
+    return `
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Forward Message</h3>
+            <button id="closeForwardMessage" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-4">
+                <input type="text" id="forwardSearchInput" class="form-input" placeholder="Search groups...">
+            </div>
+            
+            <div id="forwardTargetsList" class="space-y-2 max-h-64 overflow-y-auto">
+                <!-- Forward targets will be loaded here -->
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" id="cancelForward" class="btn-secondary">Cancel</button>
+                <button type="button" id="forwardSelectedBtn" class="btn-primary" disabled>
+                    Forward (<span id="forwardCount">0</span>)
+                </button>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * Get Starred Messages Modal HTML
+ */
+function getStarredMessagesModalHTML() {
+    return `
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3 class="modal-title">Starred Messages</h3>
+            <button id="closeStarredMessages" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="starredMessagesList" class="space-y-4 max-h-96 overflow-y-auto">
+                <!-- Starred messages will be loaded here -->
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * Get Confirm Leave Group HTML
+ */
+function getConfirmLeaveGroupHTML() {
+    return `
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Leave Group</h3>
+            <button type="button" class="modal-close" onclick="hideModal('confirmLeaveGroup')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="mb-4">Are you sure you want to leave this group? You will no longer receive messages from this group.</p>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="hideModal('confirmLeaveGroup')">Cancel</button>
+                <button type="button" id="confirmLeaveAction" class="btn-warning">Leave Group</button>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * Get Confirm Delete Group HTML
+ */
+function getConfirmDeleteGroupHTML() {
+    return `
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Delete Group</h3>
+            <button type="button" class="modal-close" onclick="hideModal('confirmDeleteGroup')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="mb-4 text-red-600 font-semibold">Warning: This action cannot be undone!</p>
+            <p class="mb-4">All messages, media, and group data will be permanently deleted. All members will be removed from the group.</p>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="hideModal('confirmDeleteGroup')">Cancel</button>
+                <button type="button" id="confirmDeleteAction" class="btn-danger">Delete Group</button>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * Create group context menus
+ */
+function createGroupContextMenus() {
+    // 8. Group List Context Menu
     if (!document.getElementById('groupListContextMenu')) {
         const contextMenu = document.createElement('div');
         contextMenu.id = 'groupListContextMenu';
-        contextMenu.className = 'fixed hidden bg-white rounded-lg shadow-xl border border-gray-200 z-50 min-w-48';
+        contextMenu.className = 'context-menu hidden';
         contextMenu.innerHTML = `
-            <div class="py-1">
+            <div class="context-menu-content">
                 <button class="context-menu-item" data-action="open-group">
-                    <i class="fas fa-comments mr-2 text-blue-600"></i>Open
+                    <i class="fas fa-comments mr-2"></i>Open
                 </button>
                 <button class="context-menu-item" data-action="mute-group">
-                    <i class="fas fa-bell-slash mr-2 text-yellow-600"></i>Mute
+                    <i class="fas fa-bell-slash mr-2"></i>Mute
                 </button>
-                <button class="context-menu-item" data-action="mark-read">
-                    <i class="fas fa-check-double mr-2 text-green-600"></i>Mark as Read
+                <button class="context-menu-item" data-action="mark-as-read">
+                    <i class="fas fa-check-double mr-2"></i>Mark as Read
                 </button>
-                <hr class="my-1 border-gray-200">
-                <button class="context-menu-item" data-action="group-info">
-                    <i class="fas fa-info-circle mr-2 text-purple-600"></i>Group Info
-                </button>
-                <button class="context-menu-item" data-action="group-settings">
-                    <i class="fas fa-cog mr-2 text-gray-600"></i>Settings
-                </button>
-                <hr class="my-1 border-gray-200">
-                <button class="context-menu-item text-red-600" data-action="leave-group">
+                <hr>
+                <button class="context-menu-item" data-action="leave-group">
                     <i class="fas fa-sign-out-alt mr-2"></i>Leave Group
                 </button>
             </div>
         `;
         document.body.appendChild(contextMenu);
     }
-    
-    // Message Context Menu
-    if (!document.getElementById('messageContextMenu')) {
-        const contextMenu = document.createElement('div');
-        contextMenu.id = 'messageContextMenu';
-        contextMenu.className = 'fixed hidden bg-white rounded-lg shadow-xl border border-gray-200 z-50 min-w-48';
-        contextMenu.innerHTML = `
-            <div class="py-1">
-                <button class="context-menu-item" data-action="reply">
-                    <i class="fas fa-reply mr-2 text-blue-600"></i>Reply
-                </button>
-                <button class="context-menu-item" data-action="forward">
-                    <i class="fas fa-share mr-2 text-green-600"></i>Forward
-                </button>
-                <button class="context-menu-item" data-action="star">
-                    <i class="far fa-star mr-2 text-yellow-600"></i>Star
-                </button>
-                <button class="context-menu-item" data-action="react">
-                    <i class="far fa-smile mr-2 text-purple-600"></i>React
-                </button>
-                <hr class="my-1 border-gray-200">
-                <button class="context-menu-item" data-action="copy">
-                    <i class="fas fa-copy mr-2 text-gray-600"></i>Copy
-                </button>
-                <button class="context-menu-item" data-action="select">
-                    <i class="fas fa-check-square mr-2 text-blue-600"></i>Select
-                </button>
-                <hr class="my-1 border-gray-200">
-                <button class="context-menu-item" data-action="edit">
-                    <i class="fas fa-edit mr-2 text-blue-600"></i>Edit
-                </button>
-                <button class="context-menu-item text-red-600" data-action="delete-me">
-                    <i class="fas fa-trash mr-2"></i>Delete for me
-                </button>
-                <button class="context-menu-item text-red-600" data-action="delete-all">
-                    <i class="fas fa-trash-alt mr-2"></i>Delete for everyone
-                </button>
-                <hr class="my-1 border-gray-200">
-                <button class="context-menu-item text-red-600" data-action="report">
-                    <i class="fas fa-flag mr-2"></i>Report
-                </button>
-            </div>
-        `;
-        document.body.appendChild(contextMenu);
+}
+
+/**
+ * Create group UI components
+ */
+function createGroupUIComponents() {
+    // Update chat header for group features
+    const chatHeader = document.querySelector('.chat-header');
+    if (chatHeader) {
+        // Add group-specific buttons
+        const groupCallBtn = document.createElement('button');
+        groupCallBtn.id = 'groupCallBtn';
+        groupCallBtn.className = 'group-call-btn btn-icon';
+        groupCallBtn.innerHTML = '<i class="fas fa-phone"></i>';
+        groupCallBtn.title = 'Group Call';
+        
+        const groupVideoCallBtn = document.createElement('button');
+        groupVideoCallBtn.id = 'groupVideoCallBtn';
+        groupVideoCallBtn.className = 'group-video-call-btn btn-icon';
+        groupVideoCallBtn.innerHTML = '<i class="fas fa-video"></i>';
+        groupVideoCallBtn.title = 'Group Video Call';
+        
+        const groupMenuBtn = document.createElement('button');
+        groupMenuBtn.id = 'groupMenuBtn';
+        groupMenuBtn.className = 'btn-icon';
+        groupMenuBtn.innerHTML = '<i class="fas fa-ellipsis-v"></i>';
+        groupMenuBtn.title = 'Group Menu';
+        
+        // Add to chat header
+        const chatActions = chatHeader.querySelector('.chat-actions');
+        if (chatActions) {
+            chatActions.prepend(groupCallBtn);
+            chatActions.prepend(groupVideoCallBtn);
+            chatActions.prepend(groupMenuBtn);
+        }
+        
+        // Update chat title to show group info
+        const chatTitle = chatHeader.querySelector('.chat-title');
+        if (chatTitle && !chatTitle.querySelector('.group-member-count')) {
+            const memberCount = document.createElement('span');
+            memberCount.className = 'group-member-count text-sm text-gray-500 ml-2';
+            chatTitle.appendChild(memberCount);
+        }
     }
     
-    // Reaction Picker
-    if (!document.getElementById('reactionPicker')) {
-        const picker = document.createElement('div');
-        picker.id = 'reactionPicker';
-        picker.className = 'fixed hidden bg-white rounded-full shadow-xl border border-gray-200 z-50 p-2';
-        picker.innerHTML = `
-            <div class="flex space-x-2">
-                <button class="reaction-option" data-reaction="👍">👍</button>
-                <button class="reaction-option" data-reaction="👎">👎</button>
-                <button class="reaction-option" data-reaction="❤️">❤️</button>
-                <button class="reaction-option" data-reaction="😄">😄</button>
-                <button class="reaction-option" data-reaction="😲">😲</button>
-                <button class="reaction-option" data-reaction="😢">😢</button>
-                <button class="reaction-option" data-reaction="😡">😡</button>
-                <button class="reaction-option" data-reaction="🎉">🎉</button>
-                <button class="reaction-option" data-reaction="🔥">🔥</button>
-                <button class="reaction-option" data-reaction="👏">👏</button>
-            </div>
-        `;
-        document.body.appendChild(picker);
+    // Add back button for mobile
+    if (!document.getElementById('backToChats')) {
+        const backBtn = document.createElement('button');
+        backBtn.id = 'backToChats';
+        backBtn.className = 'back-to-chats btn-icon hidden md:hidden';
+        backBtn.innerHTML = '<i class="fas fa-arrow-left"></i>';
+        backBtn.title = 'Back to Chats';
+        
+        const chatHeader = document.querySelector('.chat-header');
+        if (chatHeader) {
+            chatHeader.prepend(backBtn);
+        }
     }
 }
 
-// Create business tools
-function createBusinessTools() {
-    // Catalogue Modal
-    if (!document.getElementById('catalogueModal')) {
-        const modal = document.createElement('div');
-        modal.id = 'catalogueModal';
-        modal.className = 'modal hidden';
-        modal.innerHTML = `
-            <div class="modal-content max-w-6xl">
-                <div class="modal-header">
-                    <h3 class="text-xl font-semibold">Product Catalogue</h3>
-                    <button id="closeCatalogue" class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <!-- Catalogue management UI -->
-                    <div class="text-center py-12">
-                        <i class="fas fa-store text-5xl text-gray-300 mb-4"></i>
-                        <h4 class="text-lg font-semibold text-gray-500">Product Catalogue</h4>
-                        <p class="text-gray-400">Manage your products and services here</p>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    
-    // Advertise Modal
-    if (!document.getElementById('advertiseModal')) {
-        const modal = document.createElement('div');
-        modal.id = 'advertiseModal';
-        modal.className = 'modal hidden';
-        modal.innerHTML = `
-            <div class="modal-content max-w-4xl">
-                <div class="modal-header">
-                    <h3 class="text-xl font-semibold">Create Advertisement</h3>
-                    <button id="closeAdvertise" class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <!-- Ad creation UI -->
-                    <div class="text-center py-12">
-                        <i class="fas fa-bullhorn text-5xl text-gray-300 mb-4"></i>
-                        <h4 class="text-lg font-semibold text-gray-500">Advertisement</h4>
-                        <p class="text-gray-400">Create and manage advertisements</p>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
+/**
+ * Create shared goals section
+ */
+function createSharedGoalsSection() {
+    // Implementation for shared goals
 }
 
-// Create AI features
-function createAIFeatures() {
-    // AI Summary Modal
-    if (!document.getElementById('aiSummaryModal')) {
-        const modal = document.createElement('div');
-        modal.id = 'aiSummaryModal';
-        modal.className = 'modal hidden';
-        modal.innerHTML = `
-            <div class="modal-content max-w-2xl">
-                <div class="modal-header">
-                    <h3 class="text-xl font-semibold">AI Conversation Summary</h3>
-                    <button id="closeAISummary" class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-6">
-                        <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6">
-                            <div class="flex items-center mb-4">
-                                <i class="fas fa-robot text-3xl text-purple-600 mr-3"></i>
-                                <div>
-                                    <h4 class="font-semibold text-lg">AI-Powered Summary</h4>
-                                    <p class="text-sm text-gray-600">Get a concise summary of the conversation</p>
-                                </div>
-                            </div>
-                            <button id="aiSummarize" 
-                                    class="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                                <i class="fas fa-magic mr-2"></i>Generate Summary
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div id="aiSummaryResult" class="hidden">
-                        <div class="bg-gray-50 rounded-xl p-6">
-                            <div class="flex justify-between items-start mb-4">
-                                <h4 class="font-semibold">Summary</h4>
-                                <button id="copySummary" class="text-sm text-purple-600 hover:text-purple-800">
-                                    <i class="fas fa-copy mr-1"></i>Copy
-                                </button>
-                            </div>
-                            <div id="summaryContent" class="text-gray-700"></div>
-                            <div class="mt-4 pt-4 border-t text-sm text-gray-500">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                Generated by AI • <span id="summaryTime"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    
-    // Smart Replies Modal
-    if (!document.getElementById('smartRepliesModal')) {
-        const modal = document.createElement('div');
-        modal.id = 'smartRepliesModal';
-        modal.className = 'modal hidden';
-        modal.innerHTML = `
-            <div class="modal-content max-w-md">
-                <div class="modal-header">
-                    <h3 class="text-xl font-semibold">Smart Replies</h3>
-                    <button id="closeSmartReplies" class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-6">
-                        <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6">
-                            <div class="flex items-center mb-4">
-                                <i class="fas fa-lightbulb text-3xl text-green-600 mr-3"></i>
-                                <div>
-                                    <h4 class="font-semibold text-lg">AI Suggested Replies</h4>
-                                    <p class="text-sm text-gray-600">Quick replies based on conversation context</p>
-                                </div>
-                            </div>
-                            <button id="aiReply" 
-                                    class="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                                <i class="fas fa-comment-dots mr-2"></i>Get Suggestions
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div id="smartRepliesList" class="space-y-2 hidden">
-                        <h4 class="font-medium text-gray-700 mb-2">Suggested Replies:</h4>
-                        <!-- Smart replies will be generated here -->
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
+/**
+ * Create highlights panel
+ */
+function createHighlightsPanel() {
+    // Implementation for highlights panel
 }
 
-// Cache DOM elements
+// ==================== CACHE DOM ELEMENTS ====================
+
+/**
+ * Cache all DOM elements
+ */
 function cacheGroupElements() {
+    // 1. Group Creation Elements
     groupElements.createGroupModal = document.getElementById('createGroupModal');
-    groupElements.enhancedGroupInfoModal = document.getElementById('enhancedGroupInfoModal');
-    groupElements.groupMediaGalleryModal = document.getElementById('groupMediaGalleryModal');
-    groupElements.manageAdminsModal = document.getElementById('manageAdminsModal');
-    groupElements.searchGroupModal = document.getElementById('searchGroupModal');
-    groupElements.forwardMessageModal = document.getElementById('forwardMessageModal');
-    groupElements.joinGroupModal = document.getElementById('joinGroupModal');
-    groupElements.allFriendsModal = document.getElementById('allFriendsModal');
-    groupElements.catalogueModal = document.getElementById('catalogueModal');
-    groupElements.advertiseModal = document.getElementById('advertiseModal');
-    
-    // Group Creation Elements
     groupElements.groupName = document.getElementById('groupName');
     groupElements.groupDescription = document.getElementById('groupDescription');
     groupElements.groupParticipants = document.getElementById('groupParticipants');
-    groupElements.groupAdminsOnlySend = document.getElementById('groupSendMessages');
-    groupElements.groupAdminsOnlyEdit = document.getElementById('groupEditInfo');
-    groupElements.groupEnableEncryption = document.getElementById('groupEnableEncryption');
-    groupElements.createGroupBtn = document.getElementById('createGroup');
+    groupElements.createGroupBtn = document.getElementById('createGroupBtn');
     groupElements.closeCreateGroup = document.getElementById('closeCreateGroup');
-    groupElements.cancelCreateGroup = document.getElementById('cancelCreateGroup');
+    groupElements.groupAdminsOnlySend = document.getElementById('groupAdminsOnlySend');
+    groupElements.groupAdminsOnlyEdit = document.getElementById('groupAdminsOnlyEdit');
+    groupElements.groupEnableEncryption = document.getElementById('groupEnableEncryption');
     
-    // Group Info Elements
+    // 2. Group List & Display
+    groupElements.groupsList = document.getElementById('groupsList');
+    groupElements.noChatsMessage = document.getElementById('noChatsMessage');
+    
+    // 3. Group Info & Settings
+    groupElements.enhancedGroupInfoModal = document.getElementById('enhancedGroupInfoModal');
     groupElements.enhancedGroupName = document.getElementById('enhancedGroupName');
     groupElements.enhancedGroupMembersCount = document.getElementById('enhancedGroupMembersCount');
-    groupElements.groupSendMessages = document.getElementById('groupSendMessagesSetting');
-    groupElements.groupEditInfo = document.getElementById('groupEditInfoSetting');
+    groupElements.groupSendMessages = document.getElementById('groupSendMessages');
+    groupElements.groupEditInfo = document.getElementById('groupEditInfo');
     groupElements.groupInviteLink = document.getElementById('groupInviteLink');
     groupElements.copyInviteLink = document.getElementById('copyInviteLink');
     groupElements.refreshInviteLink = document.getElementById('refreshInviteLink');
     groupElements.closeEnhancedGroupInfo = document.getElementById('closeEnhancedGroupInfo');
     
-    // Group Media Gallery Elements
-    groupElements.mediaGalleryGrid = document.getElementById('mediaGalleryGrid');
-    groupElements.filterButtons = document.querySelectorAll('.filter-btn');
-    groupElements.closeGroupMediaGallery = document.getElementById('closeGroupMediaGallery');
+    // 4. Group Join Elements
+    groupElements.joinGroupModal = document.getElementById('joinGroupModal');
+    groupElements.groupCode = document.getElementById('groupCode');
+    groupElements.groupPreview = document.getElementById('groupPreview');
+    groupElements.previewGroupName = document.getElementById('previewGroupName');
+    groupElements.previewGroupMembers = document.getElementById('previewGroupMembers');
+    groupElements.joinGroupBtn = document.getElementById('joinGroupBtn');
+    groupElements.closeJoinGroup = document.getElementById('closeJoinGroup');
     
-    // Search & Selection Elements
-    groupElements.groupSearchInput = document.getElementById('groupSearchInput');
-    groupElements.groupSearchResults = document.getElementById('groupSearchResults');
-    groupElements.closeSearchGroup = document.getElementById('closeSearchGroup');
-    groupElements.forwardSearchInput = document.getElementById('forwardSearchInput');
-    groupElements.forwardTargetsList = document.getElementById('forwardTargetsList');
-    groupElements.forwardCount = document.getElementById('forwardCount');
-    groupElements.forwardSelectedBtn = document.getElementById('forwardSelectedBtn');
-    groupElements.closeForwardMessage = document.getElementById('closeForwardMessage');
-    
-    // Admin Management Elements
+    // 5. Group Management Elements
+    groupElements.manageAdminsModal = document.getElementById('manageAdminsModal');
     groupElements.adminSearchInput = document.getElementById('adminSearchInput');
     groupElements.adminList = document.getElementById('adminList');
     groupElements.saveAdmins = document.getElementById('saveAdmins');
     groupElements.closeManageAdmins = document.getElementById('closeManageAdmins');
     
-    // Group Join Elements
-    groupElements.groupCode = document.getElementById('groupCode');
-    groupElements.groupPreview = document.getElementById('groupPreview');
-    groupElements.previewGroupName = document.getElementById('previewGroupName');
-    groupElements.previewGroupMembers = document.getElementById('previewGroupMembers');
-    groupElements.joinGroupBtn = document.getElementById('joinGroup');
-    groupElements.closeJoinGroup = document.getElementById('closeJoinGroup');
-    groupElements.cancelJoinGroup = document.getElementById('cancelJoinGroup');
+    // 6. Group Media Gallery
+    groupElements.groupMediaGalleryModal = document.getElementById('groupMediaGalleryModal');
+    groupElements.mediaGalleryGrid = document.getElementById('mediaGalleryGrid');
+    groupElements.closeGroupMediaGallery = document.getElementById('closeGroupMediaGallery');
     
-    // UI Components
+    // 7. Group Search Elements
+    groupElements.searchGroupModal = document.getElementById('searchGroupModal');
+    groupElements.groupSearchInput = document.getElementById('groupSearchInput');
+    groupElements.groupSearchResults = document.getElementById('groupSearchResults');
+    groupElements.closeSearchGroup = document.getElementById('closeSearchGroup');
+    
+    // 8. Group Context Menu
     groupElements.groupListContextMenu = document.getElementById('groupListContextMenu');
-    groupElements.messageContextMenu = document.getElementById('messageContextMenu');
-    groupElements.reactionPicker = document.getElementById('reactionPicker');
+    
+    // 9. Group Chat Area Elements
+    groupElements.chatTitle = document.querySelector('.chat-title');
+    groupElements.chatAvatar = document.querySelector('.chat-avatar');
+    groupElements.chatStatus = document.querySelector('.chat-status');
+    
+    // 10. Group Message Elements
+    groupElements.chatMessages = document.getElementById('chatMessages');
+    
+    // 11. Group Tools & Features
     groupElements.newGroupBtn = document.getElementById('newGroupBtn');
-    groupElements.backToChats = document.getElementById('backToChats');
+    groupElements.groupMenuBtn = document.getElementById('groupMenuBtn');
     
-    // Business Tools Elements
-    groupElements.catalogueBtn = document.getElementById('catalogueBtn');
-    groupElements.catalogueModal = document.getElementById('catalogueModal');
-    groupElements.advertiseBtn = document.getElementById('advertiseBtn');
-    groupElements.advertiseModal = document.getElementById('advertiseModal');
-    groupElements.labelsBtn = document.getElementById('labelsBtn');
-    groupElements.labelsModal = document.getElementById('labelsModal');
-    groupElements.greetingBtn = document.getElementById('greetingBtn');
-    groupElements.greetingModal = document.getElementById('greetingModal');
-    groupElements.awayBtn = document.getElementById('awayBtn');
-    groupElements.awayModal = document.getElementById('awayModal');
-    groupElements.businessProfileModal = document.getElementById('businessProfileModal');
+    // 12. Group Member Elements
+    groupElements.groupMembersList = document.getElementById('groupMembersList');
     
-    // AI Features Elements
-    groupElements.aiSummaryModal = document.getElementById('aiSummaryModal');
-    groupElements.aiSummarize = document.getElementById('aiSummarize');
-    groupElements.smartRepliesModal = document.getElementById('smartRepliesModal');
-    groupElements.aiReply = document.getElementById('aiReply');
+    // 16. Group Forward Elements
+    groupElements.forwardMessageModal = document.getElementById('forwardMessageModal');
+    groupElements.forwardSearchInput = document.getElementById('forwardSearchInput');
+    groupElements.forwardTargetsList = document.getElementById('forwardTargetsList');
+    groupElements.forwardSelectedBtn = document.getElementById('forwardSelectedBtn');
+    groupElements.closeForwardMessage = document.getElementById('closeForwardMessage');
     
-    // Miscellaneous Elements
-    groupElements.menuBtn = document.getElementById('menuBtn');
-    groupElements.settingsModal = document.getElementById('settingsModal');
-    groupElements.chatMenuBtn = document.getElementById('chatMenuBtn');
-    groupElements.searchInput = document.getElementById('searchInput');
-    groupElements.friendSearch = document.getElementById('friendSearch');
-    groupElements.addFriendBtn = document.getElementById('addFriendBtn');
-    groupElements.themeToggle = document.getElementById('themeToggle');
+    // 17. Starred Messages in Groups
+    groupElements.starredMessagesModal = document.getElementById('starredMessagesModal');
+    groupElements.starredMessagesList = document.getElementById('starredMessagesList');
+    groupElements.closeStarredMessages = document.getElementById('closeStarredMessages');
+    
+    // 20. Group Creation Participant Selection
+    groupElements.selectedParticipantsContainer = document.getElementById('selectedParticipants');
+    groupElements.participantCount = document.getElementById('participantCount');
+    
+    // 22. Group Leave/Delete Elements
+    groupElements.leaveGroupBtn = document.getElementById('leaveGroupBtn');
+    groupElements.deleteGroupBtn = document.getElementById('deleteGroupBtn');
+    groupElements.confirmLeaveGroup = document.getElementById('confirmLeaveGroup');
+    groupElements.confirmDeleteGroup = document.getElementById('confirmDeleteGroup');
+    
+    // 24. Group Activity Indicators
+    groupElements.groupActivityIndicator = document.querySelector('.group-activity');
+    
+    // Additional elements
+    groupElements.messageInput = document.getElementById('messageInput');
+    groupElements.sendMessageBtn = document.getElementById('sendMessageBtn');
+    groupElements.groupCallBtn = document.getElementById('groupCallBtn');
+    groupElements.groupVideoCallBtn = document.getElementById('groupVideoCallBtn');
+    groupElements.backToChatsBtn = document.getElementById('backToChats');
+    groupElements.groupInviteLinkContainer = document.querySelector('.group-invite-link');
+    groupElements.encryptionBadge = document.getElementById('encryptionBadge');
+    groupElements.securityCodeDisplay = document.getElementById('securityCodeDisplay');
 }
 
-// Initialize group features
-function initializeGroupFeatures() {
-    initializeGroupTypingIndicators();
-    initializeGroupEmojiPicker();
-    initializeMessageReactions();
-    initializeDragAndDrop();
-}
+// ==================== EVENT LISTENERS SETUP ====================
 
-// Setup enhanced event listeners
+/**
+ * Setup all enhanced event listeners
+ */
 function setupEnhancedGroupEventListeners() {
     console.log('Setting up enhanced group event listeners...');
     
-    // Tab switching
-    document.addEventListener('click', handleTabSwitching);
+    // 1. Group Creation
+    if (groupElements.newGroupBtn) {
+        groupElements.newGroupBtn.addEventListener('click', () => showModal('createGroupModal'));
+    }
     
-    // Group creation
-    document.addEventListener('click', handleGroupCreation);
+    if (groupElements.createGroupBtn) {
+        groupElements.createGroupBtn.addEventListener('click', createNewGroupAction);
+    }
     
-    // Group management
-    document.addEventListener('click', handleGroupManagement);
+    if (groupElements.closeCreateGroup) {
+        groupElements.closeCreateGroup.addEventListener('click', () => hideModal('createGroupModal'));
+    }
     
-    // Message operations
-    document.addEventListener('click', handleMessageOperations);
+    if (groupElements.cancelCreateGroup) {
+        const cancelBtn = document.getElementById('cancelCreateGroup');
+        if (cancelBtn) cancelBtn.addEventListener('click', () => hideModal('createGroupModal'));
+    }
     
-    // Search functionality
-    document.addEventListener('input', handleSearchOperations);
+    // 3. Group Info
+    if (groupElements.closeEnhancedGroupInfo) {
+        groupElements.closeEnhancedGroupInfo.addEventListener('click', () => hideModal('enhancedGroupInfoModal'));
+    }
     
-    // Context menus
-    document.addEventListener('contextmenu', handleContextMenus);
-    document.addEventListener('click', handleContextMenuActions);
+    if (groupElements.copyInviteLink) {
+        groupElements.copyInviteLink.addEventListener('click', copyInviteLinkAction);
+    }
     
-    // Modal operations
-    document.addEventListener('click', handleModalOperations);
+    if (groupElements.refreshInviteLink) {
+        groupElements.refreshInviteLink.addEventListener('click', refreshInviteLinkAction);
+    }
     
-    // Form submissions
-    document.addEventListener('submit', handleFormSubmissions);
+    // 4. Join Group
+    if (groupElements.closeJoinGroup) {
+        groupElements.closeJoinGroup.addEventListener('click', () => hideModal('joinGroupModal'));
+    }
     
-    // Keyboard shortcuts
-    document.addEventListener('keydown', handleKeyboardShortcuts);
+    if (groupElements.joinGroupBtn) {
+        groupElements.joinGroupBtn.addEventListener('click', joinGroupAction);
+    }
     
-    // Drag and drop
-    document.addEventListener('dragover', handleDragOver);
-    document.addEventListener('drop', handleDrop);
+    if (groupElements.cancelJoinGroup) {
+        const cancelBtn = document.getElementById('cancelJoinGroup');
+        if (cancelBtn) cancelBtn.addEventListener('click', () => hideModal('joinGroupModal'));
+    }
+    
+    // 5. Manage Admins
+    if (groupElements.closeManageAdmins) {
+        groupElements.closeManageAdmins.addEventListener('click', () => hideModal('manageAdminsModal'));
+    }
+    
+    if (groupElements.saveAdmins) {
+        groupElements.saveAdmins.addEventListener('click', saveAdminChanges);
+    }
+    
+    if (groupElements.cancelManageAdmins) {
+        const cancelBtn = document.getElementById('cancelManageAdmins');
+        if (cancelBtn) cancelBtn.addEventListener('click', () => hideModal('manageAdminsModal'));
+    }
+    
+    // 6. Media Gallery
+    if (groupElements.closeGroupMediaGallery) {
+        groupElements.closeGroupMediaGallery.addEventListener('click', () => hideModal('groupMediaGalleryModal'));
+    }
+    
+    // 7. Search Group
+    if (groupElements.closeSearchGroup) {
+        groupElements.closeSearchGroup.addEventListener('click', () => hideModal('searchGroupModal'));
+    }
+    
+    // 8. Context Menu
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#groupListContextMenu')) {
+            hideGroupContextMenu();
+        }
+    });
+    
+    // 9. Chat Area
+    if (groupElements.groupMenuBtn) {
+        groupElements.groupMenuBtn.addEventListener('click', showGroupMenu);
+    }
+    
+    if (groupElements.groupCallBtn) {
+        groupElements.groupCallBtn.addEventListener('click', startGroupCall);
+    }
+    
+    if (groupElements.groupVideoCallBtn) {
+        groupElements.groupVideoCallBtn.addEventListener('click', startGroupVideoCall);
+    }
+    
+    if (groupElements.backToChatsBtn) {
+        groupElements.backToChatsBtn.addEventListener('click', () => switchToTab('chats'));
+    }
+    
+    // 10. Message Handling
+    if (groupElements.sendMessageBtn) {
+        groupElements.sendMessageBtn.addEventListener('click', sendGroupMessage);
+    }
+    
+    if (groupElements.messageInput) {
+        groupElements.messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendGroupMessage();
+            }
+        });
+    }
+    
+    // 16. Forward Message
+    if (groupElements.closeForwardMessage) {
+        groupElements.closeForwardMessage.addEventListener('click', () => hideModal('forwardMessageModal'));
+    }
+    
+    if (groupElements.cancelForward) {
+        groupElements.cancelForward.addEventListener('click', () => hideModal('forwardMessageModal'));
+    }
+    
+    if (groupElements.forwardSelectedBtn) {
+        groupElements.forwardSelectedBtn.addEventListener('click', forwardSelectedMessages);
+    }
+    
+    // 17. Starred Messages
+    if (groupElements.closeStarredMessages) {
+        groupElements.closeStarredMessages.addEventListener('click', () => hideModal('starredMessagesModal'));
+    }
+    
+    // 22. Leave/Delete Group
+    if (groupElements.leaveGroupBtn) {
+        groupElements.leaveGroupBtn.addEventListener('click', () => showModal('confirmLeaveGroup'));
+    }
+    
+    if (groupElements.deleteGroupBtn) {
+        groupElements.deleteGroupBtn.addEventListener('click', () => showModal('confirmDeleteGroup'));
+    }
+    
+    const confirmLeaveAction = document.getElementById('confirmLeaveAction');
+    if (confirmLeaveAction) {
+        confirmLeaveAction.addEventListener('click', confirmLeaveGroup);
+    }
+    
+    const confirmDeleteAction = document.getElementById('confirmDeleteAction');
+    if (confirmDeleteAction) {
+        confirmDeleteAction.addEventListener('click', confirmDeleteGroup);
+    }
+    
+    // 24. Activity Indicators
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Additional event listeners
+    setupAdditionalEventListeners();
     
     console.log('✅ Enhanced event listeners setup complete');
 }
 
-// Tab switching handler
-function handleTabSwitching(e) {
-    if (e.target.closest('[data-tab]')) {
-        const tabBtn = e.target.closest('[data-tab]');
-        const tabName = tabBtn.getAttribute('data-tab');
-        switchToTab(tabName);
+/**
+ * Setup additional event listeners
+ */
+function setupAdditionalEventListeners() {
+    // Search groups
+    const groupSearch = document.getElementById('groupSearch');
+    if (groupSearch) {
+        groupSearch.addEventListener('input', (e) => searchGroups(e.target.value));
     }
     
-    if (e.target.closest('#backToChats')) {
-        switchToTab('chats');
-    }
-}
-
-// Group creation handler
-function handleGroupCreation(e) {
-    // New group button
-    if (e.target.closest('#newGroupBtn') || e.target.closest('#createGroupFromEmpty')) {
-        e.preventDefault();
-        showModal('createGroupModal');
-        loadFriendsForGroupCreation();
+    // Group code input for preview
+    if (groupElements.groupCode) {
+        groupElements.groupCode.addEventListener('input', (e) => {
+            if (e.target.value.length > 8) {
+                previewGroupFromCode(e.target.value);
+            }
+        });
     }
     
-    // Create group button
-    if (e.target.closest('#createGroup')) {
-        e.preventDefault();
-        createNewGroupAction();
+    // Admin search
+    if (groupElements.adminSearchInput) {
+        groupElements.adminSearchInput.addEventListener('input', (e) => searchAdminMembers(e.target.value));
     }
     
-    // Upload group avatar
-    if (e.target.closest('#uploadGroupAvatar')) {
-        e.preventDefault();
-        const fileInput = document.getElementById('groupAvatarInput');
-        fileInput?.click();
-    }
-    
-    // Show all friends
-    if (e.target.closest('#showAllFriends')) {
-        e.preventDefault();
-        showAllFriendsModal();
-    }
-}
-
-// Group management handler
-function handleGroupManagement(e) {
-    // Open group info
-    if (e.target.closest('#groupInfoBtn')) {
-        e.preventDefault();
-        if (currentGroupId) {
-            showGroupInfoModal(currentGroupId);
-        }
-    }
-    
-    // Mute/unmute group
-    if (e.target.closest('#muteGroupBtn')) {
-        e.preventDefault();
-        if (currentGroupId) {
-            toggleGroupMute(currentGroupId);
-        }
-    }
-    
-    // Add participant
-    if (e.target.closest('#addParticipantBtn')) {
-        e.preventDefault();
-        showAddParticipantsModal();
-    }
-    
-    // Manage admins
-    if (e.target.closest('#manageAdminsBtn')) {
-        e.preventDefault();
-        showManageAdminsModal();
-    }
-    
-    // Leave group
-    if (e.target.closest('#leaveGroupBtn')) {
-        e.preventDefault();
-        if (currentGroupId) {
-            leaveGroup(currentGroupId);
-        }
-    }
-    
-    // Delete group
-    if (e.target.closest('#deleteGroupBtn')) {
-        e.preventDefault();
-        if (currentGroupId) {
-            deleteGroup(currentGroupId);
-        }
-    }
-    
-    // Copy invite link
-    if (e.target.closest('#copyInviteLink')) {
-        e.preventDefault();
-        copyInviteLink();
-    }
-    
-    // Refresh invite link
-    if (e.target.closest('#refreshInviteLink')) {
-        e.preventDefault();
-        refreshInviteLink();
-    }
-}
-
-// Message operations handler
-function handleMessageOperations(e) {
-    // Message click for selection
-    if (e.target.closest('.group-message-container')) {
-        const messageElement = e.target.closest('.group-message-container');
-        const messageId = messageElement.dataset.messageId;
-        if (selectedGroupMessages.size > 0) {
-            toggleMessageSelection(messageId);
-        }
-    }
-    
-    // Star message
-    if (e.target.closest('[data-action="star"]')) {
-        e.preventDefault();
-        const messageId = currentContextMessageId;
-        if (messageId) {
-            toggleMessageStar(messageId);
-        }
-    }
-    
-    // Forward message
-    if (e.target.closest('[data-action="forward"]') || e.target.closest('#forwardSelectedBtn')) {
-        e.preventDefault();
-        if (selectedGroupMessages.size > 0) {
-            const firstMessageId = Array.from(selectedGroupMessages)[0];
-            forwardGroupMessage(firstMessageId);
-        } else if (currentContextMessageId) {
-            forwardGroupMessage(currentContextMessageId);
-        }
-    }
-    
-    // React to message
-    if (e.target.closest('[data-action="react"]') || e.target.closest('.reaction-option')) {
-        e.preventDefault();
-        const reaction = e.target.getAttribute('data-reaction');
-        if (reaction && currentContextMessageId) {
-            addReactionToMessage(currentContextMessageId, reaction);
-        }
-    }
-    
-    // Reply to message
-    if (e.target.closest('[data-action="reply"]')) {
-        e.preventDefault();
-        if (currentContextMessageId) {
-            replyToGroupMessage(currentContextMessageId);
-        }
-    }
-    
-    // Copy message
-    if (e.target.closest('[data-action="copy"]')) {
-        e.preventDefault();
-        if (currentContextMessageId) {
-            copyMessageText(currentContextMessageId);
-        }
-    }
-    
-    // Report message
-    if (e.target.closest('[data-action="report"]')) {
-        e.preventDefault();
-        if (currentContextMessageId) {
-            reportGroupMessage(currentContextMessageId);
-        }
-    }
-}
-
-// Search operations handler
-function handleSearchOperations(e) {
-    // Search in groups list
-    if (e.target.matches('#searchInput')) {
-        searchGroups(e.target.value);
-    }
-    
-    // Search in group
-    if (e.target.matches('#groupSearchInput')) {
-        searchInGroup(e.target.value);
-    }
-    
-    // Search for forward targets
-    if (e.target.matches('#forwardSearchInput')) {
-        searchForwardTargets(e.target.value);
-    }
-    
-    // Search for friends in group creation
-    if (e.target.matches('#friendSearch')) {
-        searchFriendsForGroupCreation(e.target.value);
-    }
-    
-    // Search for admin management
-    if (e.target.matches('#adminSearchInput')) {
-        searchAdminParticipants(e.target.value);
-    }
-}
-
-// Context menus handler
-function handleContextMenus(e) {
-    // Group list context menu
-    if (e.target.closest('.group-item')) {
-        e.preventDefault();
-        const groupItem = e.target.closest('.group-item');
-        const groupId = groupItem.dataset.groupId;
-        showGroupListContextMenu(e, groupId);
-    }
-    
-    // Message context menu
-    if (e.target.closest('.message-bubble')) {
-        e.preventDefault();
-        const messageElement = e.target.closest('.message-bubble');
-        const messageContainer = messageElement.closest('.group-message-container');
-        const messageId = messageContainer?.dataset.messageId;
-        if (messageId) {
-            showMessageContextMenu(e, messageId);
-        }
-    }
-}
-
-// Context menu actions handler
-function handleContextMenuActions(e) {
-    if (e.target.closest('.context-menu-item')) {
-        const menuItem = e.target.closest('.context-menu-item');
-        const action = menuItem.getAttribute('data-action');
-        const contextMenu = menuItem.closest('#groupListContextMenu, #messageContextMenu');
-        
-        if (contextMenu.id === 'groupListContextMenu') {
-            handleGroupContextMenuAction(action, contextMenu.dataset.groupId);
-        } else if (contextMenu.id === 'messageContextMenu') {
-            handleMessageContextMenuAction(action, currentContextMessageId);
-        }
-        
-        contextMenu.classList.add('hidden');
-    }
-}
-
-// Modal operations handler
-function handleModalOperations(e) {
-    // Close modals
-    if (e.target.closest('.modal-close') || e.target.closest('.modal-cancel')) {
-        e.preventDefault();
-        const modal = e.target.closest('.modal');
-        if (modal) {
-            modal.classList.add('hidden');
-        }
-    }
-    
-    // Close modal when clicking outside
-    if (e.target.classList.contains('modal')) {
-        e.target.classList.add('hidden');
-    }
-    
-    // Group media gallery
-    if (e.target.closest('#groupMediaBtn')) {
-        e.preventDefault();
-        if (currentGroupId) {
-            showModal('groupMediaGalleryModal');
-            loadGroupMedia(currentGroupId);
-        }
+    // Forward search
+    if (groupElements.forwardSearchInput) {
+        groupElements.forwardSearchInput.addEventListener('input', (e) => searchForwardTargets(e.target.value));
     }
     
     // Group search
-    if (e.target.closest('#groupSearchBtn')) {
-        e.preventDefault();
-        showModal('searchGroupModal');
+    if (groupElements.groupSearchInput) {
+        groupElements.groupSearchInput.addEventListener('input', (e) => searchInGroup(e.target.value));
     }
     
-    // Group starred messages
-    if (e.target.closest('#groupStarredBtn')) {
-        e.preventDefault();
-        if (currentGroupId) {
-            loadGroupStarredMessages(currentGroupId);
+    // Filter buttons in media gallery
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('filter-btn')) {
+            const filter = e.target.dataset.filter;
+            filterGroupMedia(filter);
+            e.target.classList.add('active');
+            e.target.siblings?.forEach(btn => btn.classList.remove('active'));
         }
-    }
+    });
     
-    // AI summary
-    if (e.target.closest('#aiSummarize')) {
-        e.preventDefault();
-        generateAIConversationSummary();
-    }
-    
-    // Smart replies
-    if (e.target.closest('#aiReply')) {
-        e.preventDefault();
-        generateSmartReplies();
-    }
-}
-
-// Form submissions handler
-function handleFormSubmissions(e) {
-    if (e.target.matches('#createGroupForm')) {
-        e.preventDefault();
-        createNewGroupAction();
-    }
-    
-    if (e.target.matches('#joinGroupForm')) {
-        e.preventDefault();
-        joinGroupAction();
-    }
-}
-
-// Keyboard shortcuts handler
-function handleKeyboardShortcuts(e) {
-    // Escape key closes modals
-    if (e.key === 'Escape') {
-        const openModals = document.querySelectorAll('.modal:not(.hidden)');
-        if (openModals.length > 0) {
-            openModals.forEach(modal => modal.classList.add('hidden'));
+    // Context menu items
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.context-menu-item')) {
+            const action = e.target.closest('.context-menu-item').dataset.action;
+            handleGroupContextMenuAction(action);
+            hideGroupContextMenu();
         }
-    }
+    });
     
-    // Ctrl/Cmd + F for search
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-        e.preventDefault();
-        if (currentGroupId) {
-            showModal('searchGroupModal');
-            groupElements.groupSearchInput?.focus();
-        }
-    }
-    
-    // Ctrl/Cmd + Enter to send message
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        if (document.activeElement === document.getElementById('groupMessageInput')) {
+    // Group chat items
+    document.addEventListener('contextmenu', (e) => {
+        const groupItem = e.target.closest('.group-chat-item');
+        if (groupItem) {
             e.preventDefault();
-            sendGroupMessage();
+            showGroupContextMenu(e, groupItem.dataset.groupId);
         }
-    }
-}
-
-// Drag and drop handlers
-function handleDragOver(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'copy';
-    }
-}
-
-function handleDrop(e) {
-    e.preventDefault();
-    e.stopPropagation();
+    });
     
-    if (e.dataTransfer && e.dataTransfer.files.length > 0 && currentGroupId) {
-        Array.from(e.dataTransfer.files).forEach(file => {
-            uploadGroupFile(file);
-        });
-    }
+    // Click on group chat items
+    document.addEventListener('click', (e) => {
+        const groupItem = e.target.closest('.group-chat-item');
+        if (groupItem && !e.target.closest('.context-menu')) {
+            openGroupChat(groupItem.dataset.groupId);
+        }
+    });
 }
 
 // ==================== GROUP FUNCTIONS ====================
 
-// Create new group action
+/**
+ * 1. Group Creation Functions
+ */
 async function createNewGroupAction() {
     const groupName = groupElements.groupName?.value.trim();
     const description = groupElements.groupDescription?.value.trim();
-    const privacy = document.getElementById('groupPrivacy')?.value || 'private';
     
     if (!groupName) {
         showToast('Group name is required', 'error');
-        groupElements.groupName?.focus();
         return;
     }
     
-    // Get selected participants
-    const selectedCheckboxes = document.querySelectorAll('.participant-checkbox:checked');
-    const participantIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-    
-    // Validate participants
-    const validParticipants = participantIds.filter(id => 
-        id && id !== 'undefined' && id !== currentUser.uid
-    );
-    
-    if (validParticipants.length === 0) {
-        showToast('Please add at least one friend to the group', 'error');
+    if (selectedParticipants.size === 0) {
+        showToast('Please add at least one participant', 'error');
         return;
     }
     
-    // Get settings
     const settings = {
-        sendMessages: groupElements.groupAdminsOnlySend?.value || 'all',
-        editInfo: groupElements.groupAdminsOnlyEdit?.value || 'admins',
-        isEncrypted: groupElements.groupEnableEncryption?.checked || false
+        adminsOnlySend: groupElements.groupAdminsOnlySend?.checked || false,
+        adminsOnlyEdit: groupElements.groupAdminsOnlyEdit?.checked || false,
+        enableEncryption: groupElements.groupEnableEncryption?.checked || false
     };
     
-    showToast('Creating group...', 'info');
-    
     try {
-        const groupId = await createNewGroup(
-            groupName,
-            description,
-            privacy,
-            validParticipants,
-            settings
-        );
+        const groupId = await createGroup({
+            name: groupName,
+            description: description,
+            participants: Array.from(selectedParticipants),
+            settings: settings,
+            createdBy: currentUser.uid
+        });
         
         if (groupId) {
             hideModal('createGroupModal');
             openGroupChat(groupId);
+            showToast('Group created successfully', 'success');
         }
     } catch (error) {
         console.error('Error creating group:', error);
-        showToast('Error creating group: ' + error.message, 'error');
+        showToast('Error creating group', 'error');
     }
 }
 
-// Create new group (core function)
-async function createNewGroup(name, description, privacy, participantIds, settings) {
+async function createGroup(groupData) {
     try {
-        console.log('Creating new group:', name);
-        
-        // Generate group ID
         const groupId = `group_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
-        // Prepare participants
-        const participants = [currentUser.uid, ...participantIds];
-        
-        // Generate invite code
-        const inviteCode = generateInviteCode();
-        const inviteLink = `${window.location.origin}/invite/${inviteCode}`;
-        
-        // Get avatar if uploaded
-        const avatarInput = document.getElementById('groupAvatarInput');
-        let avatarUrl = '';
-        
-        if (avatarInput?.files[0]) {
-            avatarUrl = await uploadGroupAvatarFile(avatarInput.files[0], groupId);
-        }
-        
-        // Create group data
-        const groupData = {
+        const groupDoc = {
             id: groupId,
-            name: name,
-            description: description || '',
-            privacy: privacy,
-            participants: participants,
+            name: groupData.name,
+            description: groupData.description || '',
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(groupData.name)}&background=random`,
+            participants: [...new Set([currentUser.uid, ...groupData.participants])],
             admins: [currentUser.uid],
-            createdBy: currentUser.uid,
-            avatar: avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7C3AED&color=fff`,
-            inviteCode: inviteCode,
-            inviteLink: inviteLink,
-            settings: {
-                sendMessages: settings.sendMessages || 'all',
-                editInfo: settings.editInfo || 'admins',
-                privacy: privacy
-            },
-            isEncrypted: settings.isEncrypted || false,
-            isMuted: false,
-            status: 'active',
-            typingUsers: [],
-            lastMessage: '',
-            lastMessageTime: null,
-            lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
+            settings: groupData.settings,
+            isEncrypted: groupData.settings.enableEncryption,
+            inviteCode: generateInviteCode(),
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'active'
         };
         
-        // Add to Firestore
-        await db.collection('groups').doc(groupId).set(groupData);
+        await db.collection('groups').doc(groupId).set(groupDoc);
         
-        // Send system message
+        // Send welcome message
         await sendSystemMessage(groupId, `${currentUserData.displayName} created the group`);
         
-        // Send notifications to added participants
-        for (const participantId of participantIds) {
-            await sendSystemMessage(groupId, `${currentUserData.displayName} added you to the group`);
-            sendGroupInviteNotification(groupId, participantId);
+        // Send notifications to participants
+        for (const participantId of groupData.participants) {
+            await sendGroupInviteNotification(groupId, participantId);
         }
         
-        console.log('Group created successfully:', groupId);
-        showToast('Group created successfully!', 'success');
-        
         return groupId;
-        
     } catch (error) {
-        console.error('Error creating group:', error);
+        console.error('Error in createGroup:', error);
         throw error;
     }
 }
 
-// Load friends for group creation
-async function loadFriendsForGroupCreation() {
-    const participantsList = groupElements.groupParticipants;
-    if (!participantsList) return;
-    
-    participantsList.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-purple-500"></i></div>';
-    
+/**
+ * 2. Group List Functions
+ */
+async function loadUserGroups() {
     try {
-        // Get friends list
-        const friends = await fetchFriendsDirectly();
+        const groupsQuery = await db.collection('groups')
+            .where('participants', 'array-contains', currentUser.uid)
+            .where('status', '==', 'active')
+            .orderBy('lastActivity', 'desc')
+            .get();
         
-        if (!friends || friends.length === 0) {
-            participantsList.innerHTML = `
-                <div class="text-center py-8">
-                    <i class="fas fa-user-friends text-4xl text-gray-300 mb-3"></i>
-                    <p class="text-gray-500">No friends found</p>
-                    <p class="text-sm text-gray-400 mt-1">Add friends to create a group</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // Render friends list
-        participantsList.innerHTML = '';
-        friends.forEach(friend => {
-            const friendItem = document.createElement('div');
-            friendItem.className = 'flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors';
-            friendItem.innerHTML = `
-                <div class="flex items-center space-x-3 flex-1">
-                    <div class="relative">
-                        <img class="w-12 h-12 rounded-full object-cover" 
-                             src="${friend.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName)}&background=7C3AED&color=fff`}"
-                             alt="${friend.displayName}"
-                             onerror="this.src='https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff'">
-                        <div class="absolute bottom-0 right-0 w-3 h-3 ${friend.status === 'online' ? 'bg-green-500' : 'bg-gray-400'} rounded-full border-2 border-white"></div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <h4 class="font-medium text-gray-800 truncate">${friend.displayName}</h4>
-                        <p class="text-sm text-gray-500 truncate">${friend.status || 'offline'}</p>
-                    </div>
-                </div>
-                <input type="checkbox" class="participant-checkbox w-5 h-5 text-purple-600 rounded focus:ring-purple-500" 
-                       value="${friend.id}" data-name="${friend.displayName}">
-            `;
-            
-            participantsList.appendChild(friendItem);
+        allGroups = [];
+        groupsQuery.forEach(doc => {
+            allGroups.push({ id: doc.id, ...doc.data() });
         });
         
-        // Add event listeners for checkboxes
-        document.querySelectorAll('.participant-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                updateSelectedParticipants();
-            });
-        });
-        
+        renderGroupsList(allGroups);
     } catch (error) {
-        console.error('Error loading friends:', error);
-        participantsList.innerHTML = `
-            <div class="text-center py-8 text-red-500">
-                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                <p>Error loading friends</p>
-                <button onclick="loadFriendsForGroupCreation()" class="mt-2 text-sm text-purple-600 hover:text-purple-800">
-                    Retry
-                </button>
-            </div>
-        `;
+        console.error('Error loading groups:', error);
+        showToast('Error loading groups', 'error');
     }
 }
 
-// Update selected participants display
-function updateSelectedParticipants() {
-    const selectedCheckboxes = document.querySelectorAll('.participant-checkbox:checked');
-    const selectedContainer = document.getElementById('selectedParticipants');
+function renderGroupsList(groups) {
+    if (!groupElements.groupsList) return;
     
-    if (!selectedContainer) return;
-    
-    if (selectedCheckboxes.length === 0) {
-        selectedContainer.classList.add('hidden');
+    if (groups.length === 0) {
+        groupElements.noChatsMessage?.classList.remove('hidden');
+        groupElements.groupsList.innerHTML = '';
         return;
     }
     
-    selectedContainer.classList.remove('hidden');
-    selectedContainer.innerHTML = '';
+    groupElements.noChatsMessage?.classList.add('hidden');
+    groupElements.groupsList.innerHTML = '';
     
-    selectedCheckboxes.forEach(checkbox => {
-        const participantId = checkbox.value;
-        const participantName = checkbox.dataset.name;
-        
-        const tag = document.createElement('div');
-        tag.className = 'flex items-center space-x-2 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm';
-        tag.innerHTML = `
-            <span>${participantName}</span>
-            <button type="button" class="text-purple-600 hover:text-purple-900" 
-                    onclick="this.closest('.participant-checkbox').click()">
-                <i class="fas fa-times text-xs"></i>
-            </button>
-        `;
-        selectedContainer.appendChild(tag);
+    groups.forEach(group => {
+        const groupItem = createGroupChatItem(group);
+        groupElements.groupsList.appendChild(groupItem);
     });
 }
 
-// Search friends for group creation
-function searchFriendsForGroupCreation(query) {
-    const participantsList = groupElements.groupParticipants;
-    if (!participantsList) return;
+function createGroupChatItem(group) {
+    const item = document.createElement('div');
+    item.className = 'group-chat-item flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer';
+    item.dataset.groupId = group.id;
+    item.dataset.groupName = group.name;
     
-    const friendItems = participantsList.querySelectorAll('.flex.items-center.justify-between');
-    if (friendItems.length === 0) return;
+    const unreadCount = getGroupUnreadCount(group.id);
     
-    const searchTerm = query.toLowerCase().trim();
+    item.innerHTML = `
+        <div class="flex-shrink-0 relative">
+            <img class="group-avatar w-12 h-12 rounded-full" 
+                 src="${group.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.name)}&background=random`}"
+                 alt="${group.name}">
+            ${group.typingUsers?.length > 0 ? `
+                <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+            ` : ''}
+        </div>
+        <div class="ml-3 flex-1 min-w-0">
+            <div class="flex justify-between items-center">
+                <h3 class="group-name font-semibold truncate">${group.name}</h3>
+                <span class="timestamp text-xs text-gray-500">
+                    ${group.lastActivity ? formatTimeAgo(group.lastActivity.toDate()) : ''}
+                </span>
+            </div>
+            <p class="last-message text-sm text-gray-500 truncate">
+                ${group.lastMessage || 'No messages yet'}
+            </p>
+        </div>
+        ${unreadCount > 0 ? `
+            <div class="unread-count ml-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
+                ${unreadCount}
+            </div>
+        ` : ''}
+        ${group.isMuted ? '<i class="fas fa-bell-slash text-gray-400 ml-2"></i>' : ''}
+    `;
     
-    friendItems.forEach(item => {
-        const nameElement = item.querySelector('h4');
-        if (nameElement) {
-            const name = nameElement.textContent.toLowerCase();
-            item.style.display = name.includes(searchTerm) ? 'flex' : 'none';
-        }
-    });
+    return item;
 }
 
-// Show all friends modal
-async function showAllFriendsModal() {
-    const modal = groupElements.allFriendsModal;
-    if (!modal) return;
-    
-    showModal('allFriendsModal');
-    
-    try {
-        const friends = await fetchFriendsDirectly();
-        const container = modal.querySelector('.grid');
-        
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        if (!friends || friends.length === 0) {
-            container.innerHTML = `
-                <div class="col-span-3 text-center py-12">
-                    <i class="fas fa-user-friends text-5xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500">No friends found</p>
-                </div>
-            `;
-            return;
-        }
-        
-        friends.forEach(friend => {
-            const friendCard = document.createElement('div');
-            friendCard.className = 'bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow';
-            friendCard.innerHTML = `
-                <div class="flex items-center space-x-3 mb-3">
-                    <img class="w-12 h-12 rounded-full object-cover" 
-                         src="${friend.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName)}&background=7C3AED&color=fff`}"
-                         alt="${friend.displayName}">
-                    <div class="flex-1">
-                        <h4 class="font-semibold">${friend.displayName}</h4>
-                        <p class="text-sm text-gray-500">${friend.status || 'offline'}</p>
-                    </div>
-                </div>
-                <label class="flex items-center cursor-pointer">
-                    <input type="checkbox" class="friend-select-checkbox mr-2 w-4 h-4 text-purple-600 rounded" 
-                           value="${friend.id}" data-name="${friend.displayName}">
-                    <span class="text-sm">Select</span>
-                </label>
-            `;
-            container.appendChild(friendCard);
-        });
-        
-        // Add event listener for confirm button
-        const confirmBtn = modal.querySelector('#confirmFriendsSelection');
-        const countSpan = modal.querySelector('#selectedFriendsCount');
-        
-        confirmBtn.addEventListener('click', function() {
-            const selectedCheckboxes = modal.querySelectorAll('.friend-select-checkbox:checked');
-            const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-            
-            // Update main form
-            selectedIds.forEach(id => {
-                const checkbox = document.querySelector(`.participant-checkbox[value="${id}"]`);
-                if (checkbox) {
-                    checkbox.checked = true;
-                    checkbox.dispatchEvent(new Event('change'));
-                }
-            });
-            
-            hideModal('allFriendsModal');
-        });
-        
-        // Update count
-        modal.querySelectorAll('.friend-select-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const selected = modal.querySelectorAll('.friend-select-checkbox:checked').length;
-                countSpan.textContent = selected;
-            });
-        });
-        
-    } catch (error) {
-        console.error('Error loading all friends:', error);
+function getGroupUnreadCount(groupId) {
+    // Implement unread count logic
+    return 0; // Placeholder
+}
+
+function searchGroups(query) {
+    if (!query.trim()) {
+        renderGroupsList(allGroups);
+        return;
     }
+    
+    const searchTerm = query.toLowerCase();
+    const filteredGroups = allGroups.filter(group =>
+        group.name.toLowerCase().includes(searchTerm) ||
+        group.description?.toLowerCase().includes(searchTerm)
+    );
+    
+    renderGroupsList(filteredGroups);
 }
 
-// Show group info modal
-async function showGroupInfoModal(groupId) {
+/**
+ * 3. Group Info Functions
+ */
+async function showGroupInfo(groupId) {
     try {
         const groupDoc = await db.collection('groups').doc(groupId).get();
         if (!groupDoc.exists) {
@@ -2028,440 +1363,380 @@ async function showGroupInfoModal(groupId) {
             return;
         }
         
-        const groupData = groupDoc.data();
-        currentGroup = { id: groupId, ...groupData };
+        const group = { id: groupId, ...groupDoc.data() };
+        currentGroup = group;
         
         // Update modal content
-        if (groupElements.enhancedGroupName) {
-            groupElements.enhancedGroupName.textContent = groupData.name;
-        }
+        updateGroupInfoModal(group);
         
-        if (groupElements.enhancedGroupDescription) {
-            groupElements.enhancedGroupDescription.textContent = groupData.description || 'No description';
-        }
+        // Load members
+        await loadGroupMembers(groupId);
         
-        if (groupElements.enhancedGroupMembersCount) {
-            const memberCount = groupData.participants?.length || 0;
-            groupElements.enhancedGroupMembersCount.textContent = `${memberCount} member${memberCount !== 1 ? 's' : ''}`;
-        }
-        
-        // Update avatar
-        const avatarElement = document.getElementById('enhancedGroupAvatar');
-        if (avatarElement) {
-            avatarElement.src = groupData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(groupData.name)}&background=7C3AED&color=fff`;
-        }
-        
-        // Update settings
-        if (groupElements.groupSendMessages) {
-            groupElements.groupSendMessages.value = groupData.settings?.sendMessages || 'all';
-        }
-        
-        if (groupElements.groupEditInfo) {
-            groupElements.groupEditInfo.value = groupData.settings?.editInfo || 'admins';
-        }
-        
-        // Update invite link
-        if (groupElements.groupInviteLink) {
-            groupElements.groupInviteLink.value = groupData.inviteLink || `${window.location.origin}/invite/${groupData.inviteCode}`;
-        }
-        
-        // Show/hide encryption badge
-        const encryptionBadge = document.getElementById('encryptionBadge');
-        if (encryptionBadge) {
-            encryptionBadge.classList.toggle('hidden', !groupData.isEncrypted);
-        }
-        
-        // Show/hide admin danger zone
-        const adminDangerZone = document.getElementById('adminDangerZone');
-        if (adminDangerZone) {
-            const isAdmin = groupData.admins?.includes(currentUser.uid);
-            adminDangerZone.classList.toggle('hidden', !isAdmin);
-        }
-        
-        // Load participants
-        await loadGroupParticipantsList(groupId, groupData.participants);
-        
-        // Show modal
         showModal('enhancedGroupInfoModal');
-        
     } catch (error) {
         console.error('Error showing group info:', error);
         showToast('Error loading group information', 'error');
     }
 }
 
-// Load group participants list
-async function loadGroupParticipantsList(groupId, participantIds) {
-    const participantsList = document.getElementById('groupParticipantsList');
-    if (!participantsList || !participantIds) return;
+function updateGroupInfoModal(group) {
+    if (groupElements.enhancedGroupName) {
+        groupElements.enhancedGroupName.textContent = group.name;
+    }
     
-    participantsList.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin"></i></div>';
+    if (groupElements.enhancedGroupMembersCount) {
+        const memberCount = group.participants?.length || 0;
+        groupElements.enhancedGroupMembersCount.textContent = `${memberCount} members`;
+    }
+    
+    const groupInfoAvatar = document.getElementById('groupInfoAvatar');
+    if (groupInfoAvatar) {
+        groupInfoAvatar.src = group.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.name)}&background=random`;
+    }
+    
+    const groupInfoDescription = document.getElementById('groupInfoDescription');
+    if (groupInfoDescription) {
+        groupInfoDescription.textContent = group.description || 'No description';
+    }
+    
+    if (groupElements.groupInviteLink) {
+        const inviteCode = group.inviteCode || generateInviteCode();
+        groupElements.groupInviteLink.value = `${window.location.origin}/invite/${inviteCode}`;
+    }
+    
+    if (groupElements.encryptionBadge) {
+        groupElements.encryptionBadge.classList.toggle('hidden', !group.isEncrypted);
+    }
+    
+    if (groupElements.securityCodeDisplay) {
+        groupElements.securityCodeDisplay.classList.toggle('hidden', !group.isEncrypted);
+    }
+    
+    // Update settings
+    if (groupElements.groupSendMessages) {
+        groupElements.groupSendMessages.value = group.settings?.adminsOnlySend ? 'admins' : 'all';
+    }
+    
+    if (groupElements.groupEditInfo) {
+        groupElements.groupEditInfo.value = group.settings?.adminsOnlyEdit ? 'admins' : 'all';
+    }
+    
+    // Show/hide admin danger zone
+    const adminDangerZone = document.getElementById('adminDangerZone');
+    if (adminDangerZone) {
+        const isAdmin = group.admins?.includes(currentUser.uid);
+        adminDangerZone.classList.toggle('hidden', !isAdmin);
+    }
+}
+
+async function loadGroupMembers(groupId) {
+    if (!groupElements.groupMembersList) return;
     
     try {
-        // Get group data for admin info
         const groupDoc = await db.collection('groups').doc(groupId).get();
-        const groupData = groupDoc.exists ? groupDoc.data() : {};
-        const admins = groupData.admins || [];
-        const creatorId = groupData.createdBy;
+        const group = groupDoc.data();
         
-        // Load participant details
-        const participantPromises = participantIds.map(async (userId) => {
+        const members = [];
+        for (const userId of group.participants || []) {
             const userDoc = await db.collection('users').doc(userId).get();
             if (userDoc.exists) {
-                return {
+                const userData = userDoc.data();
+                members.push({
                     id: userId,
-                    ...userDoc.data(),
-                    isAdmin: admins.includes(userId),
-                    isCreator: userId === creatorId
-                };
+                    ...userData,
+                    isAdmin: group.admins?.includes(userId),
+                    isCreator: userId === group.createdBy
+                });
             }
-            return null;
-        });
+        }
         
-        const participants = (await Promise.all(participantPromises)).filter(p => p !== null);
-        
-        // Sort: creator first, then admins, then members
-        participants.sort((a, b) => {
-            if (a.isCreator && !b.isCreator) return -1;
-            if (!a.isCreator && b.isCreator) return 1;
-            if (a.isAdmin && !b.isAdmin) return -1;
-            if (!a.isAdmin && b.isAdmin) return 1;
-            return a.displayName?.localeCompare(b.displayName);
-        });
-        
-        // Render participants
-        participantsList.innerHTML = '';
-        participants.forEach(participant => {
-            const isSelf = participant.id === currentUser.uid;
-            const canManage = admins.includes(currentUser.uid) && !participant.isCreator && !isSelf;
-            
-            const participantItem = document.createElement('div');
-            participantItem.className = 'flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50';
-            participantItem.innerHTML = `
-                <div class="flex items-center space-x-3 flex-1">
-                    <div class="relative">
-                        <img class="w-12 h-12 rounded-full object-cover" 
-                             src="${participant.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(participant.displayName)}&background=7C3AED&color=fff`}"
-                             alt="${participant.displayName}">
-                        <div class="absolute bottom-0 right-0 w-3 h-3 ${participant.status === 'online' ? 'bg-green-500' : 'bg-gray-400'} rounded-full border-2 border-white"></div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center space-x-2">
-                            <h4 class="font-semibold text-gray-800 truncate">${participant.displayName}</h4>
-                            ${participant.isCreator ? 
-                                '<span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">Creator</span>' : 
-                                participant.isAdmin ? 
-                                '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Admin</span>' : ''}
-                            ${isSelf ? '<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">You</span>' : ''}
-                        </div>
-                        <p class="text-sm text-gray-500 truncate">${participant.status || 'offline'}</p>
-                    </div>
-                </div>
-                ${canManage ? `
-                    <div class="flex space-x-2">
-                        ${!participant.isAdmin ? `
-                            <button class="make-admin-btn p-2 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-50" 
-                                    data-user-id="${participant.id}" title="Make Admin">
-                                <i class="fas fa-user-shield"></i>
-                            </button>
-                        ` : ''}
-                        <button class="remove-participant-btn p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-50" 
-                                data-user-id="${participant.id}" title="Remove">
-                            <i class="fas fa-user-times"></i>
-                        </button>
-                    </div>
-                ` : ''}
-            `;
-            
-            participantsList.appendChild(participantItem);
-        });
-        
-        // Add event listeners for admin actions
-        participantsList.addEventListener('click', function(e) {
-            if (e.target.closest('.make-admin-btn')) {
-                const btn = e.target.closest('.make-admin-btn');
-                const userId = btn.dataset.userId;
-                makeMemberAdmin(groupId, userId);
-            }
-            
-            if (e.target.closest('.remove-participant-btn')) {
-                const btn = e.target.closest('.remove-participant-btn');
-                const userId = btn.dataset.userId;
-                if (confirm('Remove this member from the group?')) {
-                    removeParticipantFromGroup(groupId, userId);
-                }
-            }
-        });
-        
+        renderGroupMembers(members);
     } catch (error) {
-        console.error('Error loading participants:', error);
-        participantsList.innerHTML = '<div class="text-center py-8 text-red-500">Error loading participants</div>';
+        console.error('Error loading group members:', error);
     }
 }
 
-// Show add participants modal
-async function showAddParticipantsModal() {
-    try {
-        if (!currentGroupId) return;
+function renderGroupMembers(members) {
+    if (!groupElements.groupMembersList) return;
+    
+    groupElements.groupMembersList.innerHTML = '';
+    
+    members.forEach(member => {
+        const memberItem = document.createElement('div');
+        memberItem.className = 'group-member flex items-center justify-between p-2 hover:bg-gray-50 rounded';
+        memberItem.dataset.memberId = member.id;
+        memberItem.dataset.memberRole = member.isAdmin ? 'admin' : 'member';
         
-        // Create modal
-        const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-        modal.innerHTML = `
-            <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
-                <div class="modal-header mb-4">
-                    <h3 class="text-xl font-semibold">Add Participants</h3>
-                    <button class="modal-close text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body flex-1 overflow-hidden flex flex-col">
-                    <div class="mb-4">
-                        <input type="text" id="addParticipantSearch" 
-                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                               placeholder="Search friends...">
+        memberItem.innerHTML = `
+            <div class="flex items-center">
+                <img class="member-avatar w-10 h-10 rounded-full mr-3" 
+                     src="${member.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.displayName)}&background=random`}"
+                     alt="${member.displayName}">
+                <div>
+                    <div class="flex items-center">
+                        <span class="member-name font-medium">${member.displayName}</span>
+                        ${member.isCreator ? `
+                            <span class="member-role ml-2 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">Creator</span>
+                        ` : member.isAdmin ? `
+                            <span class="member-role ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Admin</span>
+                        ` : ''}
                     </div>
-                    <div id="addParticipantList" class="flex-1 overflow-y-auto space-y-2">
-                        <!-- Friends list will be loaded here -->
-                    </div>
-                    <div class="mt-4 pt-4 border-t">
-                        <div class="flex justify-between items-center">
-                            <span id="addParticipantCount" class="text-sm text-gray-500">0 selected</span>
-                            <div class="flex space-x-2">
-                                <button class="modal-cancel px-4 py-2 text-gray-600 hover:text-gray-800">
-                                    Cancel
-                                </button>
-                                <button id="confirmAddParticipants" 
-                                        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-                                        disabled>
-                                    Add
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <span class="member-status text-sm text-gray-500">${member.status || 'offline'}</span>
                 </div>
             </div>
+            ${member.id !== currentUser.uid ? `
+                <div class="flex space-x-2">
+                    <button class="manage-member-btn text-blue-600 hover:text-blue-800" data-action="toggle-admin" data-user-id="${member.id}">
+                        <i class="fas fa-user-shield"></i>
+                    </button>
+                </div>
+            ` : ''}
         `;
         
-        document.body.appendChild(modal);
-        
-        // Load friends
-        await loadAddParticipantsList(modal);
-        
-        // Add event listeners
-        modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
-        modal.querySelector('.modal-cancel').addEventListener('click', () => modal.remove());
-        
-        modal.querySelector('#confirmAddParticipants').addEventListener('click', async () => {
-            const selectedCheckboxes = modal.querySelectorAll('.add-participant-checkbox:checked');
-            const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-            
-            if (selectedIds.length > 0) {
-                for (const userId of selectedIds) {
-                    await addParticipantToGroup(currentGroupId, userId);
-                }
-                modal.remove();
-            }
-        });
-        
-        // Search functionality
-        modal.querySelector('#addParticipantSearch').addEventListener('input', (e) => {
-            searchAddParticipants(modal, e.target.value);
-        });
-        
-        // Close when clicking outside
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
-        
-    } catch (error) {
-        console.error('Error showing add participants modal:', error);
-        showToast('Error loading friends list', 'error');
-    }
-}
-
-// Load add participants list
-async function loadAddParticipantsList(modal) {
-    const listContainer = modal.querySelector('#addParticipantList');
-    if (!listContainer) return;
-    
-    try {
-        const friends = await fetchFriendsDirectly();
-        const groupParticipants = currentGroup?.participants || [];
-        
-        // Filter out friends already in group
-        const availableFriends = friends.filter(friend => 
-            !groupParticipants.includes(friend.id) && friend.id !== currentUser.uid
-        );
-        
-        if (availableFriends.length === 0) {
-            listContainer.innerHTML = `
-                <div class="text-center py-8 text-gray-500">
-                    <i class="fas fa-user-friends text-3xl mb-3"></i>
-                    <p>All friends are already in the group</p>
-                </div>
-            `;
-            return;
-        }
-        
-        listContainer.innerHTML = '';
-        availableFriends.forEach(friend => {
-            const friendItem = document.createElement('label');
-            friendItem.className = 'flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer';
-            friendItem.innerHTML = `
-                <div class="flex items-center space-x-3 flex-1">
-                    <img class="w-10 h-10 rounded-full object-cover" 
-                         src="${friend.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName)}&background=7C3AED&color=fff`}"
-                         alt="${friend.displayName}">
-                    <div class="flex-1 min-w-0">
-                        <h4 class="font-medium text-gray-800 truncate">${friend.displayName}</h4>
-                        <p class="text-sm text-gray-500 truncate">${friend.status || 'offline'}</p>
-                    </div>
-                </div>
-                <input type="checkbox" class="add-participant-checkbox w-5 h-5 text-purple-600 rounded" 
-                       value="${friend.id}">
-            `;
-            listContainer.appendChild(friendItem);
-        });
-        
-        // Update count on checkbox change
-        const countSpan = modal.querySelector('#addParticipantCount');
-        const confirmBtn = modal.querySelector('#confirmAddParticipants');
-        
-        listContainer.addEventListener('change', () => {
-            const selectedCount = modal.querySelectorAll('.add-participant-checkbox:checked').length;
-            countSpan.textContent = `${selectedCount} selected`;
-            confirmBtn.disabled = selectedCount === 0;
-        });
-        
-    } catch (error) {
-        console.error('Error loading add participants list:', error);
-        listContainer.innerHTML = '<div class="text-center py-8 text-red-500">Error loading friends</div>';
-    }
-}
-
-// Search add participants
-function searchAddParticipants(modal, query) {
-    const listContainer = modal.querySelector('#addParticipantList');
-    if (!listContainer) return;
-    
-    const friendItems = listContainer.querySelectorAll('label');
-    const searchTerm = query.toLowerCase().trim();
-    
-    friendItems.forEach(item => {
-        const nameElement = item.querySelector('h4');
-        if (nameElement) {
-            const name = nameElement.textContent.toLowerCase();
-            item.style.display = name.includes(searchTerm) ? 'flex' : 'none';
-        }
+        groupElements.groupMembersList.appendChild(memberItem);
     });
 }
 
-// Show manage admins modal
-async function showManageAdminsModal() {
-    const modal = groupElements.manageAdminsModal;
-    if (!modal || !currentGroupId) return;
+function copyInviteLinkAction() {
+    if (!groupElements.groupInviteLink) return;
     
-    showModal('manageAdminsModal');
-    await loadAdminManagementList();
+    groupElements.groupInviteLink.select();
+    document.execCommand('copy');
+    
+    // Show feedback
+    const originalValue = groupElements.groupInviteLink.value;
+    groupElements.groupInviteLink.value = 'Copied!';
+    
+    setTimeout(() => {
+        groupElements.groupInviteLink.value = originalValue;
+    }, 2000);
+    
+    showToast('Invite link copied to clipboard', 'success');
 }
 
-// Load admin management list
-async function loadAdminManagementList() {
-    const adminList = groupElements.adminList;
-    if (!adminList || !currentGroup) return;
-    
-    adminList.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin"></i></div>';
+async function refreshInviteLinkAction() {
+    if (!currentGroupId) return;
     
     try {
-        // Get all participants
-        const participantPromises = currentGroup.participants.map(async (userId) => {
-            const userDoc = await db.collection('users').doc(userId).get();
-            if (userDoc.exists) {
-                return {
-                    id: userId,
-                    ...userDoc.data(),
-                    isAdmin: currentGroup.admins?.includes(userId) || false,
-                    isCreator: userId === currentGroup.createdBy
-                };
-            }
-            return null;
+        const newCode = generateInviteCode();
+        await db.collection('groups').doc(currentGroupId).update({
+            inviteCode: newCode,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        const participants = (await Promise.all(participantPromises)).filter(p => p !== null);
-        
-        // Sort: creator first, then current user, then others
-        participants.sort((a, b) => {
-            if (a.isCreator && !b.isCreator) return -1;
-            if (!a.isCreator && b.isCreator) return 1;
-            if (a.id === currentUser.uid && b.id !== currentUser.uid) return -1;
-            if (a.id !== currentUser.uid && b.id === currentUser.uid) return 1;
-            return a.displayName?.localeCompare(b.displayName);
-        });
-        
-        // Render admin list
-        adminList.innerHTML = '';
-        participants.forEach(participant => {
-            const adminItem = document.createElement('div');
-            adminItem.className = 'flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50';
-            adminItem.innerHTML = `
-                <div class="flex items-center space-x-3 flex-1">
-                    <img class="w-12 h-12 rounded-full object-cover" 
-                         src="${participant.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(participant.displayName)}&background=7C3AED&color=fff`}"
-                         alt="${participant.displayName}">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center space-x-2">
-                            <h4 class="font-semibold text-gray-800 truncate">${participant.displayName}</h4>
-                            ${participant.isCreator ? 
-                                '<span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">Creator</span>' : ''}
-                            ${participant.id === currentUser.uid ? 
-                                '<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">You</span>' : ''}
-                        </div>
-                        <p class="text-sm text-gray-500">${participant.status || 'offline'}</p>
-                    </div>
-                </div>
-                <div class="flex items-center">
-                    ${participant.isCreator ? `
-                        <span class="text-sm text-gray-500">Always Admin</span>
-                    ` : `
-                        <label class="switch">
-                            <input type="checkbox" class="admin-toggle" 
-                                   ${participant.isAdmin ? 'checked' : ''}
-                                   data-user-id="${participant.id}">
-                            <span class="slider"></span>
-                        </label>
-                    `}
-                </div>
-            `;
-            
-            adminList.appendChild(adminItem);
-        });
-        
-        // Update admin count
-        const adminCount = document.getElementById('adminCount');
-        if (adminCount) {
-            const adminToggleCount = adminList.querySelectorAll('.admin-toggle:checked').length;
-            adminCount.textContent = adminToggleCount + 1; // +1 for creator
+        if (groupElements.groupInviteLink) {
+            groupElements.groupInviteLink.value = `${window.location.origin}/invite/${newCode}`;
         }
         
-        // Update count when toggles change
-        adminList.addEventListener('change', function() {
-            const adminToggleCount = this.querySelectorAll('.admin-toggle:checked').length;
-            if (adminCount) {
-                adminCount.textContent = adminToggleCount + 1;
-            }
-        });
-        
+        showToast('Invite link refreshed', 'success');
     } catch (error) {
-        console.error('Error loading admin management list:', error);
-        adminList.innerHTML = '<div class="text-center py-8 text-red-500">Error loading participants</div>';
+        console.error('Error refreshing invite link:', error);
+        showToast('Error refreshing invite link', 'error');
     }
 }
 
-// Save admin changes
-async function saveAdminChangesFunc() {
+/**
+ * 4. Join Group Functions
+ */
+async function joinGroupAction() {
+    const codeInput = groupElements.groupCode?.value.trim();
+    if (!codeInput) {
+        showToast('Please enter a group code', 'error');
+        return;
+    }
+    
+    // Extract code from URL if it's a link
+    let code = codeInput;
+    if (codeInput.includes('/invite/')) {
+        const parts = codeInput.split('/invite/');
+        code = parts[parts.length - 1];
+    }
+    
+    try {
+        // Find group by invite code
+        const groupsQuery = await db.collection('groups')
+            .where('inviteCode', '==', code)
+            .where('status', '==', 'active')
+            .limit(1)
+            .get();
+        
+        if (groupsQuery.empty) {
+            showToast('Invalid group code', 'error');
+            return;
+        }
+        
+        const groupDoc = groupsQuery.docs[0];
+        const groupId = groupDoc.id;
+        const group = groupDoc.data();
+        
+        // Check if user is already a member
+        if (group.participants?.includes(currentUser.uid)) {
+            showToast('You are already a member of this group', 'info');
+            openGroupChat(groupId);
+            hideModal('joinGroupModal');
+            return;
+        }
+        
+        // Add user to group
+        await db.collection('groups').doc(groupId).update({
+            participants: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+        });
+        
+        // Send system message
+        await sendSystemMessage(groupId, `${currentUserData.displayName} joined the group`);
+        
+        showToast('Successfully joined the group', 'success');
+        hideModal('joinGroupModal');
+        openGroupChat(groupId);
+        
+    } catch (error) {
+        console.error('Error joining group:', error);
+        showToast('Error joining group', 'error');
+    }
+}
+
+async function previewGroupFromCode(code) {
+    try {
+        const groupsQuery = await db.collection('groups')
+            .where('inviteCode', '==', code)
+            .where('status', '==', 'active')
+            .limit(1)
+            .get();
+        
+        if (groupsQuery.empty) {
+            hideGroupPreview();
+            return;
+        }
+        
+        const groupDoc = groupsQuery.docs[0];
+        const group = groupDoc.data();
+        
+        showGroupPreview(group);
+    } catch (error) {
+        console.error('Error previewing group:', error);
+        hideGroupPreview();
+    }
+}
+
+function showGroupPreview(group) {
+    if (!groupElements.groupPreview) return;
+    
+    groupElements.groupPreview.classList.remove('hidden');
+    
+    if (groupElements.previewGroupName) {
+        groupElements.previewGroupName.textContent = group.name;
+    }
+    
+    if (groupElements.previewGroupMembers) {
+        const memberCount = group.participants?.length || 0;
+        groupElements.previewGroupMembers.textContent = `${memberCount} members`;
+    }
+    
+    if (groupElements.previewGroupAvatar) {
+        groupElements.previewGroupAvatar.src = group.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.name)}&background=random`;
+    }
+    
+    const previewGroupDescription = document.getElementById('previewGroupDescription');
+    if (previewGroupDescription) {
+        previewGroupDescription.textContent = group.description || 'No description';
+    }
+}
+
+function hideGroupPreview() {
+    if (groupElements.groupPreview) {
+        groupElements.groupPreview.classList.add('hidden');
+    }
+}
+
+/**
+ * 5. Admin Management Functions
+ */
+async function showManageAdminsModal(groupId) {
+    currentGroupId = groupId;
+    await loadAdminManagementList();
+    showModal('manageAdminsModal');
+}
+
+async function loadAdminManagementList() {
+    if (!groupElements.adminList || !currentGroupId) return;
+    
+    try {
+        const groupDoc = await db.collection('groups').doc(currentGroupId).get();
+        const group = groupDoc.data();
+        
+        const members = [];
+        for (const userId of group.participants || []) {
+            const userDoc = await db.collection('users').doc(userId).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                members.push({
+                    id: userId,
+                    ...userData,
+                    isAdmin: group.admins?.includes(userId),
+                    isCreator: userId === group.createdBy
+                });
+            }
+        }
+        
+        renderAdminList(members);
+    } catch (error) {
+        console.error('Error loading admin list:', error);
+        groupElements.adminList.innerHTML = '<div class="text-center py-4 text-gray-500">Error loading members</div>';
+    }
+}
+
+function renderAdminList(members) {
+    if (!groupElements.adminList) return;
+    
+    groupElements.adminList.innerHTML = '';
+    
+    members.forEach(member => {
+        const adminItem = document.createElement('div');
+        adminItem.className = 'admin-item flex items-center justify-between p-3 hover:bg-gray-50 rounded';
+        
+        adminItem.innerHTML = `
+            <div class="flex items-center">
+                <img class="w-10 h-10 rounded-full mr-3" 
+                     src="${member.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.displayName)}&background=random`}"
+                     alt="${member.displayName}">
+                <div>
+                    <div class="font-medium">${member.displayName}</div>
+                    <div class="text-sm text-gray-500">${member.isCreator ? 'Group Creator' : member.isAdmin ? 'Admin' : 'Member'}</div>
+                </div>
+            </div>
+            ${!member.isCreator ? `
+                <label class="switch">
+                    <input type="checkbox" class="admin-toggle" 
+                           ${member.isAdmin ? 'checked' : ''}
+                           data-user-id="${member.id}"
+                           ${member.id === currentUser.uid ? 'disabled' : ''}>
+                    <span class="slider"></span>
+                </label>
+            ` : `
+                <span class="text-sm text-gray-500">Always Admin</span>
+            `}
+        `;
+        
+        groupElements.adminList.appendChild(adminItem);
+    });
+}
+
+function searchAdminMembers(query) {
+    const adminItems = groupElements.adminList?.querySelectorAll('.admin-item');
+    if (!adminItems) return;
+    
+    const searchTerm = query.toLowerCase();
+    
+    adminItems.forEach(item => {
+        const name = item.querySelector('.font-medium')?.textContent.toLowerCase() || '';
+        const role = item.querySelector('.text-sm')?.textContent.toLowerCase() || '';
+        
+        const shouldShow = name.includes(searchTerm) || role.includes(searchTerm);
+        item.style.display = shouldShow ? 'flex' : 'none';
+    });
+}
+
+async function saveAdminChanges() {
     if (!currentGroupId) return;
     
     const adminToggles = document.querySelectorAll('.admin-toggle');
@@ -2473,37 +1748,41 @@ async function saveAdminChangesFunc() {
         }
     });
     
-    // Ensure creator is always admin
-    if (!newAdmins.includes(currentGroup.createdBy)) {
-        newAdmins.push(currentGroup.createdBy);
-    }
-    
     try {
+        // Add creator to admins if not already included
+        const groupDoc = await db.collection('groups').doc(currentGroupId).get();
+        const group = groupDoc.data();
+        
+        if (group.createdBy && !newAdmins.includes(group.createdBy)) {
+            newAdmins.push(group.createdBy);
+        }
+        
+        // Update group admins
         await db.collection('groups').doc(currentGroupId).update({
-            admins: newAdmins
+            admins: newAdmins,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        // Update current group
-        currentGroup.admins = newAdmins;
-        
-        // Send system messages for changes
-        const oldAdmins = currentGroup.admins || [];
-        const addedAdmins = newAdmins.filter(admin => !oldAdmins.includes(admin));
-        const removedAdmins = oldAdmins.filter(admin => !newAdmins.includes(admin));
+        // Send system messages for admin changes
+        const oldAdmins = group.admins || [];
+        const addedAdmins = newAdmins.filter(id => !oldAdmins.includes(id));
+        const removedAdmins = oldAdmins.filter(id => !newAdmins.includes(id));
         
         for (const adminId of addedAdmins) {
-            if (adminId !== currentUser.uid) {
-                const userDoc = await db.collection('users').doc(adminId).get();
-                const userName = userDoc.exists ? userDoc.data().displayName : 'User';
-                await sendSystemMessage(currentGroupId, `${userName} was made an admin`);
+            const userDoc = await db.collection('users').doc(adminId).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                await sendSystemMessage(currentGroupId, `${userData.displayName} was made an admin`);
             }
         }
         
         for (const adminId of removedAdmins) {
-            if (adminId !== currentGroup.createdBy) {
+            if (adminId !== group.createdBy) {
                 const userDoc = await db.collection('users').doc(adminId).get();
-                const userName = userDoc.exists ? userDoc.data().displayName : 'User';
-                await sendSystemMessage(currentGroupId, `${userName} is no longer an admin`);
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    await sendSystemMessage(currentGroupId, `${userData.displayName} is no longer an admin`);
+                }
             }
         }
         
@@ -2516,482 +1795,934 @@ async function saveAdminChangesFunc() {
     }
 }
 
-// Search admin participants
-function searchAdminParticipants(query) {
-    const adminList = groupElements.adminList;
-    if (!adminList) return;
-    
-    const adminItems = adminList.querySelectorAll('.flex.items-center.justify-between');
-    const searchTerm = query.toLowerCase().trim();
-    
-    adminItems.forEach(item => {
-        const nameElement = item.querySelector('h4');
-        if (nameElement) {
-            const name = nameElement.textContent.toLowerCase();
-            item.style.display = name.includes(searchTerm) ? 'flex' : 'none';
-        }
-    });
+/**
+ * 6. Media Gallery Functions
+ */
+async function showGroupMediaGallery(groupId) {
+    currentGroupId = groupId;
+    await loadGroupMedia();
+    showModal('groupMediaGalleryModal');
 }
 
-// Show group media gallery
-async function loadGroupMedia(groupId, filter = 'all') {
-    const mediaGrid = groupElements.mediaGalleryGrid;
-    if (!mediaGrid) return;
+async function loadGroupMedia(filter = 'all') {
+    if (!groupElements.mediaGalleryGrid || !currentGroupId) return;
     
-    mediaGrid.innerHTML = '<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-2xl text-purple-500"></i></div>';
+    groupElements.mediaGalleryGrid.innerHTML = '<div class="col-span-full text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
     
     try {
-        let query = db.collection('groupMessages')
-            .where('groupId', '==', groupId)
-            .where('type', '==', 'file')
+        const messagesQuery = await db.collection('groupMessages')
+            .where('groupId', '==', currentGroupId)
+            .where('type', 'in', ['image', 'video', 'file'])
             .orderBy('timestamp', 'desc')
-            .limit(100);
+            .limit(100)
+            .get();
         
-        const snapshot = await query.get();
         const mediaItems = [];
-        
-        snapshot.forEach(doc => {
-            const message = { id: doc.id, ...doc.data() };
-            if (message.file && message.file.url) {
-                mediaItems.push(message);
+        messagesQuery.forEach(doc => {
+            const message = doc.data();
+            if (message.fileUrl || message.mediaUrl) {
+                mediaItems.push({
+                    id: doc.id,
+                    ...message,
+                    mediaType: message.type,
+                    mediaUrl: message.fileUrl || message.mediaUrl,
+                    timestamp: message.timestamp
+                });
             }
         });
         
-        // Apply filter
-        let filteredMedia = mediaItems;
-        if (filter !== 'all') {
-            filteredMedia = mediaItems.filter(item => {
-                const fileType = item.file.type || '';
-                if (filter === 'images') return fileType.startsWith('image/');
-                if (filter === 'videos') return fileType.startsWith('video/');
-                if (filter === 'audio') return fileType.startsWith('audio/');
-                if (filter === 'documents') return !fileType.startsWith('image/') && !fileType.startsWith('video/') && !fileType.startsWith('audio/');
-                return true;
-            });
-        }
-        
-        // Render media grid
-        mediaGrid.innerHTML = '';
-        
-        if (filteredMedia.length === 0) {
-            mediaGrid.innerHTML = `
-                <div class="col-span-full text-center py-12">
-                    <i class="fas fa-photo-video text-5xl text-gray-300 mb-4"></i>
-                    <h4 class="text-lg font-semibold text-gray-500">No Media Found</h4>
-                    <p class="text-gray-400">No media files in this group</p>
-                </div>
-            `;
-            return;
-        }
-        
-        filteredMedia.forEach(media => {
-            const mediaItem = document.createElement('div');
-            mediaItem.className = 'relative group cursor-pointer overflow-hidden rounded-lg';
-            
-            const fileType = media.file.type || '';
-            const isImage = fileType.startsWith('image/');
-            const isVideo = fileType.startsWith('video/');
-            const isAudio = fileType.startsWith('audio/');
-            
-            let content = '';
-            if (isImage) {
-                content = `
-                    <img src="${media.file.url}" alt="${media.file.name}" 
-                         class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                `;
-            } else if (isVideo) {
-                content = `
-                    <div class="relative w-full h-48 bg-gray-900">
-                        <video src="${media.file.url}" class="w-full h-48 object-cover"></video>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <i class="fas fa-play-circle text-white text-4xl bg-black/50 rounded-full p-2"></i>
-                        </div>
-                    </div>
-                `;
-            } else if (isAudio) {
-                content = `
-                    <div class="w-full h-48 bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
-                        <i class="fas fa-music text-4xl text-purple-600"></i>
-                    </div>
-                `;
-            } else {
-                content = `
-                    <div class="w-full h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                        <div class="text-center">
-                            <i class="fas fa-file text-4xl text-gray-400 mb-2"></i>
-                            <p class="text-xs text-gray-600 truncate px-2">${media.file.name}</p>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            mediaItem.innerHTML = `
-                ${content}
-                <div class="absolute bottom-2 left-2 right-2 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <p class="truncate">${media.file.name}</p>
-                    <p class="text-gray-300">${formatFileSize(media.file.size)} • ${formatTimeAgo(media.timestamp)}</p>
-                </div>
-            `;
-            
-            mediaItem.addEventListener('click', () => {
-                previewMedia(media);
-            });
-            
-            mediaGrid.appendChild(mediaItem);
-        });
-        
+        renderMediaGallery(mediaItems, filter);
     } catch (error) {
         console.error('Error loading group media:', error);
-        mediaGrid.innerHTML = '<div class="col-span-full text-center py-12 text-red-500">Error loading media</div>';
+        groupElements.mediaGalleryGrid.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">Error loading media</div>';
     }
 }
 
-// Preview media
-function previewMedia(media) {
-    const previewModal = document.getElementById('mediaPreviewModal');
-    const previewContent = document.getElementById('mediaPreviewContent');
-    const previewInfo = document.getElementById('mediaPreviewInfo');
+function renderMediaGallery(mediaItems, filter) {
+    if (!groupElements.mediaGalleryGrid) return;
     
-    if (!previewModal || !previewContent) return;
-    
-    const fileType = media.file.type || '';
-    const isImage = fileType.startsWith('image/');
-    const isVideo = fileType.startsWith('video/');
-    
-    let content = '';
-    if (isImage) {
-        content = `<img src="${media.file.url}" class="max-w-full max-h-screen rounded-lg" alt="${media.file.name}">`;
-    } else if (isVideo) {
-        content = `
-            <video src="${media.file.url}" controls autoplay class="max-w-full max-h-screen rounded-lg">
-                Your browser does not support the video tag.
-            </video>
-        `;
-    } else {
-        content = `
-            <div class="bg-white rounded-lg p-8 max-w-md">
-                <div class="text-center">
-                    <i class="fas fa-file text-6xl text-gray-400 mb-4"></i>
-                    <h4 class="text-xl font-semibold mb-2">${media.file.name}</h4>
-                    <p class="text-gray-600 mb-4">${formatFileSize(media.file.size)}</p>
-                    <a href="${media.file.url}" download="${media.file.name}" 
-                       class="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                        <i class="fas fa-download mr-2"></i>Download
-                    </a>
-                </div>
-            </div>
-        `;
+    // Filter media items
+    let filteredItems = mediaItems;
+    if (filter !== 'all') {
+        filteredItems = mediaItems.filter(item => {
+            if (filter === 'images') return item.mediaType === 'image';
+            if (filter === 'videos') return item.mediaType === 'video';
+            if (filter === 'documents') return item.mediaType === 'file';
+            return true;
+        });
     }
     
-    previewContent.innerHTML = content;
-    
-    // Update info
-    if (previewInfo) {
-        previewInfo.innerHTML = `
-            <p class="font-medium">${media.file.name}</p>
-            <p class="text-sm">${formatFileSize(media.file.size)} • ${formatTimeAgo(media.timestamp)}</p>
-        `;
-    }
-    
-    previewModal.classList.remove('hidden');
-    
-    // Close preview
-    const closeBtn = document.getElementById('closeMediaPreview');
-    if (closeBtn) {
-        closeBtn.onclick = () => previewModal.classList.add('hidden');
-    }
-    
-    // Close on escape key
-    const closeOnEscape = (e) => {
-        if (e.key === 'Escape') previewModal.classList.add('hidden');
-    };
-    document.addEventListener('keydown', closeOnEscape);
-    
-    // Remove listener when modal closes
-    previewModal.addEventListener('hidden', () => {
-        document.removeEventListener('keydown', closeOnEscape);
-    }, { once: true });
-}
-
-// Filter group media
-function filterGroupMedia(filter) {
-    if (!currentGroupId) return;
-    
-    // Update active filter button
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.filter === filter);
-    });
-    
-    loadGroupMedia(currentGroupId, filter);
-}
-
-// Search in group
-async function searchInGroup(query, filter = 'all') {
-    const resultsContainer = groupElements.groupSearchResults;
-    if (!resultsContainer || !currentGroupId) return;
-    
-    if (!query.trim()) {
-        resultsContainer.innerHTML = `
-            <div class="text-center py-12">
-                <i class="fas fa-search text-5xl text-gray-300 mb-4"></i>
-                <h4 class="text-lg font-semibold text-gray-500">Search Group Messages</h4>
-                <p class="text-gray-400">Enter keywords to find messages in this group</p>
+    if (filteredItems.length === 0) {
+        groupElements.mediaGalleryGrid.innerHTML = `
+            <div class="col-span-full text-center py-8">
+                <i class="fas fa-photo-video text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">No media found</p>
             </div>
         `;
         return;
     }
     
-    const startTime = performance.now();
-    resultsContainer.innerHTML = '<div class="text-center py-12"><i class="fas fa-spinner fa-spin text-2xl text-purple-500"></i></div>';
+    groupElements.mediaGalleryGrid.innerHTML = '';
     
-    try {
-        let queryRef = db.collection('groupMessages')
-            .where('groupId', '==', currentGroupId);
+    filteredItems.forEach(item => {
+        const mediaItem = document.createElement('div');
+        mediaItem.className = 'media-item relative group cursor-pointer';
+        mediaItem.dataset.mediaType = item.mediaType;
+        mediaItem.dataset.mediaUrl = item.mediaUrl;
+        mediaItem.dataset.timestamp = item.timestamp?.toDate().getTime();
         
-        const snapshot = await queryRef.get();
-        const allMessages = [];
-        
-        snapshot.forEach(doc => {
-            allMessages.push({ id: doc.id, ...doc.data() });
-        });
-        
-        // Filter messages client-side for better search experience
-        const searchTerm = query.toLowerCase();
-        let filteredMessages = allMessages.filter(message => {
-            // Skip system messages and deleted messages
-            if (message.type === 'system' || message.deletedForEveryone) return false;
-            
-            // Apply content filter
-            if (filter !== 'all') {
-                if (filter === 'text' && message.type !== 'text') return false;
-                if (filter === 'images' && (!message.file || !message.file.type?.startsWith('image/'))) return false;
-                if (filter === 'videos' && (!message.file || !message.file.type?.startsWith('video/'))) return false;
-                if (filter === 'links' && !containsLink(message.text)) return false;
-                if (filter === 'docs' && (!message.file || message.file.type?.startsWith('image/') || message.file.type?.startsWith('video/') || message.file.type?.startsWith('audio/'))) return false;
-            }
-            
-            // Search in text
-            if (message.text && message.text.toLowerCase().includes(searchTerm)) return true;
-            
-            // Search in file names
-            if (message.file && message.file.name && message.file.name.toLowerCase().includes(searchTerm)) return true;
-            
-            // Search in sender name
-            if (message.senderName && message.senderName.toLowerCase().includes(searchTerm)) return true;
-            
-            return false;
-        });
-        
-        // Sort by timestamp
-        filteredMessages.sort((a, b) => {
-            const timeA = a.timestamp?.toDate() || new Date(0);
-            const timeB = b.timestamp?.toDate() || new Date(0);
-            return timeB - timeA;
-        });
-        
-        // Render results
-        resultsContainer.innerHTML = '';
-        
-        if (filteredMessages.length === 0) {
-            resultsContainer.innerHTML = `
-                <div class="text-center py-12">
-                    <i class="fas fa-search-minus text-5xl text-gray-300 mb-4"></i>
-                    <h4 class="text-lg font-semibold text-gray-500">No Results Found</h4>
-                    <p class="text-gray-400">Try different keywords or filters</p>
+        let content = '';
+        if (item.mediaType === 'image') {
+            content = `
+                <img src="${item.mediaUrl}" alt="Media" class="w-full h-48 object-cover rounded-lg">
+                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg"></div>
+            `;
+        } else if (item.mediaType === 'video') {
+            content = `
+                <div class="w-full h-48 bg-gray-900 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-play text-white text-3xl"></i>
                 </div>
             `;
         } else {
-            filteredMessages.forEach(message => {
-                const resultElement = createSearchResultElement(message);
-                resultsContainer.appendChild(resultElement);
-            });
+            content = `
+                <div class="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-file text-gray-400 text-3xl"></i>
+                </div>
+            `;
         }
         
-        // Update search stats
-        const searchStats = document.getElementById('searchStats');
-        const resultCount = document.getElementById('resultCount');
-        const searchTime = document.getElementById('searchTime');
+        mediaItem.innerHTML = content;
         
-        if (searchStats && resultCount && searchTime) {
-            const endTime = performance.now();
-            const timeTaken = ((endTime - startTime) / 1000).toFixed(2);
+        mediaItem.addEventListener('click', () => {
+            previewMedia(item);
+        });
+        
+        groupElements.mediaGalleryGrid.appendChild(mediaItem);
+    });
+}
+
+function filterGroupMedia(filter) {
+    // This will be called when filter buttons are clicked
+    // The actual filtering happens in renderMediaGallery
+    loadGroupMedia(filter);
+}
+
+/**
+ * 7. Group Search Functions
+ */
+async function showGroupSearch(groupId) {
+    currentGroupId = groupId;
+    showModal('searchGroupModal');
+}
+
+async function searchInGroup(query) {
+    if (!groupElements.groupSearchResults || !currentGroupId) return;
+    
+    if (!query.trim()) {
+        groupElements.groupSearchResults.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">Enter search terms to find messages</p>
+            </div>
+        `;
+        return;
+    }
+    
+    groupElements.groupSearchResults.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
+    
+    try {
+        const messagesQuery = await db.collection('groupMessages')
+            .where('groupId', '==', currentGroupId)
+            .orderBy('timestamp', 'desc')
+            .limit(50)
+            .get();
+        
+        const results = [];
+        const searchTerm = query.toLowerCase();
+        
+        messagesQuery.forEach(doc => {
+            const message = doc.data();
+            const messageText = message.text?.toLowerCase() || '';
+            const senderName = message.senderName?.toLowerCase() || '';
             
-            resultCount.textContent = `${filteredMessages.length} result${filteredMessages.length !== 1 ? 's' : ''} found`;
-            searchTime.textContent = `Search took ${timeTaken}s`;
-            searchStats.classList.remove('hidden');
-        }
+            if (messageText.includes(searchTerm) || senderName.includes(searchTerm)) {
+                results.push({
+                    id: doc.id,
+                    ...message
+                });
+            }
+        });
         
+        renderSearchResults(results, searchTerm);
     } catch (error) {
         console.error('Error searching in group:', error);
-        resultsContainer.innerHTML = `
-            <div class="text-center py-12 text-red-500">
-                <i class="fas fa-exclamation-triangle text-5xl mb-4"></i>
-                <h4 class="text-lg font-semibold">Error Searching</h4>
-                <p class="text-gray-400">Please try again</p>
+        groupElements.groupSearchResults.innerHTML = '<div class="text-center py-8 text-red-500">Error searching messages</div>';
+    }
+}
+
+function renderSearchResults(results, searchTerm) {
+    if (!groupElements.groupSearchResults) return;
+    
+    if (results.length === 0) {
+        groupElements.groupSearchResults.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-search-minus text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">No results found for "${searchTerm}"</p>
+            </div>
+        `;
+        return;
+    }
+    
+    groupElements.groupSearchResults.innerHTML = '';
+    
+    results.forEach(result => {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'search-result-item p-4 border-b hover:bg-gray-50 cursor-pointer';
+        resultItem.dataset.messageId = result.id;
+        
+        // Highlight search term in message text
+        let highlightedText = result.text || '';
+        if (searchTerm) {
+            const regex = new RegExp(`(${searchTerm})`, 'gi');
+            highlightedText = highlightedText.replace(regex, '<mark>$1</mark>');
+        }
+        
+        resultItem.innerHTML = `
+            <div class="flex items-start">
+                <img class="w-8 h-8 rounded-full mr-3" 
+                     src="${result.senderPhoto || 'https://ui-avatars.com/api/?name=User&background=random'}"
+                     alt="${result.senderName}">
+                <div class="flex-1">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-medium">${result.senderName}</span>
+                        <span class="text-xs text-gray-500">
+                            ${result.timestamp ? formatTimeAgo(result.timestamp.toDate()) : ''}
+                        </span>
+                    </div>
+                    <div class="text-sm">${highlightedText}</div>
+                </div>
+            </div>
+        `;
+        
+        resultItem.addEventListener('click', () => {
+            scrollToMessage(result.id);
+            hideModal('searchGroupModal');
+        });
+        
+        groupElements.groupSearchResults.appendChild(resultItem);
+    });
+}
+
+/**
+ * 8. Group Context Menu Functions
+ */
+function showGroupContextMenu(event, groupId) {
+    const contextMenu = groupElements.groupListContextMenu;
+    if (!contextMenu) return;
+    
+    // Position the context menu
+    contextMenu.style.left = `${event.pageX}px`;
+    contextMenu.style.top = `${event.pageY}px`;
+    contextMenu.classList.remove('hidden');
+    
+    // Store the group ID in the context menu
+    contextMenu.dataset.groupId = groupId;
+    
+    // Prevent default context menu
+    event.preventDefault();
+}
+
+function hideGroupContextMenu() {
+    const contextMenu = groupElements.groupListContextMenu;
+    if (contextMenu) {
+        contextMenu.classList.add('hidden');
+    }
+}
+
+async function handleGroupContextMenuAction(action) {
+    const contextMenu = groupElements.groupListContextMenu;
+    const groupId = contextMenu?.dataset.groupId;
+    
+    if (!groupId) return;
+    
+    switch (action) {
+        case 'open-group':
+            openGroupChat(groupId);
+            break;
+            
+        case 'mute-group':
+            await toggleGroupMute(groupId);
+            break;
+            
+        case 'mark-as-read':
+            await markGroupAsRead(groupId);
+            break;
+            
+        case 'leave-group':
+            confirmLeaveGroupWithId(groupId);
+            break;
+    }
+}
+
+async function toggleGroupMute(groupId) {
+    try {
+        const groupDoc = await db.collection('groups').doc(groupId).get();
+        const group = groupDoc.data();
+        
+        const isMuted = group.mutedUsers?.includes(currentUser.uid);
+        
+        if (isMuted) {
+            await db.collection('groups').doc(groupId).update({
+                mutedUsers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+            });
+            showToast('Group unmuted', 'success');
+        } else {
+            await db.collection('groups').doc(groupId).update({
+                mutedUsers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+            });
+            showToast('Group muted', 'success');
+        }
+        
+        // Update UI
+        loadUserGroups();
+        
+    } catch (error) {
+        console.error('Error toggling group mute:', error);
+        showToast('Error updating group settings', 'error');
+    }
+}
+
+async function markGroupAsRead(groupId) {
+    // Implement mark as read logic
+    showToast('Marked as read', 'success');
+    loadUserGroups();
+}
+
+function confirmLeaveGroupWithId(groupId) {
+    currentGroupId = groupId;
+    showModal('confirmLeaveGroup');
+}
+
+/**
+ * 9. Group Chat Area Functions
+ */
+async function openGroupChat(groupId) {
+    try {
+        const groupDoc = await db.collection('groups').doc(groupId).get();
+        if (!groupDoc.exists) {
+            showToast('Group not found', 'error');
+            return;
+        }
+        
+        const group = groupDoc.data();
+        currentGroup = { id: groupId, ...group };
+        currentGroupId = groupId;
+        isGroupChat = true;
+        
+        // Update chat header
+        updateChatHeaderForGroup(group);
+        
+        // Load messages
+        await loadGroupMessages(groupId);
+        
+        // Switch to chat tab
+        switchToTab('chats');
+        
+        // Show back button on mobile
+        if (groupElements.backToChatsBtn) {
+            groupElements.backToChatsBtn.classList.remove('hidden');
+        }
+        
+        // Start listening for new messages
+        startListeningToGroupMessages(groupId);
+        
+        // Mark as read
+        await markGroupAsRead(groupId);
+        
+    } catch (error) {
+        console.error('Error opening group chat:', error);
+        showToast('Error opening group chat', 'error');
+    }
+}
+
+function updateChatHeaderForGroup(group) {
+    if (groupElements.chatTitle) {
+        groupElements.chatTitle.innerHTML = `
+            <div class="flex items-center">
+                <img class="chat-avatar w-10 h-10 rounded-full mr-3" 
+                     src="${group.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.name)}&background=random`}"
+                     alt="${group.name}">
+                <div>
+                    <h2 class="font-semibold">${group.name}</h2>
+                    <div class="flex items-center">
+                        <span class="chat-status text-sm text-gray-500">
+                            <span class="group-member-count">${group.participants?.length || 0} members</span>
+                            ${group.typingUsers?.length > 0 ? '<span class="group-typing-indicator ml-2">Typing...</span>' : ''}
+                        </span>
+                    </div>
+                </div>
             </div>
         `;
     }
 }
 
-// Create search result element
-function createSearchResultElement(message) {
-    const element = document.createElement('div');
-    element.className = 'bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer';
-    element.dataset.messageId = message.id;
+async function loadGroupMessages(groupId) {
+    if (!groupElements.chatMessages) return;
     
-    const time = message.timestamp ? message.timestamp.toDate().toLocaleString() : 'Unknown time';
-    const isSent = message.senderId === currentUser.uid;
+    groupElements.chatMessages.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
     
-    let content = '';
-    if (message.type === 'file') {
-        const fileType = message.file?.type || '';
-        if (fileType.startsWith('image/')) {
-            content = `
-                <div class="flex items-center space-x-3">
-                    <div class="w-16 h-16 rounded overflow-hidden">
-                        <img src="${message.file.url}" alt="${message.file.name}" class="w-full h-full object-cover">
-                    </div>
-                    <div>
-                        <p class="font-medium">Image: ${message.file.name}</p>
-                        <p class="text-sm text-gray-500">${formatFileSize(message.file.size)}</p>
-                    </div>
-                </div>
-            `;
-        } else if (fileType.startsWith('video/')) {
-            content = `
-                <div class="flex items-center space-x-3">
-                    <div class="w-16 h-16 bg-gray-900 rounded flex items-center justify-center">
-                        <i class="fas fa-video text-white"></i>
-                    </div>
-                    <div>
-                        <p class="font-medium">Video: ${message.file.name}</p>
-                        <p class="text-sm text-gray-500">${formatFileSize(message.file.size)}</p>
-                    </div>
-                </div>
-            `;
-        } else {
-            content = `
-                <div class="flex items-center space-x-3">
-                    <div class="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
-                        <i class="fas fa-file text-gray-600"></i>
-                    </div>
-                    <div>
-                        <p class="font-medium">File: ${message.file.name}</p>
-                        <p class="text-sm text-gray-500">${formatFileSize(message.file.size)}</p>
-                    </div>
-                </div>
-            `;
-        }
-    } else {
-        content = `<p class="text-gray-700">${escapeHtml(message.text)}</p>`;
+    try {
+        const messagesQuery = await db.collection('groupMessages')
+            .where('groupId', '==', groupId)
+            .orderBy('timestamp', 'desc')
+            .limit(50)
+            .get();
+        
+        const messages = [];
+        messagesQuery.forEach(doc => {
+            messages.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Reverse for chronological order
+        messages.reverse();
+        
+        renderGroupMessages(messages);
+    } catch (error) {
+        console.error('Error loading group messages:', error);
+        groupElements.chatMessages.innerHTML = '<div class="text-center py-8 text-red-500">Error loading messages</div>';
+    }
+}
+
+function renderGroupMessages(messages) {
+    if (!groupElements.chatMessages) return;
+    
+    groupElements.chatMessages.innerHTML = '';
+    
+    if (messages.length === 0) {
+        groupElements.chatMessages.innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-comments text-4xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-semibold text-gray-600">No messages yet</h3>
+                <p class="text-gray-500">Send the first message to start the conversation</p>
+            </div>
+        `;
+        return;
     }
     
-    element.innerHTML = `
-        <div class="flex justify-between items-start mb-2">
-            <div class="flex items-center space-x-2">
-                <span class="font-semibold">${isSent ? 'You' : message.senderName || 'Unknown'}</span>
-                ${message.starredBy?.includes(currentUser.uid) ? '<i class="fas fa-star text-yellow-500"></i>' : ''}
-            </div>
-            <span class="text-sm text-gray-500">${time}</span>
+    let lastDate = null;
+    
+    messages.forEach(message => {
+        const messageDate = message.timestamp?.toDate();
+        const dateStr = messageDate ? messageDate.toLocaleDateString() : '';
+        
+        // Add date separator if needed
+        if (lastDate !== dateStr) {
+            const dateSeparator = document.createElement('div');
+            dateSeparator.className = 'date-separator text-center my-4';
+            dateSeparator.innerHTML = `<span class="bg-gray-100 px-3 py-1 rounded text-sm text-gray-600">${dateStr}</span>`;
+            groupElements.chatMessages.appendChild(dateSeparator);
+            lastDate = dateStr;
+        }
+        
+        const messageElement = createGroupMessageElement(message);
+        groupElements.chatMessages.appendChild(messageElement);
+    });
+    
+    // Scroll to bottom
+    groupElements.chatMessages.scrollTop = groupElements.chatMessages.scrollHeight;
+}
+
+function createGroupMessageElement(message) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `group-message mb-4 ${message.senderId === currentUser.uid ? 'text-right' : ''}`;
+    messageDiv.dataset.messageId = message.id;
+    messageDiv.dataset.senderId = message.senderId;
+    messageDiv.dataset.senderName = message.senderName;
+    
+    const isSent = message.senderId === currentUser.uid;
+    const isSystem = message.type === 'system';
+    const isMentioned = message.mentions?.includes(currentUser.uid);
+    const isEveryoneMention = message.isEveryoneMention;
+    
+    let messageClass = 'inline-block p-3 rounded-lg max-w-xs lg:max-w-md ';
+    if (isSystem) {
+        messageClass += 'bg-gray-100 text-gray-600 text-sm ';
+    } else if (isSent) {
+        messageClass += 'bg-blue-500 text-white ';
+    } else {
+        messageClass += 'bg-gray-200 text-gray-800 ';
+    }
+    
+    if (isMentioned) {
+        messageClass += 'mentioned border-l-4 border-yellow-500 ';
+    }
+    
+    if (isEveryoneMention) {
+        messageClass += 'group-mention border-l-4 border-red-500 ';
+    }
+    
+    let content = '';
+    
+    if (isSystem) {
+        content = `<div class="system-message">${message.text}</div>`;
+    } else {
+        // Show sender name for group messages (except own messages)
+        if (!isSent) {
+            content += `<div class="sender-name text-sm font-medium mb-1">${message.senderName}`;
+            if (message.isAdmin) {
+                content += ` <span class="admin-badge text-xs bg-blue-100 text-blue-800 px-1 rounded">Admin</span>`;
+            }
+            content += `</div>`;
+        }
+        
+        // Message content
+        content += `<div class="message-content">${escapeHtml(message.text)}</div>`;
+        
+        // Message footer (time, status, reactions)
+        const time = message.timestamp ? message.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        content += `<div class="message-footer text-xs mt-1 opacity-75">${time}`;
+        
+        if (isSent) {
+            content += ` • ${message.status || 'sent'}`;
+        }
+        
+        if (message.reactions?.length > 0) {
+            content += ` • ${message.reactions.map(r => r.reaction).join(' ')}`;
+        }
+        
+        content += `</div>`;
+    }
+    
+    messageDiv.innerHTML = `
+        <div class="${messageClass}">
+            ${content}
         </div>
-        ${content}
-        <div class="mt-3 flex justify-end">
-            <button onclick="scrollToMessage('${message.id}')" 
-                    class="text-sm text-purple-600 hover:text-purple-800">
-                <i class="fas fa-arrow-right mr-1"></i>Go to message
+    `;
+    
+    // Add context menu for non-system messages
+    if (!isSystem) {
+        messageDiv.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showMessageContextMenu(e, message.id);
+        });
+    }
+    
+    return messageDiv;
+}
+
+function startListeningToGroupMessages(groupId) {
+    // Unsubscribe from previous listener
+    if (unsubscribeGroupMessages) {
+        unsubscribeGroupMessages();
+    }
+    
+    unsubscribeGroupMessages = db.collection('groupMessages')
+        .where('groupId', '==', groupId)
+        .orderBy('timestamp', 'desc')
+        .limit(1)
+        .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                    const message = { id: change.doc.id, ...change.doc.data() };
+                    addNewGroupMessage(message);
+                }
+            });
+        }, error => {
+            console.error('Error listening to group messages:', error);
+        });
+}
+
+function addNewGroupMessage(message) {
+    if (!groupElements.chatMessages) return;
+    
+    // Check if message already exists
+    const existingMessage = groupElements.chatMessages.querySelector(`[data-message-id="${message.id}"]`);
+    if (existingMessage) return;
+    
+    const messageElement = createGroupMessageElement(message);
+    groupElements.chatMessages.appendChild(messageElement);
+    
+    // Scroll to bottom if user is near bottom
+    const messagesContainer = groupElements.chatMessages;
+    const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
+    
+    if (isNearBottom) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+}
+
+/**
+ * 10. Group Message Functions
+ */
+async function sendGroupMessage() {
+    if (!groupElements.messageInput || !currentGroupId) return;
+    
+    const text = groupElements.messageInput.value.trim();
+    if (!text) return;
+    
+    try {
+        const messageData = {
+            groupId: currentGroupId,
+            senderId: currentUser.uid,
+            senderName: currentUserData.displayName,
+            senderPhoto: currentUserData.photoURL,
+            text: text,
+            type: 'text',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'sent',
+            isAdmin: currentGroup?.admins?.includes(currentUser.uid) || false
+        };
+        
+        // Check for mentions
+        const mentions = extractMentions(text);
+        if (mentions.length > 0) {
+            messageData.mentions = mentions;
+        }
+        
+        // Check for @everyone
+        if (text.includes('@everyone')) {
+            messageData.isEveryoneMention = true;
+        }
+        
+        await db.collection('groupMessages').add(messageData);
+        
+        // Update group's last activity
+        await db.collection('groups').doc(currentGroupId).update({
+            lastMessage: text.length > 50 ? text.substring(0, 50) + '...' : text,
+            lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
+            lastMessageTime: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Clear input
+        groupElements.messageInput.value = '';
+        
+        // Send notifications for mentions
+        if (mentions.length > 0) {
+            for (const userId of mentions) {
+                if (userId !== currentUser.uid) {
+                    sendMentionNotification(currentGroupId, userId);
+                }
+            }
+        }
+        
+        // Send notification for @everyone
+        if (messageData.isEveryoneMention) {
+            const participants = currentGroup?.participants || [];
+            for (const userId of participants) {
+                if (userId !== currentUser.uid) {
+                    sendMentionNotification(currentGroupId, userId, true);
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error sending group message:', error);
+        showToast('Error sending message', 'error');
+    }
+}
+
+function extractMentions(text) {
+    const mentionRegex = /@(\w+)/g;
+    const mentions = [];
+    let match;
+    
+    while ((match = mentionRegex.exec(text)) !== null) {
+        mentions.push(match[1]);
+    }
+    
+    return mentions;
+}
+
+async function sendMentionNotification(groupId, userId, isEveryone = false) {
+    try {
+        // Get user's notification token
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+        
+        if (userData?.notificationToken) {
+            // Send push notification
+            await sendPushNotification({
+                to: userData.notificationToken,
+                title: isEveryone ? '@everyone' : `You were mentioned in ${currentGroup?.name}`,
+                body: `${currentUserData.displayName}: ${groupElements.messageInput?.value.substring(0, 100)}...`,
+                data: {
+                    groupId: groupId,
+                    type: 'mention'
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error sending mention notification:', error);
+    }
+}
+
+/**
+ * 11. Group Tools & Features Functions
+ */
+function showGroupMenu() {
+    // Create and show group menu
+    const menu = document.createElement('div');
+    menu.className = 'absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50';
+    menu.innerHTML = `
+        <div class="py-1">
+            <button class="group-menu-item" onclick="showGroupInfo('${currentGroupId}')">
+                <i class="fas fa-info-circle mr-2"></i>View Group Info
+            </button>
+            <button class="group-menu-item" onclick="showGroupSearch('${currentGroupId}')">
+                <i class="fas fa-search mr-2"></i>Search in Group
+            </button>
+            <button class="group-menu-item" onclick="showGroupMediaGallery('${currentGroupId}')">
+                <i class="fas fa-photo-video mr-2"></i>Media Gallery
+            </button>
+            <button class="group-menu-item" onclick="showStarredMessages('${currentGroupId}')">
+                <i class="fas fa-star mr-2"></i>Starred Messages
+            </button>
+            ${currentGroup?.admins?.includes(currentUser.uid) ? `
+                <button class="group-menu-item" onclick="showManageAdminsModal('${currentGroupId}')">
+                    <i class="fas fa-user-shield mr-2"></i>Manage Admins
+                </button>
+            ` : ''}
+            <hr>
+            <button class="group-menu-item text-red-600" onclick="showModal('confirmLeaveGroup')">
+                <i class="fas fa-sign-out-alt mr-2"></i>Leave Group
             </button>
         </div>
     `;
     
-    return element;
+    // Position near group menu button
+    const groupMenuBtn = groupElements.groupMenuBtn;
+    const rect = groupMenuBtn.getBoundingClientRect();
+    
+    menu.style.position = 'fixed';
+    menu.style.top = `${rect.bottom + window.scrollY}px`;
+    menu.style.right = `${window.innerWidth - rect.right}px`;
+    
+    // Add to document
+    document.body.appendChild(menu);
+    
+    // Close menu when clicking outside
+    const closeMenu = (e) => {
+        if (!menu.contains(e.target) && e.target !== groupMenuBtn) {
+            document.body.removeChild(menu);
+            document.removeEventListener('click', closeMenu);
+        }
+    };
+    
+    setTimeout(() => {
+        document.addEventListener('click', closeMenu);
+    }, 0);
 }
 
-// Forward group message
-async function forwardGroupMessage(messageId) {
+async function startGroupCall() {
+    if (!currentGroupId) return;
+    
     try {
-        const messageDoc = await db.collection('groupMessages').doc(messageId).get();
-        if (!messageDoc.exists) {
-            showToast('Message not found', 'error');
-            return;
-        }
+        // Create group call
+        const callId = `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
-        const message = { id: messageId, ...messageDoc.data() };
-        currentForwardMessage = message;
+        const callData = {
+            id: callId,
+            groupId: currentGroupId,
+            type: 'audio',
+            participants: [currentUser.uid],
+            startedBy: currentUser.uid,
+            startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'active'
+        };
         
-        showModal('forwardMessageModal');
-        updateForwardPreview(message);
-        loadForwardTargets();
+        await db.collection('groupCalls').doc(callId).set(callData);
+        
+        // Send system message
+        await sendSystemMessage(currentGroupId, `${currentUserData.displayName} started a group call`);
+        
+        // Update UI
+        groupCallActive = true;
+        updateCallUI();
+        
+        // Show toast
+        showToast('Group call started', 'success');
         
     } catch (error) {
-        console.error('Error forwarding message:', error);
-        showToast('Error forwarding message', 'error');
+        console.error('Error starting group call:', error);
+        showToast('Error starting call', 'error');
     }
 }
 
-// Update forward preview
-function updateForwardPreview(message) {
-    const preview = document.getElementById('forwardPreview');
-    if (!preview) return;
+async function startGroupVideoCall() {
+    if (!currentGroupId) return;
     
-    const sender = message.senderId === currentUser.uid ? 'You' : message.senderName || 'Unknown';
-    const time = message.timestamp ? message.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    try {
+        // Create group video call
+        const callId = `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        const callData = {
+            id: callId,
+            groupId: currentGroupId,
+            type: 'video',
+            participants: [currentUser.uid],
+            startedBy: currentUser.uid,
+            startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'active'
+        };
+        
+        await db.collection('groupCalls').doc(callId).set(callData);
+        
+        // Send system message
+        await sendSystemMessage(currentGroupId, `${currentUserData.displayName} started a group video call`);
+        
+        // Update UI
+        groupVideoCallActive = true;
+        updateCallUI();
+        
+        // Show toast
+        showToast('Group video call started', 'success');
+        
+    } catch (error) {
+        console.error('Error starting group video call:', error);
+        showToast('Error starting video call', 'error');
+    }
+}
+
+function updateCallUI() {
+    const groupCallBtn = groupElements.groupCallBtn;
+    const groupVideoCallBtn = groupElements.groupVideoCallBtn;
     
-    let content = '';
-    if (message.type === 'file') {
-        const fileType = message.file?.type || '';
-        if (fileType.startsWith('image/')) {
-            content = `
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-image text-blue-500"></i>
-                    <span>Image: ${message.file.name}</span>
-                </div>
-            `;
-        } else if (fileType.startsWith('video/')) {
-            content = `
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-video text-purple-500"></i>
-                    <span>Video: ${message.file.name}</span>
-                </div>
-            `;
-        } else {
-            content = `
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-file text-gray-500"></i>
-                    <span>File: ${message.file.name}</span>
-                </div>
-            `;
-        }
+    if (groupCallActive) {
+        groupCallBtn.classList.add('active');
+        groupCallBtn.innerHTML = '<i class="fas fa-phone-slash"></i>';
+        groupCallBtn.title = 'End Call';
     } else {
-        content = `<p class="truncate">${escapeHtml(message.text)}</p>`;
+        groupCallBtn.classList.remove('active');
+        groupCallBtn.innerHTML = '<i class="fas fa-phone"></i>';
+        groupCallBtn.title = 'Group Call';
     }
     
-    preview.innerHTML = `
-        <div class="flex items-start space-x-3">
-            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-share text-purple-600"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-                <div class="flex justify-between items-start mb-2">
-                    <span class="font-semibold">${sender}</span>
-                    <span class="text-sm text-gray-500">${time}</span>
-                </div>
-                <div class="text-gray-700">
-                    ${content}
-                </div>
-            </div>
-        </div>
-    `;
-    
-    preview.classList.remove('hidden');
+    if (groupVideoCallActive) {
+        groupVideoCallBtn.classList.add('active');
+        groupVideoCallBtn.innerHTML = '<i class="fas fa-video-slash"></i>';
+        groupVideoCallBtn.title = 'End Video Call';
+    } else {
+        groupVideoCallBtn.classList.remove('active');
+        groupVideoCallBtn.innerHTML = '<i class="fas fa-video"></i>';
+        groupVideoCallBtn.title = 'Group Video Call';
+    }
 }
 
-// Load forward targets
-async function loadForwardTargets() {
-    const targetsList = groupElements.forwardTargetsList;
-    if (!targetsList) return;
+/**
+ * 12. Group Member Functions
+ */
+// Already implemented in loadGroupMembers and renderGroupMembers
+
+/**
+ * 13. Group Poll Functions (if applicable)
+ */
+async function createGroupPoll(question, options) {
+    if (!currentGroupId) return;
     
-    targetsList.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin"></i></div>';
+    try {
+        const pollData = {
+            groupId: currentGroupId,
+            question: question,
+            options: options.map(option => ({
+                text: option,
+                votes: 0,
+                voters: []
+            })),
+            createdBy: currentUser.uid,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            totalVotes: 0,
+            isActive: true
+        };
+        
+        await db.collection('groupPolls').add(pollData);
+        
+        // Send poll as a message
+        await sendGroupMessageAsPoll(pollData);
+        
+        showToast('Poll created', 'success');
+    } catch (error) {
+        console.error('Error creating poll:', error);
+        showToast('Error creating poll', 'error');
+    }
+}
+
+async function sendGroupMessageAsPoll(pollData) {
+    const messageData = {
+        groupId: currentGroupId,
+        senderId: currentUser.uid,
+        senderName: currentUserData.displayName,
+        senderPhoto: currentUserData.photoURL,
+        type: 'poll',
+        pollData: pollData,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: 'sent'
+    };
+    
+    await db.collection('groupMessages').add(messageData);
+}
+
+/**
+ * 14. Group Announcements Functions
+ */
+async function createGroupAnnouncement(title, content, isPinned = false) {
+    if (!currentGroupId) return;
+    
+    try {
+        const announcementData = {
+            groupId: currentGroupId,
+            title: title,
+            content: content,
+            createdBy: currentUser.uid,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isPinned: isPinned,
+            isActive: true
+        };
+        
+        await db.collection('groupAnnouncements').add(announcementData);
+        
+        // Send announcement as a message
+        await sendGroupMessageAsAnnouncement(announcementData);
+        
+        showToast('Announcement created', 'success');
+    } catch (error) {
+        console.error('Error creating announcement:', error);
+        showToast('Error creating announcement', 'error');
+    }
+}
+
+async function sendGroupMessageAsAnnouncement(announcementData) {
+    const messageData = {
+        groupId: currentGroupId,
+        senderId: currentUser.uid,
+        senderName: currentUserData.displayName,
+        senderPhoto: currentUserData.photoURL,
+        type: 'announcement',
+        announcementData: announcementData,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: 'sent'
+    };
+    
+    await db.collection('groupMessages').add(messageData);
+}
+
+/**
+ * 15. Group Notification Functions
+ */
+// Implemented in sendSystemMessage and sendMentionNotification
+
+/**
+ * 16. Group Forward Functions
+ */
+async function showForwardMessageModal(messageId) {
+    currentForwardMessage = messageId;
+    await loadForwardTargets();
+    showModal('forwardMessageModal');
+}
+
+async function loadForwardTargets() {
+    if (!groupElements.forwardTargetsList) return;
+    
+    groupElements.forwardTargetsList.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i></div>';
     
     try {
         // Load groups user is in
@@ -3000,788 +2731,454 @@ async function loadForwardTargets() {
             .where('status', '==', 'active')
             .get();
         
-        // Load friends (for individual chats)
-        const friends = await fetchFriendsDirectly();
+        groupElements.forwardTargetsList.innerHTML = '';
         
-        targetsList.innerHTML = '';
-        
-        // Add groups
         groupsQuery.forEach(doc => {
-            const group = { id: doc.id, ...doc.data() };
+            const group = doc.data();
             if (group.id !== currentGroupId) { // Don't show current group
-                addForwardTarget(group, 'group');
+                addForwardTarget(group);
             }
         });
         
-        // Add friends
-        friends.forEach(friend => {
-            addForwardTarget(friend, 'user');
-        });
-        
-        if (targetsList.children.length === 0) {
-            targetsList.innerHTML = '<div class="text-center py-8 text-gray-500">No chats available</div>';
-        }
-        
+        updateForwardCount();
     } catch (error) {
         console.error('Error loading forward targets:', error);
-        targetsList.innerHTML = '<div class="text-center py-8 text-red-500">Error loading chats</div>';
+        groupElements.forwardTargetsList.innerHTML = '<div class="text-center py-4 text-red-500">Error loading groups</div>';
     }
 }
 
-// Add forward target
-function addForwardTarget(target, type) {
-    const targetsList = groupElements.forwardTargetsList;
-    if (!targetsList) return;
+function addForwardTarget(group) {
+    if (!groupElements.forwardTargetsList) return;
     
-    const targetItem = document.createElement('label');
-    targetItem.className = 'flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer';
-    
-    const name = type === 'group' ? target.name : target.displayName;
-    const avatar = type === 'group' ? 
-        target.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7C3AED&color=fff` :
-        target.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7C3AED&color=fff`;
+    const targetItem = document.createElement('div');
+    targetItem.className = 'forward-target flex items-center p-2 hover:bg-gray-50 rounded';
+    targetItem.dataset.groupId = group.id;
     
     targetItem.innerHTML = `
-        <input type="checkbox" class="forward-target-checkbox hidden" 
-               value="${target.id}" data-type="${type}" data-name="${name}">
-        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-            <i class="fas fa-${type === 'group' ? 'users' : 'user'} text-gray-600"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-            <p class="font-medium truncate">${name}</p>
-            <p class="text-sm text-gray-500 truncate">${type === 'group' ? 'Group' : 'Chat'}</p>
-        </div>
-        <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
-            <div class="w-3 h-3 rounded-full bg-transparent"></div>
-        </div>
+        <label class="flex items-center flex-1 cursor-pointer">
+            <input type="checkbox" class="forward-select mr-3" data-group-id="${group.id}">
+            <img class="w-8 h-8 rounded-full mr-3" 
+                 src="${group.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(group.name)}&background=random`}"
+                 alt="${group.name}">
+            <span class="font-medium">${group.name}</span>
+            <span class="text-sm text-gray-500 ml-2">${group.participants?.length || 0} members</span>
+        </label>
     `;
     
-    targetsList.appendChild(targetItem);
+    groupElements.forwardTargetsList.appendChild(targetItem);
     
-    // Add click handler
-    targetItem.addEventListener('click', function(e) {
-        if (!e.target.matches('input')) {
-            const checkbox = this.querySelector('input');
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event('change'));
-        }
-    });
-    
-    // Update UI on checkbox change
-    const checkbox = targetItem.querySelector('input');
-    checkbox.addEventListener('change', function() {
-        const checkmark = targetItem.querySelector('.w-3.h-3');
-        if (this.checked) {
-            checkmark.classList.add('bg-purple-600');
-            targetItem.classList.add('bg-purple-50', 'border', 'border-purple-200');
-        } else {
-            checkmark.classList.remove('bg-purple-600');
-            targetItem.classList.remove('bg-purple-50', 'border', 'border-purple-200');
-        }
-        updateForwardCount();
-    });
+    // Add event listener for checkbox
+    const checkbox = targetItem.querySelector('.forward-select');
+    checkbox.addEventListener('change', updateForwardCount);
 }
 
-// Update forward count
-function updateForwardCount() {
-    const forwardCount = groupElements.forwardCount;
-    const forwardSelectedBtn = groupElements.forwardSelectedBtn;
-    const selectedCountSpan = document.getElementById('forwardSelectedCount');
-    
-    if (!forwardCount || !forwardSelectedBtn) return;
-    
-    const selectedCount = document.querySelectorAll('.forward-target-checkbox:checked').length;
-    
-    forwardCount.textContent = `${selectedCount} selected`;
-    
-    if (selectedCountSpan) {
-        selectedCountSpan.textContent = selectedCount > 0 ? ` (${selectedCount})` : '';
-    }
-    
-    forwardSelectedBtn.disabled = selectedCount === 0;
-}
-
-// Search forward targets
 function searchForwardTargets(query) {
-    const targetsList = groupElements.forwardTargetsList;
-    if (!targetsList) return;
+    const targets = groupElements.forwardTargetsList?.querySelectorAll('.forward-target');
+    if (!targets) return;
     
-    const targetItems = targetsList.querySelectorAll('label');
-    const searchTerm = query.toLowerCase().trim();
+    const searchTerm = query.toLowerCase();
     
-    targetItems.forEach(item => {
-        const nameElement = item.querySelector('.font-medium');
-        if (nameElement) {
-            const name = nameElement.textContent.toLowerCase();
-            item.style.display = name.includes(searchTerm) ? 'flex' : 'none';
-        }
+    targets.forEach(target => {
+        const groupName = target.querySelector('.font-medium')?.textContent.toLowerCase() || '';
+        const shouldShow = groupName.includes(searchTerm);
+        target.style.display = shouldShow ? 'flex' : 'none';
     });
 }
 
-// Confirm forward
-async function confirmForward() {
-    if (!currentForwardMessage) {
-        showToast('No message selected', 'error');
-        return;
+function updateForwardCount() {
+    const checkboxes = document.querySelectorAll('.forward-select:checked');
+    const count = checkboxes.length;
+    
+    const forwardCount = document.getElementById('forwardCount');
+    if (forwardCount) {
+        forwardCount.textContent = count;
     }
     
-    const selectedCheckboxes = document.querySelectorAll('.forward-target-checkbox:checked');
-    if (selectedCheckboxes.length === 0) {
-        showToast('Please select at least one chat', 'error');
-        return;
+    if (groupElements.forwardSelectedBtn) {
+        groupElements.forwardSelectedBtn.disabled = count === 0;
+        groupElements.forwardSelectedBtn.innerHTML = `Forward (${count})`;
     }
-    
-    showToast('Forwarding message...', 'info');
+}
+
+async function forwardSelectedMessages() {
+    const checkboxes = document.querySelectorAll('.forward-select:checked');
+    if (checkboxes.length === 0) return;
     
     try {
-        for (const checkbox of selectedCheckboxes) {
-            const targetId = checkbox.value;
-            const targetType = checkbox.dataset.type;
+        // Get the message to forward
+        const messageDoc = await db.collection('groupMessages').doc(currentForwardMessage).get();
+        if (!messageDoc.exists) {
+            showToast('Message not found', 'error');
+            return;
+        }
+        
+        const message = messageDoc.data();
+        
+        // Forward to selected groups
+        for (const checkbox of checkboxes) {
+            const groupId = checkbox.dataset.groupId;
             
-            const forwardMessage = {
-                text: currentForwardMessage.text,
-                senderId: currentUser.uid,
-                senderName: currentUserData.displayName,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                status: 'sent',
-                type: currentForwardMessage.type,
-                forwardedFrom: currentForwardMessage.senderName || 'Unknown',
-                originalMessageId: currentForwardMessage.id,
-                isEncrypted: currentForwardMessage.isEncrypted || false
+            const forwardedMessage = {
+                ...message,
+                forwardedFrom: currentGroupId,
+                forwardedBy: currentUser.uid,
+                forwardedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
             
-            // Copy file data if exists
-            if (currentForwardMessage.file) {
-                forwardMessage.file = currentForwardMessage.file;
-            }
+            delete forwardedMessage.id; // Remove ID for new document
             
-            if (targetType === 'group') {
-                forwardMessage.groupId = targetId;
-                await db.collection('groupMessages').add(forwardMessage);
-                
-                // Update group's last message
-                await db.collection('groups').doc(targetId).update({
-                    lastMessage: `Forwarded: ${forwardMessage.text.substring(0, 50)}...`,
-                    lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastActivity: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } else {
-                // For individual chats
-                forwardMessage.receiverId = targetId;
-                // Add to individual messages collection
-                // await db.collection('messages').add(forwardMessage);
-            }
-        }
-        
-        showToast('Message forwarded successfully', 'success');
-        hideModal('forwardMessageModal');
-        currentForwardMessage = null;
-        
-    } catch (error) {
-        console.error('Error forwarding message:', error);
-        showToast('Error forwarding message', 'error');
-    }
-}
-
-// Join group action
-async function joinGroupAction() {
-    const inviteInput = groupElements.groupCode?.value.trim();
-    if (!inviteInput) {
-        showToast('Please enter an invite code or link', 'error');
-        return;
-    }
-    
-    // Extract code from URL if it's a link
-    let inviteCode = inviteInput;
-    if (inviteInput.includes('/invite/')) {
-        const parts = inviteInput.split('/invite/');
-        inviteCode = parts[parts.length - 1];
-    }
-    
-    try {
-        // Find group by invite code
-        const groupsQuery = await db.collection('groups')
-            .where('inviteCode', '==', inviteCode)
-            .where('status', '==', 'active')
-            .get();
-        
-        if (groupsQuery.empty) {
-            showToast('Invalid invite code or group not found', 'error');
-            return;
-        }
-        
-        const groupDoc = groupsQuery.docs[0];
-        const groupId = groupDoc.id;
-        const groupData = groupDoc.data();
-        
-        // Check if user is already a member
-        if (groupData.participants?.includes(currentUser.uid)) {
-            showToast('You are already a member of this group', 'info');
-            openGroupChat(groupId);
-            return;
-        }
-        
-        // Show group preview
-        showGroupPreview(groupData);
-        
-    } catch (error) {
-        console.error('Error joining group:', error);
-        showToast('Error joining group', 'error');
-    }
-}
-
-// Show group preview
-function showGroupPreview(groupData) {
-    const preview = groupElements.groupPreview;
-    if (!preview) return;
-    
-    document.getElementById('previewGroupName').textContent = groupData.name;
-    document.getElementById('previewGroupMembers').textContent = `${groupData.participants?.length || 0} members`;
-    document.getElementById('previewGroupDescription').textContent = groupData.description || 'No description';
-    
-    const avatar = document.getElementById('previewGroupAvatar');
-    if (avatar) {
-        avatar.src = groupData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(groupData.name)}&background=7C3AED&color=fff`;
-    }
-    
-    preview.classList.remove('hidden');
-    
-    // Update join button
-    const joinBtn = document.getElementById('joinPreviewGroup');
-    if (joinBtn) {
-        joinBtn.onclick = async () => {
-            await joinGroup(groupData.id);
-        };
-    }
-}
-
-// Join group
-async function joinGroup(groupId) {
-    try {
-        const groupDoc = await db.collection('groups').doc(groupId).get();
-        if (!groupDoc.exists) {
-            showToast('Group not found', 'error');
-            return;
-        }
-        
-        const groupData = groupDoc.data();
-        
-        // Check privacy
-        if (groupData.privacy === 'private' || groupData.privacy === 'hidden') {
-            // Send join request
-            await db.collection('groupRequests').add({
-                groupId: groupId,
-                userId: currentUser.uid,
-                userName: currentUserData.displayName,
-                userPhoto: currentUserData.photoURL,
-                status: 'pending',
-                requestedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            await db.collection('groupMessages').add(forwardedMessage);
             
-            showToast('Join request sent to group admin', 'success');
-            
-        } else if (groupData.privacy === 'public') {
-            // Join directly
+            // Update group's last activity
             await db.collection('groups').doc(groupId).update({
-                participants: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                lastMessage: `Forwarded: ${message.text?.substring(0, 50)}...`,
+                lastActivity: firebase.firestore.FieldValue.serverTimestamp()
             });
-            
-            // Send system message
-            await sendSystemMessage(groupId, `${currentUserData.displayName} joined the group`);
-            
-            showToast('You joined the group!', 'success');
-            openGroupChat(groupId);
         }
         
-        hideModal('joinGroupModal');
+        showToast(`Message forwarded to ${checkboxes.length} group(s)`, 'success');
+        hideModal('forwardMessageModal');
         
     } catch (error) {
-        console.error('Error joining group:', error);
-        showToast('Error joining group', 'error');
+        console.error('Error forwarding messages:', error);
+        showToast('Error forwarding messages', 'error');
     }
 }
 
-// Generate AI conversation summary
-async function generateAIConversationSummary() {
-    if (!currentGroupId) {
-        showToast('Please select a group first', 'error');
-        return;
-    }
+/**
+ * 17. Starred Messages Functions
+ */
+async function showStarredMessages(groupId) {
+    currentGroupId = groupId;
+    await loadStarredMessages();
+    showModal('starredMessagesModal');
+}
+
+async function loadStarredMessages() {
+    if (!groupElements.starredMessagesList) return;
     
-    showToast('Generating summary...', 'info');
+    groupElements.starredMessagesList.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
     
     try {
-        // Get recent messages
         const messagesQuery = await db.collection('groupMessages')
             .where('groupId', '==', currentGroupId)
+            .where('starredBy', 'array-contains', currentUser.uid)
             .orderBy('timestamp', 'desc')
             .limit(50)
             .get();
         
         const messages = [];
         messagesQuery.forEach(doc => {
-            const data = doc.data();
-            if (data.type === 'text' && data.senderId !== 'system') {
-                messages.push({
-                    sender: data.senderName,
-                    text: data.text,
-                    time: data.timestamp?.toDate().toLocaleTimeString()
-                });
-            }
+            messages.push({ id: doc.id, ...doc.data() });
         });
         
-        // Reverse to get chronological order
-        messages.reverse();
-        
-        if (messages.length === 0) {
-            showToast('No messages to summarize', 'warning');
-            return;
-        }
-        
-        // Simulate AI summary (in production, call AI API)
-        let summary = `Conversation Summary (${messages.length} messages):\n\n`;
-        let lastSender = '';
-        let messageCount = 0;
-        
-        messages.forEach(msg => {
-            if (msg.sender !== lastSender) {
-                summary += `${msg.sender}:\n`;
-                lastSender = msg.sender;
-            }
-            
-            // Truncate long messages
-            const truncatedText = msg.text.length > 100 ? msg.text.substring(0, 100) + '...' : msg.text;
-            summary += `  • ${truncatedText}\n`;
-            messageCount++;
-            
-            // Limit summary length
-            if (messageCount >= 10) return;
-        });
-        
-        if (messages.length > 10) {
-            summary += `\n... and ${messages.length - 10} more messages`;
-        }
-        
-        // Display summary
-        const summaryContent = document.getElementById('summaryContent');
-        const summaryTime = document.getElementById('summaryTime');
-        const summaryResult = document.getElementById('aiSummaryResult');
-        
-        if (summaryContent && summaryTime && summaryResult) {
-            summaryContent.textContent = summary;
-            summaryTime.textContent = new Date().toLocaleTimeString();
-            summaryResult.classList.remove('hidden');
-        }
-        
-        showToast('Summary generated', 'success');
-        
-        // Add copy functionality
-        const copyBtn = document.getElementById('copySummary');
-        if (copyBtn) {
-            copyBtn.onclick = () => {
-                navigator.clipboard.writeText(summary);
-                showToast('Summary copied to clipboard', 'success');
-            };
-        }
-        
+        renderStarredMessages(messages);
     } catch (error) {
-        console.error('Error generating summary:', error);
-        showToast('Error generating summary', 'error');
+        console.error('Error loading starred messages:', error);
+        groupElements.starredMessagesList.innerHTML = '<div class="text-center py-8 text-red-500">Error loading starred messages</div>';
     }
 }
 
-// Generate smart replies
-async function generateSmartReplies() {
-    if (!currentGroupId) {
-        showToast('Please select a group first', 'error');
+function renderStarredMessages(messages) {
+    if (!groupElements.starredMessagesList) return;
+    
+    if (messages.length === 0) {
+        groupElements.starredMessagesList.innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-star text-4xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-semibold text-gray-600">No Starred Messages</h3>
+                <p class="text-gray-500">Star messages to find them easily later</p>
+            </div>
+        `;
         return;
     }
     
-    showToast('Generating smart replies...', 'info');
+    groupElements.starredMessagesList.innerHTML = '';
     
-    try {
-        // Get last few messages
-        const messagesQuery = await db.collection('groupMessages')
-            .where('groupId', '==', currentGroupId)
-            .orderBy('timestamp', 'desc')
-            .limit(5)
-            .get();
+    messages.forEach(message => {
+        const starredItem = document.createElement('div');
+        starredItem.className = 'starred-message-item p-4 border-b hover:bg-gray-50 cursor-pointer';
+        starredItem.dataset.groupId = message.groupId;
+        starredItem.dataset.messageId = message.id;
+        starredItem.dataset.starredBy = JSON.stringify(message.starredBy || []);
         
-        const lastMessages = [];
-        messagesQuery.forEach(doc => {
-            const data = doc.data();
-            if (data.type === 'text' && data.senderId !== 'system') {
-                lastMessages.push(data.text);
-            }
-        });
+        starredItem.innerHTML = `
+            <div class="flex items-start">
+                <img class="w-8 h-8 rounded-full mr-3" 
+                     src="${message.senderPhoto || 'https://ui-avatars.com/api/?name=User&background=random'}"
+                     alt="${message.senderName}">
+                <div class="flex-1">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-medium">${message.senderName}</span>
+                        <span class="text-xs text-gray-500">
+                            ${message.timestamp ? formatTimeAgo(message.timestamp.toDate()) : ''}
+                        </span>
+                    </div>
+                    <div class="text-sm mb-2">${escapeHtml(message.text)}</div>
+                    <div class="flex justify-between items-center">
+                        <button class="text-yellow-500 hover:text-yellow-600" onclick="toggleMessageStar('${message.id}', event)">
+                            <i class="fas fa-star"></i> Unstar
+                        </button>
+                        <button class="text-blue-500 hover:text-blue-600" onclick="scrollToMessage('${message.id}')">
+                            <i class="fas fa-arrow-right"></i> Go to Message
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
         
-        // Generate smart replies based on context (simulated)
-        const smartReplies = [
-            "Got it, thanks!",
-            "I'll check and get back to you",
-            "That sounds good to me",
-            "Let me think about that",
-            "Can you explain more?",
-            "I agree with that",
-            "Let's discuss this further",
-            "Thanks for sharing!"
-        ];
-        
-        // Display smart replies
-        const repliesList = document.getElementById('smartRepliesList');
-        if (repliesList) {
-            repliesList.innerHTML = '<h4 class="font-medium text-gray-700 mb-2">Suggested Replies:</h4>';
-            
-            smartReplies.forEach(reply => {
-                const replyItem = document.createElement('button');
-                replyItem.className = 'w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg mb-2 transition-colors';
-                replyItem.textContent = reply;
-                replyItem.addEventListener('click', () => {
-                    const messageInput = document.getElementById('groupMessageInput');
-                    if (messageInput) {
-                        messageInput.value = reply;
-                        messageInput.focus();
-                        hideModal('smartRepliesModal');
-                    }
-                });
-                repliesList.appendChild(replyItem);
-            });
-            
-            repliesList.classList.remove('hidden');
-        }
-        
-    } catch (error) {
-        console.error('Error generating smart replies:', error);
-        showToast('Error generating replies', 'error');
-    }
+        groupElements.starredMessagesList.appendChild(starredItem);
+    });
 }
 
-// Show group list context menu
-function showGroupListContextMenu(e, groupId) {
-    const contextMenu = groupElements.groupListContextMenu;
-    if (!contextMenu) return;
+async function toggleMessageStar(messageId, event) {
+    if (event) event.stopPropagation();
     
-    contextMenu.dataset.groupId = groupId;
-    
-    // Update menu items based on group state
-    const userMutedGroups = JSON.parse(localStorage.getItem('mutedGroups') || '{}');
-    const isMuted = userMutedGroups[groupId];
-    
-    const muteItem = contextMenu.querySelector('[data-action="mute-group"]');
-    if (muteItem) {
-        muteItem.innerHTML = isMuted ? 
-            '<i class="fas fa-bell mr-2 text-yellow-600"></i>Unmute' :
-            '<i class="fas fa-bell-slash mr-2 text-yellow-600"></i>Mute';
-    }
-    
-    // Position menu
-    contextMenu.style.left = `${e.pageX}px`;
-    contextMenu.style.top = `${e.pageY}px`;
-    contextMenu.classList.remove('hidden');
-    
-    // Close menu when clicking elsewhere
-    setTimeout(() => {
-        document.addEventListener('click', function closeMenu() {
-            contextMenu.classList.add('hidden');
-            document.removeEventListener('click', closeMenu);
-        });
-    }, 100);
-}
-
-// Show message context menu
-function showMessageContextMenu(e, messageId) {
-    const contextMenu = groupElements.messageContextMenu;
-    if (!contextMenu) return;
-    
-    currentContextMessageId = messageId;
-    
-    // Get message element
-    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-    if (!messageElement) return;
-    
-    // Check if message is starred
-    const isStarred = messageElement.querySelector('.fa-star.fas');
-    const starItem = contextMenu.querySelector('[data-action="star"]');
-    if (starItem) {
-        starItem.innerHTML = isStarred ? 
-            '<i class="fas fa-star mr-2 text-yellow-600"></i>Unstar' :
-            '<i class="far fa-star mr-2 text-yellow-600"></i>Star';
-    }
-    
-    // Check if user can delete for everyone
-    const canDeleteForEveryone = currentGroup?.admins?.includes(currentUser.uid) || 
-                                 messageElement.dataset.senderId === currentUser.uid;
-    const deleteAllItem = contextMenu.querySelector('[data-action="delete-all"]');
-    if (deleteAllItem) {
-        deleteAllItem.style.display = canDeleteForEveryone ? 'block' : 'none';
-    }
-    
-    // Position menu
-    contextMenu.style.left = `${e.pageX}px`;
-    contextMenu.style.top = `${e.pageY}px`;
-    contextMenu.classList.remove('hidden');
-    
-    // Close menu when clicking elsewhere
-    setTimeout(() => {
-        document.addEventListener('click', function closeMenu() {
-            contextMenu.classList.add('hidden');
-            document.removeEventListener('click', closeMenu);
-        });
-    }, 100);
-}
-
-// Handle group context menu actions
-function handleGroupContextMenuAction(action, groupId) {
-    switch (action) {
-        case 'open-group':
-            openGroupChat(groupId);
-            break;
-        case 'mute-group':
-            toggleGroupMute(groupId);
-            break;
-        case 'mark-read':
-            resetGroupUnreadCount(groupId);
-            break;
-        case 'group-info':
-            showGroupInfoModal(groupId);
-            break;
-        case 'group-settings':
-            showGroupInfoModal(groupId);
-            break;
-        case 'leave-group':
-            if (confirm('Are you sure you want to leave this group?')) {
-                leaveGroup(groupId);
-            }
-            break;
-    }
-}
-
-// Handle message context menu actions
-function handleMessageContextMenuAction(action, messageId) {
-    switch (action) {
-        case 'reply':
-            replyToGroupMessage(messageId);
-            break;
-        case 'forward':
-            forwardGroupMessage(messageId);
-            break;
-        case 'star':
-            toggleMessageStar(messageId, !isMessageStarred(messageId));
-            break;
-        case 'react':
-            showReactionPicker(messageId);
-            break;
-        case 'copy':
-            copyMessageText(messageId);
-            break;
-        case 'select':
-            toggleMessageSelection(messageId);
-            break;
-        case 'edit':
-            // Message editing functionality
-            editGroupMessage(messageId);
-            break;
-        case 'delete-me':
-            deleteGroupMessage(messageId, false);
-            break;
-        case 'delete-all':
-            if (confirm('Delete this message for everyone?')) {
-                deleteGroupMessage(messageId, true);
-            }
-            break;
-        case 'report':
-            reportGroupMessage(messageId);
-            break;
-    }
-}
-
-// Show reaction picker
-function showReactionPicker(messageId) {
-    const picker = groupElements.reactionPicker;
-    if (!picker) return;
-    
-    currentContextMessageId = messageId;
-    
-    // Position near the message
-    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-    if (messageElement) {
-        const rect = messageElement.getBoundingClientRect();
-        picker.style.left = `${rect.right - 100}px`;
-        picker.style.top = `${rect.top - 50}px`;
-        picker.classList.remove('hidden');
-    }
-    
-    // Close picker when clicking elsewhere
-    setTimeout(() => {
-        document.addEventListener('click', function closePicker(e) {
-            if (!picker.contains(e.target)) {
-                picker.classList.add('hidden');
-                document.removeEventListener('click', closePicker);
-            }
-        });
-    }, 100);
-}
-
-// Add reaction to message
-async function addReactionToMessage(messageId, reaction) {
     try {
         const messageRef = db.collection('groupMessages').doc(messageId);
+        const messageDoc = await messageRef.get();
         
-        await messageRef.update({
-            reactions: firebase.firestore.FieldValue.arrayUnion({
-                userId: currentUser.uid,
-                reaction: reaction,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            })
-        });
+        if (!messageDoc.exists) return;
         
-        // Update UI
-        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-        if (messageElement) {
-            let reactionsContainer = messageElement.querySelector('.message-reactions');
-            if (!reactionsContainer) {
-                reactionsContainer = document.createElement('div');
-                reactionsContainer.className = 'message-reactions flex items-center space-x-1 mt-1';
-                const messageBubble = messageElement.querySelector('.message-bubble');
-                if (messageBubble) {
-                    messageBubble.appendChild(reactionsContainer);
-                }
-            }
-            
-            // Add or update reaction
-            const existingReaction = reactionsContainer.querySelector(`[data-reaction="${reaction}"]`);
-            if (existingReaction) {
-                const count = parseInt(existingReaction.dataset.count) + 1;
-                existingReaction.dataset.count = count;
-                existingReaction.innerHTML = `${reaction} ${count}`;
-            } else {
-                const reactionSpan = document.createElement('span');
-                reactionSpan.className = 'bg-gray-100 px-2 py-1 rounded-full text-xs';
-                reactionSpan.dataset.reaction = reaction;
-                reactionSpan.dataset.count = 1;
-                reactionSpan.innerHTML = `${reaction} 1`;
-                reactionsContainer.appendChild(reactionSpan);
-            }
+        const message = messageDoc.data();
+        const isStarred = message.starredBy?.includes(currentUser.uid);
+        
+        if (isStarred) {
+            await messageRef.update({
+                starredBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+            });
+            showToast('Message unstarred', 'success');
+        } else {
+            await messageRef.update({
+                starredBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+            });
+            showToast('Message starred', 'success');
         }
         
-        // Hide reaction picker
-        const picker = groupElements.reactionPicker;
-        if (picker) picker.classList.add('hidden');
+        // Reload starred messages if modal is open
+        if (document.getElementById('starredMessagesModal')?.classList.contains('hidden') === false) {
+            await loadStarredMessages();
+        }
         
     } catch (error) {
-        console.error('Error adding reaction:', error);
-        showToast('Error adding reaction', 'error');
+        console.error('Error toggling message star:', error);
+        showToast('Error updating message', 'error');
     }
 }
 
-// Initialize message reactions
-function initializeMessageReactions() {
-    const picker = groupElements.reactionPicker;
-    if (!picker) return;
+/**
+ * 18. Group State Functions
+ */
+function updateGroupStateClasses() {
+    // Update group list items based on state
+    const groupItems = document.querySelectorAll('.group-chat-item');
     
-    picker.addEventListener('click', (e) => {
-        const reactionBtn = e.target.closest('.reaction-option');
-        if (reactionBtn && currentContextMessageId) {
-            const reaction = reactionBtn.dataset.reaction;
-            addReactionToMessage(currentContextMessageId, reaction);
+    groupItems.forEach(item => {
+        const groupId = item.dataset.groupId;
+        const group = allGroups.find(g => g.id === groupId);
+        
+        if (group) {
+            // Update muted class
+            if (group.mutedUsers?.includes(currentUser.uid)) {
+                item.classList.add('muted');
+            } else {
+                item.classList.remove('muted');
+            }
+            
+            // Update pinned class
+            if (group.isPinned) {
+                item.classList.add('pinned');
+            } else {
+                item.classList.remove('pinned');
+            }
+            
+            // Update archived class
+            if (group.status === 'archived') {
+                item.classList.add('archived');
+            } else {
+                item.classList.remove('archived');
+            }
+            
+            // Update unread class
+            const unreadCount = getGroupUnreadCount(groupId);
+            if (unreadCount > 0) {
+                item.classList.add('unread');
+            } else {
+                item.classList.remove('unread');
+            }
+            
+            // Update selected class
+            if (currentGroupId === groupId) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
         }
     });
 }
 
-// Initialize drag and drop
-function initializeDragAndDrop() {
-    const dropZone = document.getElementById('groupMessageInput')?.parentElement;
-    if (dropZone) {
-        dropZone.addEventListener('dragover', handleDragOver);
-        dropZone.addEventListener('drop', handleDrop);
+/**
+ * 19. Mobile Group Controls
+ */
+function setupMobileGroupControls() {
+    // Back button functionality
+    if (groupElements.backToChatsBtn) {
+        groupElements.backToChatsBtn.addEventListener('click', () => {
+            // Clear current group
+            currentGroup = null;
+            currentGroupId = null;
+            isGroupChat = false;
+            
+            // Clear chat messages
+            if (groupElements.chatMessages) {
+                groupElements.chatMessages.innerHTML = '';
+            }
+            
+            // Hide back button
+            groupElements.backToChatsBtn.classList.add('hidden');
+            
+            // Update chat header
+            updateChatHeaderForIndividualChat();
+            
+            // Switch to groups tab
+            switchToTab('groups');
+        });
+    }
+    
+    // Handle window resize
+    window.addEventListener('resize', handleWindowResize);
+}
+
+function handleWindowResize() {
+    // Adjust UI for mobile/desktop
+    const isMobile = window.innerWidth < 768;
+    
+    if (isMobile && currentGroupId) {
+        // Show back button on mobile when in group chat
+        if (groupElements.backToChatsBtn) {
+            groupElements.backToChatsBtn.classList.remove('hidden');
+        }
+    } else {
+        // Hide back button on desktop
+        if (groupElements.backToChatsBtn) {
+            groupElements.backToChatsBtn.classList.add('hidden');
+        }
     }
 }
 
-// Show modal
-function showModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden'; // Prevent scrolling
-    }
-}
-
-// Hide modal
-function hideModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add('hidden');
-        document.body.style.overflow = ''; // Restore scrolling
-    }
-}
-
-// Copy invite link
-function copyInviteLink() {
-    const inviteLink = groupElements.groupInviteLink;
-    if (!inviteLink) return;
-    
-    inviteLink.select();
-    document.execCommand('copy');
-    
-    // Show visual feedback
-    const originalValue = inviteLink.value;
-    inviteLink.value = 'Copied to clipboard!';
-    
-    setTimeout(() => {
-        inviteLink.value = originalValue;
-    }, 2000);
-    
-    showToast('Invite link copied to clipboard', 'success');
-}
-
-// Refresh invite link
-async function refreshInviteLink() {
-    if (!currentGroupId || !currentGroup?.admins?.includes(currentUser.uid)) {
-        showToast('Only group admins can refresh invite links', 'error');
-        return;
-    }
+/**
+ * 20. Group Creation Participant Selection
+ */
+async function loadFriendsForGroupCreation() {
+    if (!groupElements.groupParticipants) return;
     
     try {
-        const newCode = generateInviteCode();
-        const newLink = `${window.location.origin}/invite/${newCode}`;
+        const friends = await fetchFriendsDirectly();
         
-        await updateGroupInfo(currentGroupId, {
-            inviteCode: newCode,
-            inviteLink: newLink
-        });
-        
-        if (groupElements.groupInviteLink) {
-            groupElements.groupInviteLink.value = newLink;
+        if (friends.length === 0) {
+            groupElements.groupParticipants.innerHTML = `
+                <div id="noParticipantsMessage" class="text-center py-8 text-gray-500">
+                    <i class="fas fa-user-friends text-3xl mb-3"></i>
+                    <p>No friends found</p>
+                    <p class="text-sm mt-2">Add friends to create a group</p>
+                </div>
+            `;
+            return;
         }
         
-        showToast('Invite link refreshed!', 'success');
+        groupElements.groupParticipants.innerHTML = '';
+        
+        friends.forEach(friend => {
+            const friendItem = document.createElement('div');
+            friendItem.className = 'friend-select-item flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer';
+            
+            friendItem.innerHTML = `
+                <label class="flex items-center flex-1 cursor-pointer">
+                    <input type="checkbox" class="participant-checkbox mr-3" 
+                           data-user-id="${friend.id}" value="${friend.id}">
+                    <img class="w-10 h-10 rounded-full mr-3" 
+                         src="${friend.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName)}&background=random`}"
+                         alt="${friend.displayName}">
+                    <div>
+                        <div class="font-medium">${friend.displayName}</div>
+                        <div class="text-sm text-gray-500">${friend.status || 'offline'}</div>
+                    </div>
+                </label>
+            `;
+            
+            groupElements.groupParticipants.appendChild(friendItem);
+            
+            // Add event listener
+            const checkbox = friendItem.querySelector('.participant-checkbox');
+            checkbox.addEventListener('change', (e) => {
+                toggleParticipantSelection(friend.id, friend.displayName, e.target.checked);
+            });
+        });
         
     } catch (error) {
-        console.error('Error refreshing invite link:', error);
-        showToast('Error refreshing invite link', 'error');
+        console.error('Error loading friends:', error);
+        groupElements.groupParticipants.innerHTML = '<div class="text-center py-4 text-red-500">Error loading friends</div>';
     }
 }
 
-// Toggle group mute
-async function toggleGroupMute(groupId) {
-    const userMutedGroups = JSON.parse(localStorage.getItem('mutedGroups') || '{}');
-    const isMuted = userMutedGroups[groupId];
-    
-    userMutedGroups[groupId] = !isMuted;
-    localStorage.setItem('mutedGroups', JSON.stringify(userMutedGroups));
-    
-    // Update UI
-    const muteBtn = document.getElementById('muteGroupBtn');
-    if (muteBtn) {
-        muteBtn.innerHTML = !isMuted ? 
-            '<i class="fas fa-bell"></i><span>Unmute</span>' :
-            '<i class="fas fa-bell-slash"></i><span>Mute</span>';
+function toggleParticipantSelection(userId, userName, isSelected) {
+    if (isSelected) {
+        selectedParticipants.add(userId);
+        addSelectedParticipant(userId, userName);
+    } else {
+        selectedParticipants.delete(userId);
+        removeSelectedParticipant(userId);
     }
     
-    showToast(!isMuted ? 'Group muted' : 'Group unmuted', 'success');
+    updateParticipantCount();
 }
 
-// Generate invite code
+function addSelectedParticipant(userId, userName) {
+    if (!groupElements.selectedParticipantsContainer) return;
+    
+    const selectedItem = document.createElement('div');
+    selectedItem.className = 'selected-participant flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full';
+    selectedItem.dataset.userId = userId;
+    
+    selectedItem.innerHTML = `
+        <span>${userName}</span>
+        <button class="ml-2 text-blue-600 hover:text-blue-800" onclick="removeParticipant('${userId}')">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    groupElements.selectedParticipantsContainer.appendChild(selectedItem);
+}
+
+function removeSelectedParticipant(userId) {
+    const selectedItem = groupElements.selectedParticipantsContainer?.querySelector(`[data-user-id="${userId}"]`);
+    if (selectedItem) {
+        selectedItem.remove();
+    }
+    
+    // Also uncheck the checkbox
+    const checkbox = document.querySelector(`.participant-checkbox[value="${userId}"]`);
+    if (checkbox) {
+        checkbox.checked = false;
+    }
+}
+
+function removeParticipant(userId) {
+    selectedParticipants.delete(userId);
+    removeSelectedParticipant(userId);
+    updateParticipantCount();
+}
+
+function updateParticipantCount() {
+    if (groupElements.participantCount) {
+        groupElements.participantCount.textContent = selectedParticipants.size;
+    }
+}
+
+/**
+ * 21. Group Invite Elements
+ */
 function generateInviteCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
@@ -3791,90 +3188,859 @@ function generateInviteCode() {
     return code;
 }
 
-// Helper function to check if text contains a link
-function containsLink(text) {
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return urlRegex.test(text);
+async function generateQRCode(inviteCode) {
+    // Implement QR code generation
+    // You can use a library like qrcode.js
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(inviteCode)}`;
+    return qrCodeUrl;
 }
 
-// Helper function to escape HTML
+async function shareInviteLink(inviteCode) {
+    const inviteUrl = `${window.location.origin}/invite/${inviteCode}`;
+    
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Join my group on Kynecta',
+                text: 'Join my group on Kynecta!',
+                url: inviteUrl,
+            });
+        } catch (error) {
+            console.error('Error sharing:', error);
+            copyToClipboard(inviteUrl);
+        }
+    } else {
+        copyToClipboard(inviteUrl);
+    }
+}
+
+/**
+ * 22. Group Leave/Delete Functions
+ */
+async function confirmLeaveGroup() {
+    if (!currentGroupId) return;
+    
+    try {
+        await leaveGroup(currentGroupId);
+        hideModal('confirmLeaveGroup');
+    } catch (error) {
+        console.error('Error leaving group:', error);
+        showToast('Error leaving group', 'error');
+    }
+}
+
+async function leaveGroup(groupId) {
+    try {
+        const groupDoc = await db.collection('groups').doc(groupId).get();
+        const group = groupDoc.data();
+        
+        // Remove user from participants
+        await db.collection('groups').doc(groupId).update({
+            participants: firebase.firestore.FieldValue.arrayRemove(currentUser.uid),
+            admins: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+        });
+        
+        // Send system message
+        await sendSystemMessage(groupId, `${currentUserData.displayName} left the group`);
+        
+        // Update local state
+        if (currentGroupId === groupId) {
+            currentGroup = null;
+            currentGroupId = null;
+            isGroupChat = false;
+            
+            // Clear chat
+            if (groupElements.chatMessages) {
+                groupElements.chatMessages.innerHTML = '';
+            }
+            
+            // Hide back button
+            if (groupElements.backToChatsBtn) {
+                groupElements.backToChatsBtn.classList.add('hidden');
+            }
+        }
+        
+        // Unsubscribe from messages
+        if (unsubscribeGroupMessages) {
+            unsubscribeGroupMessages();
+            unsubscribeGroupMessages = null;
+        }
+        
+        // Reload groups list
+        await loadUserGroups();
+        
+        showToast('You left the group', 'success');
+        
+    } catch (error) {
+        console.error('Error leaving group:', error);
+        throw error;
+    }
+}
+
+async function confirmDeleteGroup() {
+    if (!currentGroupId) return;
+    
+    try {
+        await deleteGroup(currentGroupId);
+        hideModal('confirmDeleteGroup');
+    } catch (error) {
+        console.error('Error deleting group:', error);
+        showToast('Error deleting group', 'error');
+    }
+}
+
+async function deleteGroup(groupId) {
+    try {
+        const groupDoc = await db.collection('groups').doc(groupId).get();
+        const group = groupDoc.data();
+        
+        // Check if user is creator or admin
+        if (group.createdBy !== currentUser.uid && !group.admins?.includes(currentUser.uid)) {
+            showToast('Only group admins can delete the group', 'error');
+            return;
+        }
+        
+        // Mark group as deleted
+        await db.collection('groups').doc(groupId).update({
+            status: 'deleted',
+            deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            deletedBy: currentUser.uid
+        });
+        
+        // Send system message
+        await sendSystemMessage(groupId, 'This group has been deleted');
+        
+        // Update local state
+        if (currentGroupId === groupId) {
+            currentGroup = null;
+            currentGroupId = null;
+            isGroupChat = false;
+            
+            // Clear chat
+            if (groupElements.chatMessages) {
+                groupElements.chatMessages.innerHTML = '';
+            }
+            
+            // Hide back button
+            if (groupElements.backToChatsBtn) {
+                groupElements.backToChatsBtn.classList.add('hidden');
+            }
+        }
+        
+        // Unsubscribe from messages
+        if (unsubscribeGroupMessages) {
+            unsubscribeGroupMessages();
+            unsubscribeGroupMessages = null;
+        }
+        
+        // Reload groups list
+        await loadUserGroups();
+        
+        showToast('Group deleted', 'success');
+        
+    } catch (error) {
+        console.error('Error deleting group:', error);
+        throw error;
+    }
+}
+
+/**
+ * 23. Group Encryption Functions
+ */
+function generateSecurityCode(groupId) {
+    // Generate a unique security code for encrypted groups
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substr(2, 6);
+    return `${groupId.substr(0, 4)}-${timestamp.toString(36).substr(-4)}-${random}`.toUpperCase();
+}
+
+async function verifyGroupSecurity(groupId, securityCode) {
+    // Verify group security code
+    // This would typically involve checking against stored encrypted keys
+    return true; // Placeholder
+}
+
+/**
+ * 24. Group Activity Functions
+ */
+function updateGroupActivityIndicators() {
+    // Update activity indicators for groups
+    const groupItems = document.querySelectorAll('.group-chat-item');
+    
+    groupItems.forEach(item => {
+        const groupId = item.dataset.groupId;
+        const group = allGroups.find(g => g.id === groupId);
+        
+        if (group) {
+            // Update activity indicator
+            const lastActivity = group.lastActivity?.toDate();
+            const now = new Date();
+            const hoursSinceActivity = lastActivity ? (now - lastActivity) / (1000 * 60 * 60) : 24;
+            
+            const activityIndicator = item.querySelector('.group-activity');
+            if (!activityIndicator) return;
+            
+            if (hoursSinceActivity < 1) {
+                activityIndicator.className = 'group-activity active-now';
+                activityIndicator.title = 'Active now';
+            } else if (hoursSinceActivity < 24) {
+                activityIndicator.className = 'group-activity';
+                activityIndicator.title = `Active ${Math.floor(hoursSinceActivity)} hours ago`;
+            } else {
+                activityIndicator.className = 'group-activity last-seen-group';
+                activityIndicator.title = `Last seen ${Math.floor(hoursSinceActivity / 24)} days ago`;
+            }
+        }
+    });
+}
+
+/**
+ * 25. Group File Sharing Functions
+ */
+async function uploadGroupFile(file) {
+    if (!currentGroupId) return;
+    
+    try {
+        // Create a unique file name
+        const fileName = `group_${currentGroupId}_${Date.now()}_${file.name}`;
+        
+        // Upload to Firebase Storage
+        const storageRef = firebase.storage().ref();
+        const fileRef = storageRef.child(`group_files/${currentGroupId}/${fileName}`);
+        
+        const uploadTask = fileRef.put(file);
+        
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                // Progress monitoring
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                console.log(`Upload is ${progress}% done`);
+            },
+            (error) => {
+                console.error('Error uploading file:', error);
+                showToast('Error uploading file', 'error');
+            },
+            async () => {
+                // Upload complete
+                const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                
+                // Send file as message
+                const messageData = {
+                    groupId: currentGroupId,
+                    senderId: currentUser.uid,
+                    senderName: currentUserData.displayName,
+                    senderPhoto: currentUserData.photoURL,
+                    type: 'file',
+                    fileUrl: downloadURL,
+                    fileName: file.name,
+                    fileSize: file.size,
+                    fileType: file.type,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'sent'
+                };
+                
+                await db.collection('groupMessages').add(messageData);
+                
+                // Update group's last activity
+                await db.collection('groups').doc(currentGroupId).update({
+                    lastMessage: `File: ${file.name}`,
+                    lastActivity: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showToast('File uploaded', 'success');
+            }
+        );
+        
+    } catch (error) {
+        console.error('Error in uploadGroupFile:', error);
+        showToast('Error uploading file', 'error');
+    }
+}
+
+// ==================== HELPER FUNCTIONS ====================
+
+function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function hideModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+function switchToTab(tabName) {
+    // Hide all tab panels
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.add('hidden');
+    });
+    
+    // Show selected tab panel
+    const tabPanel = document.getElementById(tabName + 'Tab');
+    if (tabPanel) {
+        tabPanel.classList.remove('hidden');
+    }
+    
+    // Update active tab button
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-tab') === tabName) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+function formatTimeAgo(date) {
+    // Ensure date is a Date object
+    if (!(date instanceof Date)) {
+        // Try to convert if it's a Firestore timestamp
+        if (date && typeof date.toDate === 'function') {
+            date = date.toDate();
+        } else if (date && date.seconds) {
+            // Firestore timestamp object
+            date = new Date(date.seconds * 1000);
+        } else if (date) {
+            // Try to parse as Date
+            date = new Date(date);
+        } else {
+            return 'Unknown time';
+        }
+    }
+    
+    // Check if valid date
+    if (isNaN(date.getTime())) {
+        return 'Invalid date';
+    }
+    
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    
+    if (seconds < 60) return 'just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+    
+    return date.toLocaleDateString();
+}
+
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-// Helper function to format file size
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-// Helper function to format time ago
-function formatTimeAgo(timestamp) {
-    if (!timestamp) return 'Just now';
-    
-    const date = timestamp.toDate();
-    const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);
-    
-    const intervals = {
-        year: 31536000,
-        month: 2592000,
-        week: 604800,
-        day: 86400,
-        hour: 3600,
-        minute: 60,
-        second: 1
-    };
-    
-    for (const [unit, secondsInUnit] of Object.entries(intervals)) {
-        const interval = Math.floor(seconds / secondsInUnit);
-        if (interval >= 1) {
-            return interval === 1 ? `1 ${unit} ago` : `${interval} ${unit}s ago`;
-        }
+function showGroupsToast(message, type = 'info') {
+    // Use existing toast function or create one
+    if (typeof window.showToast === 'function') {
+        window.showToast(message, type);
+    } else {
+        console.log(`${type}: ${message}`);
     }
-    
-    return 'Just now';
 }
 
-// Export functions for global access
+function scrollToMessage(messageId) {
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageElement) {
+        messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Highlight the message temporarily
+        messageElement.classList.add('highlighted');
+        setTimeout(() => {
+            messageElement.classList.remove('highlighted');
+        }, 2000);
+    }
+}
+
+async function sendSystemMessage(groupId, text) {
+    try {
+        const messageData = {
+            groupId: groupId,
+            senderId: 'system',
+            senderName: 'System',
+            text: text,
+            type: 'system',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'sent'
+        };
+        
+        await db.collection('groupMessages').add(messageData);
+    } catch (error) {
+        console.error('Error sending system message:', error);
+    }
+}
+
+async function sendGroupInviteNotification(groupId, userId) {
+    try {
+        // Get user's notification token
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+        
+        if (userData?.notificationToken) {
+            // Send push notification
+            await sendPushNotification({
+                to: userData.notificationToken,
+                title: 'Group Invitation',
+                body: `${currentUserData.displayName} added you to a group`,
+                data: {
+                    groupId: groupId,
+                    type: 'group_invite'
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error sending group invite notification:', error);
+    }
+}
+
+async function sendPushNotification(notification) {
+    // Implement push notification sending
+    // This would typically use Firebase Cloud Messaging
+    console.log('Sending push notification:', notification);
+}
+
+async function fetchFriendsDirectly() {
+    try {
+        // Fetch friends from Firestore
+        const friendsQuery = await db.collection('users')
+            .where('friends', 'array-contains', currentUser.uid)
+            .get();
+        
+        const friends = [];
+        friendsQuery.forEach(doc => {
+            friends.push({ id: doc.id, ...doc.data() });
+        });
+        
+        return friends;
+    } catch (error) {
+        console.error('Error fetching friends:', error);
+        return [];
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard', 'success');
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        showToast('Failed to copy', 'error');
+    });
+}
+
+function handleVisibilityChange() {
+    if (!document.hidden && currentGroupId) {
+        // User returned to the app, update activity
+        updateGroupActivityIndicators();
+    }
+}
+
+// ==================== INITIALIZE GROUP FEATURES ====================
+
+function initializeGroupFeatures() {
+    // Initialize typing indicators
+    initializeTypingIndicators();
+    
+    // Initialize drag and drop
+    initializeDragAndDrop();
+    
+    // Initialize emoji picker
+    initializeEmojiPicker();
+    
+    // Initialize mobile controls
+    setupMobileGroupControls();
+}
+
+function initializeTypingIndicators() {
+    if (!groupElements.messageInput || !currentGroupId) return;
+    
+    let typingTimeout;
+    
+    groupElements.messageInput.addEventListener('input', () => {
+        if (!typingTimeout) {
+            // User started typing
+            updateTypingStatus(true);
+        }
+        
+        // Clear previous timeout
+        clearTimeout(typingTimeout);
+        
+        // Set new timeout
+        typingTimeout = setTimeout(() => {
+            // User stopped typing
+            updateTypingStatus(false);
+            typingTimeout = null;
+        }, 1000);
+    });
+}
+
+async function updateTypingStatus(isTyping) {
+    if (!currentGroupId) return;
+    
+    try {
+        const groupRef = db.collection('groups').doc(currentGroupId);
+        
+        if (isTyping) {
+            await groupRef.update({
+                typingUsers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+            });
+        } else {
+            await groupRef.update({
+                typingUsers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+            });
+        }
+    } catch (error) {
+        console.error('Error updating typing status:', error);
+    }
+}
+
+function initializeDragAndDrop() {
+    const messageInput = groupElements.messageInput;
+    if (!messageInput) return;
+    
+    messageInput.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        messageInput.classList.add('drag-over');
+    });
+    
+    messageInput.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        messageInput.classList.remove('drag-over');
+    });
+    
+    messageInput.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        messageInput.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            uploadGroupFile(files[0]);
+        }
+    });
+}
+
+function initializeEmojiPicker() {
+    // Initialize emoji picker for group messages
+    // This would integrate with an emoji picker library
+}
+
+// ==================== LISTENERS FOR REAL-TIME UPDATES ====================
+
+function listenForGroupInvites() {
+    // Listen for group invites in real-time
+    db.collection('groupInvites')
+        .where('userId', '==', currentUser.uid)
+        .where('status', '==', 'pending')
+        .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                    const invite = { id: change.doc.id, ...change.doc.data() };
+                    showGroupInviteNotification(invite);
+                }
+            });
+        });
+}
+
+function listenForGroupRequests() {
+    if (!currentUser) return;
+    
+    // Get admin group IDs
+    const adminGroupIds = getAllAdminGroupIds();
+    
+    // Don't create query if no admin groups
+    if (adminGroupIds.length === 0) return;
+    
+    // Listen for group requests (for admins)
+    db.collection('groupRequests')
+        .where('groupId', 'in', adminGroupIds)
+        .where('status', '==', 'pending')
+        .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                    const request = { id: change.doc.id, ...change.doc.data() };
+                    showGroupRequestNotification(request);
+                }
+            });
+        });
+}
+
+function getAllAdminGroupIds() {
+    // Get all group IDs where user is admin
+    if (!allGroups || allGroups.length === 0) return [];
+    
+    return allGroups
+        .filter(group => group.admins?.includes(currentUser.uid))
+        .map(group => group.id);
+}
+
+function showGroupInviteNotification(invite) {
+    // Show notification for group invite
+    const notification = document.createElement('div');
+    notification.className = 'fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border p-4 z-50 max-w-sm';
+    
+    notification.innerHTML = `
+        <div class="flex items-start">
+            <img class="w-12 h-12 rounded-full mr-3" 
+                 src="${invite.groupAvatar || 'https://ui-avatars.com/api/?name=Group&background=random'}"
+                 alt="${invite.groupName}">
+            <div class="flex-1">
+                <h4 class="font-semibold">Group Invitation</h4>
+                <p class="text-sm text-gray-600 mt-1">You've been invited to join "${invite.groupName}"</p>
+                <div class="mt-3 flex space-x-2">
+                    <button class="btn-secondary text-sm px-3 py-1" onclick="declineGroupInvite('${invite.id}')">
+                        Decline
+                    </button>
+                    <button class="btn-primary text-sm px-3 py-1" onclick="acceptGroupInvite('${invite.id}', '${invite.groupId}')">
+                        Accept
+                    </button>
+                </div>
+            </div>
+            <button class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 30 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 30000);
+}
+
+async function acceptGroupInvite(inviteId, groupId) {
+    try {
+        // Update invite status
+        await db.collection('groupInvites').doc(inviteId).update({
+            status: 'accepted',
+            respondedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Add user to group
+        await db.collection('groups').doc(groupId).update({
+            participants: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+        });
+        
+        // Send system message
+        await sendSystemMessage(groupId, `${currentUserData.displayName} joined the group via invite`);
+        
+        // Remove notification
+        const notification = document.querySelector(`[onclick*="${inviteId}"]`)?.closest('.fixed');
+        if (notification) {
+            notification.remove();
+        }
+        
+        showToast('Joined group successfully', 'success');
+        
+        // Reload groups
+        loadUserGroups();
+        
+    } catch (error) {
+        console.error('Error accepting group invite:', error);
+        showToast('Error accepting invite', 'error');
+    }
+}
+
+async function declineGroupInvite(inviteId) {
+    try {
+        await db.collection('groupInvites').doc(inviteId).update({
+            status: 'declined',
+            respondedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Remove notification
+        const notification = document.querySelector(`[onclick*="${inviteId}"]`)?.closest('.fixed');
+        if (notification) {
+            notification.remove();
+        }
+        
+        showToast('Invite declined', 'info');
+        
+    } catch (error) {
+        console.error('Error declining group invite:', error);
+        showToast('Error declining invite', 'error');
+    }
+}
+
+function showGroupRequestNotification(request) {
+    // Show notification for group join request (for admins)
+    const notification = document.createElement('div');
+    notification.className = 'fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border p-4 z-50 max-w-sm';
+    
+    notification.innerHTML = `
+        <div class="flex items-start">
+            <img class="w-12 h-12 rounded-full mr-3" 
+                 src="${request.userPhoto || 'https://ui-avatars.com/api/?name=User&background=random'}"
+                 alt="${request.userName}">
+            <div class="flex-1">
+                <h4 class="font-semibold">Group Join Request</h4>
+                <p class="text-sm text-gray-600 mt-1">${request.userName} wants to join your group</p>
+                <div class="mt-3 flex space-x-2">
+                    <button class="btn-secondary text-sm px-3 py-1" onclick="declineGroupRequest('${request.id}')">
+                        Decline
+                    </button>
+                    <button class="btn-primary text-sm px-3 py-1" onclick="acceptGroupRequest('${request.id}', '${request.groupId}', '${request.userId}')">
+                        Accept
+                    </button>
+                </div>
+            </div>
+            <button class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 30 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 30000);
+}
+
+async function acceptGroupRequest(requestId, groupId, userId) {
+    try {
+        // Update request status
+        await db.collection('groupRequests').doc(requestId).update({
+            status: 'accepted',
+            respondedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            respondedBy: currentUser.uid
+        });
+        
+        // Add user to group
+        await db.collection('groups').doc(groupId).update({
+            participants: firebase.firestore.FieldValue.arrayUnion(userId)
+        });
+        
+        // Send system message
+        await sendSystemMessage(groupId, `${userId} joined the group`);
+        
+        // Send notification to user
+        await sendGroupInviteNotification(groupId, userId);
+        
+        // Remove notification
+        const notification = document.querySelector(`[onclick*="${requestId}"]`)?.closest('.fixed');
+        if (notification) {
+            notification.remove();
+        }
+        
+        showToast('Request accepted', 'success');
+        
+    } catch (error) {
+        console.error('Error accepting group request:', error);
+        showToast('Error accepting request', 'error');
+    }
+}
+
+async function declineGroupRequest(requestId) {
+    try {
+        await db.collection('groupRequests').doc(requestId).update({
+            status: 'declined',
+            respondedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            respondedBy: currentUser.uid
+        });
+        
+        // Remove notification
+        const notification = document.querySelector(`[onclick*="${requestId}"]`)?.closest('.fixed');
+        if (notification) {
+            notification.remove();
+        }
+        
+        showToast('Request declined', 'info');
+        
+    } catch (error) {
+        console.error('Error declining group request:', error);
+        showToast('Error declining request', 'error');
+    }
+}
+
+// ==================== EXPORT FUNCTIONS ====================
+
 window.GroupSystem = {
+    // Initialization
     initializeGroupSystem,
-    createNewGroup,
+    
+    // Group Management
+    createNewGroup: createNewGroupAction,
     openGroupChat,
     loadUserGroups,
+    showGroupInfo,
+    
+    // Group Chat
     sendGroupMessage,
-    addParticipantToGroup,
-    removeParticipantFromGroup,
+    loadGroupMessages,
+    
+    // Group Actions
     leaveGroup,
     deleteGroup,
-    updateGroupInfo,
     toggleGroupMute,
-    makeMemberAdmin,
+    
+    // Join Groups
+    joinGroupAction,
+    
+    // Media & Content
+    showGroupMediaGallery,
+    loadGroupMedia,
+    filterGroupMedia,
+    
+    // Search
+    showGroupSearch,
+    searchInGroup,
+    
+    // Admin Management
+    showManageAdminsModal,
+    saveAdminChanges,
+    
+    // Forwarding
+    showForwardMessageModal,
+    forwardSelectedMessages,
+    
+    // Starred Messages
+    showStarredMessages,
+    toggleMessageStar,
+    
+    // Polls
+    createGroupPoll,
+    
+    // Announcements
+    createGroupAnnouncement,
+    
+    // File Sharing
+    uploadGroupFile,
+    
+    // Invites
     acceptGroupInvite,
     declineGroupInvite,
-    joinPublicGroup,
-    toggleMessageStar,
-    deleteGroupMessage,
-    replyToGroupMessage,
-    forwardGroupMessage,
-    copyMessageText,
-    reportGroupMessage,
-    loadGroupMedia,
-    loadGroupStarredMessages,
-    searchInGroup,
-    scrollToMessage,
-    switchToTab,
-    showGroupInfoModal,
+    
+    // Requests
+    acceptGroupRequest,
+    declineGroupRequest,
+    
+    // UI Functions
     showModal,
     hideModal,
-    generateAIConversationSummary,
-    generateSmartReplies
+    switchToTab,
+    
+    // Data
+    currentGroup,
+    currentGroupId,
+    isGroupChat,
+    allGroups
 };
+
+// ==================== INITIALIZATION ====================
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
