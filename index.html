@@ -7,7 +7,7 @@
      <meta name="theme-color" content="#000000">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>kynecta - Connect Globally, Create Together</title>
+    <title>kynecta - Connect & Chat Globally</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
@@ -826,16 +826,21 @@
             context-menu: none;
         }
         
-        /* Mood and Interest Selection Styles */
+        /* Combined Interest & Language Selection Styles */
         .selection-card {
             background: rgba(255, 255, 255, 0.05);
             border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
-            padding: 1.5rem;
+            padding: 1rem;
             transition: all 0.3s ease;
             cursor: pointer;
             position: relative;
             overflow: hidden;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         
         .selection-card:hover {
@@ -868,14 +873,14 @@
         }
         
         .selection-icon {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1rem;
-            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
         }
         
         .selection-counter {
@@ -929,21 +934,6 @@
             cursor: not-allowed;
         }
         
-        .selection-back-btn {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 1rem;
-        }
-        
-        .selection-back-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
         .selection-title {
             font-size: 1.75rem;
             font-weight: bold;
@@ -959,23 +949,34 @@
             margin-bottom: 2rem;
         }
         
-        .selection-grid {
+        .combined-selection-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.75rem;
             margin-bottom: 2rem;
         }
         
         @media (max-width: 640px) {
-            .selection-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-                gap: 0.75rem;
+            .combined-selection-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 0.5rem;
+            }
+            
+            .selection-card {
+                height: 100px;
+                padding: 0.75rem;
+            }
+            
+            .selection-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 0.875rem;
             }
         }
         
         @media (min-width: 768px) {
-            .selection-grid {
-                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            .combined-selection-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             }
         }
 
@@ -995,14 +996,167 @@
             background: rgba(255, 255, 255, 0.1);
             color: white;
         }
+        
+        /* Combined category label */
+        .category-label {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+        }
+        
+        /* Auto-login indicator */
+        .auto-login-badge {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* App Store Promo Styles */
+        .app-promo-card {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .app-promo-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #8B5CF6, #3B82F6);
+        }
+        
+        .download-badge {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: bold;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+        }
+        
+        .download-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Feature highlight with coming soon badge */
+        .coming-soon-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        /* Chat-focused feature styles */
+        .chat-feature {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(139, 92, 246, 0.08));
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: 16px;
+            padding: 1.25rem;
+            transition: all 0.3s ease;
+        }
+        
+        .chat-feature:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+        }
+        
+        /* Quick login button */
+        .quick-login-btn {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        
+        .quick-login-btn:hover {
+            background: rgba(34, 197, 94, 0.2);
+            transform: scale(1.05);
+        }
+        
+        /* Interest tags */
+        .interest-tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .interest-tag.tech { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+        .interest-tag.music { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; }
+        .interest-tag.sports { background: rgba(16, 185, 129, 0.2); color: #86efac; }
+        .interest-tag.gaming { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+        .interest-tag.art { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+        .interest-tag.travel { background: rgba(236, 72, 153, 0.2); color: #f9a8d4; }
+        
+        /* Language tags */
+        .language-tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+        }
     </style>
 </head>
 <body class="h-full dashboard-container bg-grid-pattern theme-calm protected-content no-screenshot no-context-menu">
+    <!-- Auto-login Indicator -->
+    <div id="autoLoginBadge" class="auto-login-badge hidden">
+        <i class="fas fa-bolt"></i>
+        <span>Auto-login Enabled</span>
+    </div>
+
     <!-- Mood Theme Selector (Desktop) -->
     <div class="mood-selector hidden lg:block">
         <button class="mood-btn flex items-center space-x-2">
             <i class="fas fa-palette"></i>
-            <span class="hidden sm:inline">Mood</span>
+            <span class="hidden sm:inline">Theme</span>
         </button>
         <div class="mood-options">
             <div class="mood-option mood-calm" data-theme="calm" title="Calm"></div>
@@ -1029,90 +1183,10 @@
         </div>
     </div>
 
-    <!-- Mood Customizer -->
-    <div class="mood-customizer">
-        <button class="mood-customizer-btn flex items-center space-x-2" id="moodCustomizerBtn">
-            <i class="fas fa-sliders-h"></i>
-            <span class="hidden sm:inline">Customize</span>
-        </button>
-    </div>
-
-    <!-- Mood Customizer Modal -->
-    <div id="moodCustomizerModal" class="mood-customizer-modal">
-        <div class="mood-customizer-content">
-            <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center space-x-3">
-                    <i class="fas fa-palette text-2xl text-blue-400"></i>
-                    <h2 class="text-xl md:text-2xl font-bold text-white">Mood Color Customizer</h2>
-                </div>
-                <button id="closeMoodCustomizer" class="text-gray-400 hover:text-white transition">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold text-white mb-3">Select Your Mood Color</h3>
-                <div class="color-palette">
-                    <div class="color-option active" style="background: linear-gradient(135deg, #3B82F6, #8B5CF6);" data-primary="#3B82F6" data-secondary="#8B5CF6" data-theme="calm"></div>
-                    <div class="color-option" style="background: linear-gradient(135deg, #DC2626, #EA580C);" data-primary="#DC2626" data-secondary="#EA580C" data-theme="energetic"></div>
-                    <div class="color-option" style="background: linear-gradient(135deg, #7C3AED, #DB2777);" data-primary="#7C3AED" data-secondary="#DB2777" data-theme="creative"></div>
-                    <div class="color-option" style="background: linear-gradient(135deg, #059669, #10B981);" data-primary="#059669" data-secondary="#10B981" data-theme="chill"></div>
-                    <div class="color-option" style="background: linear-gradient(135deg, #DB2777, #BE185D);" data-primary="#DB2777" data-secondary="#BE185D" data-theme="romantic"></div>
-                    <div class="color-option" style="background: linear-gradient(135deg, #6B7280, #4B5563);" data-primary="#6B7280" data-secondary="#4B5563" data-theme="default"></div>
-                    <div class="color-option" style="background: linear-gradient(135deg, #F59E0B, #D97706);" data-primary="#F59E0B" data-secondary="#D97706" data-theme="sunny"></div>
-                    <div class="color-option" style="background: linear-gradient(135deg, #8B5CF6, #EC4899);" data-primary="#8B5CF6" data-secondary="#EC4899" data-theme="vibrant"></div>
-                    <div class="color-option" style="background: linear-gradient(135deg, #06B6D4, #0EA5E9);" data-primary="#06B6D4" data-secondary="#0EA5E9" data-theme="ocean"></div>
-                    <div class="color-option" style="background: linear-gradient(135deg, #84CC16, #22C55E);" data-primary="#84CC16" data-secondary="#22C55E" data-theme="fresh"></div>
-                </div>
-                
-                <div class="custom-color-input">
-                    <div class="custom-color-preview" id="customColorPreview" style="background: linear-gradient(135deg, #3B82F6, #8B5CF6);"></div>
-                    <div class="flex flex-col w-full">
-                        <label class="text-white text-sm mb-1">Primary Color</label>
-                        <input type="color" id="primaryColorPicker" value="#3B82F6" class="w-full">
-                    </div>
-                    <div class="flex flex-col w-full">
-                        <label class="text-white text-sm mb-1">Secondary Color</label>
-                        <input type="color" id="secondaryColorPicker" value="#8B5CF6" class="w-full">
-                    </div>
-                    <button id="applyCustomColors" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition mt-4">
-                        Apply
-                    </button>
-                </div>
-            </div>
-
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold text-white mb-3">Color Intensity</h3>
-                <input type="range" min="0" max="100" value="50" class="intensity-slider" id="colorIntensity">
-                <div class="flex justify-between text-xs text-gray-400">
-                    <span>Subtle</span>
-                    <span>Balanced</span>
-                    <span>Vibrant</span>
-                </div>
-            </div>
-
-            <div>
-                <h3 class="text-lg font-semibold text-white mb-3">Preview</h3>
-                <div class="mood-preview" id="moodPreview">
-                    Your Mood Preview
-                </div>
-            </div>
-
-            <div class="flex justify-between mt-6">
-                <button id="resetMoodColors" class="px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition">
-                    Reset to Default
-                </button>
-                <button id="saveMoodColors" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
-                    Save Mood Colors
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Connection Status -->
     <div class="connection-status connecting" id="connectionStatus">
         <i class="fas fa-circle-notch fa-spin mr-2"></i>
-        <span id="connectionText">Connecting to kynecta...</span>
+        <span id="connectionText">Connecting to kynecta Chat...</span>
     </div>
 
     <!-- Toast Container -->
@@ -1125,8 +1199,8 @@
                 <div class="flex-1 mb-4 md:mb-0">
                     <h3 class="text-xl font-bold mb-2">🍪 We Value Your Privacy</h3>
                     <p class="text-blue-200 text-sm md:text-base">
-                        We use cookies to enhance your experience, analyze traffic, and personalize content. 
-                        By continuing to use kynecta, you agree to our use of cookies and our Privacy Policy.
+                        We use cookies to enhance your chat experience, analyze traffic, and personalize content. 
+                        By continuing to use kynecta Chat, you agree to our use of cookies and our Privacy Policy.
                     </p>
                 </div>
                 <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
@@ -1205,46 +1279,7 @@
                             <p class="text-xs md:text-sm text-gray-400">Receive an automated voice call with a verification code.</p>
                         </div>
                     </div>
-
-                    <!-- Option 4: Secret Text (Security Question) -->
-                    <div onclick="selectRecoveryMethod('secret')" class="recovery-option-card glass-effect p-4 rounded-xl flex items-center space-x-4">
-                        <i class="fas fa-user-secret text-xl md:text-2xl text-purple-400"></i>
-                        <div>
-                            <h3 class="font-bold text-base md:text-lg">Secret Text / Security Question</h3>
-                            <p class="text-xs md:text-sm text-gray-400">Answer your security question for direct reset access.</p>
-                        </div>
-                    </div>
                 </div>
-            </div>
-            
-            <!-- Step 3: Specific Recovery Form (Secret Text example) -->
-            <div id="forgot-step-3-secret-reset" class="hidden">
-                <h2 class="text-lg md:text-xl font-semibold mb-4 text-gray-100">Secret Text Recovery</h2>
-                <p class="text-gray-300 mb-6 text-sm md:text-base">
-                    To confirm your identity, please answer your secret question.
-                </p>
-                <form id="forgotSecretForm">
-                    <div class="mb-4">
-                        <label for="forgotSecurityQuestion" class="block text-sm font-medium text-gray-300 mb-2">Security Question</label>
-                        <p id="forgotSecurityQuestion" class="p-3 rounded-xl glass-effect border border-blue-700 text-sm md:text-base">
-                            What was the name of your first pet? (Simulated)
-                        </p>
-                    </div>
-                    <div class="mb-6">
-                        <label for="forgotSecurityAnswer" class="block text-sm font-medium text-gray-300 mb-2">Your Answer</label>
-                        <input type="text" id="forgotSecurityAnswer" name="securityAnswer" required
-                               class="w-full p-3 rounded-xl glass-effect border border-blue-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-white text-sm md:text-base">
-                    </div>
-                    
-                    <button type="submit" id="forgotSecretSubmitBtn"
-                            class="w-full cyber-gradient text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-blue-500/50 transition duration-300 transform hover:scale-[1.01] flex items-center justify-center text-sm md:text-base">
-                        <i class="fas fa-check-circle mr-2"></i> Verify & Reset
-                    </button>
-                </form>
-                <button onclick="changeRecoveryMethod()"
-                        class="w-full mt-4 text-gray-400 py-3 rounded-xl font-semibold hover:text-gray-100 transition duration-200 text-sm md:text-base">
-                    Change Recovery Method
-                </button>
             </div>
         </div>
     </div>
@@ -1273,13 +1308,13 @@
                 <div class="text-center mb-6 md:mb-8">
                     <div class="flex items-center justify-center space-x-3 md:space-x-4 mb-4 md:mb-6">
                         <div class="w-16 h-16 md:w-20 md:h-20 cyber-gradient rounded-xl md:rounded-2xl flex items-center justify-center quantum-glow floating">
-                            <i class="fas fa-globe-americas text-white text-2xl md:text-3xl"></i>
+                            <i class="fas fa-comments text-white text-2xl md:text-3xl"></i>
                         </div>
                         <div>
                             <span class="text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 neon-text">
-                                kynecta
+                                kynecta Chat
                             </span>
-                            <p class="text-blue-300 text-sm md:text-lg mt-1 md:mt-2">Where the World Connects</p>
+                            <p class="text-blue-300 text-sm md:text-lg mt-1 md:mt-2">Global Chat Platform</p>
                         </div>
                     </div>
                 </div>
@@ -1287,111 +1322,160 @@
                 <!-- Attractive Advertisement Content -->
                 <div class="space-y-6 md:space-y-8">
                     <div class="text-center">
-                        <h2 class="text-2xl md:text-4xl font-bold gradient-text mb-3 md:mb-4 responsive-heading">Join 500,000+ Global Connectors!</h2>
-                        <p class="text-blue-200 text-base md:text-xl mb-4 md:mb-6 responsive-subheading">The world's most vibrant community is waiting for you</p>
+                        <h2 class="text-2xl md:text-4xl font-bold gradient-text mb-3 md:mb-4 responsive-heading">Join 2,000,000+ Chatters!</h2>
+                        <p class="text-blue-200 text-base md:text-xl mb-4 md:mb-6 responsive-subheading">The world's most connected chat platform is waiting for you</p>
                     </div>
 
-                    <!-- Platform Features -->
+                    <!-- Chat-Focused Features -->
                     <div class="grid grid-cols-1 gap-4 md:gap-6 mb-6 md:mb-8">
-                        <div class="platform-feature">
+                        <div class="chat-feature">
                             <div class="flex items-start space-x-4">
                                 <div class="feature-icon bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                                    <i class="fas fa-comments"></i>
+                                    <i class="fas fa-globe"></i>
                                 </div>
                                 <div class="flex-1">
-                                    <h3 class="text-lg md:text-xl font-bold text-white mb-2">Mood-Based Chat</h3>
-                                    <p class="text-blue-300 text-sm md:text-base mb-3">Connect with people who match your current mood. Find calm conversations or energetic debates based on how you feel. <strong>Create polls and voting sessions</strong> to engage your community in decision-making.</p>
+                                    <h3 class="text-lg md:text-xl font-bold text-white mb-2">Global Chat Rooms</h3>
+                                    <p class="text-blue-300 text-sm md:text-base mb-3">Connect with people worldwide in topic-based chat rooms. From casual conversations to deep discussions.</p>
                                     <div class="flex flex-wrap">
-                                        <span class="mood-tag calm">Calm</span>
-                                        <span class="mood-tag energetic">Energetic</span>
-                                        <span class="mood-tag creative">Creative</span>
-                                        <span class="mood-tag chill">Chill</span>
-                                        <span class="mood-tag romantic">Romantic</span>
+                                        <span class="interest-tag tech">Technology</span>
+                                        <span class="interest-tag music">Music</span>
+                                        <span class="interest-tag sports">Sports</span>
+                                        <span class="interest-tag gaming">Gaming</span>
+                                        <span class="interest-tag art">Art & Design</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="platform-feature">
+                        <div class="chat-feature">
                             <div class="flex items-start space-x-4">
                                 <div class="feature-icon bg-gradient-to-br from-green-500 to-blue-600 text-white">
-                                    <i class="fas fa-shopping-cart"></i>
+                                    <i class="fas fa-lock"></i>
                                 </div>
                                 <div class="flex-1">
-                                    <h3 class="text-lg md:text-xl font-bold text-white mb-2">Interest-Based Marketplace</h3>
-                                    <p class="text-blue-300 text-sm md:text-base mb-3">Buy and sell services, goods, and skills within communities that share your interests. Find unique offerings from like-minded people.</p>
+                                    <h3 class="text-lg md:text-xl font-bold text-white mb-2">Private & Group Chats</h3>
+                                    <p class="text-blue-300 text-sm md:text-base mb-3">Secure private messaging and group chats with end-to-end encryption. Share files, images, and voice messages.</p>
                                     <div class="flex flex-wrap">
-                                        <span class="interest-badge"><i class="fas fa-concierge-bell mr-1"></i> Services</span>
-                                        <span class="interest-badge"><i class="fas fa-box mr-1"></i> Goods</span>
-                                        <span class="interest-badge"><i class="fas fa-tools mr-1"></i> Skills</span>
-                                        <span class="interest-badge"><i class="fas fa-laptop-code mr-1"></i> Digital</span>
-                                        <span class="interest-badge"><i class="fas fa-hands-helping mr-1"></i> Consulting</span>
+                                        <span class="interest-badge"><i class="fas fa-lock mr-1"></i> Encrypted</span>
+                                        <span class="interest-badge"><i class="fas fa-users mr-1"></i> Group Chats</span>
+                                        <span class="interest-badge"><i class="fas fa-shield-alt mr-1"></i> Secure</span>
+                                        <span class="interest-badge"><i class="fas fa-file-upload mr-1"></i> File Sharing</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="platform-feature">
+                        <div class="chat-feature">
                             <div class="flex items-start space-x-4">
                                 <div class="feature-icon bg-gradient-to-br from-purple-500 to-pink-600 text-white">
-                                    <i class="fas fa-gamepad"></i>
+                                    <i class="fas fa-language"></i>
                                 </div>
                                 <div class="flex-1">
-                                    <h3 class="text-lg md:text-xl font-bold text-white mb-2">Interactive Games</h3>
-                                    <p class="text-blue-300 text-sm md:text-base mb-3">Play games with friends or find new gaming partners based on shared interests and skill levels.</p>
+                                    <h3 class="text-lg md:text-xl font-bold text-white mb-2">Real-time Translation</h3>
+                                    <p class="text-blue-300 text-sm md:text-base mb-3">Chat with anyone in any language with our real-time translation feature. Break language barriers instantly.</p>
                                     <div class="flex flex-wrap">
-                                        <span class="interest-badge"><i class="fas fa-chess mr-1"></i> Strategy</span>
-                                        <span class="interest-badge"><i class="fas fa-dice mr-1"></i> Casual</span>
-                                        <span class="interest-badge"><i class="fas fa-trophy mr-1"></i> Competitive</span>
-                                        <span class="interest-badge"><i class="fas fa-puzzle-piece mr-1"></i> Puzzle</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="platform-feature">
-                            <div class="flex items-start space-x-4">
-                                <div class="feature-icon bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
-                                    <i class="fas fa-newspaper"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <h3 class="text-lg md:text-xl font-bold text-white mb-2">Personalized Feed</h3>
-                                    <p class="text-blue-300 text-sm md:text-base mb-3">Discover content tailored to your interests and mood. Follow creators who share your passions.</p>
-                                    <div class="flex flex-wrap">
-                                        <span class="interest-badge"><i class="fas fa-video mr-1"></i> Video</span>
-                                        <span class="interest-badge"><i class="fas fa-image mr-1"></i> Images</span>
-                                        <span class="interest-badge"><i class="fas fa-podcast mr-1"></i> Audio</span>
-                                        <span class="interest-badge"><i class="fas fa-file-text mr-1"></i> Articles</span>
+                                        <span class="language-tag">English</span>
+                                        <span class="language-tag">Spanish</span>
+                                        <span class="language-tag">French</span>
+                                        <span class="language-tag">中文</span>
+                                        <span class="language-tag">العربية</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Secure Payments -->
-                    <div class="glass-effect border border-green-700 rounded-2xl p-4 md:p-6">
-                        <div class="flex items-center space-x-3 mb-4">
-                            <i class="fas fa-shield-alt text-2xl text-green-400"></i>
-                            <h3 class="text-lg md:text-xl font-bold text-white">Secure Payments</h3>
+                    <!-- App Store Promo Section -->
+                    <div class="app-promo-card">
+                        <div class="text-center mb-4">
+                            <h3 class="text-xl md:text-2xl font-bold text-white mb-2">🚀 Want More Features?</h3>
+                            <p class="text-blue-300 text-sm md:text-base mb-4">
+                                Discover our full suite of kynecta apps for an enhanced experience!
+                            </p>
                         </div>
-                        <p class="text-blue-300 text-sm md:text-base mb-4">
-                            Shop with confidence using our encrypted payment system. All transactions are protected with bank-level security.
-                        </p>
-                        <div class="flex flex-wrap">
-                            <span class="payment-badge"><i class="fas fa-lock mr-1"></i> Encrypted</span>
-                            <span class="payment-badge"><i class="fas fa-shield-check mr-1"></i> Protected</span>
-                            <span class="payment-badge"><i class="fas fa-user-shield mr-1"></i> Verified</span>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div class="platform-feature relative">
+                                <div class="coming-soon-badge">Already Available</div>
+                                <div class="flex items-start space-x-4">
+                                    <div class="feature-icon bg-gradient-to-br from-green-500 to-teal-600 text-white">
+                                        <i class="fas fa-gamepad"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-bold text-white mb-2">kynecta Games</h3>
+                                        <p class="text-blue-300 text-sm mb-3">Compete with gamers worldwide in tournaments and casual matches with real prizes.</p>
+                                        <div class="text-xs text-yellow-400 font-semibold">Download separate app</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="platform-feature relative">
+                                <div class="coming-soon-badge">Coming Soon</div>
+                                <div class="flex items-start space-x-4">
+                                    <div class="feature-icon bg-gradient-to-br from-red-500 to-pink-600 text-white">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-bold text-white mb-2">kynecta Marketplace</h3>
+                                        <p class="text-blue-300 text-sm mb-3">Buy, sell, and trade items and services in our secure marketplace.</p>
+                                        <div class="text-xs text-yellow-400 font-semibold">Download separate app</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="platform-feature relative">
+                                <div class="coming-soon-badge">Coming Soon</div>
+                                <div class="flex items-start space-x-4">
+                                    <div class="feature-icon bg-gradient-to-br from-teal-500 to-green-600 text-white">
+                                        <i class="fas fa-credit-card"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-bold text-white mb-2">kynecta Pay</h3>
+                                        <p class="text-blue-300 text-sm mb-3">Secure payments for marketplace purchases and money transfers.</p>
+                                        <div class="text-xs text-yellow-400 font-semibold">Download separate app</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="platform-feature relative">
+                                <div class="coming-soon-badge">Coming Soon</div>
+                                <div class="flex items-start space-x-4">
+                                    <div class="feature-icon bg-gradient-to-br from-indigo-500 to-blue-600 text-white">
+                                        <i class="fas fa-newspaper"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-bold text-white mb-2">kynecta Feed</h3>
+                                        <p class="text-blue-300 text-sm mb-3">Personalized news, updates, and content from creators worldwide.</p>
+                                        <div class="text-xs text-yellow-400 font-semibold">Download separate app</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <p class="text-blue-300 text-sm mb-4">
+                                <i class="fas fa-star text-yellow-400 mr-1"></i>
+                                All kynecta apps sync seamlessly with your chat profile!
+                            </p>
+                            <div class="flex justify-center space-x-4">
+                                <a href="#" class="download-badge">
+                                    <i class="fab fa-apple mr-2"></i> App Store
+                                </a>
+                                <a href="#" class="download-badge">
+                                    <i class="fab fa-google-play mr-2"></i> Play Store
+                                </a>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Live Stats Counter -->
                     <div class="grid grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
                         <div class="text-center">
-                            <div class="stats-counter" id="onlineCount">500K+</div>
-                            <div class="text-blue-300 text-xs md:text-sm">Active Users</div>
+                            <div class="stats-counter" id="onlineCount">2M+</div>
+                            <div class="text-blue-300 text-xs md:text-sm">Active Chatters</div>
                         </div>
                         <div class="text-center">
-                            <div class="stats-counter" id="countryCount">190+</div>
+                            <div class="stats-counter" id="countryCount">200+</div>
                             <div class="text-blue-300 text-xs md:text-sm">Countries</div>
                         </div>
                         <div class="text-center">
@@ -1399,31 +1483,31 @@
                             <div class="text-blue-300 text-xs md:text-sm">Languages</div>
                         </div>
                         <div class="text-center">
-                            <div class="stats-counter" id="communityCount">10K+</div>
-                            <div class="text-blue-300 text-xs md:text-sm">Communities</div>
+                            <div class="stats-counter" id="communityCount">100K+</div>
+                            <div class="text-blue-300 text-xs md:text-sm">Chat Rooms</div>
                         </div>
                     </div>
 
                     <!-- Success Stories -->
                     <div class="bg-black/30 rounded-xl p-4 md:p-6 border border-purple-500/30">
-                        <h3 class="text-lg md:text-xl font-bold text-center text-white mb-4 md:mb-6">🌟 Success Stories</h3>
+                        <h3 class="text-lg md:text-xl font-bold text-center text-white mb-4 md:mb-6">💬 Success Stories</h3>
                         <div class="space-y-3 md:space-y-4">
                             <div class="flex items-start space-x-3">
                                 <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <span class="text-white font-bold text-sm">S</span>
+                                    <span class="text-white font-bold text-sm">J</span>
                                 </div>
                                 <div>
-                                    <p class="text-white font-semibold text-sm md:text-base">"Found my business partner in Japan! kynecta made global networking effortless."</p>
-                                    <p class="text-blue-300 text-xs md:text-sm">- Sarah, Entrepreneur from USA</p>
+                                    <p class="text-white font-semibold text-sm md:text-base">"Found my international business partners through kynecta Chat! The real-time translation feature is amazing."</p>
+                                    <p class="text-blue-300 text-xs md:text-sm">- Jessica, USA</p>
                                 </div>
                             </div>
                             <div class="flex items-start space-x-3">
                                 <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <span class="text-white font-bold text-sm">A</span>
+                                    <span class="text-white font-bold text-sm">M</span>
                                 </div>
                                 <div>
-                                    <p class="text-white font-semibold text-sm md:text-base">"Learned Spanish while making friends from Mexico! Best language exchange platform."</p>
-                                    <p class="text-blue-300 text-xs md:text-sm">- Alex, Student from UK</p>
+                                    <p class="text-white font-semibold text-sm md:text-base">"Made friends from 10 different countries! kynecta Chat helped me learn about different cultures."</p>
+                                    <p class="text-blue-300 text-xs md:text-sm">- Miguel, Spain</p>
                                 </div>
                             </div>
                         </div>
@@ -1439,13 +1523,13 @@
                 <div class="lg:hidden text-center mb-6 md:mb-8 mobile-margin">
                     <div class="flex items-center justify-center space-x-3 mb-4 md:mb-6">
                         <div class="w-12 h-12 md:w-16 md:h-16 cyber-gradient rounded-xl flex items-center justify-center quantum-glow">
-                            <i class="fas fa-globe text-white text-xl md:text-2xl"></i>
+                            <i class="fas fa-comments text-white text-xl md:text-2xl"></i>
                         </div>
                         <div>
                             <span class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 neon-text">
-                                kynecta
+                                kynecta Chat
                             </span>
-                            <p class="text-blue-300 text-xs md:text-sm">Where the World Connects</p>
+                            <p class="text-blue-300 text-xs md:text-sm">Global Chat Platform</p>
                         </div>
                     </div>
                 </div>
@@ -1476,70 +1560,39 @@
 
                 <!-- All Content Sections Container -->
                 <div class="content-area relative min-h-[600px]">
-                    <!-- Mood & Interest Selection Section -->
+                    <!-- Combined Interest & Language Selection Section -->
                     <div id="selectionSection" class="section section-active">
                         <!-- Progress Counter -->
                         <div id="selectionCounter" class="selection-counter">
-                            <span id="selectedCount">0</span>/2 moods & <span id="selectedInterestsCount">0</span>/2 interests
+                            <span id="selectedCount">0</span>/3 selected
                         </div>
 
                         <div class="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
                             <div class="w-full max-w-4xl">
-                                <!-- Mood Selection Step -->
-                                <div id="moodSelectionStep">
+                                <!-- Combined Selection Step -->
+                                <div id="combinedSelectionStep">
                                     <div class="text-center mb-8 md:mb-12">
-                                        <h1 class="selection-title">Welcome to kynecta! 🎉</h1>
-                                        <p class="selection-subtitle">First, let's personalize your experience. Choose up to 2 moods that best describe how you feel right now</p>
+                                        <h1 class="selection-title">Welcome to kynecta Chat! 💬</h1>
+                                        <p class="selection-subtitle">Choose up to 3 interests & languages to personalize your chat experience</p>
                                     </div>
 
                                     <!-- Progress Bar -->
                                     <div class="selection-progress">
-                                        <div class="selection-progress-bar" id="moodProgressBar" style="width: 0%"></div>
+                                        <div class="selection-progress-bar" id="combinedProgressBar" style="width: 0%"></div>
                                     </div>
 
-                                    <!-- Mood Selection Grid -->
-                                    <div class="selection-grid" id="moodSelectionGrid">
-                                        <!-- Mood cards will be populated by JavaScript -->
-                                    </div>
-
-                                    <!-- Navigation Buttons -->
-                                    <div class="flex flex-col sm:flex-row gap-4 mt-8">
-                                        <button id="skipMoodSelection" class="skip-selection-btn">
-                                            Skip for now <i class="fas fa-forward ml-2"></i>
-                                        </button>
-                                        <button id="nextToInterestsBtn" class="selection-next-btn" disabled>
-                                            Continue to Interests <i class="fas fa-arrow-right ml-2"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Interest Selection Step -->
-                                <div id="interestSelectionStep" class="hidden">
-                                    <div class="text-center mb-8 md:mb-12">
-                                        <h1 class="selection-title">Great! Now Choose Your Interests</h1>
-                                        <p class="selection-subtitle">Select up to 2 interests that match what you love to do</p>
-                                    </div>
-
-                                    <!-- Progress Bar -->
-                                    <div class="selection-progress">
-                                        <div class="selection-progress-bar" id="interestProgressBar" style="width: 0%"></div>
-                                    </div>
-
-                                    <!-- Interest Selection Grid -->
-                                    <div class="selection-grid" id="interestSelectionGrid">
-                                        <!-- Interest cards will be populated by JavaScript -->
+                                    <!-- Combined Selection Grid -->
+                                    <div class="combined-selection-grid" id="combinedSelectionGrid">
+                                        <!-- Combined interest & language cards will be populated by JavaScript -->
                                     </div>
 
                                     <!-- Navigation Buttons -->
                                     <div class="flex flex-col sm:flex-row gap-4 mt-8">
-                                        <button id="backToMoodsBtn" class="selection-back-btn">
-                                            <i class="fas fa-arrow-left mr-2"></i> Back to Moods
-                                        </button>
-                                        <button id="skipInterestSelection" class="skip-selection-btn">
+                                        <button id="skipSelection" class="skip-selection-btn">
                                             Skip for now <i class="fas fa-forward ml-2"></i>
                                         </button>
-                                        <button id="finishSelectionBtn" class="selection-next-btn" disabled>
-                                            Finish & Continue <i class="fas fa-check ml-2"></i>
+                                        <button id="continueToAuthBtn" class="selection-next-btn" disabled>
+                                            Continue to Chat <i class="fas fa-arrow-right ml-2"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -1549,18 +1602,41 @@
 
                     <!-- Landing Section -->
                     <div id="landingSection" class="section section-hidden">
-                        <div class="text-center">
-                            <h2 class="text-2xl md:text-3xl font-bold text-white mb-3 md:mb-4 responsive-heading">Your Global Journey Starts Here</h2>
+                        <div class="text-center mb-8">
+                            <h2 class="text-2xl md:text-3xl font-bold text-white mb-3 md:mb-4 responsive-heading">Your Global Connection Starts Here</h2>
                             <p class="text-blue-300 mb-6 md:mb-8 text-sm md:text-base responsive-text">
-                                Join millions who have transformed how they connect, learn, and grow with people from every corner of the world.
+                                Join millions who have transformed how they connect and communicate with people from every corner of the world.
                             </p>
+                            
+                            <!-- Quick Login for Returning Users -->
+                            <div id="quickLoginSection" class="hidden mb-6">
+                                <div class="glass-effect border border-green-700 rounded-2xl p-4 mb-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                                <span id="userInitial" class="text-white font-bold"></span>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-white font-bold text-sm md:text-base" id="userDisplayName"></h4>
+                                                <p class="text-blue-300 text-xs" id="userEmail"></p>
+                                            </div>
+                                        </div>
+                                        <i class="fas fa-check-circle text-green-400 text-xl"></i>
+                                    </div>
+                                    <button id="quickLoginBtn" class="quick-login-btn w-full justify-center">
+                                        <i class="fas fa-bolt"></i>
+                                        Quick Login to Chat
+                                    </button>
+                                </div>
+                                <p class="text-blue-300 text-xs mb-6">Not <span id="quickLoginUserName"></span>? <button id="switchAccountBtn" class="text-purple-400 hover:text-purple-300">Switch account</button></p>
+                            </div>
                             
                             <div class="space-y-3 md:space-y-4">
                                 <button id="showLoginBtn" class="w-full cyber-gradient text-white py-3 md:py-4 px-4 md:px-6 rounded-xl text-base md:text-lg font-semibold hover:scale-105 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 quantum-glow pulse-glow">
-                                    <i class="fas fa-sign-in-alt mr-2"></i>Continue Your Journey
+                                    <i class="fas fa-sign-in-alt mr-2"></i>Continue to Chat
                                 </button>
                                 <button id="showRegisterBtn" class="w-full glass-effect text-white py-3 md:py-4 px-4 md:px-6 rounded-xl text-base md:text-lg font-semibold hover:scale-105 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 border border-blue-700 hover:border-cyan-500">
-                                    <i class="fas fa-user-plus mr-2"></i>Start Free Adventure
+                                    <i class="fas fa-user-plus mr-2"></i>Start Chatting Now
                                 </button>
                             </div>
                             
@@ -1571,96 +1647,92 @@
                                 </div>
                                 <div class="flex items-center">
                                     <i class="fas fa-globe text-green-400 mr-1 md:mr-2"></i>
-                                    <span>Global Access</span>
+                                    <span>Global Connections</span>
                                 </div>
                                 <div class="flex items-center">
-                                    <i class="fas fa-heart text-pink-400 mr-1 md:mr-2"></i>
-                                    <span>Always Free</span>
+                                    <i class="fas fa-language text-pink-400 mr-1 md:mr-2"></i>
+                                    <span>Real-time Translation</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Mobile Feature Highlights -->
                         <div class="lg:hidden mt-6 md:mt-8">
-                            <h3 class="text-lg md:text-xl font-bold text-center text-white mb-4">Discover kynecta</h3>
+                            <h3 class="text-lg md:text-xl font-bold text-center text-white mb-4">Discover kynecta Chat</h3>
                             <div class="grid grid-cols-1 gap-4">
-                                <div class="platform-feature">
+                                <div class="chat-feature">
                                     <div class="flex items-start space-x-4">
                                         <div class="feature-icon bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                                            <i class="fas fa-comments"></i>
+                                            <i class="fas fa-globe"></i>
                                         </div>
                                         <div class="flex-1">
-                                            <h4 class="text-base font-bold text-white mb-2">Mood-Based Chat</h4>
-                                            <p class="text-blue-300 text-xs mb-2">Connect with people who match your current mood. <strong>Create polls and voting sessions</strong> to engage your community.</p>
+                                            <h4 class="text-base font-bold text-white mb-2">Global Chat Rooms</h4>
+                                            <p class="text-blue-300 text-xs mb-2">Connect with people worldwide in topic-based rooms.</p>
                                             <div class="flex flex-wrap">
-                                                <span class="mood-tag calm">Calm</span>
-                                                <span class="mood-tag energetic">Energetic</span>
-                                                <span class="mood-tag creative">Creative</span>
+                                                <span class="interest-tag tech">Technology</span>
+                                                <span class="interest-tag music">Music</span>
+                                                <span class="interest-tag sports">Sports</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div class="platform-feature">
+                                <div class="chat-feature">
                                     <div class="flex items-start space-x-4">
                                         <div class="feature-icon bg-gradient-to-br from-green-500 to-blue-600 text-white">
-                                            <i class="fas fa-shopping-cart"></i>
+                                            <i class="fas fa-lock"></i>
                                         </div>
                                         <div class="flex-1">
-                                            <h4 class="text-base font-bold text-white mb-2">Marketplace</h4>
-                                            <p class="text-blue-300 text-xs mb-2">Buy & sell services, goods, and skills.</p>
+                                            <h4 class="text-base font-bold text-white mb-2">Private & Group Chats</h4>
+                                            <p class="text-blue-300 text-xs mb-2">Secure messaging with end-to-end encryption.</p>
                                             <div class="flex flex-wrap">
-                                                <span class="interest-badge"><i class="fas fa-concierge-bell mr-1"></i> Services</span>
-                                                <span class="interest-badge"><i class="fas fa-box mr-1"></i> Goods</span>
-                                                <span class="interest-badge"><i class="fas fa-tools mr-1"></i> Skills</span>
+                                                <span class="interest-badge"><i class="fas fa-lock mr-1"></i> Encrypted</span>
+                                                <span class="interest-badge"><i class="fas fa-users mr-1"></i> Group Chats</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div class="platform-feature">
+                                <div class="chat-feature">
                                     <div class="flex items-start space-x-4">
                                         <div class="feature-icon bg-gradient-to-br from-purple-500 to-pink-600 text-white">
-                                            <i class="fas fa-gamepad"></i>
+                                            <i class="fas fa-language"></i>
                                         </div>
                                         <div class="flex-1">
-                                            <h4 class="text-base font-bold text-white mb-2">Games</h4>
-                                            <p class="text-blue-300 text-xs mb-2">Play with friends based on shared interests.</p>
+                                            <h4 class="text-base font-bold text-white mb-2">Real-time Translation</h4>
+                                            <p class="text-blue-300 text-xs mb-2">Break language barriers with instant translation.</p>
                                             <div class="flex flex-wrap">
-                                                <span class="interest-badge"><i class="fas fa-chess mr-1"></i> Strategy</span>
-                                                <span class="interest-badge"><i class="fas fa-dice mr-1"></i> Casual</span>
-                                                <span class="interest-badge"><i class="fas fa-trophy mr-1"></i> Competitive</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="platform-feature">
-                                    <div class="flex items-start space-x-4">
-                                        <div class="feature-icon bg-gradient-to-br from-yellow-500 to-orange-600 text-white">
-                                            <i class="fas fa-newspaper"></i>
-                                        </div>
-                                        <div class="flex-1">
-                                            <h4 class="text-base font-bold text-white mb-2">Feed</h4>
-                                            <p class="text-blue-300 text-xs mb-2">Discover content tailored to your interests.</p>
-                                            <div class="flex flex-wrap">
-                                                <span class="interest-badge"><i class="fas fa-video mr-1"></i> Video</span>
-                                                <span class="interest-badge"><i class="fas fa-image mr-1"></i> Images</span>
-                                                <span class="interest-badge"><i class="fas fa-podcast mr-1"></i> Audio</span>
+                                                <span class="language-tag">English</span>
+                                                <span class="language-tag">Spanish</span>
+                                                <span class="language-tag">中文</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
+                            <!-- Mobile App Promo -->
+                            <div class="app-promo-card mt-4">
+                                <h4 class="text-base font-bold text-white mb-2">🚀 Want More?</h4>
+                                <p class="text-blue-300 text-xs mb-3">Download our other apps for gaming, marketplace, payments, and feeds!</p>
+                                <div class="flex justify-center space-x-2">
+                                    <a href="#" class="download-badge text-xs py-2 px-3">
+                                        <i class="fab fa-apple mr-1"></i> App Store
+                                    </a>
+                                    <a href="#" class="download-badge text-xs py-2 px-3">
+                                        <i class="fab fa-google-play mr-1"></i> Play Store
+                                    </a>
+                                </div>
+                            </div>
+                            
                             <!-- Mobile Stats -->
                             <div class="mt-4 md:mt-6 grid grid-cols-4 gap-2 md:gap-4">
                                 <div class="text-center">
-                                    <div class="text-lg md:text-xl font-bold text-blue-400">500K+</div>
-                                    <div class="text-blue-300 text-xs">Users</div>
+                                    <div class="text-lg md:text-xl font-bold text-blue-400">2M+</div>
+                                    <div class="text-blue-300 text-xs">Chatters</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="text-lg md:text-xl font-bold text-blue-400">190+</div>
+                                    <div class="text-lg md:text-xl font-bold text-blue-400">200+</div>
                                     <div class="text-blue-300 text-xs">Countries</div>
                                 </div>
                                 <div class="text-center">
@@ -1668,27 +1740,27 @@
                                     <div class="text-blue-300 text-xs">Languages</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="text-lg md:text-xl font-bold text-blue-400">10K+</div>
-                                    <div class="text-blue-300 text-xs">Communities</div>
+                                    <div class="text-lg md:text-xl font-bold text-blue-400">100K+</div>
+                                    <div class="text-blue-300 text-xs">Chat Rooms</div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Security Features -->
                         <div class="glass-effect border border-blue-700 rounded-2xl p-4 md:p-6 mt-6 md:mt-8">
-                            <h3 class="text-xs md:text-sm font-medium text-cyan-400 mb-2 md:mb-3">Why Choose kynecta?</h3>
+                            <h3 class="text-xs md:text-sm font-medium text-cyan-400 mb-2 md:mb-3">Why Choose kynecta Chat?</h3>
                             <ul class="text-xs md:text-sm text-blue-400 space-y-1 md:space-y-2">
                                 <li class="flex items-center">
                                     <i class="fas fa-check-circle text-green-400 mr-1 md:mr-2 text-xs"></i>
-                                    <span>No hidden fees - completely free forever</span>
+                                    <span>Real-time translation for 50+ languages</span>
                                 </li>
                                 <li class="flex items-center">
                                     <i class="fas fa-check-circle text-green-400 mr-1 md:mr-2 text-xs"></i>
-                                    <span>Connect with verified users worldwide</span>
+                                    <span>End-to-end encrypted private chats</span>
                                 </li>
                                 <li class="flex items-center">
                                     <i class="fas fa-check-circle text-green-400 mr-1 md:mr-2 text-xs"></i>
-                                    <span>Advanced translation for seamless communication</span>
+                                    <span>Auto-login like premium chat platforms</span>
                                 </li>
                             </ul>
                         </div>
@@ -1699,7 +1771,7 @@
                         <div class="text-center mb-4 md:mb-6">
                             <h2 class="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2 responsive-heading">Welcome Back</h2>
                             <p class="text-blue-300 text-sm md:text-base responsive-text">
-                                Continue your global journey with kynecta
+                                Continue your conversations with kynecta Chat
                             </p>
                         </div>
 
@@ -1745,7 +1817,7 @@
                                     <div class="flex items-center">
                                         <input id="remember-me" name="remember-me" type="checkbox" 
                                                class="h-3 w-3 md:h-4 md:w-4 text-cyan-400 focus:ring-cyan-400 border-blue-700 rounded glass-effect">
-                                        <label for="remember-me" class="ml-2 block text-blue-300">Remember me</label>
+                                        <label for="remember-me" class="ml-2 block text-blue-300">Remember me (Auto-login)</label>
                                     </div>
                                     <div>
                                         <button type="button" id="forgotPasswordBtn" class="font-medium text-purple-400 hover:text-purple-300 transition">Forgot password?</button>
@@ -1755,7 +1827,7 @@
                                 <div>
                                     <button type="submit" id="loginBtn"
                                             class="w-full cyber-gradient text-white py-2 md:py-3 px-4 rounded-xl text-base md:text-lg font-semibold hover:scale-105 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 quantum-glow disabled:opacity-50 disabled:cursor-not-allowed">
-                                        <span id="loginBtnText" class="text-sm md:text-base">Sign In</span>
+                                        <span id="loginBtnText" class="text-sm md:text-base">Sign In & Auto-login</span>
                                         <div id="loginSpinner" class="loading-spinner hidden"></div>
                                     </button>
                                 </div>
@@ -1783,9 +1855,9 @@
                     <!-- Register Section -->
                     <div id="registerSection" class="section section-hidden">
                         <div class="text-center mb-4 md:mb-6">
-                            <h2 class="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2 responsive-heading">Join kynecta</h2>
+                            <h2 class="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2 responsive-heading">Join kynecta Chat</h2>
                             <p class="text-blue-300 text-sm md:text-base responsive-text">
-                                Start your global adventure today
+                                Start connecting with people worldwide today
                             </p>
                         </div>
 
@@ -1793,13 +1865,13 @@
                         <form id="registration-form" class="space-y-4 md:space-y-6">
                             <div>
                                 <label for="displayName" class="block text-xs md:text-sm font-medium text-cyan-400 mb-1 md:mb-2">
-                                    Display Name
+                                    Username
                                     <span class="text-red-400 ml-1">*</span>
                                 </label>
                                 <div class="relative">
                                     <input type="text" id="displayName" name="displayName" required autocomplete="name"
                                            class="glass-effect appearance-none block w-full px-3 md:px-4 py-2 md:py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-white pl-10 md:pl-12 transition text-sm md:text-base"
-                                           placeholder="Enter your display name">
+                                           placeholder="Enter your username">
                                     <div class="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
                                         <i class="fas fa-user text-sm md:text-base"></i>
                                     </div>
@@ -1873,7 +1945,7 @@
 
                             <button type="submit" id="registerBtn"
                                     class="w-full cyber-gradient text-white py-2 md:py-3 px-4 rounded-xl text-base md:text-lg font-semibold hover:scale-105 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-400 quantum-glow disabled:opacity-50 disabled:cursor-not-allowed">
-                                <span id="registerBtnText" class="text-sm md:text-base">Create Account</span>
+                                <span id="registerBtnText" class="text-sm md:text-base">Create Account & Auto-login</span>
                                 <div id="registerSpinner" class="loading-spinner hidden"></div>
                             </button>
                         </form>
@@ -1924,7 +1996,7 @@
             async init() {
                 try {
                     console.log('🔄 Starting Firebase initialization...');
-                    this.updateConnectionStatus('connecting', 'Connecting to kynecta...');
+                    this.updateConnectionStatus('connecting', 'Connecting to kynecta Chat...');
                     
                     // Check if Firebase is available
                     if (typeof firebase === 'undefined') {
@@ -1957,7 +2029,7 @@
                     });
                     
                     this.isInitialized = true;
-                    this.updateConnectionStatus('connected', 'KYNECTA');
+                    this.updateConnectionStatus('connected', 'KYNECTA CHAT');
                     
                     // Show security status with checkmark
                     const securityStatus = document.getElementById('securityStatus');
@@ -1989,6 +2061,9 @@
                     
                     console.log('✅ Firebase initialized successfully!');
                     
+                    // Check for auto-login - but note that localStorage is already checked first by the main app
+                    this.checkFirebaseAutoLogin();
+                    
                 } catch (error) {
                     console.error('❌ Firebase initialization failed:', error);
                     this.updateConnectionStatus('disconnected', 'Connection Failed');
@@ -2014,9 +2089,45 @@
                     `;
                     
                     // Show error message
-                    if (window.kynectaApp) {
-                        window.kynectaApp.showMessage(' connection failed. Please check your connection.', 'error');
+                    if (window.kynectaChatApp) {
+                        window.kynectaChatApp.showToast('Firebase connection failed. Using fallback mode.', 'warning');
                     }
+                }
+            }
+
+            async checkFirebaseAutoLogin() {
+                try {
+                    // Check if user is already logged in via Firebase
+                    const currentUser = this.auth.currentUser;
+                    if (currentUser) {
+                        console.log('✅ User already logged in via Firebase:', currentUser.email);
+                        // If Firebase has a user but localStorage doesn't, sync them
+                        const savedUser = localStorage.getItem('kynecta-chat-user');
+                        if (!savedUser && window.kynectaChatApp) {
+                            const userData = {
+                                uid: currentUser.uid,
+                                email: currentUser.email,
+                                displayName: currentUser.displayName || currentUser.email.split('@')[0],
+                                isNewUser: false,
+                                interests: [],
+                                languages: [],
+                                autoLogin: true,
+                                lastLogin: new Date().toISOString()
+                            };
+                            localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
+                            
+                            // Update app state if it exists
+                            if (!window.kynectaChatApp.quickLoginUser) {
+                                window.kynectaChatApp.showQuickLogin(userData);
+                            }
+                        }
+                        return true;
+                    }
+                    
+                    return false;
+                } catch (error) {
+                    console.error('❌ Firebase auto-login check failed:', error);
+                    return false;
                 }
             }
 
@@ -2036,60 +2147,65 @@
                     });
                     
                     // Get user selections from localStorage if not provided
-                    const selections = userSelections || window.kynectaApp?.getUserSelections() || {
-                        moods: [],
-                        interests: []
+                    const selections = userSelections || window.kynectaChatApp?.getUserSelections() || {
+                        interests: [],
+                        languages: []
                     };
                     
                     // Create user document in Firestore - UPDATED with comprehensive fields
-                    const userDocRef = this.db.collection('users').doc(user.uid);
+                    const userDocRef = this.db.collection('chatters').doc(user.uid);
                     await userDocRef.set({
                         uid: user.uid,
                         userId: user.uid,
                         email: user.email,
                         displayName: displayName,
-                        userName: displayName,
+                        username: displayName,
                         photoURL: '',
-                        bio: 'New kynecta member!',
+                        bio: 'New kynecta chatter!',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
                         emailVerified: false,
-                        moods: selections.moods || [],
                         interests: selections.interests || [],
-                        customColors: {
-                            primary: '#3B82F6',
-                            secondary: '#8B5CF6',
-                            theme: 'calm'
-                        },
-                        selectedMoods: selections.moods || [],
+                        languages: selections.languages || [],
                         selectedInterests: selections.interests || [],
-                        moodHistory: [{
-                            date: firebase.firestore.FieldValue.serverTimestamp(),
-                            moods: selections.moods || []
-                        }],
-                        interestHistory: [{
+                        selectedLanguages: selections.languages || [],
+                        chatHistory: [{
                             date: firebase.firestore.FieldValue.serverTimestamp(),
                             interests: selections.interests || []
-                        }]
+                        }],
+                        languageHistory: [{
+                            date: firebase.firestore.FieldValue.serverTimestamp(),
+                            languages: selections.languages || []
+                        }],
+                        autoLoginEnabled: true,
+                        lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                        totalMessages: 0,
+                        activeChats: 0,
+                        groupsJoined: 0,
+                        status: 'online',
+                        preferredLanguage: selections.languages[0] || 'english',
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
                     });
                     
-                    // Store user info in localStorage
-                    localStorage.setItem('kynecta-user', JSON.stringify({
+                    // Store user info in localStorage for INSTANT auto-login next time
+                    const userData = {
                         uid: user.uid,
                         email: user.email,
                         displayName: displayName,
                         isNewUser: true,
-                        moods: selections.moods,
                         interests: selections.interests,
-                        customColors: {
-                            primary: '#3B82F6',
-                            secondary: '#8B5CF6',
-                            theme: 'calm'
-                        }
-                    }));
+                        languages: selections.languages,
+                        autoLogin: true,
+                        lastLogin: new Date().toISOString()
+                    };
+                    
+                    localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
                     
                     // Store selections for other pages to use
-                    localStorage.setItem('kynecta-selections', JSON.stringify(selections));
+                    localStorage.setItem('kynecta-chat-selections', JSON.stringify(selections));
+                    
+                    // Enable auto-login by default
+                    localStorage.setItem('kynecta-chat-auto-login', 'true');
                     
                     console.log('✅ User registered successfully:', user.email);
                     return userCredential;
@@ -2127,7 +2243,7 @@
                 }
             }
 
-            async loginUser(email, password) {
+            async loginUser(email, password, rememberMe = true) {
                 if (!this.isInitialized) {
                     throw new Error('Firebase not initialized. Please try again.');
                 }
@@ -2138,39 +2254,47 @@
                     const user = userCredential.user;
                     
                     // Get user data from Firestore
-                    const userDocRef = this.db.collection('users').doc(user.uid);
+                    const userDocRef = this.db.collection('chatters').doc(user.uid);
                     const userDoc = await userDocRef.get();
                     const userData = userDoc.data();
                     
                     // Update last login timestamp
                     await userDocRef.update({
-                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                        autoLoginEnabled: rememberMe
                     });
                     
-                    const customColors = userData?.customColors || {
-                        primary: '#3B82F6',
-                        secondary: '#8B5CF6',
-                        theme: 'calm'
-                    };
-                    
                     const selections = {
-                        moods: userData?.moods || [],
-                        interests: userData?.interests || []
+                        interests: userData?.interests || [],
+                        languages: userData?.languages || []
                     };
                     
-                    // Store user info in localStorage
-                    localStorage.setItem('kynecta-user', JSON.stringify({
+                    // Store user info in localStorage for INSTANT auto-login next time
+                    const localStorageUserData = {
                         uid: user.uid,
                         email: user.email,
                         displayName: user.displayName || user.email.split('@')[0],
                         isNewUser: false,
-                        moods: selections.moods,
                         interests: selections.interests,
-                        customColors: customColors
-                    }));
+                        languages: selections.languages,
+                        autoLogin: rememberMe,
+                        lastLogin: new Date().toISOString()
+                    };
+                    
+                    localStorage.setItem('kynecta-chat-user', JSON.stringify(localStorageUserData));
                     
                     // Store selections for other pages to use
-                    localStorage.setItem('kynecta-selections', JSON.stringify(selections));
+                    localStorage.setItem('kynecta-chat-selections', JSON.stringify(selections));
+                    
+                    // Store auto-login preference
+                    if (rememberMe) {
+                        localStorage.setItem('kynecta-chat-auto-login', 'true');
+                        localStorage.setItem('kynecta-chat-email', email);
+                    } else {
+                        localStorage.removeItem('kynecta-chat-auto-login');
+                        localStorage.removeItem('kynecta-chat-email');
+                    }
                     
                     console.log('✅ User logged in successfully:', user.email);
                     return userCredential;
@@ -2185,6 +2309,37 @@
                     console.log('Actual Firebase error:', error.code, error.message);
                     
                     throw new Error(errorMessage);
+                }
+            }
+
+            async quickLogin() {
+                try {
+                    // Check if user is already authenticated with Firebase
+                    const currentUser = this.auth.currentUser;
+                    if (currentUser) {
+                        console.log('✅ Quick login successful via Firebase:', currentUser.email);
+                        return currentUser;
+                    }
+                    
+                    // Try to get saved user data from localStorage
+                    const savedUser = localStorage.getItem('kynecta-chat-user');
+                    if (!savedUser) {
+                        throw new Error('No saved user found');
+                    }
+                    
+                    const userData = JSON.parse(savedUser);
+                    
+                    console.log('✅ Quick login using localStorage data:', userData.email);
+                    
+                    return {
+                        uid: userData.uid,
+                        email: userData.email,
+                        displayName: userData.displayName
+                    };
+                    
+                } catch (error) {
+                    console.error('❌ Quick login failed:', error);
+                    throw error;
                 }
             }
 
@@ -2240,19 +2395,6 @@
                     }
                 }
             }
-
-            // Test function for debugging
-            async testFirestoreWrite() {
-                try {
-                    const testRef = this.db.collection('test').doc('test');
-                    await testRef.set({ test: true, timestamp: new Date() });
-                    console.log('✅ Firestore write test passed');
-                    return true;
-                } catch (error) {
-                    console.error('❌ Firestore write test failed:', error);
-                    return false;
-                }
-            }
         }
 
         // Initialize Firebase Auth Service
@@ -2262,27 +2404,23 @@
     <!-- Application Script -->
     <script>
         /**
-         * kynecta - Main Application Script
-         * Handles section transitions, cookies, mood themes, and UI interactions
+         * kynecta Chat - Main Application Script
+         * Handles combined selection, auto-login, and chat-focused UI
+         * NOW WITH INSTANT QUICK LOGIN FEATURES
          */
 
-        class kynectaApp {
+        class kynectaChatApp {
             constructor() {
                 this.currentSection = 'selection'; // Start with selection section
                 this.isTransitioning = false;
                 this.cookiesAccepted = false;
                 this.showingCookieBanner = false;
                 this.currentTheme = 'calm';
-                this.customColors = {
-                    primary: '#3B82F6',
-                    secondary: '#8B5CF6',
-                    theme: 'calm'
-                };
                 
                 // User selections storage
                 this.userSelections = {
-                    moods: [],
-                    interests: []
+                    interests: [],
+                    languages: []
                 };
                 
                 // Forgot password modal state
@@ -2290,7 +2428,70 @@
                 this.forgotPasswordIdentifier = '';
                 this.forgotPasswordMethod = '';
                 
+                // Quick login user
+                this.quickLoginUser = null;
+                
+                // Firebase initialization flag
+                this.firebaseReady = false;
+                
+                // === INSTANT QUICK LOGIN CHECK - RUNS IMMEDIATELY ===
+                this.instantQuickLoginCheck();
+                
+                // Initialize the rest of the app
                 this.init();
+            }
+
+            /**
+             * INSTANT QUICK LOGIN CHECK
+             * Checks localStorage immediately on page load (before Firebase)
+             * This provides instant UI response for returning users
+             */
+            instantQuickLoginCheck() {
+                try {
+                    console.log('⚡ Running INSTANT quick login check (localStorage first)...');
+                    
+                    // Check localStorage FIRST (instant, no async, no waiting)
+                    const savedUser = localStorage.getItem('kynecta-chat-user');
+                    const savedSelections = localStorage.getItem('kynecta-chat-selections');
+                    
+                    if (savedUser) {
+                        const userData = JSON.parse(savedUser);
+                        
+                        // Set user selections from localStorage
+                        this.userSelections = savedSelections ? JSON.parse(savedSelections) : { interests: [], languages: [] };
+                        
+                        // Store quick login user for immediate use
+                        this.quickLoginUser = userData;
+                        
+                        console.log('✅ Instant quick login loaded from localStorage:', userData.email);
+                        
+                        // Show quick login IMMEDIATELY after DOM is ready
+                        setTimeout(() => {
+                            this.showQuickLogin(userData);
+                        }, 100);
+                        
+                        // Check if user has selections, skip to landing page immediately
+                        const parsedSelections = savedSelections ? JSON.parse(savedSelections) : null;
+                        if (parsedSelections && (parsedSelections.interests.length > 0 || parsedSelections.languages.length > 0)) {
+                            // Skip to landing page after a brief delay to ensure DOM is ready
+                            setTimeout(() => {
+                                this.showSection('landing');
+                            }, 300);
+                        }
+                        
+                        // Show auto-login badge
+                        document.getElementById('autoLoginBadge').classList.remove('hidden');
+                        
+                        return true;
+                    }
+                    
+                    console.log('⚡ No saved user found in localStorage');
+                    return false;
+                    
+                } catch (error) {
+                    console.error('❌ Instant quick login check failed:', error);
+                    return false;
+                }
             }
 
             init() {
@@ -2300,8 +2501,8 @@
                 // Load user preferences if any
                 this.loadUserPreferences();
                 
-                // Initialize mood and interest selection
-                this.initializeSelection();
+                // Initialize combined selection
+                this.initializeCombinedSelection();
                 
                 // Start animated counters
                 this.startCounterAnimations();
@@ -2309,179 +2510,214 @@
                 // Initialize mood theme
                 this.loadThemePreference();
                 
-                // Initialize mood customizer
-                this.setupMoodCustomizer();
-                
-                // Initialize mobile mood selector
-                this.setupMobileMoodSelector();
-                
-                // Initialize security protection
-                this.setupSecurityProtection();
-                
                 // Check if user has already completed selection
                 this.checkSelectionCompletion();
                 
-                console.log('🚀 kynecta app initialized');
+                // Setup security protection
+                this.setupSecurityProtection();
+                
+                // Initialize Firebase in the BACKGROUND (non-blocking)
+                this.initFirebaseBackground();
+                
+                console.log('💬 kynecta Chat app initialized with instant quick login');
+            }
+
+            /**
+             * Initialize Firebase in the background (non-blocking)
+             * Doesn't block UI or quick login display
+             */
+            initFirebaseBackground() {
+                // Only initialize Firebase if it's available
+                if (typeof firebase === 'undefined') {
+                    console.warn('⚠️ Firebase SDK not available, running in localStorage-only mode');
+                    return;
+                }
+                
+                // Check if Firebase Auth service is already initializing
+                if (window.firebaseAuth) {
+                    console.log('🔥 Firebase already initializing in background...');
+                    return;
+                }
+                
+                // Set a small delay to let the UI render first
+                setTimeout(() => {
+                    console.log('🔥 Starting Firebase initialization in background...');
+                    
+                    // Check again if Firebase is available
+                    if (typeof firebase !== 'undefined' && !window.firebaseAuth) {
+                        try {
+                            // This will trigger Firebase initialization
+                            window.firebaseAuth = new FirebaseAuthService();
+                        } catch (error) {
+                            console.warn('⚠️ Firebase background init failed, continuing in fallback mode:', error);
+                        }
+                    }
+                }, 1000);
             }
 
             /**
              * Check if user has already completed selection
              */
             checkSelectionCompletion() {
-                const selections = localStorage.getItem('kynecta-selections');
+                // Note: This is now handled by instantQuickLoginCheck()
+                // Keeping this method for backward compatibility
+                const selections = localStorage.getItem('kynecta-chat-selections');
                 if (selections) {
                     const parsed = JSON.parse(selections);
-                    // If user has made any selections, skip to landing page
-                    if (parsed.moods.length > 0 || parsed.interests.length > 0) {
-                        this.userSelections = parsed;
-                        this.showSection('landing');
-                    }
+                    this.userSelections = parsed;
                 }
             }
 
             /**
-             * Initialize mood and interest selection system
+             * Initialize combined interest and language selection system
              */
-            initializeSelection() {
-                // Define available moods
-                this.availableMoods = [
-                    { id: 'calm', name: 'Calm', icon: 'fas fa-spa', color: 'from-blue-500 to-purple-600', description: 'Relaxed and peaceful' },
-                    { id: 'energetic', name: 'Energetic', icon: 'fas fa-bolt', color: 'from-red-500 to-orange-500', description: 'Full of energy and excitement' },
-                    { id: 'creative', name: 'Creative', icon: 'fas fa-paint-brush', color: 'from-purple-500 to-pink-600', description: 'Inspired and imaginative' },
-                    { id: 'chill', name: 'Chill', icon: 'fas fa-couch', color: 'from-green-500 to-blue-600', description: 'Easygoing and laid-back' },
-                    { id: 'romantic', name: 'Romantic', icon: 'fas fa-heart', color: 'from-pink-500 to-red-500', description: 'Affectionate and loving' },
-                    { id: 'adventurous', name: 'Adventurous', icon: 'fas fa-mountain', color: 'from-yellow-500 to-green-600', description: 'Excited for new experiences' },
-                    { id: 'focused', name: 'Focused', icon: 'fas fa-bullseye', color: 'from-indigo-500 to-blue-600', description: 'Concentrated and determined' },
-                    { id: 'playful', name: 'Playful', icon: 'fas fa-gamepad', color: 'from-yellow-400 to-orange-500', description: 'Fun-loving and cheerful' },
-                    { id: 'thoughtful', name: 'Thoughtful', icon: 'fas fa-brain', color: 'from-gray-600 to-blue-700', description: 'Reflective and considerate' },
-                    { id: 'social', name: 'Social', icon: 'fas fa-users', color: 'from-teal-500 to-green-600', description: 'Outgoing and friendly' }
+            initializeCombinedSelection() {
+                // Define combined interests and languages
+                this.combinedOptions = [
+                    // Interests
+                    { id: 'tech', name: 'Technology', icon: 'fas fa-laptop', color: 'from-blue-500 to-cyan-500', category: 'interest', description: 'Tech talks' },
+                    { id: 'music', name: 'Music', icon: 'fas fa-music', color: 'from-purple-500 to-pink-600', category: 'interest', description: 'Music lovers' },
+                    { id: 'sports', name: 'Sports', icon: 'fas fa-futbol', color: 'from-green-500 to-teal-600', category: 'interest', description: 'Sports fans' },
+                    { id: 'gaming', name: 'Gaming', icon: 'fas fa-gamepad', color: 'from-red-500 to-orange-500', category: 'interest', description: 'Gamers unite' },
+                    { id: 'art', name: 'Art & Design', icon: 'fas fa-palette', color: 'from-yellow-500 to-orange-500', category: 'interest', description: 'Creative minds' },
+                    { id: 'travel', name: 'Travel', icon: 'fas fa-plane', color: 'from-teal-500 to-blue-600', category: 'interest', description: 'Globe trotters' },
+                    
+                    // Languages
+                    { id: 'english', name: 'English', icon: 'fas fa-language', color: 'from-red-500 to-blue-500', category: 'language', description: 'Global' },
+                    { id: 'spanish', name: 'Spanish', icon: 'fas fa-language', color: 'from-yellow-500 to-red-500', category: 'language', description: 'Español' },
+                    { id: 'french', name: 'French', icon: 'fas fa-language', color: 'from-blue-500 to-red-500', category: 'language', description: 'Français' },
+                    { id: 'german', name: 'German', icon: 'fas fa-language', color: 'from-black to-yellow-500', category: 'language', description: 'Deutsch' },
+                    { id: 'chinese', name: 'Chinese', icon: 'fas fa-language', color: 'from-red-500 to-yellow-500', category: 'language', description: '中文' },
+                    { id: 'japanese', name: 'Japanese', icon: 'fas fa-language', color: 'from-red-500 to-white', category: 'language', description: '日本語' },
+                    { id: 'arabic', name: 'Arabic', icon: 'fas fa-language', color: 'from-green-500 to-black', category: 'language', description: 'العربية' },
+                    { id: 'hindi', name: 'Hindi', icon: 'fas fa-language', color: 'from-orange-500 to-green-500', category: 'language', description: 'हिन्दी' }
                 ];
 
-                // Define available interests
-                this.availableInterests = [
-                    { id: 'gaming', name: 'Gaming', icon: 'fas fa-gamepad', color: 'from-purple-500 to-pink-600', description: 'Video games & eSports' },
-                    { id: 'music', name: 'Music', icon: 'fas fa-music', color: 'from-red-500 to-pink-500', description: 'All genres and instruments' },
-                    { id: 'sports', name: 'Sports', icon: 'fas fa-futbol', color: 'from-green-500 to-blue-600', description: 'Sports & fitness activities' },
-                    { id: 'art', name: 'Art', icon: 'fas fa-palette', color: 'from-yellow-500 to-orange-500', description: 'Visual arts & creativity' },
-                    { id: 'technology', name: 'Technology', icon: 'fas fa-laptop-code', color: 'from-blue-500 to-indigo-600', description: 'Tech, coding & innovation' },
-                    { id: 'travel', name: 'Travel', icon: 'fas fa-globe-americas', color: 'from-teal-500 to-green-600', description: 'Exploring new places' },
-                    { id: 'food', name: 'Food', icon: 'fas fa-utensils', color: 'from-orange-500 to-red-500', description: 'Cooking & culinary arts' },
-                    { id: 'fashion', name: 'Fashion', icon: 'fas fa-tshirt', color: 'from-pink-500 to-purple-600', description: 'Style & clothing trends' },
-                    { id: 'reading', name: 'Reading', icon: 'fas fa-book', color: 'from-brown-500 to-yellow-600', description: 'Books & literature' },
-                    { id: 'photography', name: 'Photography', icon: 'fas fa-camera', color: 'from-gray-600 to-blue-700', description: 'Photography & editing' },
-                    { id: 'business', name: 'Business', icon: 'fas fa-chart-line', color: 'from-green-600 to-teal-600', description: 'Entrepreneurship & finance' },
-                    { id: 'education', name: 'Education', icon: 'fas fa-graduation-cap', color: 'from-blue-600 to-indigo-700', description: 'Learning & courses' }
-                ];
-
-                // Populate mood selection grid
-                this.populateSelectionGrid('moodSelectionGrid', this.availableMoods, 'moods');
-                
-                // Populate interest selection grid
-                this.populateSelectionGrid('interestSelectionGrid', this.availableInterests, 'interests');
+                // Populate combined selection grid
+                this.populateCombinedGrid();
                 
                 // Load any existing selections
                 this.loadSelections();
             }
 
             /**
-             * Populate selection grid with cards
+             * Populate combined selection grid with cards
              */
-            populateSelectionGrid(gridId, items, type) {
-                const grid = document.getElementById(gridId);
+            populateCombinedGrid() {
+                const grid = document.getElementById('combinedSelectionGrid');
                 if (!grid) return;
                 
-                grid.innerHTML = items.map(item => `
-                    <div class="selection-card" data-id="${item.id}" data-type="${type}">
+                grid.innerHTML = this.combinedOptions.map(item => `
+                    <div class="selection-card" data-id="${item.id}" data-category="${item.category}">
+                        <span class="category-label">${item.category === 'interest' ? 'Interest' : 'Language'}</span>
                         <div class="selection-icon bg-gradient-to-br ${item.color} text-white">
                             <i class="${item.icon}"></i>
                         </div>
                         <h3 class="text-white font-bold text-sm md:text-base mb-1">${item.name}</h3>
-                        <p class="text-gray-400 text-xs">${item.description}</p>
+                        <p class="text-gray-400 text-xs text-center">${item.description}</p>
                     </div>
                 `).join('');
                 
                 // Add click event listeners
                 grid.querySelectorAll('.selection-card').forEach(card => {
                     card.addEventListener('click', () => {
-                        this.toggleSelection(card);
+                        this.toggleCombinedSelection(card);
                     });
                 });
             }
 
             /**
-             * Toggle selection of a mood or interest card
+             * Toggle selection of a combined card
              */
-            toggleSelection(card) {
+            toggleCombinedSelection(card) {
                 const id = card.getAttribute('data-id');
-                const type = card.getAttribute('data-type');
-                const maxSelections = 2;
+                const category = card.getAttribute('data-category');
+                const maxSelections = 3;
                 
                 // Check if already selected
                 const isSelected = card.classList.contains('selected');
-                const currentSelections = this.userSelections[type];
+                const currentSelections = this.getTotalSelections();
                 
                 if (isSelected) {
                     // Remove from selection
                     card.classList.remove('selected');
-                    this.userSelections[type] = currentSelections.filter(item => item !== id);
+                    if (category === 'interest') {
+                        this.userSelections.interests = this.userSelections.interests.filter(item => item !== id);
+                    } else {
+                        this.userSelections.languages = this.userSelections.languages.filter(item => item !== id);
+                    }
                 } else {
                     // Check if max reached
-                    if (currentSelections.length >= maxSelections) {
-                        this.showToast(`Maximum ${maxSelections} ${type} allowed`, 'warning');
+                    if (currentSelections >= maxSelections) {
+                        this.showToast(`Maximum ${maxSelections} selections allowed`, 'warning');
+                        return;
+                    }
+                    
+                    // Check category limits (optional, you can remove if not needed)
+                    const categorySelections = category === 'interest' ? this.userSelections.interests : this.userSelections.languages;
+                    if (categorySelections.length >= 2) {
+                        this.showToast(`Maximum 2 ${category === 'interest' ? 'interests' : 'languages'} allowed`, 'warning');
                         return;
                     }
                     
                     // Add to selection
                     card.classList.add('selected');
-                    this.userSelections[type].push(id);
+                    if (category === 'interest') {
+                        this.userSelections.interests.push(id);
+                    } else {
+                        this.userSelections.languages.push(id);
+                    }
                 }
                 
                 // Update counters and UI
-                this.updateSelectionUI();
+                this.updateCombinedSelectionUI();
                 
                 // Save selections
                 this.saveSelections();
             }
 
             /**
-             * Update selection UI (counters, buttons, progress)
+             * Get total number of selections
              */
-            updateSelectionUI() {
+            getTotalSelections() {
+                return this.userSelections.interests.length + this.userSelections.languages.length;
+            }
+
+            /**
+             * Update combined selection UI (counters, buttons, progress)
+             */
+            updateCombinedSelectionUI() {
                 // Update counter display
-                const moodCount = this.userSelections.moods.length;
-                const interestCount = this.userSelections.interests.length;
+                const totalSelections = this.getTotalSelections();
                 
                 // Update counter text
-                document.getElementById('selectedCount').textContent = moodCount;
-                document.getElementById('selectedInterestsCount').textContent = interestCount;
+                document.getElementById('selectedCount').textContent = totalSelections;
                 
-                // Update progress bars
-                document.getElementById('moodProgressBar').style.width = `${(moodCount / 2) * 100}%`;
-                document.getElementById('interestProgressBar').style.width = `${(interestCount / 2) * 100}%`;
+                // Update progress bar
+                document.getElementById('combinedProgressBar').style.width = `${(totalSelections / 3) * 100}%`;
                 
                 // Update button states
-                document.getElementById('nextToInterestsBtn').disabled = moodCount === 0;
-                document.getElementById('finishSelectionBtn').disabled = interestCount === 0;
+                document.getElementById('continueToAuthBtn').disabled = totalSelections === 0;
             }
 
             /**
              * Save selections to localStorage
              */
             saveSelections() {
-                localStorage.setItem('kynecta-selections', JSON.stringify(this.userSelections));
+                localStorage.setItem('kynecta-chat-selections', JSON.stringify(this.userSelections));
             }
 
             /**
              * Load selections from localStorage
              */
             loadSelections() {
-                const savedSelections = localStorage.getItem('kynecta-selections');
+                const savedSelections = localStorage.getItem('kynecta-chat-selections');
                 if (savedSelections) {
                     this.userSelections = JSON.parse(savedSelections);
                     
                     // Restore visual selection state
                     this.restoreSelections();
-                    this.updateSelectionUI();
+                    this.updateCombinedSelectionUI();
                 }
             }
 
@@ -2489,15 +2725,9 @@
              * Restore visual selection state
              */
             restoreSelections() {
-                // Restore mood selections
-                this.userSelections.moods.forEach(moodId => {
-                    const card = document.querySelector(`.selection-card[data-id="${moodId}"][data-type="moods"]`);
-                    if (card) card.classList.add('selected');
-                });
-                
-                // Restore interest selections
-                this.userSelections.interests.forEach(interestId => {
-                    const card = document.querySelector(`.selection-card[data-id="${interestId}"][data-type="interests"]`);
+                // Restore all selections
+                [...this.userSelections.interests, ...this.userSelections.languages].forEach(id => {
+                    const card = document.querySelector(`.selection-card[data-id="${id}"]`);
                     if (card) card.classList.add('selected');
                 });
             }
@@ -2510,30 +2740,14 @@
             }
 
             /**
-             * Show mood or interest selection step
-             */
-            showSelectionStep(step) {
-                const moodStep = document.getElementById('moodSelectionStep');
-                const interestStep = document.getElementById('interestSelectionStep');
-                
-                if (step === 'moods') {
-                    moodStep.classList.remove('hidden');
-                    interestStep.classList.add('hidden');
-                } else if (step === 'interests') {
-                    moodStep.classList.add('hidden');
-                    interestStep.classList.remove('hidden');
-                }
-            }
-
-            /**
-             * Finish selection and show main app
+             * Finish selection and show authentication
              */
             finishSelection() {
                 // Save selections
                 this.saveSelections();
                 
                 // Show success message
-                this.showToast('Selections saved! Your kynecta experience will be personalized based on your choices.', 'success');
+                this.showToast('Chat preferences saved! Your experience will be personalized.', 'success');
                 
                 // Transition to landing page
                 setTimeout(() => {
@@ -2542,27 +2756,44 @@
             }
 
             /**
-             * Skip mood selection
+             * Skip selection
              */
-            skipMoodSelection() {
-                this.showSelectionStep('interests');
-                this.showToast('You can always update your moods later in settings', 'info');
-            }
-
-            /**
-             * Skip interest selection
-             */
-            skipInterestSelection() {
+            skipSelection() {
                 // Save empty selections
                 this.saveSelections();
                 
                 // Show info message
-                this.showToast('You can add interests later in your profile settings', 'info');
+                this.showToast('You can update preferences later in your profile', 'info');
                 
                 // Transition to landing page
                 setTimeout(() => {
                     this.showSection('landing');
                 }, 500);
+            }
+
+            /**
+             * Show quick login for returning users
+             * NOW INSTANT - no waiting for Firebase
+             */
+            showQuickLogin(userData) {
+                this.quickLoginUser = userData;
+                
+                // Show quick login section IMMEDIATELY
+                const quickLoginSection = document.getElementById('quickLoginSection');
+                if (quickLoginSection) {
+                    quickLoginSection.classList.remove('hidden');
+                    
+                    // Update user info
+                    document.getElementById('userDisplayName').textContent = userData.displayName || userData.email.split('@')[0];
+                    document.getElementById('userEmail').textContent = userData.email;
+                    document.getElementById('userInitial').textContent = (userData.displayName || userData.email).charAt(0).toUpperCase();
+                    document.getElementById('quickLoginUserName').textContent = userData.displayName || userData.email.split('@')[0];
+                    
+                    // Show auto-login badge
+                    document.getElementById('autoLoginBadge').classList.remove('hidden');
+                    
+                    console.log('✅ Quick login displayed instantly from localStorage');
+                }
             }
 
             /**
@@ -2582,22 +2813,10 @@
                     return false;
                 });
                 
-                // Disable drag and drop
-                document.addEventListener('dragstart', (e) => {
-                    e.preventDefault();
-                    return false;
-                });
-                
                 // Disable copy
                 document.addEventListener('copy', (e) => {
                     e.preventDefault();
                     this.showToast('Copying is disabled for security', 'warning');
-                    return false;
-                });
-                
-                // Disable cut
-                document.addEventListener('cut', (e) => {
-                    e.preventDefault();
                     return false;
                 });
                 
@@ -2610,45 +2829,15 @@
                         return false;
                     }
                     
-                    // Disable Alt+Print Screen
-                    if (e.altKey && e.key === 'PrintScreen') {
-                        e.preventDefault();
-                        this.showToast('Screenshots are disabled for security', 'warning');
-                        return false;
-                    }
-                    
-                    // Disable Windows+Print Screen
-                    if (e.metaKey && e.key === 'PrintScreen') {
-                        e.preventDefault();
-                        this.showToast('Screenshots are disabled for security', 'warning');
-                        return false;
-                    }
-                    
                     // Disable F12 (Developer Tools)
                     if (e.key === 'F12') {
                         e.preventDefault();
-                        this.showToast('Developer tools are disabled', 'warning');
                         return false;
                     }
                     
                     // Disable Ctrl+Shift+I (Developer Tools)
                     if (e.ctrlKey && e.shiftKey && e.key === 'I') {
                         e.preventDefault();
-                        this.showToast('Developer tools are disabled', 'warning');
-                        return false;
-                    }
-                    
-                    // Disable Ctrl+Shift+C (Developer Tools - Element Inspector)
-                    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
-                        e.preventDefault();
-                        this.showToast('Element inspection is disabled', 'warning');
-                        return false;
-                    }
-                    
-                    // Disable Ctrl+U (View Source)
-                    if (e.ctrlKey && e.key === 'u') {
-                        e.preventDefault();
-                        this.showToast('View source is disabled', 'warning');
                         return false;
                     }
                 });
@@ -2661,25 +2850,13 @@
              */
             setupEventListeners() {
                 // Selection navigation buttons
-                document.getElementById('nextToInterestsBtn').addEventListener('click', () => {
-                    this.showSelectionStep('interests');
-                });
-                
-                document.getElementById('backToMoodsBtn').addEventListener('click', () => {
-                    this.showSelectionStep('moods');
-                });
-                
-                document.getElementById('finishSelectionBtn').addEventListener('click', () => {
+                document.getElementById('continueToAuthBtn').addEventListener('click', () => {
                     this.finishSelection();
                 });
                 
-                // Skip buttons
-                document.getElementById('skipMoodSelection').addEventListener('click', () => {
-                    this.skipMoodSelection();
-                });
-                
-                document.getElementById('skipInterestSelection').addEventListener('click', () => {
-                    this.skipInterestSelection();
+                // Skip button
+                document.getElementById('skipSelection').addEventListener('click', () => {
+                    this.skipSelection();
                 });
                 
                 // Section navigation buttons
@@ -2688,6 +2865,16 @@
                     // Show cookie banner only when registering (new users)
                     this.showCookieBannerForNewUsers();
                     this.showSection('register');
+                });
+                
+                // Quick login button
+                document.getElementById('quickLoginBtn').addEventListener('click', () => {
+                    this.handleQuickLogin();
+                });
+                
+                // Switch account button
+                document.getElementById('switchAccountBtn').addEventListener('click', () => {
+                    this.hideQuickLogin();
                 });
                 
                 // Back buttons
@@ -2728,316 +2915,47 @@
             }
 
             /**
-             * Sets up mobile mood selector functionality
+             * Handle quick login
              */
-            setupMobileMoodSelector() {
-                const mobileMoodBtn = document.querySelector('.mobile-mood-btn');
-                const mobileMoodOptions = document.querySelector('.mobile-mood-options');
-                const mobileMoodOptionsList = document.querySelectorAll('.mobile-mood-option');
-
-                // Toggle mobile mood options visibility
-                if (mobileMoodBtn) {
-                    mobileMoodBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        mobileMoodOptions.classList.toggle('show');
-                    });
-                }
-
-                // Close mobile mood options when clicking outside
-                document.addEventListener('click', () => {
-                    if (mobileMoodOptions) {
-                        mobileMoodOptions.classList.remove('show');
+            async handleQuickLogin() {
+                if (!this.quickLoginUser) return;
+                
+                this.showLoading('Logging in...');
+                
+                try {
+                    // Try Firebase quick login first
+                    if (window.firebaseAuth && window.firebaseAuth.isInitialized) {
+                        const user = await window.firebaseAuth.quickLogin();
+                        console.log('✅ Quick login successful via Firebase');
+                    } else {
+                        // Fallback to localStorage-only mode
+                        console.log('✅ Quick login using localStorage (Firebase not available)');
                     }
-                });
-
-                // Prevent mobile mood options from closing when clicking inside
-                if (mobileMoodOptions) {
-                    mobileMoodOptions.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                    });
-                }
-
-                // Handle mobile mood selection
-                if (mobileMoodOptionsList) {
-                    mobileMoodOptionsList.forEach(option => {
-                        option.addEventListener('click', () => {
-                            const theme = option.getAttribute('data-theme');
-                            this.changeTheme(theme);
-                            if (mobileMoodOptions) {
-                                mobileMoodOptions.classList.remove('show');
-                            }
-                        });
-                    });
-                }
-            }
-
-            /**
-             * Sets up mood customizer functionality
-             */
-            setupMoodCustomizer() {
-                // Mood customizer button
-                const moodCustomizerBtn = document.getElementById('moodCustomizerBtn');
-                if (moodCustomizerBtn) {
-                    moodCustomizerBtn.addEventListener('click', () => {
-                        this.showMoodCustomizerModal();
-                    });
-                }
-                
-                // Close mood customizer modal
-                const closeMoodCustomizer = document.getElementById('closeMoodCustomizer');
-                if (closeMoodCustomizer) {
-                    closeMoodCustomizer.addEventListener('click', () => {
-                        this.hideMoodCustomizerModal();
-                    });
-                }
-                
-                // Color palette selection
-                const colorOptions = document.querySelectorAll('.color-option');
-                colorOptions.forEach(option => {
-                    option.addEventListener('click', () => {
-                        // Remove active class from all options
-                        colorOptions.forEach(opt => opt.classList.remove('active'));
-                        // Add active class to clicked option
-                        option.classList.add('active');
-                        
-                        // Update custom colors
-                        this.customColors.primary = option.getAttribute('data-primary');
-                        this.customColors.secondary = option.getAttribute('data-secondary');
-                        this.customColors.theme = option.getAttribute('data-theme');
-                        
-                        // Update preview
-                        this.updateMoodPreview();
-                        
-                        // Update custom color inputs
-                        document.getElementById('primaryColorPicker').value = this.customColors.primary;
-                        document.getElementById('secondaryColorPicker').value = this.customColors.secondary;
-                        document.getElementById('customColorPreview').style.background = 
-                            `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
-                        
-                        // Apply the colors immediately
-                        this.applyCustomColors();
-                    });
-                });
-                
-                // Custom color inputs
-                const primaryColorPicker = document.getElementById('primaryColorPicker');
-                const secondaryColorPicker = document.getElementById('secondaryColorPicker');
-                if (primaryColorPicker) {
-                    primaryColorPicker.addEventListener('input', (e) => {
-                        this.customColors.primary = e.target.value;
-                        this.updateMoodPreview();
-                        document.getElementById('customColorPreview').style.background = 
-                            `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
-                    });
-                }
-                
-                if (secondaryColorPicker) {
-                    secondaryColorPicker.addEventListener('input', (e) => {
-                        this.customColors.secondary = e.target.value;
-                        this.updateMoodPreview();
-                        document.getElementById('customColorPreview').style.background = 
-                            `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
-                    });
-                }
-                
-                // Apply custom colors button
-                const applyCustomColors = document.getElementById('applyCustomColors');
-                if (applyCustomColors) {
-                    applyCustomColors.addEventListener('click', () => {
-                        this.applyCustomColors();
-                    });
-                }
-                
-                // Color intensity slider
-                const colorIntensity = document.getElementById('colorIntensity');
-                if (colorIntensity) {
-                    colorIntensity.addEventListener('input', (e) => {
-                        this.updateColorIntensity(e.target.value);
-                    });
-                }
-                
-                // Reset mood colors button
-                const resetMoodColors = document.getElementById('resetMoodColors');
-                if (resetMoodColors) {
-                    resetMoodColors.addEventListener('click', () => {
-                        this.resetMoodColors();
-                    });
-                }
-                
-                // Save mood colors button
-                const saveMoodColors = document.getElementById('saveMoodColors');
-                if (saveMoodColors) {
-                    saveMoodColors.addEventListener('click', () => {
-                        this.saveMoodColors();
-                    });
-                }
-                
-                // Close modal when clicking outside
-                const moodCustomizerModal = document.getElementById('moodCustomizerModal');
-                if (moodCustomizerModal) {
-                    moodCustomizerModal.addEventListener('click', (e) => {
-                        if (e.target.id === 'moodCustomizerModal') {
-                            this.hideMoodCustomizerModal();
-                        }
-                    });
-                }
-            }
-
-            /**
-             * Updates the mood preview based on selected colors
-             */
-            updateMoodPreview() {
-                const preview = document.getElementById('moodPreview');
-                if (preview) {
-                    preview.style.background = `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
-                }
-            }
-
-            /**
-             * Updates color intensity based on slider value
-             */
-            updateColorIntensity(intensity) {
-                // This would adjust the saturation/brightness of colors based on intensity
-                // For now, we'll just update the preview opacity to simulate intensity
-                const preview = document.getElementById('moodPreview');
-                if (preview) {
-                    preview.style.opacity = 0.5 + (intensity / 100) * 0.5;
-                }
-            }
-
-            /**
-             * Applies custom colors to the interface
-             */
-            applyCustomColors() {
-                // Update CSS variables with custom colors
-                document.documentElement.style.setProperty('--primary-color', this.customColors.primary);
-                document.documentElement.style.setProperty('--secondary-color', this.customColors.secondary);
-                
-                // Update gradient elements
-                const gradientElements = document.querySelectorAll('.cyber-gradient, .stats-counter, .gradient-text');
-                gradientElements.forEach(el => {
-                    if (el.classList.contains('cyber-gradient')) {
-                        el.style.background = `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
-                    } else if (el.classList.contains('stats-counter')) {
-                        el.style.background = `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
-                        el.style.webkitBackgroundClip = 'text';
-                        el.style.webkitTextFillColor = 'transparent';
-                        el.style.backgroundClip = 'text';
-                    } else if (el.classList.contains('gradient-text')) {
-                        el.style.background = `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary}, #f472b6)`;
-                        el.style.webkitBackgroundClip = 'text';
-                        el.style.webkitTextFillColor = 'transparent';
-                        el.style.backgroundClip = 'text';
-                    }
-                });
-                
-                // Update mood preview
-                this.updateMoodPreview();
-                
-                this.showToast('Custom colors applied!', 'success');
-            }
-
-            /**
-             * Resets mood colors to default
-             */
-            resetMoodColors() {
-                this.customColors = {
-                    primary: '#3B82F6',
-                    secondary: '#8B5CF6',
-                    theme: 'calm'
-                };
-                
-                // Reset color inputs
-                document.getElementById('primaryColorPicker').value = this.customColors.primary;
-                document.getElementById('secondaryColorPicker').value = this.customColors.secondary;
-                document.getElementById('customColorPreview').style.background = 
-                    `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
-                
-                // Reset active color option
-                const colorOptions = document.querySelectorAll('.color-option');
-                colorOptions.forEach(option => {
-                    option.classList.remove('active');
-                    if (option.getAttribute('data-theme') === 'calm') {
-                        option.classList.add('active');
-                    }
-                });
-                
-                // Reset intensity slider
-                document.getElementById('colorIntensity').value = 50;
-                
-                // Apply default colors
-                this.applyCustomColors();
-                
-                this.showToast('Colors reset to default', 'info');
-            }
-
-            /**
-             * Saves mood colors to user profile
-             */
-            async saveMoodColors() {
-                // In a real app, this would save to the user's profile in Firebase
-                // For now, we'll just save to localStorage
-                localStorage.setItem('kynecta-custom-colors', JSON.stringify(this.customColors));
-                
-                // If user is logged in, we would update their Firestore document
-                const user = JSON.parse(localStorage.getItem('kynecta-user'));
-                if (user && window.firebaseAuth && window.firebaseAuth.isInitialized) {
-                    try {
-                        const userDocRef = window.firebaseAuth.db.collection('users').doc(user.uid);
-                        await userDocRef.update({
-                            customColors: this.customColors
-                        });
-                        
-                        // Update local user data
-                        user.customColors = this.customColors;
-                        localStorage.setItem('kynecta-user', JSON.stringify(user));
-                    } catch (error) {
-                        console.error('Error saving custom colors:', error);
-                    }
-                }
-                
-                this.showToast('Mood colors saved to your profile!', 'success');
-                this.hideMoodCustomizerModal();
-            }
-
-            /**
-             * Shows the mood customizer modal
-             */
-            showMoodCustomizerModal() {
-                const modal = document.getElementById('moodCustomizerModal');
-                modal.classList.add('show');
-                
-                // Load current custom colors
-                const savedColors = localStorage.getItem('kynecta-custom-colors');
-                if (savedColors) {
-                    this.customColors = JSON.parse(savedColors);
                     
-                    // Update color inputs
-                    document.getElementById('primaryColorPicker').value = this.customColors.primary;
-                    document.getElementById('secondaryColorPicker').value = this.customColors.secondary;
-                    document.getElementById('customColorPreview').style.background = 
-                        `linear-gradient(135deg, ${this.customColors.primary}, ${this.customColors.secondary})`;
+                    // Success - redirect to chat IMMEDIATELY
+                    this.redirectToChat();
                     
-                    // Update active color option
-                    const colorOptions = document.querySelectorAll('.color-option');
-                    colorOptions.forEach(option => {
-                        option.classList.remove('active');
-                        if (option.getAttribute('data-theme') === this.customColors.theme) {
-                            option.classList.add('active');
-                        }
-                    });
+                } catch (error) {
+                    this.hideLoading();
+                    this.showToast('Quick login failed. Please sign in manually.', 'error');
+                    this.hideQuickLogin();
                 }
-                
-                // Update preview
-                this.updateMoodPreview();
             }
 
             /**
-             * Hides the mood customizer modal
+             * Hide quick login section
              */
-            hideMoodCustomizerModal() {
-                const modal = document.getElementById('moodCustomizerModal');
-                modal.classList.remove('show');
+            hideQuickLogin() {
+                const quickLoginSection = document.getElementById('quickLoginSection');
+                if (quickLoginSection) {
+                    quickLoginSection.classList.add('hidden');
+                }
+                this.quickLoginUser = null;
+                document.getElementById('autoLoginBadge').classList.add('hidden');
+                
+                // Clear localStorage to prevent auto-login next time
+                localStorage.removeItem('kynecta-chat-user');
+                localStorage.removeItem('kynecta-chat-auto-login');
             }
 
             /**
@@ -3093,11 +3011,6 @@
                 const forgotEmailForm = document.getElementById('forgotEmailForm');
                 if (forgotEmailForm) {
                     forgotEmailForm.addEventListener('submit', (e) => this.handleForgotPasswordStep1(e));
-                }
-                
-                const forgotSecretForm = document.getElementById('forgotSecretForm');
-                if (forgotSecretForm) {
-                    forgotSecretForm.addEventListener('submit', (e) => this.handleForgotPasswordStep3(e));
                 }
                 
                 // Close modal when clicking outside
@@ -3176,6 +3089,53 @@
                         });
                     });
                 }
+                
+                // Mobile mood selector
+                this.setupMobileMoodSelector();
+            }
+
+            /**
+             * Sets up mobile mood selector
+             */
+            setupMobileMoodSelector() {
+                const mobileMoodBtn = document.querySelector('.mobile-mood-btn');
+                const mobileMoodOptions = document.querySelector('.mobile-mood-options');
+                const mobileMoodOptionsList = document.querySelectorAll('.mobile-mood-option');
+
+                // Toggle mobile mood options visibility
+                if (mobileMoodBtn) {
+                    mobileMoodBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        mobileMoodOptions.classList.toggle('show');
+                    });
+                }
+
+                // Close mobile mood options when clicking outside
+                document.addEventListener('click', () => {
+                    if (mobileMoodOptions) {
+                        mobileMoodOptions.classList.remove('show');
+                    }
+                });
+
+                // Prevent mobile mood options from closing when clicking inside
+                if (mobileMoodOptions) {
+                    mobileMoodOptions.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                }
+
+                // Handle mobile mood selection
+                if (mobileMoodOptionsList) {
+                    mobileMoodOptionsList.forEach(option => {
+                        option.addEventListener('click', () => {
+                            const theme = option.getAttribute('data-theme');
+                            this.changeTheme(theme);
+                            if (mobileMoodOptions) {
+                                mobileMoodOptions.classList.remove('show');
+                            }
+                        });
+                    });
+                }
             }
 
             /**
@@ -3194,7 +3154,7 @@
                 this.currentTheme = theme;
                 
                 // Save theme preference
-                localStorage.setItem('kynecta-theme', theme);
+                localStorage.setItem('kynecta-chat-theme', theme);
                 
                 // Show theme change message
                 const themeNames = {
@@ -3214,7 +3174,7 @@
              * Loads theme preference from localStorage
              */
             loadThemePreference() {
-                const savedTheme = localStorage.getItem('kynecta-theme');
+                const savedTheme = localStorage.getItem('kynecta-chat-theme');
                 if (savedTheme) {
                     this.changeTheme(savedTheme);
                 }
@@ -3224,7 +3184,7 @@
              * Shows cookie banner only for new users (register flow)
              */
             showCookieBannerForNewUsers() {
-                const cookieDecision = localStorage.getItem('kynecta-cookies');
+                const cookieDecision = localStorage.getItem('kynecta-chat-cookies');
                 if (!cookieDecision && !this.showingCookieBanner) {
                     this.showingCookieBanner = true;
                     const banner = document.getElementById('cookieBanner');
@@ -3236,7 +3196,7 @@
              * Handles cookie acceptance
              */
             acceptCookies() {
-                localStorage.setItem('kynecta-cookies', 'accepted');
+                localStorage.setItem('kynecta-chat-cookies', 'accepted');
                 this.cookiesAccepted = true;
                 this.showingCookieBanner = false;
                 this.hideCookieBanner();
@@ -3250,7 +3210,7 @@
              * Handles cookie rejection
              */
             rejectCookies() {
-                localStorage.setItem('kynecta-cookies', 'rejected');
+                localStorage.setItem('kynecta-chat-cookies', 'rejected');
                 this.cookiesAccepted = false;
                 this.showingCookieBanner = false;
                 this.hideCookieBanner();
@@ -3310,15 +3270,12 @@
                 // Hide all steps
                 document.getElementById('forgot-step-1-email').classList.add('hidden');
                 document.getElementById('forgot-step-2-methods').classList.add('hidden');
-                document.getElementById('forgot-step-3-secret-reset').classList.add('hidden');
                 
                 // Show current step
                 if (step === 1) {
                     document.getElementById('forgot-step-1-email').classList.remove('hidden');
                 } else if (step === 2) {
                     document.getElementById('forgot-step-2-methods').classList.remove('hidden');
-                } else if (step === 3) {
-                    document.getElementById('forgot-step-3-secret-reset').classList.remove('hidden');
                 }
             }
 
@@ -3343,51 +3300,22 @@
                 this.showLoading('Locating account...');
                 
                 try {
-                    // Simulate account lookup
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    
-                    this.forgotPasswordIdentifier = identifier;
-                    this.setForgotPasswordStep(2);
-                    this.hideLoading();
-                    
-                } catch (error) {
-                    this.hideLoading();
-                    this.showToast('Error locating account. Please try again.', 'error');
-                }
-            }
-
-            /**
-             * Handles step 3 of forgot password (secret question)
-             */
-            async handleForgotPasswordStep3(e) {
-                e.preventDefault();
-                
-                const answer = document.getElementById('forgotSecurityAnswer').value.trim();
-                
-                if (!answer) {
-                    this.showToast('Please provide an answer.', 'error');
-                    return;
-                }
-                
-                this.showLoading('Verifying your answer...');
-                
-                try {
-                    // Simulate verification
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    
-                    // Mock correct answer
-                    if (answer.toLowerCase() === 'sparky') {
-                        this.hideLoading();
-                        this.showToast('Security question verified! You can now set a new password (Simulated).', 'success');
-                        this.hideForgotPasswordModal();
+                    // Check if Firebase is available
+                    if (window.firebaseAuth && window.firebaseAuth.isInitialized) {
+                        // Send password reset email via Firebase
+                        await window.firebaseAuth.sendPasswordResetEmail(identifier);
                     } else {
-                        this.hideLoading();
-                        this.showToast('Incorrect answer. Please try again.', 'error');
+                        // Simulate success for fallback mode
+                        await new Promise(resolve => setTimeout(resolve, 1500));
                     }
                     
+                    this.hideLoading();
+                    this.showToast('Password reset email sent! Please check your inbox (and spam folder).', 'success');
+                    this.hideForgotPasswordModal();
+                    
                 } catch (error) {
                     this.hideLoading();
-                    this.showToast('Error verifying answer. Please try again.', 'error');
+                    this.showToast(error.message, 'error');
                 }
             }
 
@@ -3396,10 +3324,10 @@
              */
             startCounterAnimations() {
                 const counters = [
-                    { id: 'onlineCount', target: 500000, suffix: '+' },
-                    { id: 'countryCount', target: 190, suffix: '+' },
+                    { id: 'onlineCount', target: 2000000, suffix: '+' },
+                    { id: 'countryCount', target: 200, suffix: '+' },
                     { id: 'languageCount', target: 50, suffix: '+' },
-                    { id: 'communityCount', target: 10000, suffix: '+' }
+                    { id: 'communityCount', target: 100000, suffix: '+' }
                 ];
 
                 counters.forEach(counter => {
@@ -3522,6 +3450,7 @@
                 
                 const email = document.getElementById('loginEmail').value.trim();
                 const password = document.getElementById('loginPassword').value;
+                const rememberMe = document.getElementById('remember-me').checked;
                 
                 // Clear previous errors
                 this.clearFieldError('loginEmail');
@@ -3548,15 +3477,42 @@
                     this.setLoginLoadingState(true);
                     
                     try {
-                        // Call Firebase authentication
-                        await window.firebaseAuth.loginUser(email, password);
+                        // Try Firebase login first
+                        if (window.firebaseAuth && window.firebaseAuth.isInitialized) {
+                            await window.firebaseAuth.loginUser(email, password, rememberMe);
+                        } else {
+                            // Fallback mode - simulate login
+                            await new Promise(resolve => setTimeout(resolve, 1500));
+                            
+                            // Create localStorage entry for instant login next time
+                            const userData = {
+                                uid: 'fallback_' + Date.now(),
+                                email: email,
+                                displayName: email.split('@')[0],
+                                isNewUser: false,
+                                interests: this.userSelections.interests,
+                                languages: this.userSelections.languages,
+                                autoLogin: rememberMe,
+                                lastLogin: new Date().toISOString()
+                            };
+                            
+                            localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
+                            localStorage.setItem('kynecta-chat-selections', JSON.stringify(this.userSelections));
+                            
+                            if (rememberMe) {
+                                localStorage.setItem('kynecta-chat-auto-login', 'true');
+                                localStorage.setItem('kynecta-chat-email', email);
+                            }
+                            
+                            console.log('✅ Login successful (fallback mode)');
+                        }
                         
-                        // Success - redirect to profile page
-                        this.redirectToProfile();
+                        // Success - redirect to chat page
+                        this.redirectToChat();
                         
                     } catch (error) {
-                        // Handle authentication error with simplified message
-                        this.showMessage('Login failed. Please check your credentials and try again.', 'error');
+                        // Handle authentication error
+                        this.showMessage(error.message, 'error');
                         this.setLoginLoadingState(false);
                     }
                 }
@@ -3585,7 +3541,7 @@
                 let isValid = true;
                 
                 if (!displayName) {
-                    this.showFieldError('displayName', 'Display name is required');
+                    this.showFieldError('displayName', 'Username is required');
                     isValid = false;
                 }
                 
@@ -3624,11 +3580,34 @@
                     this.setRegisterLoadingState(true);
                     
                     try {
-                        // Pass user selections to registration
-                        await window.firebaseAuth.registerUser(email, password, displayName, this.userSelections);
+                        // Try Firebase registration first
+                        if (window.firebaseAuth && window.firebaseAuth.isInitialized) {
+                            await window.firebaseAuth.registerUser(email, password, displayName, this.userSelections);
+                        } else {
+                            // Fallback mode - simulate registration
+                            await new Promise(resolve => setTimeout(resolve, 1500));
+                            
+                            // Create localStorage entry for INSTANT auto-login next time
+                            const userData = {
+                                uid: 'fallback_' + Date.now(),
+                                email: email,
+                                displayName: displayName,
+                                isNewUser: true,
+                                interests: this.userSelections.interests,
+                                languages: this.userSelections.languages,
+                                autoLogin: true,
+                                lastLogin: new Date().toISOString()
+                            };
+                            
+                            localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
+                            localStorage.setItem('kynecta-chat-selections', JSON.stringify(this.userSelections));
+                            localStorage.setItem('kynecta-chat-auto-login', 'true');
+                            
+                            console.log('✅ Registration successful (fallback mode)');
+                        }
                         
-                        // Success - redirect to profile page
-                        this.redirectToProfile();
+                        // Success - redirect to chat page
+                        this.redirectToChat();
                         
                     } catch (error) {
                         // Handle registration error
@@ -3681,17 +3660,6 @@
             }
 
             /**
-             * Shows a success message for a form field
-             */
-            showFieldSuccess(fieldId) {
-                const field = document.getElementById(fieldId);
-                if (field) {
-                    field.classList.add('input-success');
-                    field.classList.remove('input-error');
-                }
-            }
-
-            /**
              * Sets loading state for login form
              */
             setLoginLoadingState(isLoading) {
@@ -3706,7 +3674,7 @@
                         loginBtnText.textContent = 'Signing In...';
                         loginSpinner.classList.remove('hidden');
                     } else {
-                        loginBtnText.textContent = 'Sign In';
+                        loginBtnText.textContent = 'Sign In & Auto-login';
                         loginSpinner.classList.add('hidden');
                     }
                 }
@@ -3727,7 +3695,7 @@
                         registerBtnText.textContent = 'Creating Account...';
                         registerSpinner.classList.remove('hidden');
                     } else {
-                        registerBtnText.textContent = 'Create Account';
+                        registerBtnText.textContent = 'Create Account & Auto-login';
                         registerSpinner.classList.add('hidden');
                     }
                 }
@@ -3822,21 +3790,14 @@
              * Loads user preferences from localStorage
              */
             loadUserPreferences() {
-                const savedEmail = localStorage.getItem('kynecta-email');
-                const rememberMe = localStorage.getItem('kynecta-remember') === 'true';
+                const savedEmail = localStorage.getItem('kynecta-chat-email');
+                const rememberMe = localStorage.getItem('kynecta-chat-remember') === 'true';
                 
                 if (savedEmail && rememberMe) {
                     const loginEmail = document.getElementById('loginEmail');
                     const rememberMeCheckbox = document.getElementById('remember-me');
                     if (loginEmail) loginEmail.value = savedEmail;
                     if (rememberMeCheckbox) rememberMeCheckbox.checked = true;
-                }
-                
-                // Load custom colors
-                const savedColors = localStorage.getItem('kynecta-custom-colors');
-                if (savedColors) {
-                    this.customColors = JSON.parse(savedColors);
-                    this.applyCustomColors();
                 }
             }
 
@@ -3848,23 +3809,23 @@
                 const rememberMe = document.getElementById('remember-me').checked;
                 
                 if (rememberMe && email) {
-                    localStorage.setItem('kynecta-email', email);
-                    localStorage.setItem('kynecta-remember', 'true');
+                    localStorage.setItem('kynecta-chat-email', email);
+                    localStorage.setItem('kynecta-chat-remember', 'true');
                 } else {
-                    localStorage.removeItem('kynecta-email');
-                    localStorage.removeItem('kynecta-remember');
+                    localStorage.removeItem('kynecta-chat-email');
+                    localStorage.removeItem('kynecta-chat-remember');
                 }
             }
 
             /**
-             * Redirects to the profile page with a smooth transition
+             * Redirects to the chat page with a smooth transition
              */
-            redirectToProfile() {
+            redirectToChat() {
                 // Save user preferences
                 this.saveUserPreferences();
                 
                 // Show success message
-                this.showMessage('Welcome to kynecta! Redirecting...', 'success');
+                this.showMessage('Welcome to kynecta Chat! Redirecting to chat dashboard...', 'success');
                 
                 // Add a brief delay to show the success message
                 setTimeout(() => {
@@ -3882,60 +3843,60 @@
 
         // Global functions for forgot password modal
         function selectRecoveryMethod(method) {
-            if (window.kynectaApp) {
-                window.kynectaApp.forgotPasswordMethod = method;
+            if (window.kynectaChatApp) {
+                window.kynectaChatApp.forgotPasswordMethod = method;
                 
                 if (method === 'email') {
                     executeRecovery('email');
                 } else if (method === 'phone' || method === 'voice') {
                     executeRecovery(method);
-                } else if (method === 'secret') {
-                    window.kynectaApp.setForgotPasswordStep(3);
                 }
             }
         }
 
         async function executeRecovery(method) {
-            if (!window.kynectaApp) return;
+            if (!window.kynectaChatApp) return;
             
-            const { forgotPasswordIdentifier } = window.kynectaApp;
+            const { forgotPasswordIdentifier } = window.kynectaChatApp;
             
-            window.kynectaApp.showLoading(`Initiating ${method} recovery...`);
+            window.kynectaChatApp.showLoading(`Initiating ${method} recovery...`);
             
             if (method === 'email') {
                 try {
-                    await window.firebaseAuth.sendPasswordResetEmail(forgotPasswordIdentifier);
-                    window.kynectaApp.hideLoading();
-                    window.kynectaApp.showToast('Recovery email sent successfully! Please check your inbox (and spam folder) for the link.', 'success');
-                    window.kynectaApp.hideForgotPasswordModal();
+                    // Use Firebase if available, otherwise simulate
+                    if (window.firebaseAuth && window.firebaseAuth.isInitialized) {
+                        await window.firebaseAuth.sendPasswordResetEmail(forgotPasswordIdentifier);
+                    } else {
+                        // Simulate for fallback mode
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                    }
+                    
+                    window.kynectaChatApp.hideLoading();
+                    window.kynectaChatApp.showToast('Recovery email sent successfully! Please check your inbox (and spam folder) for the link.', 'success');
+                    window.kynectaChatApp.hideForgotPasswordModal();
                 } catch (error) {
-                    window.kynectaApp.hideLoading();
-                    window.kynectaApp.showToast(`Email reset failed: ${error.message}`, 'error');
+                    window.kynectaChatApp.hideLoading();
+                    window.kynectaChatApp.showToast(`Email reset failed: ${error.message}`, 'error');
                 }
             } else if (method === 'phone' || method === 'voice') {
                 // Simulated Phone/Voice Call Recovery
                 await new Promise(resolve => setTimeout(resolve, 2000));
-                window.kynectaApp.hideLoading();
+                window.kynectaChatApp.hideLoading();
                 const action = method === 'phone' ? 'SMS code' : 'voice call';
-                window.kynectaApp.showToast(`A simulated ${action} has been initiated for ${forgotPasswordIdentifier}. Please check your phone for a code to complete the process.`, 'info');
-                window.kynectaApp.hideForgotPasswordModal();
-            }
-        }
-
-        function changeRecoveryMethod() {
-            if (window.kynectaApp) {
-                window.kynectaApp.setForgotPasswordStep(2);
+                window.kynectaChatApp.showToast(`A simulated ${action} has been initiated for ${forgotPasswordIdentifier}. Please check your phone for a code to complete the process.`, 'info');
+                window.kynectaChatApp.hideForgotPasswordModal();
             }
         }
 
         // Initialize the app when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
-            window.kynectaApp = new kynectaApp();
+            window.kynectaChatApp = new kynectaChatApp();
             
-            // Check Firebase status after a delay
+            // Check Firebase status after a delay (background operation)
             setTimeout(() => {
                 if (!window.firebaseAuth || !window.firebaseAuth.isInitialized) {
-                    console.warn('⚠️ Firebase not initialized - using fallback mode');
+                    console.warn('⚠️ Firebase not initialized - using fallback mode with localStorage');
+                    window.kynectaChatApp.showToast('Running in offline mode. Some features may be limited.', 'info');
                 }
             }, 3000);
         });

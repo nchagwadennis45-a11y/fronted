@@ -25,7 +25,7 @@
     <script>
         window.tailwindConfig = { ignoreCDNWarning: true };
         
-        // ADDED: JavaScript functions for settings
+        // JavaScript functions for settings
         function showSettingsSection(sectionName) {
             console.log('Opening settings section:', sectionName);
             
@@ -70,6 +70,60 @@
                 fileInput.click();
             }
         }
+        
+        // Mobile navigation handling
+        function showChatArea() {
+            const chatListContainer = document.getElementById('chatListContainer');
+            const chatArea = document.getElementById('chatArea');
+            
+            if (chatListContainer && chatArea) {
+                chatListContainer.classList.add('hidden');
+                chatArea.classList.remove('hidden');
+            }
+        }
+        
+        function showChatList() {
+            const chatListContainer = document.getElementById('chatListContainer');
+            const chatArea = document.getElementById('chatArea');
+            
+            if (chatListContainer && chatArea) {
+                chatListContainer.classList.remove('hidden');
+                chatArea.classList.add('hidden');
+            }
+        }
+        
+        // Initialize mobile navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if mobile
+            const isMobile = window.innerWidth < 768;
+            
+            if (isMobile) {
+                // Hide chat area by default on mobile
+                const chatArea = document.getElementById('chatArea');
+                if (chatArea) {
+                    chatArea.classList.add('hidden');
+                }
+                
+                // Show chat list by default
+                const chatListContainer = document.getElementById('chatListContainer');
+                if (chatListContainer) {
+                    chatListContainer.classList.remove('hidden');
+                }
+                
+                // Add back button functionality
+                const backToChats = document.getElementById('backToChats');
+                if (backToChats) {
+                    backToChats.addEventListener('click', showChatList);
+                }
+                
+                // Chat items should open chat area
+                document.addEventListener('click', function(e) {
+                    if (e.target.closest('.chat-item')) {
+                        showChatArea();
+                    }
+                });
+            }
+        });
     </script>
     
     <link rel="stylesheet" href="chat.css">
@@ -93,7 +147,7 @@
     <!-- Main Chat App -->
     <div id="chatApp" class="h-full">
         <!-- Permanent Left Sidebar Navigation -->
-        <div class="fixed left-0 top-0 bottom-0 w-20 bg-gray-900 z-40 flex flex-col items-center py-6 space-y-8">
+        <div class="fixed left-0 top-0 bottom-0 w-16 bg-gray-900 z-40 flex flex-col items-center py-6 space-y-8">
             <!-- App Logo -->
             <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-green-500 rounded-2xl flex items-center justify-center">
                 <span class="text-white text-xl font-bold">K</span>
@@ -101,7 +155,7 @@
             
             <!-- Permanent Navigation Icons -->
             <div class="flex-1 flex flex-col items-center space-y-8">
-                <button class="nav-icon text-white text-2xl p-3 rounded-2xl bg-purple-700" data-tab="chats" title="Chats">
+                <button class="nav-icon text-white text-2xl p-3 rounded-2xl bg-purple-700" data-tab="chats" title="Chats" onclick="showChatList()">
                     <i class="fas fa-comments"></i>
                 </button>
                 
@@ -123,15 +177,13 @@
             </div>
             
             <!-- Settings Icon at Bottom -->
-            <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" id="menuBtn" title="Settings">
+            <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" id="menuBtn" title="Settings" onclick="openSettingsModal()">
                 <i class="fas fa-cog"></i>
             </button>
         </div>
 
-        <!-- REMOVED: Bottom Navigation Tabs (duplicate of sidebar) -->
-
-        <div class="flex h-full pb-0 ml-20">
-            <!-- Sidebar/Friend List -->
+        <div class="flex h-full pb-0 ml-16">
+            <!-- Sidebar/Friend List - Hidden on mobile when chat is open -->
             <div id="chatListContainer" class="chat-list-container w-full md:w-1/3 lg:w-1/4 bg-white flex flex-col border-r border-gray-200">
                 <!-- User Profile Header -->
                 <div class="kynecta-header p-4 flex justify-between items-center">
@@ -271,22 +323,6 @@
                     <!-- Tools Tab -->
                     <div id="toolsTab" class="tab-panel hidden">
                         <div class="p-4 space-y-4">
-                            <!-- Mood Settings -->
-                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
-                                <h3 class="font-semibold mb-3 flex items-center">
-                                    <i class="fas fa-smile mr-2 text-purple-500"></i>
-                                    Current Mood
-                                </h3>
-                                <div class="flex flex-wrap gap-2 mb-3">
-                                    <button class="mood-option px-3 py-2 rounded-full text-sm border-2 border-gray-200 hover:border-purple-300 transition-colors" data-mood="happy">😊 Happy</button>
-                                    <button class="mood-option px-3 py-2 rounded-full text-sm border-2 border-gray-200 hover:border-blue-300 transition-colors" data-mood="calm">😌 Calm</button>
-                                    <button class="mood-option px-3 py-2 rounded-full text-sm border-2 border-gray-200 hover:border-red-300 transition-colors" data-mood="energetic">⚡ Energetic</button>
-                                    <button class="mood-option px-3 py-2 rounded-full text-sm border-2 border-gray-200 hover:border-green-300 transition-colors" data-mood="focused">🎯 Focused</button>
-                                    <button class="mood-option px-3 py-2 rounded-full text-sm border-2 border-gray-200 hover:border-purple-300 transition-colors" data-mood="creative">🎨 Creative</button>
-                                </div>
-                                <p class="text-xs text-gray-500">Your mood influences chat suggestions and themes</p>
-                            </div>
-
                             <!-- Quick Actions - Now linked to settings -->
                             <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
                                 <h3 class="font-semibold mb-3">Quick Actions</h3>
@@ -345,35 +381,35 @@
                                     Business Tools
                                 </h3>
                                 <div class="space-y-3">
-                                    <button class="w-full p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" id="catalogueBtn">
+                                    <button class="w-full p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" onclick="document.getElementById('catalogueModal').classList.remove('hidden')">
                                         <div>
                                             <p class="font-medium text-purple-700">Catalogue</p>
                                             <p class="text-sm text-purple-600">Manage your product catalogue</p>
                                         </div>
                                         <i class="fas fa-shopping-cart text-purple-500"></i>
                                     </button>
-                                    <button class="w-full p-3 bg-gradient-to-r from-green-50 to-teal-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" id="advertiseBtn">
+                                    <button class="w-full p-3 bg-gradient-to-r from-green-50 to-teal-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" onclick="document.getElementById('advertiseModal').classList.remove('hidden')">
                                         <div>
                                             <p class="font-medium text-green-700">Advertise</p>
                                             <p class="text-sm text-green-600">Create and manage ads</p>
                                         </div>
                                         <i class="fas fa-bullhorn text-green-500"></i>
                                     </button>
-                                    <button class="w-full p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" id="labelsBtn">
+                                    <button class="w-full p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" onclick="document.getElementById('labelsModal').classList.remove('hidden')">
                                         <div>
                                             <p class="font-medium text-orange-700">Labels</p>
                                             <p class="text-sm text-orange-600">Organize with labels</p>
                                         </div>
                                         <i class="fas fa-tags text-orange-500"></i>
                                     </button>
-                                    <button class="w-full p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" id="greetingBtn">
+                                    <button class="w-full p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" onclick="document.getElementById('greetingModal').classList.remove('hidden')">
                                         <div>
                                             <p class="font-medium text-blue-700">Greeting Message</p>
                                             <p class="text-sm text-blue-600">Set up welcome messages</p>
                                         </div>
                                         <i class="fas fa-comment-dots text-blue-500"></i>
                                     </button>
-                                    <button class="w-full p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" id="awayBtn">
+                                    <button class="w-full p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" onclick="document.getElementById('awayModal').classList.remove('hidden')">
                                         <div>
                                             <p class="font-medium text-red-700">Away Message</p>
                                             <p class="text-sm text-red-600">Set up away messages</p>
@@ -390,14 +426,14 @@
                                     AI Assistant
                                 </h3>
                                 <div class="space-y-3">
-                                    <button class="w-full p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" id="aiSummarize">
+                                    <button class="w-full p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" onclick="document.getElementById('aiSummaryModal').classList.remove('hidden')">
                                         <div>
                                             <p class="font-medium text-purple-700">Summarize Conversation</p>
                                             <p class="text-sm text-purple-600">Get AI summary of recent messages</p>
                                         </div>
                                         <i class="fas fa-sparkles text-purple-500"></i>
                                     </button>
-                                    <button class="w-full p-3 bg-gradient-to-r from-green-50 to-teal-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" id="aiReply">
+                                    <button class="w-full p-3 bg-gradient-to-r from-green-50 to-teal-50 rounded-xl text-left hover:shadow-md transition-all flex items-center justify-between" onclick="document.getElementById('smartRepliesModal').classList.remove('hidden')">
                                         <div>
                                             <p class="font-medium text-green-700">Smart Reply Suggestions</p>
                                             <p class="text-sm text-green-600">Get context-aware reply ideas</p>
@@ -411,13 +447,13 @@
                 </div>
             </div>
 
-            <!-- Chat Area -->
-            <div class="chat-area flex-1 flex flex-col bg-gray-50">
-                <!-- Chat Header -->
-                <div id="chatHeader" class="kynecta-header p-4 flex justify-between items-center hidden">
+            <!-- Chat Area - Fills remaining space -->
+            <div id="chatArea" class="chat-area flex-1 flex flex-col bg-gray-50 w-full h-full hidden md:flex">
+                <!-- Chat Header - Hidden by default, shown when chat is active -->
+                <div id="chatHeader" class="kynecta-header p-4 flex justify-between items-center">
                     <div class="flex items-center">
-                        <div class="mobile-only mr-3">
-                            <i class="fas fa-arrow-left text-white cursor-pointer hover:scale-110 transition-transform" id="backToChats"></i>
+                        <div class="md:hidden mr-3">
+                            <i class="fas fa-arrow-left text-white cursor-pointer hover:scale-110 transition-transform" id="backToChats" onclick="showChatList()"></i>
                         </div>
                         <img id="chatAvatar" class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-white font-semibold mr-3 object-cover border-2 border-white/30" src="" alt="Chat">
                         <div>
@@ -743,7 +779,7 @@
             <div class="kynecta-header p-6">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-semibold text-white">Create Shared Goal</h3>
-                    <button id="closeCreateGoal" class="text-white/80 hover:text-white transition-colors">
+                    <button id="closeCreateGoal" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('createGoalModal')">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
@@ -791,7 +827,7 @@
             <div class="kynecta-header p-4">
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-semibold text-white">Create Status Update</h3>
-                    <button id="closeStatusCreation" class="text-white/80 hover:text-white transition-colors">
+                    <button id="closeStatusCreation" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('statusCreation')">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
@@ -1043,7 +1079,7 @@
             
             <div class="overflow-y-auto max-h-[50vh] custom-scrollbar p-0">
                 <!-- Settings List Container with fixed height for 2 items -->
-                <div class="settings-scroll-container">
+                <div class="settings-scroll-container" style="height: 300px; overflow-y: auto;">
                     <!-- All Settings (Compact View) -->
                     <div class="settings-full-list">
                         <div class="space-y-0">
@@ -1213,7 +1249,7 @@
                     <button id="searchFriend" class="flex-1 py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
                         Search
                     </button>
-                    <button id="cancelFriend" class="flex-1 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
+                    <button id="cancelFriend" class="flex-1 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity" onclick="closeModal('addFriendModal')">
                         Cancel
                     </button>
                 </div>
@@ -1233,7 +1269,7 @@
                 </div>
                 
                 <div class="mt-4">
-                    <button id="closeEnhancedSearch" class="w-full py-3 bg-gray-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
+                    <button id="closeEnhancedSearch" class="w-full py-3 bg-gray-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity" onclick="closeModal('friendSearchResultsModal')">
                         Close
                     </button>
                 </div>
@@ -1269,7 +1305,7 @@
                     <button id="removeFriend" class="flex-1 py-3 bg-red-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
                         Remove
                     </button>
-                    <button id="cancelEditFriend" class="flex-1 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
+                    <button id="cancelEditFriend" class="flex-1 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity" onclick="closeModal('editFriendModal')">
                         Cancel
                     </button>
                 </div>

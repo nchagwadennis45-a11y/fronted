@@ -179,17 +179,30 @@ globalVarsToProtect.forEach(varName => {
 });
 
 // Only declare if they don't exist
-if (typeof closeStatusViewer === 'undefined') var closeStatusViewer = null;
-if (typeof helpCenterModal === 'undefined') var helpCenterModal = null;
-if (typeof statusViewerModal === 'undefined') var statusViewerModal = null;
-if (typeof statusViewerContent === 'undefined') var statusViewerContent = null;
-if (typeof currentUser === 'undefined') var currentUser = null;
-if (typeof currentUserData === 'undefined') var currentUserData = null;
-if (typeof currentChat === 'undefined') var currentChat = null;
-if (typeof currentChatId === 'undefined') var currentChatId = null;
-if (typeof friends === 'undefined') var friends = [];
-if (typeof allUsers === 'undefined') var allUsers = [];
+// ==================== PREVENT DUPLICATE DECLARATIONS ====================
+// Use window object to check and avoid redeclaration
+if (!window.closeStatusViewer) window.closeStatusViewer = null;
+if (!window.helpCenterModal) window.helpCenterModal = null;
+if (!window.statusViewerModal) window.statusViewerModal = null;
+if (!window.statusViewerContent) window.statusViewerContent = null;
+if (!window.currentUser) window.currentUser = null;
+if (!window.currentUserData) window.currentUserData = null;
+if (!window.currentChat) window.currentChat = null;
+if (!window.currentChatId) window.currentChatId = null;
+if (!window.friends) window.friends = [];
+if (!window.allUsers) window.allUsers = [];
 
+// Also declare them locally for backward compatibility
+var closeStatusViewer = window.closeStatusViewer;
+var helpCenterModal = window.helpCenterModal;
+var statusViewerModal = window.statusViewerModal;
+var statusViewerContent = window.statusViewerContent;
+var currentUser = window.currentUser;
+var currentUserData = window.currentUserData;
+var currentChat = window.currentChat;
+var currentChatId = window.currentChatId;
+var friends = window.friends;
+var allUsers = window.allUsers;
 // ==================== IMAGE ERROR HANDLING ====================
 function setupImageErrorHandling() {
     console.log('Setting up image error handling...');
@@ -231,10 +244,14 @@ function handleImageError(img) {
     // Skip if already handled or valid URLs
     if (img.classList.contains('error-handled') || 
         img.src.startsWith('data:') || 
-        img.src.includes('blob:') ||
-        img.src.includes('ui-avatars.com') ||
-        img.src.includes('firebasestorage') ||
-        img.src.includes('cloudinary')) {
+        img.src.includes('blob:')) {
+        return;
+    }
+    
+    // Skip Google cleardot tracking images
+    if (img.src.includes('google.com/images/cleardot.gif')) {
+        img.style.display = 'none';
+        img.classList.add('error-handled');
         return;
     }
     
@@ -262,6 +279,7 @@ function handleImageError(img) {
 }
 
 // ==================== FIREBASE INITIALIZATION ====================
+// ==================== FIREBASE INITIALIZATION ====================
 const firebaseConfig = {
     apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
     authDomain: "uniconnect-ee95c.firebaseapp.com",
@@ -271,13 +289,27 @@ const firebaseConfig = {
     appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
 };
 
-// Initialize Firebase
+// Initialize Firebase only if not already initialized
 let auth, db, storage, messaging;
+
 try {
+    // Check if Firebase is already initialized
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
+        
+        // Enable persistence BEFORE getting any Firebase services
+        firebase.firestore().enablePersistence()
+            .then(() => console.log('Firestore persistence enabled'))
+            .catch(err => {
+                if (err.code === 'failed-precondition') {
+                    console.log('Multiple tabs open, persistence only in one tab');
+                } else if (err.code === 'unimplemented') {
+                    console.log('Browser doesn\'t support persistence');
+                }
+            });
     }
     
+    // Now get Firebase services
     auth = firebase.auth();
     db = firebase.firestore();
     storage = firebase.storage();
@@ -285,12 +317,11 @@ try {
     
     console.log('Firebase initialized successfully');
     
-    // 🔥 ADD THESE LINES TO SHARE WITH CALL.JS 🔥
+    // Share with other scripts
     window.db = db;
     window.auth = auth;
     window.storage = storage;
     window.firebase = firebase;
-    console.log('✅ Firebase shared with call.js');
     
 } catch (error) {
     console.error('Firebase initialization failed:', error);
@@ -705,6 +736,57 @@ function getFileIcon(fileType) {
     if (fileType.includes('zip') || fileType.includes('compressed')) return 'fa-file-archive';
     return 'fa-file';
 }
+// ==================== INTERNET CONNECTION DETECTION ====================
+function setupInternetDetection() {
+    // Update UI based on connection status
+    function updateConnectionStatus(isOnline) {
+        const statusElement = document.getElementById('connectionStatus');
+        if (!statusElement) {
+            // Create status indicator if it doesn't exist
+            const statusDiv = document.createElement('div');
+            statusDiv.id = 'connectionStatus';
+            statusDiv.className = 'fixed top-0 left-0 right-0 z-50 text-center py-1 text-xs font-semibold transition-all duration-300';
+            statusDiv.style.display = 'none';
+            document.body.appendChild(statusDiv);
+        }
+        
+        const element = document.getElementById('connectionStatus');
+        if (isOnline) {
+            element.textContent = '✅ Online';
+            element.className = 'fixed top-0 left-0 right-0 z-50 text-center py-1 text-xs font-semibold bg-green-500 text-white transition-all duration-300';
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 3000);
+        } else {
+            element.textContent = '⚠️ You are offline - Some features may not work';
+            element.className = 'fixed top-0 left-0 right-0 z-50 text-center py-1 text-xs font-semibold bg-red-500 text-white transition-all duration-300';
+            element.style.display = 'block';
+        }
+    }
+    
+    // Listen for online/offline events
+    window.addEventListener('online', () => {
+        console.log('Internet connection restored');
+        updateConnectionStatus(true);
+        showToast('Back online!', 'success');
+        
+        // Re-enable Firestore
+        if (db) {
+            db.enableNetwork().then(() => {
+                console.log('Firestore reconnected');
+            });
+        }
+    });
+    
+    window.addEventListener('offline', () => {
+        console.log('Internet connection lost');
+        updateConnectionStatus(false);
+        showToast('You are offline', 'warning');
+    });
+    
+    // Initial check
+    updateConnectionStatus(navigator.onLine);
+}
 
 // ==================== NETWORK & ERROR HANDLING ====================
 function setupNetworkMonitoring() {
@@ -928,8 +1010,11 @@ function showAILearnMore() {
 }
 
 function checkAIFeaturesStatus() {
+    console.log('Checking AI features status...');
+    
     // Default to hidden if no user data
     if (!currentUserData) {
+        console.log('No user data available, hiding AI features');
         hideAIFeatures();
         return;
     }
@@ -937,18 +1022,27 @@ function checkAIFeaturesStatus() {
     // Check if AI is enabled
     const aiEnabled = currentUserData.aiEnabled || currentUserData.aiFeaturesEnabled;
     
+    console.log('AI features status:', { 
+        aiEnabled: aiEnabled,
+        userData: currentUserData 
+    });
+    
     if (aiEnabled) {
+        console.log('Showing AI features');
         showAIFeatures();
     } else {
+        console.log('Hiding AI features');
         hideAIFeatures();
     }
 }
 
 // ==================== INITIALIZATION ====================
-document.addEventListener('DOMContentLoaded', initApp);
+document.addEventListener('DOMContentLoaded', function() {
+    // Add a small delay to ensure everything is ready
+    setTimeout(initApp, 100);
+});
 
-
-       function initApp() {
+async function initApp() {
     console.log('Initializing app...');
     
     try {
@@ -956,7 +1050,8 @@ document.addEventListener('DOMContentLoaded', initApp);
         setupGlobalErrorHandling();
         setupImageErrorHandling();
         setupNetworkMonitoring();
-        
+        setupInternetDetection();
+
         // 2. Setup UI components
         initializeTabs();
         setupEventListeners();
@@ -972,22 +1067,51 @@ document.addEventListener('DOMContentLoaded', initApp);
         setupContextMenuActions();
         setupAutoScrollDetection();
         
-        // 3. Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+        // 3. Initialize Firebase with retry logic
+        let firebaseInitialized = false;
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        async function initializeFirebaseWithRetry() {
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                auth = firebase.auth();
+                db = firebase.firestore();
+                storage = firebase.storage();
+                
+                // Test connection
+                await db.collection('users').limit(1).get();
+                
+                console.log('✅ Firebase initialized successfully');
+                firebaseInitialized = true;
+                
+                // Share with other scripts
+                window.db = db;
+                window.auth = auth;
+                window.storage = storage;
+                window.firebase = firebase;
+                console.log('✅ Firebase shared with call.js');
+                
+                // Enable offline persistence
+                setupFirestoreOfflineHandler();
+                
+            } catch (error) {
+                console.error(`Firebase initialization failed (attempt ${retryCount + 1}/${maxRetries}):`, error);
+                retryCount++;
+                
+                if (retryCount < maxRetries) {
+                    console.log(`Retrying in ${retryCount * 2000}ms...`);
+                    setTimeout(initializeFirebaseWithRetry, retryCount * 2000);
+                } else {
+                    showToast('Connection error. Please check your internet connection.', 'error');
+                }
+            }
         }
         
-        auth = firebase.auth();
-        db = firebase.firestore();
-        storage = firebase.storage();
-        
-        // 4. Share with other scripts
-        window.db = db;
-        window.auth = auth;
-        window.storage = storage;
-        window.firebase = firebase;
-        
-        console.log('✅ Firebase initialized and shared');
+        await initializeFirebaseWithRetry();
         
         if (typeof window.settings !== 'undefined') {
             window.settings.init({
@@ -1008,7 +1132,7 @@ document.addEventListener('DOMContentLoaded', initApp);
                 // Load user data
                 await loadUserData();
                 
-                // ⭐ ADD THIS: Check AI features status after user data loads
+                // ⭐ CHECK AI FEATURES STATUS AFTER USER DATA LOADS
                 setTimeout(() => {
                     checkAIFeaturesStatus();
                 }, 1000);
@@ -1028,7 +1152,27 @@ document.addEventListener('DOMContentLoaded', initApp);
         showToast('App initialization error: ' + error.message, 'error');
     }
 }
-// ==================== USER DATA MANAGEMENT ====================
+
+// ==================== FIREBASE OFFLINE HANDLER ====================
+function setupFirestoreOfflineHandler() {
+    // Enable offline persistence
+    db.enablePersistence()
+        .then(() => {
+            console.log('Firestore offline persistence enabled');
+        })
+        .catch((err) => {
+            if (err.code == 'failed-precondition') {
+                console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+            } else if (err.code == 'unimplemented') {
+                console.log('The current browser doesn\'t support offline persistence');
+            }
+        });
+    
+    // Handle network status
+    db.onSnapshotsInSync(() => {
+        console.log('Firestore is in sync with the server');
+    });
+}
 
 // ==================== USER DATA MANAGEMENT ====================
 async function loadUserData() {
@@ -1054,7 +1198,8 @@ async function loadUserData() {
             console.log('User data loaded:', {
                 uid: currentUser.uid,
                 displayName: currentUserData.displayName,
-                email: currentUserData.email
+                email: currentUserData.email,
+                aiEnabled: currentUserData.aiEnabled || false
             });
             
             // Ensure required fields exist
@@ -1075,6 +1220,12 @@ async function loadUserData() {
             };
             
             initializeUserData();
+            
+            // ⭐ IMPORTANT: Check AI features status HERE, after user data is loaded
+            setTimeout(() => {
+                checkAIFeaturesStatus();
+            }, 500);
+            
         } else {
             console.log('Creating new user document');
             currentUserData = {
@@ -1096,6 +1247,11 @@ async function loadUserData() {
             await db.collection('users').doc(currentUser.uid).set(currentUserData);
             console.log('New user document created');
             initializeUserData();
+            
+            // ⭐ Check AI features for new users too
+            setTimeout(() => {
+                checkAIFeaturesStatus();
+            }, 500);
         }
 
         // Update ONLY lastSeen timestamp, NOT status
@@ -1273,106 +1429,212 @@ function loadChats() {
     }
 }
 
-  function loadChatsTemporary() {
-    const chatsList = document.getElementById('chatsList');
-    if (!chatsList) {
-        console.log('⚠️ Chat list not found - DOM not ready yet');
-        // Wait for DOM to be ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                setTimeout(loadChatsTemporary, 100);
-            });
-        } else {
-            // Create the element if it doesn't exist
-            createChatListElement();
+function loadChatsTemporary() {
+    try {
+        // Check if user is authenticated
+        if (!currentUser || !currentUser.uid) {
+            console.log('⚠️ User not authenticated yet, delaying chats load');
+            setTimeout(loadChatsTemporary, 1000);
+            return;
         }
-        return
-    }
-    
-    console.log('✅ Loading chats for user:', currentUser.uid);
-    
-    if (unsubscribeChats) {
-        console.log('Unsubscribing from previous chats listener');
-        unsubscribeChats();
-    }
-    
-    unsubscribeChats = db.collection('chats')
-        .where('participants', 'array-contains', currentUser.uid)
-        .onSnapshot({
-            next: (snapshot) => {
-                console.log('Chats snapshot received:', snapshot.size, 'chats');
-                if (!chatList || !noChatsMessage) return;
+        
+        // Check if database is available
+        if (!db) {
+            console.log('⚠️ Database not available yet, delaying chats load');
+            setTimeout(loadChatsTemporary, 1000);
+            return;
+        }
+        
+        const chatsList = document.getElementById('chatsList');
+        if (!chatsList) {
+            console.log('⚠️ Chat list element not found in DOM');
+            
+            // Try to create it if it doesn't exist
+            const chatsTab = document.getElementById('chatsTab');
+            if (chatsTab) {
+                const newChatsList = document.createElement('div');
+                newChatsList.id = 'chatsList';
+                newChatsList.className = 'chats-list space-y-2 overflow-y-auto';
+                chatsTab.appendChild(newChatsList);
+                console.log('✅ Created chatsList element');
                 
-                chatList.innerHTML = '';
-                
-                if (snapshot.empty) {
-                    noChatsMessage.classList.remove('hidden');
-                    return;
-                }
-                
-                noChatsMessage.classList.add('hidden');
-                
-                // Sort manually in JavaScript
-                const chats = [];
-                snapshot.forEach(doc => {
-                    chats.push({ id: doc.id, ...doc.data() });
-                });
-                
-                // Manual sort by lastMessageTime
-                chats.sort((a, b) => {
-                    const timeA = a.lastMessageTime ? a.lastMessageTime.toDate() : new Date(0);
-                    const timeB = b.lastMessageTime ? b.lastMessageTime.toDate() : new Date(0);
-                    return timeB - timeA;
-                });
-                
-                chats.forEach(chat => {
-                    const otherParticipantId = chat.participants.find(id => id !== currentUser.uid);
-                    const otherParticipantName = chat.participantNames ? chat.participantNames[otherParticipantId] : 'Unknown User';
+                // Retry immediately with the created element
+                loadChatsTemporary();
+                return;
+            }
+            
+            // If we can't create it, give up after a few tries
+            if (!window.chatsLoadRetryCount) window.chatsLoadRetryCount = 0;
+            window.chatsLoadRetryCount++;
+            
+            if (window.chatsLoadRetryCount < 5) {
+                console.log(`Retrying chats load (${window.chatsLoadRetryCount}/5)...`);
+                setTimeout(loadChatsTemporary, 1000);
+            } else {
+                console.error('Failed to load chats after multiple attempts');
+                showToast('Cannot load chats. Please refresh the page.', 'error');
+            }
+            return;
+        }
+        
+        // Reset retry counter on success
+        window.chatsLoadRetryCount = 0;
+        
+        console.log('✅ Loading chats for user:', currentUser.uid);
+        
+        // Unsubscribe from previous listener if exists
+        if (unsubscribeChats) {
+            console.log('Unsubscribing from previous chats listener');
+            unsubscribeChats();
+            unsubscribeChats = null;
+        }
+        
+        // Setup real-time listener for chats
+        unsubscribeChats = db.collection('chats')
+            .where('participants', 'array-contains', currentUser.uid)
+            .onSnapshot({
+                next: (snapshot) => {
+                    console.log('Chats snapshot received:', snapshot.size, 'chats');
                     
-                    console.log('Rendering chat with:', otherParticipantName);
+                    // Use the correct elements
+                    const chatListContainer = document.getElementById('chatList');
+                    const noChatsMsg = document.getElementById('noChatsMessage');
                     
-                    const chatItem = document.createElement('div');
-                    chatItem.className = 'chat-item';
-                    chatItem.dataset.chatId = chat.id;
-                    chatItem.dataset.userId = otherParticipantId;
+                    if (!chatListContainer) {
+                        console.error('chatList element not found');
+                        return;
+                    }
                     
-                    // Check for unread messages
-                    const unreadCount = chat.unread && chat.unread[currentUser.uid] ? chat.unread[currentUser.uid] : 0;
+                    chatListContainer.innerHTML = '';
                     
-                    chatItem.innerHTML = `
-                        <div class="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer">
-                            <div class="relative">
-                                <img class="w-12 h-12 rounded-full object-cover" 
-                                     src="https://ui-avatars.com/api/?name=${encodeURIComponent(otherParticipantName)}&background=7C3AED&color=fff" 
-                                     alt="${otherParticipantName}">
-                                ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-center">
-                                    <div class="contact-name font-medium text-gray-800 truncate">${otherParticipantName}</div>
-                                    <div class="last-message-time text-xs text-gray-500">${chat.lastMessageTime ? formatTimeAgo(chat.lastMessageTime) : ''}</div>
-                                </div>
-                                <div class="last-message-preview text-sm text-gray-500 truncate mt-1">${chat.lastMessage || 'No messages yet'}</div>
-                            </div>
-                        </div>
-                    `;
+                    if (snapshot.empty) {
+                        if (noChatsMsg) noChatsMsg.classList.remove('hidden');
+                        return;
+                    }
                     
-                    chatItem.addEventListener('click', () => {
-                        console.log('Opening chat with:', otherParticipantName);
-                        startChat(otherParticipantId, otherParticipantName);
+                    if (noChatsMsg) noChatsMsg.classList.add('hidden');
+                    
+                    // Process and sort chats
+                    const chats = [];
+                    snapshot.forEach(doc => {
+                        chats.push({ id: doc.id, ...doc.data() });
                     });
                     
-                    chatList.appendChild(chatItem);
-                });
-            },
-            error: (error) => {
-                console.error('Error loading chats:', error);
-                if (document.getElementById('chatList')) {
-                    showToast('Error loading chats', 'error');
+                    // Sort by last message time (newest first)
+                    chats.sort((a, b) => {
+                        const timeA = a.lastMessageTime ? a.lastMessageTime.toDate() : new Date(0);
+                        const timeB = b.lastMessageTime ? b.lastMessageTime.toDate() : new Date(0);
+                        return timeB.getTime() - timeA.getTime();
+                    });
+                    
+                    // Render each chat
+                    chats.forEach(chat => {
+                        const otherParticipantId = chat.participants.find(id => id !== currentUser.uid);
+                        const otherParticipantName = chat.participantNames ? 
+                            chat.participantNames[otherParticipantId] : 'Unknown User';
+                        
+                        const unreadCount = chat.unread && chat.unread[currentUser.uid] ? 
+                            chat.unread[currentUser.uid] : 0;
+                        
+                        const chatItem = document.createElement('div');
+                        chatItem.className = 'chat-item hover:bg-gray-50 rounded-lg cursor-pointer transition-colors';
+                        chatItem.dataset.chatId = chat.id;
+                        chatItem.dataset.userId = otherParticipantId;
+                        
+                        chatItem.innerHTML = `
+                            <div class="flex items-center space-x-3 p-3">
+                                <div class="relative">
+                                    <img class="w-12 h-12 rounded-full object-cover" 
+                                         src="https://ui-avatars.com/api/?name=${encodeURIComponent(otherParticipantName)}&background=7C3AED&color=fff&size=48" 
+                                         alt="${otherParticipantName}"
+                                         onerror="this.src='${getDefaultAvatar(otherParticipantName)}'">
+                                    ${unreadCount > 0 ? `
+                                        <span class="unread-badge absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                            ${unreadCount}
+                                        </span>
+                                    ` : ''}
+                                    ${chat.participants?.length > 2 ? `
+                                        <span class="group-badge absolute -bottom-1 -right-1 bg-purple-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                            <i class="fas fa-users text-xs"></i>
+                                        </span>
+                                    ` : ''}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-center">
+                                        <div class="contact-name font-medium text-gray-800 truncate">
+                                            ${otherParticipantName}
+                                            ${chat.participants?.length > 2 ? ' (Group)' : ''}
+                                        </div>
+                                        <div class="last-message-time text-xs text-gray-500">
+                                            ${chat.lastMessageTime ? formatTimeAgo(chat.lastMessageTime) : ''}
+                                        </div>
+                                    </div>
+                                    <div class="last-message-preview text-sm text-gray-500 truncate mt-1">
+                                        ${chat.lastMessage || 'No messages yet'}
+                                    </div>
+                                    ${chat.typing && chat.typing[otherParticipantId] ? `
+                                        <div class="typing-indicator text-xs text-green-500 mt-1">
+                                            <i class="fas fa-circle-notch fa-spin mr-1"></i>typing...
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                        
+                        chatItem.addEventListener('click', () => {
+                            console.log('Opening chat with:', otherParticipantName);
+                            startChat(otherParticipantId, otherParticipantName);
+                        });
+                        
+                        chatListContainer.appendChild(chatItem);
+                    });
+                    
+                    console.log(`✅ Rendered ${chats.length} chats`);
+                },
+                error: (error) => {
+                    console.error('Error loading chats:', error);
+                    
+                    // Show user-friendly error message
+                    const chatListContainer = document.getElementById('chatList');
+                    if (chatListContainer) {
+                        chatListContainer.innerHTML = `
+                            <div class="text-center text-gray-500 py-8">
+                                <i class="fas fa-exclamation-triangle text-4xl mb-3 text-gray-300 block"></i>
+                                <p class="font-medium">Error loading chats</p>
+                                <p class="text-sm mt-1">${error.message || 'Please check your connection'}</p>
+                                <button onclick="loadChatsTemporary()" class="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                                    Retry
+                                </button>
+                            </div>
+                        `;
+                    }
+                    
+                    // Don't auto-retry on error - let user click retry
+                    if (unsubscribeChats) {
+                        unsubscribeChats();
+                        unsubscribeChats = null;
+                    }
                 }
-            }
-        });
+            });
+            
+        console.log('✅ Chats listener setup successfully');
+        
+    } catch (error) {
+        console.error('❌ Fatal error in loadChatsTemporary:', error);
+        
+        // Show error toast but don't auto-retry
+        showToast('Failed to load chats. Please refresh the page.', 'error');
+        
+        // Clean up any existing listener
+        if (unsubscribeChats) {
+            unsubscribeChats();
+            unsubscribeChats = null;
+        }
+        
+        // Don't set timeout to retry - let user refresh or fix the issue
+    }
 }
+
 
 function createChatListElement() {
     const chatsTab = document.getElementById('chatsTab');
@@ -3286,6 +3548,7 @@ async function voteOnPoll(messageId, optionIndex) {
         showToast('Error voting on poll', 'error');
     }
 }
+
 // Add this function anywhere after the AI functions
 function addAISettingsToProfile() {
     // This function can be called from your profile/settings page
@@ -3348,9 +3611,6 @@ function addAISettingsToProfile() {
         }
     }, 100);
 }
-
-// Call this when opening profile/settings
-// addAISettingsToProfile();
 
 // ==================== MESSAGE SELECTION ====================
 let selectedMessages = new Set();
@@ -4405,7 +4665,6 @@ function setupAutoScrollDetection() {
         }
     });
 }
-
 
 // ==================== LOAD ALL USERS ====================
 async function loadAllUsers() {
