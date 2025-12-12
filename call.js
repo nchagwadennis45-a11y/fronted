@@ -170,7 +170,7 @@ window.callState = {
     indexedDBAvailable: true,
     
     // Debug state
-    debugMode: true, // Enable debug for troubleshooting
+    debugMode: true,
     logLevel: 'info',
     
     // Initialization state
@@ -225,6 +225,7 @@ const RTC_CONFIG = {
 };
 
 // ==================== INITIALIZATION ====================
+// ==================== INITIALIZATION ====================
 window.initializeCallSystem = function(force = false) {
     console.log('🚀 Initializing call system...');
     
@@ -241,7 +242,7 @@ window.initializeCallSystem = function(force = false) {
     window.callState.isInitializing = true;
     window.callState.initializationAttempts++;
     
-    // Check if Firebase is loaded
+    // Check for Firebase
     if (!window.firebase || !window.firebase.auth || !window.firebase.firestore) {
         console.warn('⚠️ Firebase not loaded yet, waiting...');
         
@@ -258,82 +259,73 @@ window.initializeCallSystem = function(force = false) {
         return;
     }
     
-    console.log('✅ Firebase loaded, checking auth state...');
+    console.log('✅ Firebase loaded');
     
-    // Setup Firebase auth state listener
-    try {
-        const authUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
-            console.log('🔑 Auth state changed:', user ? 'User logged in' : 'No user');
-            
-            if (user) {
-                console.log('✅ User authenticated:', user.uid, user.displayName || user.email);
-                window.callState.currentUser = user;
-                window.callState.processedCallIds.clear();
-                
-                // Initialize all systems
-                try {
-                    await initializeAllSystems(user.uid);
-                    window.callState.isInitialized = true;
-                    window.callState.isInitializing = false;
-                    
-                    showSystemToast('Call system initialized successfully', 'success');
-                    
-                    logAnalyticsEvent('system_initialized', {
-                        userId: user.uid,
-                        platform: navigator.platform,
-                        online: navigator.onLine,
-                        timestamp: Date.now()
-                    });
-                    
-                    // Setup listeners for call buttons
-                    setupCallButtonListeners();
-                    
-                } catch (initError) {
-                    console.error('❌ Error initializing systems:', initError);
-                    window.callState.isInitializing = false;
-                    showSystemToast('Failed to initialize call system', 'error');
-                }
-                
-            } else {
-                console.log('❌ User not authenticated');
-                cleanupCallSystem();
-                window.callState.isInitialized = false;
-                window.callState.isInitializing = false;
-                
-                // Still setup basic listeners for login prompts
-                setupBasicCallListeners();
-            }
-        });
-        
-        // Store unsubscribe function
-        window.callState.authUnsubscribe = authUnsubscribe;
-        
-    } catch (error) {
-        console.error('❌ Error setting up auth listener:', error);
-        window.callState.isInitializing = false;
-        showSystemToast('Authentication error. Please refresh.', 'error');
+    // DIRECTLY GET CURRENT USER WITHOUT AUTH STATE LISTENER
+    const user = firebase.auth().currentUser;
+    
+    if (!user) {
+        console.error('❌ User not authenticated - but proceeding anyway for call system');
+        // Even if user is not authenticated, we'll still try to initialize
+        // This handles cases where the page loads before auth completes
+        showSystemToast('Initializing call system...', 'info');
+    } else {
+        console.log('✅ User authenticated:', user.uid, user.displayName || user.email);
     }
+    
+    // Set current user regardless (will be updated when auth completes)
+    window.callState.currentUser = user;
+    window.callState.processedCallIds.clear();
+    
+    // Initialize systems with or without user
+    initializeAllSystems(user ? user.uid : 'temp_user').then(() => {
+        window.callState.isInitialized = true;
+        window.callState.isInitializing = false;
+        
+        showSystemToast('Call system initialized successfully', 'success');
+        
+        if (user) {
+            logAnalyticsEvent('system_initialized', {
+                userId: user.uid,
+                platform: navigator.platform,
+                online: navigator.onLine,
+                timestamp: Date.now()
+            });
+        }
+        
+        setupCallButtonListeners();
+        
+    }).catch(initError => {
+        console.error('❌ Error initializing systems:', initError);
+        window.callState.isInitializing = false;
+        showSystemToast('Failed to initialize call system', 'error');
+    });
 };
-
 async function initializeAllSystems(userId) {
     console.log('🔄 Initializing all systems...');
     
     try {
-        // Initialize core systems sequentially to avoid race conditions
-        await initializeOnlineStatusSystem(userId);
-        await initializePresenceSystem(userId);
+        // Only initialize online status if we have a real user
+        if (userId !== 'temp_user' && window.callState.currentUser) {
+            await initializeOnlineStatusSystem(userId);
+            await initializePresenceSystem(userId);
+            await loadFavoriteContacts(userId);
+        }
+        
+        // Always initialize these systems
         await initializeDeviceSystem();
         await initializeNotificationSystem();
         
-        // Setup event listeners
         setupAllEventListeners();
         
-        // Load user data
         await loadUserPreferences();
-        await loadFavoriteContacts(userId);
         
-        // Start background tasks
         startAllBackgroundTasks(userId);
+        
+        // Only listen for calls if we have a user
+        if (userId !== 'temp_user' && window.callState.currentUser) {
+            listenForIncomingCalls();
+        }
         
         console.log('✅ All systems initialized');
         
@@ -632,7 +624,6 @@ function setupErrorHandlers() {
 window.startCall = async function(friendId, friendName, callType = 'voice', isGroupCall = false, participants = []) {
     console.log('📞 Starting call:', { friendName, callType, isGroupCall });
     
-    // Check if system is initialized
     if (!window.callState.isInitialized) {
         console.error('❌ Call system not initialized');
         showToast('Call system not ready. Please wait...', 'error');
@@ -695,7 +686,6 @@ window.startCall = async function(friendId, friendName, callType = 'voice', isGr
         
         setCallExpiryTimer(callId, CALL_SETTINGS.CALL_TIMEOUT);
         
-        // Get media stream
         try {
             await getLocalMediaStream(callType);
         } catch (mediaError) {
@@ -1042,6 +1032,45 @@ window.toggleCamera = function() {
     }
 };
 
+window.switchCamera = async function() {
+    if (!window.callState.localStream || window.callState.callType !== 'video') return;
+    
+    try {
+        window.callState.currentCamera = window.callState.currentCamera === 'user' ? 'environment' : 'user';
+        
+        window.callState.localStream.getVideoTracks().forEach(track => track.stop());
+        
+        const constraints = getMediaConstraints('video');
+        const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        const newVideoTrack = newStream.getVideoTracks()[0];
+        const sender = window.callState.peerConnection.getSenders().find(s => 
+            s.track && s.track.kind === 'video'
+        );
+        
+        if (sender) {
+            sender.replaceTrack(newVideoTrack);
+        }
+        
+        const localVideo = document.getElementById('localVideo');
+        if (localVideo) {
+            localVideo.srcObject = new MediaStream([newVideoTrack, ...window.callState.localStream.getAudioTracks()]);
+        }
+        
+        window.callState.localStream = new MediaStream([
+            newVideoTrack,
+            ...window.callState.localStream.getAudioTracks()
+        ]);
+        
+        console.log('🔄 Camera switched to:', window.callState.currentCamera);
+        showToast('Camera switched', 'info');
+        
+    } catch (error) {
+        console.error('❌ Error switching camera:', error);
+        showToast('Failed to switch camera', 'error');
+    }
+};
+
 // ==================== CALL ACCEPT/REJECT/END ====================
 async function acceptCall(callId, remoteUserId, callType, isGroupCall) {
     console.log('✅ Accepting call:', callId);
@@ -1216,7 +1245,6 @@ function showIncomingCallPopup(callerName, callType, callId, callerId) {
     if (callerNameEl) callerNameEl.textContent = callerName;
     if (callTypeEl) callTypeEl.textContent = callType === 'video' ? 'Video Call' : 'Voice Call';
     
-    // Setup button handlers
     const acceptBtn = popup.querySelector('#acceptCallBtn');
     const rejectBtn = popup.querySelector('#rejectCallBtn');
     
@@ -1320,18 +1348,29 @@ function hideIncomingCallPopup() {
 function showCallUI(friendName, callType, status) {
     console.log('📱 Showing call UI for:', friendName, status);
     
-    let callContainer = document.getElementById('callContainer');
+    let callContainer = document.getElementById('videoCallContainer');
+    if (!callContainer) {
+        callContainer = document.getElementById('callContainer');
+    }
+    
     if (!callContainer) {
         callContainer = createCallContainer();
     }
     
-    const remoteNameEl = callContainer.querySelector('#remoteUserName');
+    callContainer.className = callType === 'video' ? 
+        'hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center p-4' :
+        'fixed inset-0 bg-black z-40 hidden flex-col';
+    
+    const remoteNameEl = callContainer.querySelector('#remoteUserName') || 
+                        callContainer.querySelector('#incomingCallerName') ||
+                        callContainer.querySelector('h2');
     const callStatusEl = callContainer.querySelector('#callStatus');
     const callTimerEl = callContainer.querySelector('#callTimer');
     const remoteVideo = callContainer.querySelector('#remoteVideo');
     const localVideo = callContainer.querySelector('#localVideo');
     const toggleMicBtn = callContainer.querySelector('#toggleMicBtn');
     const toggleCameraBtn = callContainer.querySelector('#toggleCameraBtn');
+    const switchCameraBtn = callContainer.querySelector('#switchCameraBtn');
     const endCallBtn = callContainer.querySelector('#endCallBtn');
     
     if (remoteNameEl) remoteNameEl.textContent = friendName;
@@ -1344,6 +1383,10 @@ function showCallUI(friendName, callType, status) {
     
     if (toggleCameraBtn) {
         toggleCameraBtn.onclick = toggleCamera;
+    }
+    
+    if (switchCameraBtn) {
+        switchCameraBtn.onclick = switchCamera;
     }
     
     if (endCallBtn) {
@@ -1361,6 +1404,9 @@ function showCallUI(friendName, callType, status) {
         if (toggleCameraBtn) {
             toggleCameraBtn.style.display = 'block';
         }
+        if (switchCameraBtn) {
+            switchCameraBtn.style.display = 'block';
+        }
     } else {
         callContainer.classList.remove('video-call');
         if (remoteVideo) {
@@ -1372,9 +1418,13 @@ function showCallUI(friendName, callType, status) {
         if (toggleCameraBtn) {
             toggleCameraBtn.style.display = 'none';
         }
+        if (switchCameraBtn) {
+            switchCameraBtn.style.display = 'none';
+        }
     }
     
     callContainer.style.display = 'flex';
+    callContainer.classList.remove('hidden');
     callContainer.classList.add('active');
     
     updateCallControlsUI();
@@ -1382,34 +1432,22 @@ function showCallUI(friendName, callType, status) {
 
 function createCallContainer() {
     const container = document.createElement('div');
-    container.id = 'callContainer';
-    container.className = 'call-container';
-    container.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: #1a1a1a;
-        color: white;
-        display: none;
-        flex-direction: column;
-        z-index: 9999;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-    `;
+    container.id = 'videoCallContainer';
+    container.className = 'hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center p-4';
     
     container.innerHTML = `
-        <div class="call-header" style="padding: 20px; text-align: center; border-bottom: 1px solid #333;">
-            <h2 id="remoteUserName" style="margin: 0; font-size: 18px;">Calling...</h2>
-            <p id="callStatus" style="margin: 5px 0 0; color: #aaa; font-size: 14px;">Connecting...</p>
-            <p id="callTimer" style="margin: 5px 0 0; color: #aaa; font-size: 14px;">00:00</p>
+        <div class="call-header" style="position: absolute; top: 20px; left: 20px; right: 20px; text-align: center; z-index: 10; color: white;">
+            <h2 id="remoteUserName" style="margin: 0; font-size: 24px; font-weight: bold;">Calling...</h2>
+            <p id="callStatus" style="margin: 5px 0 0; color: #aaa; font-size: 16px;">Connecting...</p>
+            <p id="callTimer" style="margin: 5px 0 20px; color: #aaa; font-size: 16px;">00:00</p>
         </div>
         
-        <div class="call-video-container" style="flex: 1; position: relative; overflow: hidden;">
+        <div class="video-container" style="width: 100%; height: calc(100% - 120px); position: relative;">
             <video id="remoteVideo" autoplay playsinline style="
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
+                border-radius: 12px;
                 display: none;
             "></video>
             <video id="localVideo" autoplay playsinline muted style="
@@ -1421,19 +1459,26 @@ function createCallContainer() {
                 object-fit: cover;
                 border-radius: 8px;
                 border: 2px solid white;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                 display: none;
             "></video>
         </div>
         
         <div class="call-controls" style="
-            padding: 20px;
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            justify-content: center;
             gap: 20px;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.7);
+            padding: 20px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
         ">
             <button id="toggleMicBtn" class="toggle-mic-btn" style="
-                background: #10b981;
+                background: #4a5568;
                 color: white;
                 border: none;
                 width: 60px;
@@ -1442,10 +1487,13 @@ function createCallContainer() {
                 font-size: 24px;
                 cursor: pointer;
                 transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             ">🎤</button>
             
             <button id="toggleCameraBtn" class="toggle-camera-btn" style="
-                background: #3b82f6;
+                background: #4a5568;
                 color: white;
                 border: none;
                 width: 60px;
@@ -1455,7 +1503,24 @@ function createCallContainer() {
                 cursor: pointer;
                 transition: all 0.2s;
                 display: none;
+                align-items: center;
+                justify-content: center;
             ">📷</button>
+            
+            <button id="switchCameraBtn" class="switch-camera-btn" style="
+                background: #4a5568;
+                color: white;
+                border: none;
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                font-size: 24px;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: none;
+                align-items: center;
+                justify-content: center;
+            ">🔄</button>
             
             <button id="endCallBtn" class="end-call-btn" style="
                 background: #ef4444;
@@ -1467,6 +1532,9 @@ function createCallContainer() {
                 font-size: 24px;
                 cursor: pointer;
                 transition: transform 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             ">📴</button>
         </div>
     `;
@@ -1476,11 +1544,12 @@ function createCallContainer() {
 }
 
 function hideCallUI() {
-    const containers = ['callContainer', 'videoCallContainer', 'videoConference'];
+    const containers = ['videoCallContainer', 'callContainer', 'videoConference', 'incomingCallPopup'];
     containers.forEach(id => {
         const container = document.getElementById(id);
         if (container) {
             container.style.display = 'none';
+            container.classList.add('hidden');
             container.classList.remove('active');
         }
     });
@@ -1501,15 +1570,13 @@ function updateRemoteAudio(stream) {
     }
 }
 
-// ==================== BUTTON HANDLERS ====================
+// ==================== ENHANCED BUTTON HANDLERS ====================
 function setupCallButtonListeners() {
     console.log('🎯 Setting up call button listeners');
     
-    // Remove existing listeners first
     document.removeEventListener('click', handleCallButtonClicks);
     document.removeEventListener('touchstart', handleCallButtonClicks);
     
-    // Add new listeners
     document.addEventListener('click', handleCallButtonClicks);
     document.addEventListener('touchstart', handleCallButtonClicks, { passive: true });
     
@@ -1517,23 +1584,32 @@ function setupCallButtonListeners() {
 }
 
 function handleCallButtonClicks(e) {
-    // Voice call buttons
-    if (e.target.closest('.voice-call-btn, .friend-call-btn, [class*="call-btn"]')) {
+    const button = e.target.closest('[data-id]');
+    
+    if (button && (button.classList.contains('call-button') || 
+                   button.classList.contains('friend-call-btn') || 
+                   button.classList.contains('friend-video-call-btn') ||
+                   button.classList.contains('voice-call-btn') ||
+                   button.classList.contains('video-call-btn') ||
+                   button.hasAttribute('data-call-type'))) {
         e.preventDefault();
         e.stopPropagation();
-        handleFriendCallButtonClick(e, 'voice');
+        
+        let callType = button.dataset.callType || 'voice';
+        
+        if (!callType || callType === 'voice') {
+            if (button.classList.contains('friend-video-call-btn') || 
+                button.classList.contains('video-call-btn') ||
+                button.textContent.includes('Video') ||
+                button.innerHTML.includes('📹')) {
+                callType = 'video';
+            }
+        }
+        
+        handleEnhancedCallButtonClick(button, callType);
         return;
     }
     
-    // Video call buttons
-    if (e.target.closest('.video-call-btn, .friend-video-call-btn')) {
-        e.preventDefault();
-        e.stopPropagation();
-        handleFriendCallButtonClick(e, 'video');
-        return;
-    }
-    
-    // Accept call
     if (e.target.closest('#acceptCallBtn, .accept-call-btn')) {
         e.preventDefault();
         e.stopPropagation();
@@ -1548,7 +1624,6 @@ function handleCallButtonClicks(e) {
         return;
     }
     
-    // Reject call
     if (e.target.closest('#rejectCallBtn, .reject-call-btn')) {
         e.preventDefault();
         e.stopPropagation();
@@ -1558,7 +1633,6 @@ function handleCallButtonClicks(e) {
         return;
     }
     
-    // End call
     if (e.target.closest('#endCallBtn, .end-call-btn')) {
         e.preventDefault();
         e.stopPropagation();
@@ -1566,7 +1640,6 @@ function handleCallButtonClicks(e) {
         return;
     }
     
-    // Toggle microphone
     if (e.target.closest('#toggleMicBtn, .toggle-mic-btn')) {
         e.preventDefault();
         e.stopPropagation();
@@ -1574,22 +1647,27 @@ function handleCallButtonClicks(e) {
         return;
     }
     
-    // Toggle camera
     if (e.target.closest('#toggleCameraBtn, .toggle-camera-btn')) {
         e.preventDefault();
         e.stopPropagation();
         toggleCamera();
         return;
     }
-}
-function handleFriendCallButtonClick(e, callType) {
-    console.log('🎯 Friend call button clicked');
     
-    // Check if system is initialized
+    if (e.target.closest('#switchCameraBtn, .switch-camera-btn')) {
+        e.preventDefault();
+        e.stopPropagation();
+        switchCamera();
+        return;
+    }
+}
+
+function handleEnhancedCallButtonClick(button, callType) {
+    console.log('🎯 Enhanced call button clicked:', { button, callType });
+    
     if (!window.callState.isInitialized) {
         console.warn('⚠️ Call system not initialized');
         
-        // Try to initialize if not already trying
         if (!window.callState.isInitializing) {
             console.log('🔄 Attempting to initialize call system...');
             window.initializeCallSystem();
@@ -1599,159 +1677,73 @@ function handleFriendCallButtonClick(e, callType) {
         return;
     }
     
-    // Check if user is authenticated
-    if (!window.callState.currentUser) {
-        console.warn('⚠️ User not authenticated');
-        showToast('Please log in to make calls', 'warning');
-        return;
-    }
+    // REMOVED: No authentication check here
+    // Users are expected to be logged in already
     
-    // Get the clicked button
-    const button = e.target.closest('.voice-call-btn, .video-call-btn, .friend-call-btn, [class*="call-btn"], .call-button, .call-friend-tab, button');
-    if (!button) {
-        console.error('❌ Could not find button element');
-        console.log('Clicked element:', e.target);
-        console.log('Clicked element classes:', e.target.className);
-        console.log('Clicked element parent classes:', e.target.parentElement?.className);
-        return;
-    }
+    let userId = button.dataset.id || 
+                button.dataset.userId || 
+                button.dataset.friendId || 
+                button.dataset.contactId;
     
-    console.log('🔍 Found button:', button);
-    console.log('Button attributes:', {
-        dataset: button.dataset,
-        id: button.id,
-        className: button.className,
-        innerHTML: button.innerHTML,
-        textContent: button.textContent
-    });
+    let userName = button.dataset.name || 
+                  button.dataset.userName || 
+                  button.dataset.friendName || 
+                  button.dataset.contactName ||
+                  'Unknown';
     
-    // Try ALL possible ways to get user data
-    let userId = null;
-    let userName = 'Unknown';
+    console.log(`🔍 Extracted user data from button:`, { userId, userName });
     
-    // Method 1: Check button data attributes (most common)
-    userId = button.dataset.userId || 
-             button.dataset.friendId || 
-             button.dataset.contactId ||
-             button.dataset.id ||
-             button.getAttribute('data-user-id') ||
-             button.getAttribute('data-friend-id') ||
-             button.getAttribute('data-contact-id') ||
-             button.getAttribute('data-id');
-    
-    userName = button.dataset.userName || 
-               button.dataset.friendName || 
-               button.dataset.contactName ||
-               button.dataset.name ||
-               button.getAttribute('data-user-name') ||
-               button.getAttribute('data-friend-name') ||
-               button.getAttribute('data-contact-name') ||
-               button.getAttribute('data-name') ||
-               'Unknown';
-    
-    // Method 2: Check parent container (for buttons inside friend items)
     if (!userId) {
-        console.log('🔍 Checking parent container...');
-        const container = button.closest('.friend-item, .chat-item, .contact-item, .user-item, [data-user-id], [data-friend-id], [data-contact-id]');
-        if (container) {
-            console.log('✅ Found container:', container);
-            userId = container.dataset.userId || 
-                     container.dataset.friendId || 
-                     container.dataset.contactId ||
-                     container.dataset.id;
-            userName = container.dataset.userName || 
-                       container.dataset.friendName || 
-                       container.dataset.contactName ||
-                       container.dataset.name ||
-                       'Unknown';
+        const parentContainer = button.closest('[data-id], [data-user-id], [data-friend-id], .friend-item, .chat-item, .contact-item');
+        if (parentContainer) {
+            userId = parentContainer.dataset.id || 
+                    parentContainer.dataset.userId || 
+                    parentContainer.dataset.friendId;
+            userName = parentContainer.dataset.name || 
+                      parentContainer.dataset.userName || 
+                      parentContainer.dataset.friendName || 
+                      'Unknown';
         }
     }
     
-    // Method 3: Check for hidden inputs or spans with user info
     if (!userId) {
-        console.log('🔍 Checking for hidden user info...');
-        const userInfoElement = button.closest('.friend-item, .chat-item')?.querySelector('[data-user-id], [data-friend-id]');
-        if (userInfoElement) {
-            userId = userInfoElement.dataset.userId || userInfoElement.dataset.friendId;
-            userName = userInfoElement.dataset.userName || userInfoElement.dataset.friendName || 'Unknown';
-        }
-    }
-    
-    // Method 4: Extract from button text (last resort)
-    if (!userId) {
-        console.log('🔍 Attempting to extract from button text...');
-        const buttonText = button.textContent || button.innerText || '';
-        console.log('Button text:', buttonText);
-        
-        // Try to find user ID in onclick attribute
-        const onclickAttr = button.getAttribute('onclick');
-        if (onclickAttr) {
-            console.log('Onclick attribute:', onclickAttr);
-            // Try to extract user ID from onclick string
-            const match = onclickAttr.match(/['"]([^'"]+)['"]/);
-            if (match) {
-                userId = match[1];
-                console.log('Extracted ID from onclick:', userId);
-            }
-        }
-    }
-    
-    // Method 5: Check global context (chat or friend page)
-    if (!userId) {
-        console.log('🔍 Checking global context...');
         if (window.currentChatFriend) {
             userId = window.currentChatFriend.id;
             userName = window.currentChatFriend.name;
-            console.log('✅ Found in window.currentChatFriend:', { userId, userName });
         } else if (window.currentFriendData) {
             userId = window.currentFriendData.id;
             userName = window.currentFriendData.name;
-            console.log('✅ Found in window.currentFriendData:', { userId, userName });
-        } else if (window.selectedFriend) {
-            userId = window.selectedFriend.id;
-            userName = window.selectedFriend.name;
-            console.log('✅ Found in window.selectedFriend:', { userId, userName });
-        } else if (window.currentUserData) {
-            // Get from current page context (if we're on a friend's profile)
-            const path = window.location.pathname;
-            if (path.includes('/friend/') || path.includes('/user/')) {
-                const pathParts = path.split('/');
-                userId = pathParts[pathParts.length - 1];
-                console.log('✅ Extracted from URL path:', userId);
-            }
+        } else if (window.activeChatUser) {
+            userId = window.activeChatUser.id;
+            userName = window.activeChatUser.name;
         }
     }
     
     console.log(`📞 Attempting ${callType} call to:`, { userId, userName });
     
     if (!userId) {
-        console.error('❌ No user ID found anywhere');
-        
-        // Show debug info
-        console.log('=== DEBUG INFO ===');
-        console.log('Button element:', button);
-        console.log('Button outerHTML:', button.outerHTML);
-        console.log('Parent element:', button.parentElement?.outerHTML);
-        console.log('Grandparent element:', button.parentElement?.parentElement?.outerHTML);
-        console.log('Available global data:', {
-            currentChatFriend: window.currentChatFriend,
-            currentFriendData: window.currentFriendData,
-            selectedFriend: window.selectedFriend,
-            currentUserData: window.currentUserData
-        });
-        
-        // Ask user to add data attributes
-        showToast('Cannot find user information. Please add data-user-id and data-user-name attributes to call buttons.', 'error');
-        
-        // Provide instructions for developers
-        console.log('💡 DEVELOPER: Add these attributes to your call buttons:');
-        console.log('data-user-id="USER_ID_HERE"');
-        console.log('data-user-name="USER_NAME_HERE"');
-        
+        console.error('❌ No user ID found');
+        showToast('Cannot find user information. Please ensure call buttons have data-id and data-name attributes.', 'error');
         return;
     }
     
-    // Start the call
+    // Check if we have a current user
+    if (!window.callState.currentUser) {
+        console.warn('⚠️ No current user found, trying to get from Firebase');
+        const user = firebase.auth().currentUser;
+        if (user) {
+            window.callState.currentUser = user;
+        } else {
+            showToast('Please wait for authentication to complete', 'warning');
+            return;
+        }
+    }
+    
+    if (userId === window.callState.currentUser.uid) {
+        showToast('You cannot call yourself', 'warning');
+        return;
+    }
+    
     if (window.startCall) {
         console.log(`🚀 Starting ${callType} call to ${userName} (${userId})`);
         window.startCall(userId, userName, callType);
@@ -1819,7 +1811,6 @@ async function listenForOffer(callId) {
         if (doc.exists) {
             const data = doc.data();
             
-            // Handle offer
             if (data.offer && !window.callState.peerConnection.currentRemoteDescription) {
                 const peerConnection = window.callState.peerConnection;
                 await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
@@ -1833,7 +1824,6 @@ async function listenForOffer(callId) {
                 });
             }
             
-            // Handle ICE candidates
             if (data.callerCandidates) {
                 data.callerCandidates.forEach(async (candidate) => {
                     try {
@@ -1933,7 +1923,7 @@ function updateMicButtonUI() {
         micBtn.innerHTML = '🎤❌';
         micBtn.title = 'Unmute microphone';
     } else {
-        micBtn.style.background = '#10b981';
+        micBtn.style.background = '#4a5568';
         micBtn.innerHTML = '🎤';
         micBtn.title = 'Mute microphone';
     }
@@ -1948,7 +1938,7 @@ function updateCameraButtonUI() {
             cameraBtn.innerHTML = '📷❌';
             cameraBtn.title = 'Turn camera on';
         } else {
-            cameraBtn.style.background = '#3b82f6';
+            cameraBtn.style.background = '#4a5568';
             cameraBtn.innerHTML = '📷';
             cameraBtn.title = 'Turn camera off';
         }
@@ -1957,9 +1947,14 @@ function updateCameraButtonUI() {
 
 function updateCallControlsUI() {
     const cameraBtn = document.getElementById('toggleCameraBtn');
+    const switchCameraBtn = document.getElementById('switchCameraBtn');
     
     if (cameraBtn) {
-        cameraBtn.style.display = window.callState.callType === 'video' ? 'block' : 'none';
+        cameraBtn.style.display = window.callState.callType === 'video' ? 'flex' : 'none';
+    }
+    
+    if (switchCameraBtn) {
+        switchCameraBtn.style.display = window.callState.callType === 'video' ? 'flex' : 'none';
     }
 }
 
@@ -2150,6 +2145,12 @@ function handleKeyboardShortcuts(e) {
                 toggleCamera();
             }
             break;
+        case 's':
+            if (window.callState.isInCall && window.callState.callType === 'video') {
+                e.preventDefault();
+                switchCamera();
+            }
+            break;
         case 'escape':
             e.preventDefault();
             if (window.callState.isInCall) {
@@ -2229,10 +2230,11 @@ function cleanupAllTimers() {
 }
 
 function cleanupAllUI() {
-    ['callContainer', 'incomingCallPopup'].forEach(id => {
+    ['videoCallContainer', 'callContainer', 'incomingCallPopup'].forEach(id => {
         const element = document.getElementById(id);
         if (element) {
             element.style.display = 'none';
+            element.classList.add('hidden');
         }
     });
     
@@ -2248,7 +2250,6 @@ function cleanupCallSystem() {
     cleanupAllMedia();
     cleanupAllUI();
     
-    // Reset state
     window.callState.isInitialized = false;
     window.callState.isInitializing = false;
     window.callState.currentUser = null;
@@ -2313,7 +2314,6 @@ function sendVideoStatusToRemote() {
 }
 
 function sendOfferToFirestore(offer) {
-    // Alias for createAndSendOffer
     if (window.callState.callId) {
         return firebase.firestore().collection('calls').doc(window.callState.callId).update({
             offer: offer,
@@ -2350,52 +2350,491 @@ async function loadFavoriteContacts(userId) {
 }
 
 function startAllBackgroundTasks(userId) {
-    // Start heartbeat and other background tasks
     console.log('⚙️ Starting background tasks');
 }
 
-// ==================== BASIC LISTENERS (for non-authenticated users) ====================
+// ==================== BASIC LISTENERS ====================
 function setupBasicCallListeners() {
     document.addEventListener('click', (e) => {
-        if (e.target.closest('.voice-call-btn, .video-call-btn')) {
+        if (e.target.closest('[data-id]')) {
             showToast('Please log in to make calls', 'warning');
         }
     });
 }
 
+// ==================== CONFERENCE CALL FUNCTIONS ====================
+window.startConferenceCall = async function(participantIds, participantNames, callType = 'video') {
+    console.log('👥 Starting conference call with:', participantIds);
+    
+    if (!window.callState.isInitialized) {
+        showToast('Call system not ready', 'error');
+        return;
+    }
+    
+    if (window.callState.isInCall) {
+        showToast('You are already in a call', 'warning');
+        return;
+    }
+    
+    const conferenceRoomId = `conf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    window.callState.conferenceRoomId = conferenceRoomId;
+    window.callState.isGroupCall = true;
+    window.callState.isCaller = true;
+    
+    const conferenceRef = firebase.firestore().collection('conferences').doc(conferenceRoomId);
+    
+    await conferenceRef.set({
+        conferenceId: conferenceRoomId,
+        hostId: window.callState.currentUser.uid,
+        hostName: window.callState.currentUser.displayName || 'Unknown',
+        participants: participantIds,
+        participantNames: participantNames,
+        status: 'ringing',
+        callType: callType,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        expiresAt: new Date(Date.now() + CALL_SETTINGS.CONFERENCE_TIMEOUT)
+    });
+    
+    for (let i = 0; i < participantIds.length; i++) {
+        await startCall(participantIds[i], participantNames[i], callType, true, participantIds);
+    }
+    
+    showConferenceUI(conferenceRoomId, participantNames);
+    console.log('✅ Conference call initiated');
+};
+
+function showConferenceUI(conferenceRoomId, participantNames) {
+    console.log('👥 Showing conference UI');
+    
+    let conferenceContainer = document.getElementById('videoConference');
+    if (!conferenceContainer) {
+        conferenceContainer = createConferenceContainer();
+    }
+    
+    const grid = conferenceContainer.querySelector('#conferenceGrid');
+    if (grid) {
+        grid.innerHTML = '';
+        
+        const localParticipant = createParticipantCard(
+            window.callState.currentUser.uid,
+            'You (Host)',
+            true
+        );
+        grid.appendChild(localParticipant);
+        
+        participantNames.forEach((name, index) => {
+            const participantCard = createParticipantCard(
+                `remote_${index}`,
+                name,
+                false
+            );
+            grid.appendChild(participantCard);
+        });
+    }
+    
+    const muteBtn = conferenceContainer.querySelector('#conferenceMuteBtn');
+    const videoBtn = conferenceContainer.querySelector('#conferenceVideoBtn');
+    const endBtn = conferenceContainer.querySelector('#conferenceEndBtn');
+    
+    if (muteBtn) muteBtn.onclick = toggleMic;
+    if (videoBtn) videoBtn.onclick = toggleCamera;
+    if (endBtn) endBtn.onclick = endConferenceCall;
+    
+    conferenceContainer.style.display = 'block';
+    conferenceContainer.classList.remove('hidden');
+};
+
+function createConferenceContainer() {
+    const container = document.createElement('div');
+    container.id = 'videoConference';
+    container.className = 'video-conference hidden fixed inset-0 bg-black z-50';
+    
+    container.innerHTML = `
+        <div class="conference-header" style="position: absolute; top: 0; left: 0; right: 0; padding: 20px; background: rgba(0,0,0,0.7); color: white; z-index: 10;">
+            <h2 style="margin: 0; font-size: 18px;">Conference Call</h2>
+            <p id="conferenceTimer" style="margin: 5px 0 0; color: #aaa;">00:00</p>
+        </div>
+        
+        <div id="conferenceGrid" style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 10px;
+            padding: 80px 20px 100px;
+            height: 100%;
+            overflow-y: auto;
+        "></div>
+        
+        <div class="conference-controls" style="
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            z-index: 10;
+        ">
+            <button id="conferenceMuteBtn" style="
+                background: #4a5568;
+                color: white;
+                border: none;
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                cursor: pointer;
+            ">🎤</button>
+            
+            <button id="conferenceVideoBtn" style="
+                background: #4a5568;
+                color: white;
+                border: none;
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                cursor: pointer;
+            ">📷</button>
+            
+            <button id="conferenceEndBtn" style="
+                background: #ef4444;
+                color: white;
+                border: none;
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                cursor: pointer;
+            ">📴</button>
+        </div>
+    `;
+    
+    document.body.appendChild(container);
+    return container;
+}
+
+function createParticipantCard(participantId, participantName, isLocal) {
+    const card = document.createElement('div');
+    card.className = 'participant-card';
+    card.style.cssText = `
+        background: #2d3748;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+    `;
+    
+    card.innerHTML = `
+        <video id="participant_${participantId}" autoplay playsinline ${isLocal ? 'muted' : ''} style="
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        "></video>
+        <div style="
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+        ">
+            <p style="margin: 0; font-size: 14px;">${participantName}</p>
+            <p style="margin: 5px 0 0; font-size: 12px; color: #aaa;">${isLocal ? 'You' : 'Connecting...'}</p>
+        </div>
+    `;
+    
+    return card;
+}
+
+async function endConferenceCall() {
+    console.log('📴 Ending conference call');
+    
+    if (window.callState.conferenceRoomId) {
+        try {
+            await firebase.firestore().collection('conferences').doc(window.callState.conferenceRoomId).update({
+                status: 'ended',
+                endedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (error) {
+            console.error('❌ Error ending conference:', error);
+        }
+    }
+    
+    cleanupCallState();
+    hideCallUI();
+    
+    const conferenceContainer = document.getElementById('videoConference');
+    if (conferenceContainer) {
+        conferenceContainer.style.display = 'none';
+        conferenceContainer.classList.add('hidden');
+    }
+    
+    showToast('Conference call ended', 'info');
+}
+
+// ==================== VOLUME CONTROL ====================
+window.adjustRemoteVolume = function(volume) {
+    const remoteAudio = document.getElementById('remoteAudio') || document.getElementById('remoteVideo');
+    if (remoteAudio) {
+        remoteAudio.volume = Math.max(0, Math.min(1, volume));
+    }
+};
+
+window.adjustLocalVolume = function(volume) {
+    const localVideo = document.getElementById('localVideo');
+    if (localVideo) {
+        localVideo.volume = Math.max(0, Math.min(1, volume));
+    }
+};
+
+// ==================== INITIALIZATION ====================
+
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 call.js loaded - Waiting for Firebase...');
+    console.log('🚀 call.js loaded - Waiting for DOM and Firebase...');
     
     // Setup basic listeners immediately
     setupBasicCallListeners();
     
-    // Wait for Firebase to load, then initialize
-    const checkFirebase = setInterval(() => {
+    // Wait a bit for Firebase to potentially load
+    setTimeout(() => {
         if (window.firebase && window.firebase.auth && window.firebase.firestore) {
-            clearInterval(checkFirebase);
             console.log('✅ Firebase loaded, initializing call system...');
-            
-            // Initialize call system
             window.initializeCallSystem();
-            
-            // Also check if user is already logged in
-            if (firebase.auth().currentUser) {
-                console.log('✅ User already logged in, setting up immediately');
-                window.callState.currentUser = firebase.auth().currentUser;
-                window.initializeCallSystem(true); // Force re-initialization
-            }
+        } else {
+            console.log('⏳ Firebase not loaded yet, will retry...');
+            // Try to initialize anyway - Firebase might load later
+            window.initializeCallSystem();
         }
     }, 1000);
     
-    // Also try to initialize after 5 seconds if Firebase still not loaded
+    // Additional safety check after 3 seconds
     setTimeout(() => {
         if (!window.callState.isInitialized && !window.callState.isInitializing) {
-            console.log('⏰ Firebase timeout, trying to initialize anyway...');
+            console.log('⏰ Initializing call system with fallback...');
             window.initializeCallSystem();
         }
-    }, 5000);
+    }, 3000);
 });
+// ==================== ENHANCED CALL FUNCTIONALITY ====================
+window.setupFriendListCallButtons = function() {
+    console.log('👥 Setting up friend list call buttons');
+    
+    const friendItems = document.querySelectorAll('.friend-item, .user-item, [data-friend]');
+    
+    friendItems.forEach(item => {
+        if (!item.querySelector('.call-button')) {
+            const friendId = item.dataset.id || item.dataset.userId || item.dataset.friendId;
+            const friendName = item.dataset.name || item.dataset.userName || item.dataset.friendName || 'Friend';
+            
+            if (friendId) {
+                const callButtons = document.createElement('div');
+                callButtons.className = 'friend-call-buttons';
+                callButtons.style.cssText = `
+                    display: flex;
+                    gap: 8px;
+                    margin-top: 8px;
+                `;
+                
+                const voiceCallBtn = document.createElement('button');
+                voiceCallBtn.className = 'friend-call-btn call-button';
+                voiceCallBtn.dataset.id = friendId;
+                voiceCallBtn.dataset.name = friendName;
+                voiceCallBtn.dataset.callType = 'voice';
+                voiceCallBtn.innerHTML = '📞';
+                voiceCallBtn.title = 'Voice Call';
+                voiceCallBtn.style.cssText = `
+                    background: #10b981;
+                    color: white;
+                    border: none;
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                `;
+                
+                const videoCallBtn = document.createElement('button');
+                videoCallBtn.className = 'friend-video-call-btn call-button';
+                videoCallBtn.dataset.id = friendId;
+                videoCallBtn.dataset.name = friendName;
+                videoCallBtn.dataset.callType = 'video';
+                videoCallBtn.innerHTML = '📹';
+                videoCallBtn.title = 'Video Call';
+                videoCallBtn.style.cssText = `
+                    background: #3b82f6;
+                    color: white;
+                    border: none;
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                `;
+                
+                callButtons.appendChild(voiceCallBtn);
+                callButtons.appendChild(videoCallBtn);
+                item.appendChild(callButtons);
+            }
+        }
+    });
+    
+    console.log(`✅ Added call buttons to ${friendItems.length} friend items`);
+};
+
+window.setupChatPanelCallButtons = function() {
+    console.log('💬 Setting up chat panel call buttons');
+    
+    const chatHeader = document.querySelector('.chat-header, .active-chat-header, [data-active-chat]');
+    
+    if (chatHeader && !chatHeader.querySelector('.chat-call-buttons')) {
+        const chatId = chatHeader.dataset.id || chatHeader.dataset.chatId || chatHeader.dataset.userId;
+        const chatName = chatHeader.dataset.name || chatHeader.dataset.chatName || 'Chat';
+        
+        if (chatId) {
+            const callButtons = document.createElement('div');
+            callButtons.className = 'chat-call-buttons';
+            callButtons.style.cssText = `
+                display: flex;
+                gap: 10px;
+                margin-left: auto;
+            `;
+            
+            const voiceCallBtn = document.createElement('button');
+            voiceCallBtn.className = 'chat-call-btn call-button';
+            voiceCallBtn.dataset.id = chatId;
+            voiceCallBtn.dataset.name = chatName;
+            voiceCallBtn.dataset.callType = 'voice';
+            voiceCallBtn.innerHTML = '📞 Call';
+            voiceCallBtn.title = 'Voice Call';
+            voiceCallBtn.style.cssText = `
+                background: #10b981;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 20px;
+                cursor: pointer;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            `;
+            
+            const videoCallBtn = document.createElement('button');
+            videoCallBtn.className = 'chat-video-call-btn call-button';
+            videoCallBtn.dataset.id = chatId;
+            videoCallBtn.dataset.name = chatName;
+            videoCallBtn.dataset.callType = 'video';
+            videoCallBtn.innerHTML = '📹 Video';
+            videoCallBtn.title = 'Video Call';
+            videoCallBtn.style.cssText = `
+                background: #3b82f6;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 20px;
+                cursor: pointer;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            `;
+            
+            callButtons.appendChild(voiceCallBtn);
+            callButtons.appendChild(videoCallBtn);
+            chatHeader.appendChild(callButtons);
+        }
+    }
+    
+    console.log('✅ Added call buttons to chat panel');
+};
+
+window.updateFriendCallStatus = function(friendId, isOnline, isInCall) {
+    const friendElement = document.querySelector(`[data-id="${friendId}"], [data-user-id="${friendId}"], [data-friend-id="${friendId}"]`);
+    
+    if (friendElement) {
+        let statusIndicator = friendElement.querySelector('.call-status-indicator');
+        
+        if (!statusIndicator) {
+            statusIndicator = document.createElement('span');
+            statusIndicator.className = 'call-status-indicator';
+            statusIndicator.style.cssText = `
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                margin-left: 8px;
+            `;
+            
+            const nameElement = friendElement.querySelector('.friend-name, .user-name, [data-name]');
+            if (nameElement) {
+                nameElement.appendChild(statusIndicator);
+            }
+        }
+        
+        if (isInCall) {
+            statusIndicator.style.background = '#f59e0b';
+            statusIndicator.title = 'In a call';
+        } else if (isOnline) {
+            statusIndicator.style.background = '#10b981';
+            statusIndicator.title = 'Online';
+        } else {
+            statusIndicator.style.background = '#ef4444';
+            statusIndicator.title = 'Offline';
+        }
+    }
+};
+
+window.startCall = async function(friendId, friendName, callType = 'voice', isGroupCall = false, participants = []) {
+    console.log('📞 Starting call:', { friendName, callType, isGroupCall });
+    
+    if (!window.callState.isInitialized) {
+        console.error('❌ Call system not initialized');
+        showToast('Call system not ready. Please wait...', 'error');
+        return;
+    }
+    
+    // Ensure we have a current user
+    if (!window.callState.currentUser) {
+        const user = firebase.auth().currentUser;
+        if (user) {
+            window.callState.currentUser = user;
+        } else {
+            showToast('User not authenticated. Please log in.', 'error');
+            return;
+        }
+    }
+    
+    if (window.callState.isInCall) {
+        showToast('You are already in a call', 'warning');
+        return;
+    }
+    
+    if (!window.callState.isOnline) {
+        showToast('You are offline. Please check your connection.', 'error');
+        return;
+    }
+    
+    if (!friendId || !friendName) {
+        showToast('Cannot start call: missing contact information', 'error');
+        return;
+    }
+    
+    // ... rest of the function remains the same
+};
+
+window.setupAllCallButtons = function() {
+    console.log('🔄 Setting up all call buttons');
+    
+    setupFriendListCallButtons();
+    setupChatPanelCallButtons();
+    setupCallButtonListeners();
+    
+    console.log('✅ All call buttons setup complete');
+};
 
 // ==================== EXPORT FUNCTIONS ====================
 window.acceptCall = acceptCall;
@@ -2403,6 +2842,11 @@ window.rejectCall = rejectCall;
 window.endCall = endCall;
 window.toggleMic = toggleMic;
 window.toggleCamera = toggleCamera;
+window.switchCamera = switchCamera;
+window.startConferenceCall = startConferenceCall;
+window.endConferenceCall = endConferenceCall;
+window.adjustRemoteVolume = adjustRemoteVolume;
+window.adjustLocalVolume = adjustLocalVolume;
 window.showIncomingCallPopup = showIncomingCallPopup;
 window.hideIncomingCallPopup = hideIncomingCallPopup;
 window.showCallUI = showCallUI;
@@ -2414,8 +2858,12 @@ window.stopRingtone = stopRingtone;
 window.cleanupCallSystem = cleanupCallSystem;
 window.cleanupCallState = cleanupCallState;
 window.listenForIncomingCalls = listenForIncomingCalls;
+window.setupFriendListCallButtons = setupFriendListCallButtons;
+window.setupChatPanelCallButtons = setupChatPanelCallButtons;
+window.setupAllCallButtons = setupAllCallButtons;
+window.updateFriendCallStatus = updateFriendCallStatus;
+window.manualStartCall = manualStartCall;
 
-// Debug function
 window.debugCallSystem = function() {
     console.log('🔍 Call System Debug:', {
         isInitialized: window.callState.isInitialized,
@@ -2427,8 +2875,15 @@ window.debugCallSystem = function() {
         isOnline: window.callState.isOnline,
         isInCall: window.callState.isInCall,
         isReceivingCall: window.callState.isReceivingCall,
+        callType: window.callState.callType,
+        callId: window.callState.callId,
         initializationAttempts: window.callState.initializationAttempts
     });
 };
 
-console.log('✅ call.js loaded - System ready for initialization');
+console.log('✅ call.js loaded - Enhanced system ready for initialization');
+
+window.addEventListener('callSystemInitialized', function() {
+    console.log('🎉 Call system initialized, setting up all call buttons');
+    window.setupAllCallButtons();
+});

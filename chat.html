@@ -3,7 +3,7 @@
 <head>
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#4F46E5">
-    <link rel="icon" href="../icons/icon-192x192.png">
+    <link rel="icon" href="../icons/moodchat-192.png">
     <meta name="theme-color" content="#000000">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -92,6 +92,52 @@
             }
         }
         
+        // Tab switching function
+        function switchTab(tabName) {
+            // Hide all tab panels
+            const tabPanels = document.querySelectorAll('.tab-panel');
+            tabPanels.forEach(panel => {
+                panel.classList.add('hidden');
+                panel.classList.remove('active');
+            });
+            
+            // Show selected tab panel
+            const selectedTab = document.getElementById(tabName + 'Tab');
+            if (selectedTab) {
+                selectedTab.classList.remove('hidden');
+                selectedTab.classList.add('active');
+            }
+            
+            // Update navigation icons active state
+            const navIcons = document.querySelectorAll('.nav-icon');
+            navIcons.forEach(icon => {
+                icon.classList.remove('text-white', 'bg-purple-700');
+                icon.classList.add('text-gray-400', 'hover:text-white', 'hover:bg-gray-800');
+            });
+            
+            // Activate selected navigation icon
+            const activeIcon = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeIcon) {
+                activeIcon.classList.remove('text-gray-400', 'hover:text-white', 'hover:bg-gray-800');
+                activeIcon.classList.add('text-white', 'bg-purple-700');
+            }
+            
+            // Hide chat input area when navigating away from chats
+            if (tabName !== 'chats') {
+                const inputArea = document.getElementById('inputArea');
+                if (inputArea) {
+                    inputArea.classList.add('hidden');
+                }
+            } else {
+                // If switching back to chats, show chat input if there's an active chat
+                const inputArea = document.getElementById('inputArea');
+                const chatHeader = document.getElementById('chatHeader');
+                if (inputArea && chatHeader && !chatHeader.classList.contains('hidden')) {
+                    inputArea.classList.remove('hidden');
+                }
+            }
+        }
+        
         // Initialize mobile navigation
         document.addEventListener('DOMContentLoaded', function() {
             // Check if mobile
@@ -123,6 +169,14 @@
                     }
                 });
             }
+            
+            // Add tab switching functionality
+            document.querySelectorAll('.nav-icon[data-tab]').forEach(icon => {
+                icon.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
         });
     </script>
     
@@ -155,23 +209,23 @@
             
             <!-- Permanent Navigation Icons -->
             <div class="flex-1 flex flex-col items-center space-y-8">
-                <button class="nav-icon text-white text-2xl p-3 rounded-2xl bg-purple-700" data-tab="chats" title="Chats" onclick="showChatList()">
+                <button class="nav-icon text-white text-2xl p-3 rounded-2xl bg-purple-700" data-tab="chats" title="Chats" onclick="showChatList(); switchTab('chats')">
                     <i class="fas fa-comments"></i>
                 </button>
                 
-                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-tab="friends" title="Friends">
+                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-tab="friends" title="Friends" onclick="switchTab('friends')">
                     <i class="fas fa-user-friends"></i>
                 </button>
                 
-                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-tab="updates" title="Updates">
+                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-tab="updates" title="Updates" onclick="switchTab('updates')">
                     <i class="fas fa-bell"></i>
                 </button>
                 
-                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-tab="calls" title="Calls">
+                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-tab="calls" title="Calls" onclick="switchTab('calls')">
                     <i class="fas fa-phone"></i>
                 </button>
                 
-                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-tab="tools" title="Tools">
+                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-tab="tools" title="Tools" onclick="switchTab('tools')">
                     <i class="fas fa-tools"></i>
                 </button>
             </div>
@@ -473,6 +527,8 @@
                         </div>
                     </div>
                     <div class="flex space-x-3 text-white">
+                        <!-- Voice recording icon moved to header -->
+                        <i class="fas fa-microphone text-xl cursor-pointer hover:scale-110 transition-transform" id="voiceToTextBtnHeader" title="Voice to Text"></i>
                         <i class="fas fa-phone text-xl cursor-pointer hover:scale-110 transition-transform friend-call-btn" data-id="" data-name=""></i>
                         <i class="fas fa-video text-xl cursor-pointer hover:scale-110 transition-transform friend-video-call-btn" data-id="" data-name=""></i>
                         <i class="fas fa-ellipsis-v text-xl cursor-pointer hover:scale-110 transition-transform" id="chatMenuBtn"></i>
@@ -614,21 +670,12 @@
                             <button class="w-12 h-12 rounded-2xl flex items-center justify-center text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-all" id="attachBtn">
                                 <i class="fas fa-plus"></i>
                             </button>
-                            <button class="w-12 h-12 rounded-2xl flex items-center justify-center text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-all" id="cameraBtn">
-                                <i class="fas fa-camera"></i>
-                            </button>
-                            <button class="w-12 h-12 rounded-2xl flex items-center justify-center text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-all" id="emojiBtn">
-                                <i class="fas fa-smile"></i>
-                            </button>
-                            <!-- Voice-to-Text Button -->
-                            <button class="w-12 h-12 rounded-2xl flex items-center justify-center text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-all relative" id="voiceToTextBtn">
-                                <i class="fas fa-microphone"></i>
-                                <div id="voiceRecordingIndicator" class="absolute inset-0 rounded-2xl bg-red-500 opacity-0 scale-0 transition-all duration-300"></div>
-                            </button>
+                            <!-- Camera button removed as media is accessible via plus icon -->
+                            <!-- Emoji button removed as they are available on the phone -->
                         </div>
                         <div class="flex-1 relative">
                             <!-- Enlarged Text Input Area -->
-                            <textarea id="messageInput" class="w-full bg-gray-100 py-4 px-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all resize-none" placeholder="Type a message..." rows="3" disabled style="min-height: 80px; max-height: 150px;"></textarea>
+                            <textarea id="messageInput" class="w-full bg-gray-100 py-4 px-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all resize-none" placeholder="Type a message..." rows="3" disabled style="min-height: 80px; max-height: 150px; font-size: 16px; line-height: 1.5;"></textarea>
                             <!-- Emoji Picker -->
                             <div id="emojiPicker" class="emoji-picker hidden absolute bottom-full mb-2 bg-white border border-gray-300 rounded-lg shadow-lg p-2 grid grid-cols-8 gap-1 max-h-48 overflow-y-auto">
                             </div>
@@ -638,7 +685,8 @@
                             </div>
                         </div>
                         <div class="ml-3">
-                            <button id="sendBtn" class="w-12 h-12 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-2xl flex items-center justify-center hover:opacity-90 transition-all shadow-lg" disabled>
+                            <!-- Minimized Send Button -->
+                            <button id="sendBtn" class="w-10 h-10 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-2xl flex items-center justify-center hover:opacity-90 transition-all shadow-lg" disabled>
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </div>

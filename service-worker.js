@@ -1,137 +1,23 @@
-// Service Worker for UniConnect - Firebase Web Application
-// Version: 1.2.1
-// Project: uniconnect-ee95c
+// Service Worker for Kynecta MoodChat - Firebase Web Application
+// Version: 1.2.2
+// Project: kynecta-ee95c
 // Firebase: 9.22.1 (Compact)
 
-const APP_VERSION = '1.2.1';
-const CACHE_NAME = 'kynecta-app-cache-v1';
+const APP_VERSION = '1.2.2';
+const CACHE_NAME = 'kynecta-moodchat-cache-v1';
 const CACHE_NAMES = {
-  static: `kynecta-static-v${APP_VERSION}`,
-  dynamic: `kynecta-dynamic-v${APP_VERSION}`,
-  firebase: `kynecta-firebase-v${APP_VERSION}`,
-  app: 'kynecta-app-cache-v1',
-  moods: `kynecta-moods-v${APP_VERSION}`
+  static: `kynecta-moodchat-static-v${APP_VERSION}`,
+  dynamic: `kynecta-moodchat-dynamic-v${APP_VERSION}`,
+  firebase: `kynecta-moodchat-firebase-v${APP_VERSION}`,
+  app: 'kynecta-moodchat-cache-v1',
+  moods: `kynecta-moodchat-moods-v${APP_VERSION}`
 };
 
-// Core assets to cache immediately
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/login.html',
-  '/register.html',
-  '/forgot-password.html',
-  '/profile.html',
-  '/settings.html',
-  '/notifications.html',
-  '/marketplace.html',
-  '/games.html',
-  '/payment.html',
-  '/chat.html',
-  '/moods.html',  // Added mood/interest page
-  '/interests.html',  // Added interest selection page
-  '/404.html',
-  '/manifest.json',
-  '/firebase-config.js',
-  '/app.js',
-  '/auth.js',
-  '/firestore.js',
-  '/storage.js',
-  '/chat.js',
-  '/main.js',
-  '/moods.js',  // Added moods handler
-  '/styles/main.css',
-  '/styles/chat.css',
-  '/styles/moods.css',  // Added moods styles
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  // Mood/Interest icons
-  '/icons/moods/',
-  '/icons/interests/',
-  '/icons/moods/art.png',
-  '/icons/moods/music.png',
-  '/icons/moods/sports.png',
-  '/icons/moods/tech.png',
-  '/icons/moods/gaming.png',
-  '/icons/moods/travel.png',
-  '/icons/moods/food.png',
-  '/icons/moods/fitness.png',
-  '/icons/moods/education.png',
-  '/icons/moods/business.png'
-];
-
-// Mood/Interest specific assets to cache
-const MOOD_ASSETS = [
-  '/moods.html',
-  '/interests.html',
-  '/moods.js',
-  '/styles/moods.css',
-  // Mood icons
-  '/icons/moods/happy.png',
-  '/icons/moods/neutral.png',
-  '/icons/moods/sad.png',
-  '/icons/moods/excited.png',
-  '/icons/moods/relaxed.png',
-  '/icons/moods/focused.png',
-  '/icons/moods/creative.png',
-  '/icons/moods/social.png',
-  // Interest icons
-  '/icons/interests/art.png',
-  '/icons/interests/music.png',
-  '/icons/interests/sports.png',
-  '/icons/interests/tech.png',
-  '/icons/interests/gaming.png',
-  '/icons/interests/travel.png',
-  '/icons/interests/food.png',
-  '/icons/interests/fitness.png',
-  '/icons/interests/education.png',
-  '/icons/interests/business.png',
-  '/icons/interests/reading.png',
-  '/icons/interests/movies.png',
-  '/icons/interests/photography.png',
-  '/icons/interests/cooking.png',
-  '/icons/interests/dancing.png',
-  '/icons/interests/yoga.png'
-];
-
-// Add all HTML routes to cache
-const ALL_HTML_ROUTES = [
-  '/',
-  '/index.html',
-  '/login.html',
-  '/register.html',
-  '/forgot-password.html',
-  '/profile.html',
-  '/settings.html',
-  '/notifications.html',
-  '/marketplace.html',
-  '/games.html',
-  '/payment.html',
-  '/chat.html',
-  '/moods.html',
-  '/interests.html',
-  '/404.html'
-];
-
-// Add all static assets to cache
-const ALL_STATIC_ASSETS = [
-  '/manifest.json',
-  '/firebase-config.js',
-  '/app.js',
-  '/auth.js',
-  '/firestore.js',
-  '/storage.js',
-  '/chat.js',
-  '/main.js',
-  '/moods.js',
-  '/styles/main.css',
-  '/styles/chat.css',
-  '/styles/moods.css',
-  '/styles/',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/icons/',
-  '/icons/moods/',
-  '/icons/interests/'
+// CRITICAL FIX: Only cache files that definitely exist
+// Use relative paths that match your actual file structure
+const CRITICAL_ASSETS = [
+  '/',  // This will resolve to index.html
+  '/index.html'
 ];
 
 // Firebase SDK 9.22.1 - Compact Version (Modular)
@@ -144,71 +30,48 @@ const FIREBASE_ASSETS = [
   'https://www.gstatic.com/firebasejs/9.22.1/firebase-performance-compat.js'
 ];
 
-// External dependencies
-const EXTERNAL_ASSETS = [
-  'https://cdn.tailwindcss.com'
-];
-
-// Install Event - Cache static assets
+// Install Event - Cache ONLY what exists
 self.addEventListener('install', (event) => {
-  console.log(`[kynecta Service Worker] Installing version ${APP_VERSION}...`);
+  console.log(`[Kynecta MoodChat Service Worker] Installing version ${APP_VERSION}...`);
   
   // Force activation of new service worker immediately
   self.skipWaiting();
   
   event.waitUntil(
     Promise.all([
-      // Cache ALL HTML routes for offline use
+      // Cache only critical HTML files that we KNOW exist
       caches.open(CACHE_NAME)
         .then(cache => {
-          console.log('[kynecta Service Worker] Caching ALL HTML routes for offline');
-          return cache.addAll(ALL_HTML_ROUTES);
+          console.log('[Kynecta MoodChat Service Worker] Caching critical assets');
+          // Only cache the root URL and index.html
+          return cache.add('/').catch(err => {
+            console.log('Failed to cache /, trying /index.html:', err);
+            return cache.add('/index.html');
+          });
         }),
-      // Cache ALL static assets
-      caches.open(CACHE_NAME)
-        .then(cache => {
-          console.log('[kynecta Service Worker] Caching ALL static assets');
-          return Promise.all(ALL_STATIC_ASSETS.map(asset => {
-            return cache.add(asset).catch(err => {
-              console.log(`Failed to cache ${asset}:`, err);
-            });
-          }));
-        }),
-      // Cache core static assets
-      caches.open(CACHE_NAMES.static)
-        .then(cache => {
-          console.log('[kynecta Service Worker] Caching core static assets');
-          return cache.addAll(STATIC_ASSETS);
-        }),
-      // Cache Firebase SDK separately
+      // Cache Firebase SDK separately - these URLs always exist
       caches.open(CACHE_NAMES.firebase)
         .then(cache => {
-          console.log('[kynecta Service Worker] Caching Firebase SDK 9.22.1');
-          return cache.addAll(FIREBASE_ASSETS);
-        }),
-      // Cache external assets
-      caches.open(CACHE_NAMES.dynamic)
-        .then(cache => {
-          console.log('[kynecta Service Worker] Caching external assets');
-          return cache.addAll(EXTERNAL_ASSETS);
-        }),
-      // Cache mood/interest assets
-      caches.open(CACHE_NAMES.moods)
-        .then(cache => {
-          console.log('[kynecta Service Worker] Caching mood/interest assets');
-          return Promise.all(MOOD_ASSETS.map(asset => {
-            return cache.add(asset).catch(err => {
-              console.log(`Failed to cache mood asset ${asset}:`, err);
-            });
-          }));
+          console.log('[Kynecta MoodChat Service Worker] Caching Firebase SDK 9.22.1');
+          return Promise.all(
+            FIREBASE_ASSETS.map(asset => 
+              cache.add(asset).catch(err => {
+                console.warn(`Failed to cache Firebase asset ${asset}:`, err.message);
+                return null;
+              })
+            )
+          );
         })
     ]).then(() => {
-      console.log('[kynecta Service Worker] All assets cached successfully');
+      console.log('[Kynecta MoodChat Service Worker] Installation completed');
       
       // Initialize offline storage for mood selections
-      initializeOfflineStorage();
+      return initializeOfflineStorage();
+    }).then(() => {
+      console.log('[Kynecta MoodChat Service Worker] Service Worker installed successfully');
     }).catch(error => {
-      console.error('[kynecta Service Worker] Cache installation failed:', error);
+      console.error('[Kynecta MoodChat Service Worker] Installation error:', error);
+      // Continue installation even with errors
     })
   );
 });
@@ -216,7 +79,7 @@ self.addEventListener('install', (event) => {
 // Initialize IndexedDB for offline storage
 async function initializeOfflineStorage() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('kynectaOfflineStorage', 2);
+    const request = indexedDB.open('kynectaMoodChatOfflineStorage', 2);
     
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
@@ -226,7 +89,7 @@ async function initializeOfflineStorage() {
         const moodStore = db.createObjectStore('moodSelections', { keyPath: 'id', autoIncrement: true });
         moodStore.createIndex('timestamp', 'timestamp', { unique: false });
         moodStore.createIndex('synced', 'synced', { unique: false });
-        console.log('[kynecta Service Worker] Created moodSelections object store');
+        console.log('[Kynecta MoodChat Service Worker] Created moodSelections object store');
       }
       
       // Create object store for offline interest selections
@@ -234,7 +97,7 @@ async function initializeOfflineStorage() {
         const interestStore = db.createObjectStore('interestSelections', { keyPath: 'id', autoIncrement: true });
         interestStore.createIndex('timestamp', 'timestamp', { unique: false });
         interestStore.createIndex('synced', 'synced', { unique: false });
-        console.log('[kynecta Service Worker] Created interestSelections object store');
+        console.log('[Kynecta MoodChat Service Worker] Created interestSelections object store');
       }
       
       // Create object store for offline queue (existing)
@@ -244,12 +107,12 @@ async function initializeOfflineStorage() {
     };
     
     request.onsuccess = (event) => {
-      console.log('[kynecta Service Worker] Offline storage initialized');
+      console.log('[Kynecta MoodChat Service Worker] Offline storage initialized');
       resolve(event.target.result);
     };
     
     request.onerror = (event) => {
-      console.error('[kynecta Service Worker] Failed to initialize offline storage:', event.target.error);
+      console.error('[Kynecta MoodChat Service Worker] Failed to initialize offline storage:', event.target.error);
       reject(event.target.error);
     };
   });
@@ -257,7 +120,7 @@ async function initializeOfflineStorage() {
 
 // Activate Event - Clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[kynecta Service Worker] Activating new version...');
+  console.log('[Kynecta MoodChat Service Worker] Activating new version...');
   
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -266,20 +129,20 @@ self.addEventListener('activate', (event) => {
         if ((cacheName.startsWith('uniconnect-') || cacheName.startsWith('kynecta-')) && 
             !Object.values(CACHE_NAMES).includes(cacheName) && 
             cacheName !== CACHE_NAME) {
-          console.log('[kynecta Service Worker] Deleting old cache:', cacheName);
+          console.log('[Kynecta MoodChat Service Worker] Deleting old cache:', cacheName);
           return caches.delete(cacheName);
         }
       });
       return Promise.all(deletions);
     }).then(() => {
-      console.log('[kynecta Service Worker] Activation completed');
+      console.log('[Kynecta MoodChat Service Worker] Activation completed');
       // Take control of all clients immediately
       return self.clients.claim();
     })
   );
 });
 
-// Enhanced Fetch Event - Serve cached files first when offline
+// Enhanced Fetch Event - Cache as you go strategy
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   
@@ -291,18 +154,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   // HTML pages - Cache First for offline, update when online
-  if (request.destination === 'document' || url.pathname.endsWith('.html') || 
-      ALL_HTML_ROUTES.includes(url.pathname) || 
-      (url.pathname === '/' && request.destination !== 'image')) {
+  if (request.destination === 'document' || url.pathname.endsWith('.html') || url.pathname === '/') {
     event.respondWith(handleHtmlWithCacheFirst(request));
-    return;
-  }
-
-  // Mood/Interest specific assets
-  if (url.pathname.includes('/moods/') || url.pathname.includes('/interests/') ||
-      url.pathname.endsWith('moods.js') || url.pathname.endsWith('moods.css') ||
-      url.pathname === '/moods.html' || url.pathname === '/interests.html') {
-    event.respondWith(handleMoodAssetsWithCacheFirst(request));
     return;
   }
 
@@ -333,81 +186,17 @@ self.addEventListener('fetch', (event) => {
       url.pathname.includes('/identitytoolkit/')) {
     event.respondWith(handleFirebaseRequest(request));
   }
-  // API requests - Network First strategy
-  else if (url.pathname.includes('/api/')) {
-    event.respondWith(handleApiRequest(request));
-  }
   // Firebase SDK files - Cache First (versioned URLs)
   else if (url.hostname === 'www.gstatic.com' && url.pathname.includes('/firebasejs/')) {
     event.respondWith(handleFirebaseSdkRequest(request));
   }
   else {
-    // Default strategy - Cache First for offline
-    event.respondWith(handleDefaultWithCacheFirst(request));
+    // Default strategy - Network First
+    event.respondWith(handleDefaultNetworkFirst(request));
   }
 });
 
-// Enhanced Mood/Interest assets handler
-async function handleMoodAssetsWithCacheFirst(request) {
-  // Try cache first
-  const cachedResponse = await caches.match(request, { cacheName: CACHE_NAMES.moods });
-  if (cachedResponse) {
-    // Update cache in background if online
-    updateMoodCacheInBackground(request);
-    return cachedResponse;
-  }
-
-  // Fallback to main cache
-  const mainCachedResponse = await caches.match(request, { cacheName: CACHE_NAME });
-  if (mainCachedResponse) {
-    updateCacheInBackground(request);
-    return mainCachedResponse;
-  }
-
-  // If not in cache, try network
-  try {
-    const networkResponse = await fetch(request);
-    
-    // Cache the response for future offline use
-    if (networkResponse.ok) {
-      const cache = await caches.open(CACHE_NAMES.moods);
-      await cache.put(request, networkResponse.clone());
-    }
-    
-    return networkResponse;
-  } catch (error) {
-    // For mood icons, return a placeholder
-    if (request.url.includes('/icons/moods/') || request.url.includes('/icons/interests/')) {
-      return new Response('', { 
-        status: 200,
-        headers: { 'Content-Type': 'image/svg+xml' }
-      });
-    }
-    
-    return new Response('// Offline - Mood resource not available', {
-      status: 408,
-      headers: { 'Content-Type': 'application/javascript' }
-    });
-  }
-}
-
-// Helper function to update mood cache in background
-async function updateMoodCacheInBackground(request) {
-  // Only update if we're online
-  if (navigator.onLine === false) return;
-  
-  try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const cache = await caches.open(CACHE_NAMES.moods);
-      await cache.put(request, networkResponse.clone());
-    }
-  } catch (error) {
-    // Silently fail - we already served from cache
-  }
-}
-
-// Enhanced HTML handler - Cache First with network update
+// HTML handler - Cache First with network update
 async function handleHtmlWithCacheFirst(request) {
   // Try cache first
   const cachedResponse = await caches.match(request);
@@ -429,14 +218,9 @@ async function handleHtmlWithCacheFirst(request) {
     
     return networkResponse;
   } catch (error) {
-    // If network fails and not in cache, return 404 page
-    const offlineResponse = await caches.match('/404.html');
-    if (offlineResponse) {
-      return offlineResponse;
-    }
-    
-    // Fallback to index.html
-    const indexResponse = await caches.match('/index.html');
+    // If network fails and not in cache, return index.html
+    const indexResponse = await caches.match('/index.html') || 
+                          await caches.match('/');
     if (indexResponse) {
       return indexResponse;
     }
@@ -448,7 +232,7 @@ async function handleHtmlWithCacheFirst(request) {
   }
 }
 
-// Enhanced Static assets handler - Cache First with network update
+// Static assets handler - Cache First with network update
 async function handleStaticWithCacheFirst(request) {
   // Try cache first
   const cachedResponse = await caches.match(request);
@@ -462,7 +246,7 @@ async function handleStaticWithCacheFirst(request) {
   try {
     const networkResponse = await fetch(request);
     
-    // Cache the response for future offline use
+    // Cache the response for future offline use (if successful)
     if (networkResponse.ok) {
       const cache = await caches.open(CACHE_NAME);
       await cache.put(request, networkResponse.clone());
@@ -470,14 +254,28 @@ async function handleStaticWithCacheFirst(request) {
     
     return networkResponse;
   } catch (error) {
-    return new Response('// Offline - Static resource not available', {
-      status: 408,
-      headers: { 'Content-Type': 'application/javascript' }
+    // Return appropriate offline response based on file type
+    if (request.url.endsWith('.css')) {
+      return new Response('/* Offline - CSS not available */', {
+        status: 408,
+        headers: { 'Content-Type': 'text/css' }
+      });
+    }
+    
+    if (request.url.endsWith('.js')) {
+      return new Response('// Offline - JavaScript not available', {
+        status: 408,
+        headers: { 'Content-Type': 'application/javascript' }
+      });
+    }
+    
+    return new Response('Offline - Resource not available', {
+      status: 408
     });
   }
 }
 
-// Enhanced Image handler - Cache First with network update
+// Image handler - Cache First with network update
 async function handleImageWithCacheFirst(request) {
   // Try cache first
   const cachedResponse = await caches.match(request);
@@ -491,7 +289,7 @@ async function handleImageWithCacheFirst(request) {
   try {
     const networkResponse = await fetch(request);
     
-    // Cache the response for future offline use
+    // Cache the response for future offline use (if successful)
     if (networkResponse.ok) {
       const cache = await caches.open(CACHE_NAME);
       await cache.put(request, networkResponse.clone());
@@ -499,52 +297,38 @@ async function handleImageWithCacheFirst(request) {
     
     return networkResponse;
   } catch (error) {
-    return new Response('', { status: 408 });
+    // For missing images, return a transparent 1x1 pixel
+    return new Response(
+      'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PC9zdmc+',
+      {
+        status: 200,
+        headers: { 'Content-Type': 'image/svg+xml' }
+      }
+    );
   }
 }
 
-// Manifest handler - Cache First with network update
+// Manifest handler
 async function handleManifestWithCacheFirst(request) {
   // Try cache first
   const cachedResponse = await caches.match(request);
   if (cachedResponse) {
-    // Update cache in background if online
-    updateCacheInBackground(request);
     return cachedResponse;
   }
 
   // If not in cache, try network
   try {
     const networkResponse = await fetch(request);
-    
-    // Cache the response for future offline use
-    if (networkResponse.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, networkResponse.clone());
-    }
-    
     return networkResponse;
   } catch (error) {
-    // Return basic manifest from cache
+    // Return basic manifest
     const basicManifest = {
-      "name": "kynecta",
-      "short_name": "kynecta",
+      "name": "Kynecta MoodChat",
+      "short_name": "MoodChat",
       "start_url": "/",
       "display": "standalone",
       "background_color": "#ffffff",
-      "theme_color": "#000000",
-      "icons": [
-        {
-          "src": "/icons/icon-192x192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        },
-        {
-          "src": "/icons/icon-512x512.png",
-          "sizes": "512x512",
-          "type": "image/png"
-        }
-      ]
+      "theme_color": "#1a73e8"
     };
     
     return new Response(JSON.stringify(basicManifest), {
@@ -554,20 +338,17 @@ async function handleManifestWithCacheFirst(request) {
   }
 }
 
-// Default handler - Cache First with network update
-async function handleDefaultWithCacheFirst(request) {
-  // Try cache first
-  const cachedResponse = await caches.match(request);
-  if (cachedResponse) {
-    // Update cache in background if online
-    updateCacheInBackground(request);
-    return cachedResponse;
-  }
-
-  // If not in cache, try network
+// Default handler - Network First
+async function handleDefaultNetworkFirst(request) {
   try {
     return await fetch(request);
   } catch (error) {
+    // Try cache as fallback
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    
     return new Response('Offline', { status: 408 });
   }
 }
@@ -602,7 +383,7 @@ async function handleFirebaseRequest(request) {
     
     return networkResponse;
   } catch (error) {
-    console.log('[kynecta Service Worker] Firebase request offline:', request.url);
+    console.log('[Kynecta MoodChat Service Worker] Firebase request offline:', request.url);
     
     // Try to return cached version
     const cachedResponse = await cache.match(request);
@@ -652,36 +433,9 @@ async function handleFirebaseSdkRequest(request) {
   }
 }
 
-// Strategy: Network First for API calls
-async function handleApiRequest(request) {
-  try {
-    const networkResponse = await fetch(request);
-    
-    if (networkResponse.ok) {
-      const cache = await caches.open(CACHE_NAMES.dynamic);
-      await cache.put(request, networkResponse.clone());
-    }
-    
-    return networkResponse;
-  } catch (error) {
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    
-    return new Response(
-      JSON.stringify({ error: 'You are offline', offline: true }),
-      { 
-        status: 408, 
-        headers: { 'Content-Type': 'application/json' } 
-      }
-    );
-  }
-}
-
-// Background Sync for kynecta with Firebase offline support
+// Background Sync for Kynecta MoodChat with Firebase offline support
 self.addEventListener('sync', (event) => {
-  console.log('[kynecta Service Worker] Background sync:', event.tag);
+  console.log('[Kynecta MoodChat Service Worker] Background sync:', event.tag);
   
   if (event.tag === 'firebase-auth-sync') {
     event.waitUntil(syncFirebaseAuth());
@@ -698,17 +452,17 @@ self.addEventListener('sync', (event) => {
 
 // Sync offline mood selections when back online
 async function syncOfflineMoodSelections() {
-  console.log('[kynecta Service Worker] Syncing offline mood selections...');
+  console.log('[Kynecta MoodChat Service Worker] Syncing offline mood selections...');
   
   try {
     const unsyncedMoods = await getUnsyncedMoodSelections();
     
     if (unsyncedMoods.length === 0) {
-      console.log('[kynecta Service Worker] No unsynced mood selections');
+      console.log('[Kynecta MoodChat Service Worker] No unsynced mood selections');
       return;
     }
     
-    console.log(`[kynecta Service Worker] Found ${unsyncedMoods.length} unsynced mood selections`);
+    console.log(`[Kynecta MoodChat Service Worker] Found ${unsyncedMoods.length} unsynced mood selections`);
     
     // Notify app to sync with Firebase
     await self.clients.matchAll().then(clients => {
@@ -725,23 +479,23 @@ async function syncOfflineMoodSelections() {
     await markMoodSelectionsAsSynced(unsyncedMoods);
     
   } catch (error) {
-    console.error('[kynecta Service Worker] Mood selection sync failed:', error);
+    console.error('[Kynecta MoodChat Service Worker] Mood selection sync failed:', error);
   }
 }
 
 // Sync offline interest selections when back online
 async function syncOfflineInterestSelections() {
-  console.log('[kynecta Service Worker] Syncing offline interest selections...');
+  console.log('[Kynecta MoodChat Service Worker] Syncing offline interest selections...');
   
   try {
     const unsyncedInterests = await getUnsyncedInterestSelections();
     
     if (unsyncedInterests.length === 0) {
-      console.log('[kynecta Service Worker] No unsynced interest selections');
+      console.log('[Kynecta MoodChat Service Worker] No unsynced interest selections');
       return;
     }
     
-    console.log(`[kynecta Service Worker] Found ${unsyncedInterests.length} unsynced interest selections`);
+    console.log(`[Kynecta MoodChat Service Worker] Found ${unsyncedInterests.length} unsynced interest selections`);
     
     // Notify app to sync with Firebase
     await self.clients.matchAll().then(clients => {
@@ -758,14 +512,14 @@ async function syncOfflineInterestSelections() {
     await markInterestSelectionsAsSynced(unsyncedInterests);
     
   } catch (error) {
-    console.error('[kynecta Service Worker] Interest selection sync failed:', error);
+    console.error('[Kynecta MoodChat Service Worker] Interest selection sync failed:', error);
   }
 }
 
 // Get unsynced mood selections from IndexedDB
 async function getUnsyncedMoodSelections() {
   return new Promise((resolve) => {
-    const request = indexedDB.open('kynectaOfflineStorage', 2);
+    const request = indexedDB.open('kynectaMoodChatOfflineStorage', 2);
     
     request.onsuccess = (event) => {
       const db = event.target.result;
@@ -786,7 +540,7 @@ async function getUnsyncedMoodSelections() {
 // Get unsynced interest selections from IndexedDB
 async function getUnsyncedInterestSelections() {
   return new Promise((resolve) => {
-    const request = indexedDB.open('kynectaOfflineStorage', 2);
+    const request = indexedDB.open('kynectaMoodChatOfflineStorage', 2);
     
     request.onsuccess = (event) => {
       const db = event.target.result;
@@ -807,7 +561,7 @@ async function getUnsyncedInterestSelections() {
 // Mark mood selections as synced
 async function markMoodSelectionsAsSynced(selections) {
   return new Promise((resolve) => {
-    const request = indexedDB.open('kynectaOfflineStorage', 2);
+    const request = indexedDB.open('kynectaMoodChatOfflineStorage', 2);
     
     request.onsuccess = (event) => {
       const db = event.target.result;
@@ -820,7 +574,7 @@ async function markMoodSelectionsAsSynced(selections) {
       });
       
       transaction.oncomplete = () => {
-        console.log(`[kynecta Service Worker] Marked ${selections.length} mood selections as synced`);
+        console.log(`[Kynecta MoodChat Service Worker] Marked ${selections.length} mood selections as synced`);
         resolve();
       };
     };
@@ -832,7 +586,7 @@ async function markMoodSelectionsAsSynced(selections) {
 // Mark interest selections as synced
 async function markInterestSelectionsAsSynced(selections) {
   return new Promise((resolve) => {
-    const request = indexedDB.open('kynectaOfflineStorage', 2);
+    const request = indexedDB.open('kynectaMoodChatOfflineStorage', 2);
     
     request.onsuccess = (event) => {
       const db = event.target.result;
@@ -845,7 +599,7 @@ async function markInterestSelectionsAsSynced(selections) {
       });
       
       transaction.oncomplete = () => {
-        console.log(`[kynecta Service Worker] Marked ${selections.length} interest selections as synced`);
+        console.log(`[Kynecta MoodChat Service Worker] Marked ${selections.length} interest selections as synced`);
         resolve();
       };
     };
@@ -855,7 +609,7 @@ async function markInterestSelectionsAsSynced(selections) {
 }
 
 async function syncFirebaseAuth() {
-  console.log('[kynecta Service Worker] Syncing Firebase Auth state...');
+  console.log('[Kynecta MoodChat Service Worker] Syncing Firebase Auth state...');
   // Sync authentication state when back online
   try {
     await self.clients.matchAll().then(clients => {
@@ -867,12 +621,12 @@ async function syncFirebaseAuth() {
       });
     });
   } catch (error) {
-    console.error('[kynecta Service Worker] Auth sync failed:', error);
+    console.error('[Kynecta MoodChat Service Worker] Auth sync failed:', error);
   }
 }
 
 async function syncFirestoreData() {
-  console.log('[kynecta Service Worker] Syncing Firestore data...');
+  console.log('[Kynecta MoodChat Service Worker] Syncing Firestore data...');
   // Trigger Firestore offline data sync
   try {
     await self.clients.matchAll().then(clients => {
@@ -884,12 +638,12 @@ async function syncFirestoreData() {
       });
     });
   } catch (error) {
-    console.error('[kynecta Service Worker] Firestore sync failed:', error);
+    console.error('[Kynecta MoodChat Service Worker] Firestore sync failed:', error);
   }
 }
 
 async function syncPendingMessages() {
-  console.log('[kynecta Service Worker] Syncing pending messages...');
+  console.log('[Kynecta MoodChat Service Worker] Syncing pending messages...');
   // Sync unsent chat messages when back online
   try {
     await self.clients.matchAll().then(clients => {
@@ -901,20 +655,20 @@ async function syncPendingMessages() {
       });
     });
   } catch (error) {
-    console.error('[kynecta Service Worker] Message sync failed:', error);
+    console.error('[Kynecta MoodChat Service Worker] Message sync failed:', error);
   }
 }
 
-// Push Notifications for kynecta with Firebase Cloud Messaging
+// Push Notifications for Kynecta MoodChat with Firebase Cloud Messaging
 self.addEventListener('push', (event) => {
-  console.log('[kynecta Service Worker] Push received from FCM');
+  console.log('[Kynecta MoodChat Service Worker] Push received from FCM');
 
   let notificationData = {
-    title: 'kynecta',
+    title: 'Kynecta MoodChat',
     body: 'New notification',
-    icon: '/icons/icon-192x192.png',
-    image: '/icons/icon-512x512.png',
-    badge: '/icons/icon-192x192.png'
+    icon: '/icons/moodchat-192.png',
+    image: '/icons/moodchat-512.png',
+    badge: '/icons/moodchat-192.png'
   };
   
   if (event.data) {
@@ -923,12 +677,12 @@ self.addEventListener('push', (event) => {
       const data = fcmData.data || fcmData;
       notificationData = { ...notificationData, ...data };
     } catch (error) {
-      console.log('[kynecta Service Worker] FCM data parsing error:', error);
+      console.log('[Kynecta MoodChat Service Worker] FCM data parsing error:', error);
     }
   }
   
   const options = {
-    body: notificationData.body || 'New update from UniConnect',
+    body: notificationData.body || 'New update from Kynecta MoodChat',
     icon: notificationData.icon,
     badge: notificationData.badge,
     image: notificationData.image,
@@ -949,7 +703,7 @@ self.addEventListener('push', (event) => {
         title: 'Dismiss'
       }
     ],
-    tag: 'kynecta-fcm',
+    tag: 'kynecta-moodchat-fcm',
     renotify: true,
     requireInteraction: false
   };
@@ -957,14 +711,14 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(notificationData.title, options)
       .catch(error => {
-        console.error('[kynecta Service Worker] Notification failed:', error);
+        console.error('[Kynecta MoodChat Service Worker] Notification failed:', error);
       })
   );
 });
 
 // Notification Click Event
 self.addEventListener('notificationclick', (event) => {
-  console.log('[kynecta Service Worker] FCM notification click');
+  console.log('[Kynecta MoodChat Service Worker] FCM notification click');
   
   event.notification.close();
   
@@ -979,7 +733,7 @@ self.addEventListener('notificationclick', (event) => {
       type: 'window',
       includeUncontrolled: true 
     }).then(clientList => {
-      // Focus existing UniConnect window
+      // Focus existing Kynecta MoodChat window
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           client.focus();
@@ -1005,7 +759,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // Message event for communication with Firebase app
 self.addEventListener('message', (event) => {
-  console.log('[kynecta Service Worker] Message received:', event.data);
+  console.log('[Kynecta MoodChat Service Worker] Message received:', event.data);
   
   const { data } = event;
   
@@ -1079,10 +833,10 @@ self.addEventListener('message', (event) => {
     case 'REGISTER_MOOD_SYNC':
       // Register background sync for mood selections
       self.registration.sync.register('sync-mood-selections').then(() => {
-        console.log('[kynecta Service Worker] Mood sync registered');
+        console.log('[Kynecta MoodChat Service Worker] Mood sync registered');
         event.ports[0]?.postMessage({ registered: true });
       }).catch(err => {
-        console.error('[kynecta Service Worker] Mood sync registration failed:', err);
+        console.error('[Kynecta MoodChat Service Worker] Mood sync registration failed:', err);
         event.ports[0]?.postMessage({ registered: false, error: err.message });
       });
       break;
@@ -1090,10 +844,10 @@ self.addEventListener('message', (event) => {
     case 'REGISTER_INTEREST_SYNC':
       // Register background sync for interest selections
       self.registration.sync.register('sync-interest-selections').then(() => {
-        console.log('[kynecta Service Worker] Interest sync registered');
+        console.log('[Kynecta MoodChat Service Worker] Interest sync registered');
         event.ports[0]?.postMessage({ registered: true });
       }).catch(err => {
-        console.error('[kynecta Service Worker] Interest sync registration failed:', err);
+        console.error('[Kynecta MoodChat Service Worker] Interest sync registration failed:', err);
         event.ports[0]?.postMessage({ registered: false, error: err.message });
       });
       break;
@@ -1103,7 +857,7 @@ self.addEventListener('message', (event) => {
 // Save mood selection offline
 async function saveMoodSelectionOffline(payload) {
   return new Promise((resolve) => {
-    const request = indexedDB.open('kynectaOfflineStorage', 2);
+    const request = indexedDB.open('kynectaMoodChatOfflineStorage', 2);
     
     request.onsuccess = (event) => {
       const db = event.target.result;
@@ -1119,12 +873,12 @@ async function saveMoodSelectionOffline(payload) {
       const addRequest = store.add(moodSelection);
       
       addRequest.onsuccess = () => {
-        console.log('[kynecta Service Worker] Mood selection saved offline:', moodSelection);
+        console.log('[Kynecta MoodChat Service Worker] Mood selection saved offline:', moodSelection);
         resolve();
       };
       
       addRequest.onerror = (error) => {
-        console.error('[kynecta Service Worker] Failed to save mood selection:', error);
+        console.error('[Kynecta MoodChat Service Worker] Failed to save mood selection:', error);
         resolve();
       };
     };
@@ -1133,10 +887,10 @@ async function saveMoodSelectionOffline(payload) {
   });
 }
 
-// Save interest selection offline
+// FIXED: Added missing arrow function syntax
 async function saveInterestSelectionOffline(payload) {
   return new Promise((resolve) => {
-    const request = indexedDB.open('kynectaOfflineStorage', 2);
+    const request = indexedDB.open('kynectaMoodChatOfflineStorage', 2);
     
     request.onsuccess = (event) => {
       const db = event.target.result;
@@ -1152,12 +906,12 @@ async function saveInterestSelectionOffline(payload) {
       const addRequest = store.add(interestSelection);
       
       addRequest.onsuccess = () => {
-        console.log('[kynecta Service Worker] Interest selection saved offline:', interestSelection);
+        console.log('[Kynecta MoodChat Service Worker] Interest selection saved offline:', interestSelection);
         resolve();
       };
       
       addRequest.onerror = (error) => {
-        console.error('[kynecta Service Worker] Failed to save interest selection:', error);
+        console.error('[Kynecta MoodChat Service Worker] Failed to save interest selection:', error);
         resolve();
       };
     };
@@ -1169,7 +923,7 @@ async function saveInterestSelectionOffline(payload) {
 // Get offline mood selections
 async function getOfflineMoodSelections() {
   return new Promise((resolve) => {
-    const request = indexedDB.open('kynectaOfflineStorage', 2);
+    const request = indexedDB.open('kynectaMoodChatOfflineStorage', 2);
     
     request.onsuccess = (event) => {
       const db = event.target.result;
@@ -1188,7 +942,7 @@ async function getOfflineMoodSelections() {
 // Get offline interest selections
 async function getOfflineInterestSelections() {
   return new Promise((resolve) => {
-    const request = indexedDB.open('kynectaOfflineStorage', 2);
+    const request = indexedDB.open('kynectaMoodChatOfflineStorage', 2);
     
     request.onsuccess = (event) => {
       const db = event.target.result;
@@ -1264,7 +1018,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request).then(response => {
         const loadTime = Date.now() - startTime;
-        console.log(`[kynecta Performance] Firebase SDK loaded in ${loadTime}ms`);
+        console.log(`[Kynecta Performance] Firebase SDK loaded in ${loadTime}ms`);
         return response;
       })
     );

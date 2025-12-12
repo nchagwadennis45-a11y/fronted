@@ -483,9 +483,12 @@ const dismissSuggestion = document.getElementById('dismissSuggestion');
 // Input Area Elements
 const inputArea = document.getElementById('inputArea');
 const attachBtn = document.getElementById('attachBtn');
-const cameraBtn = document.getElementById('cameraBtn');
-const emojiBtn = document.getElementById('emojiBtn');
-const voiceToTextBtn = document.getElementById('voiceToTextBtn');
+// Camera button removed as per your changes
+// const cameraBtn = document.getElementById('cameraBtn');
+// Emoji button removed as per your changes
+// const emojiBtn = document.getElementById('emojiBtn');
+// Voice to text button moved to header
+// const voiceToTextBtn = document.getElementById('voiceToTextBtn');
 const voiceRecordingIndicator = document.getElementById('voiceRecordingIndicator');
 const messageInput = document.getElementById('messageInput');
 const emojiPicker = document.getElementById('emojiPicker');
@@ -1374,6 +1377,15 @@ function switchTab(tabName) {
         if (tabButton) {
             tabButton.classList.add('active');
         }
+        
+        // Show/hide chat input area based on tab
+        if (tabName === 'chats' && currentChat) {
+            // If we're in the chats tab and have an active chat, show input area
+            if (inputArea) inputArea.classList.remove('hidden');
+        } else {
+            // For all other tabs, hide input area
+            if (inputArea) inputArea.classList.add('hidden');
+        }
     } else {
         console.error('❌ Tab panel not found for:', tabName);
         return;
@@ -1717,9 +1729,19 @@ async function startChat(friendId, friendName) {
         if (chatTitle) chatTitle.textContent = friendName;
         if (chatAvatar) chatAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(friendName)}&background=7C3AED&color=fff`;
         
-        // Enable message input
-        if (messageInput) messageInput.disabled = false;
-        if (sendBtn) sendBtn.disabled = false;
+        // Update message input styles for better readability
+        if (messageInput) {
+            messageInput.style.fontSize = '16px';
+            messageInput.style.lineHeight = '1.5';
+            messageInput.disabled = false;
+        }
+        
+        if (sendBtn) {
+            // Update send button to minimized size as per your changes
+            sendBtn.style.width = '40px'; // w-10 = 2.5rem = 40px
+            sendBtn.style.height = '40px';
+            sendBtn.disabled = false;
+        }
         
         // Add call buttons to chat header
         addCallButtonsToChatHeader(friendId, friendName);
@@ -2409,18 +2431,18 @@ function renderFriends(friendsToRender) {
 }
 
 // In chat.js, when creating friend call buttons:
-function createFriendCallButtons(friendId, friendName) {
+function createFriendCallButtons(friendId, friendData) {
     return `
         <div class="friend-call-buttons">
             <button class="friend-call-btn voice-call-btn p-2 rounded-full hover:bg-blue-50"
                     data-user-id="${friendId}"
-                    data-user-name="${friendName}"
+                    data-user-name="${friendData.displayName}"
                     title="Voice Call">
                 <i class="fas fa-phone text-blue-600"></i>
             </button>
             <button class="friend-call-btn video-call-btn p-2 rounded-full hover:bg-green-50"
                     data-user-id="${friendId}"
-                    data-user-name="${friendName}"
+                    data-user-name="${friendData.displayName}"
                     title="Video Call">
                 <i class="fas fa-video text-green-600"></i>
             </button>
@@ -4504,6 +4526,10 @@ function setupEventListeners() {
 
     // Message input and sending
     if (messageInput) {
+        // Apply enhanced text input styles
+        messageInput.style.fontSize = '16px';
+        messageInput.style.lineHeight = '1.5';
+        
         messageInput.addEventListener('input', handleTypingIndicator);
         
         messageInput.addEventListener('keypress', (e) => {
@@ -4515,10 +4541,13 @@ function setupEventListeners() {
     }
 
     if (sendBtn) {
+        // Minimized send button as per your changes
+        sendBtn.style.width = '40px'; // w-10 = 2.5rem = 40px
+        sendBtn.style.height = '40px';
         sendBtn.addEventListener('click', sendMessage);
     }
 
-    // File attachment
+    // File attachment (using the plus icon)
     if (attachBtn) {
         attachBtn.addEventListener('click', () => {
             console.log('Attach file clicked');
@@ -4544,19 +4573,18 @@ function setupEventListeners() {
         });
     }
 
-    // Emoji picker
-    if (emojiBtn) {
-        emojiBtn.addEventListener('click', toggleEmojiPicker);
+    // Voice to text button in chat header
+    const voiceToTextBtnHeader = document.getElementById('voiceToTextBtnHeader');
+    if (voiceToTextBtnHeader) {
+        voiceToTextBtnHeader.addEventListener('click', setupVoiceToText);
     }
 
-    // Close emoji picker when clicking outside
+    // Close emoji picker when clicking outside (if emoji picker exists)
     document.addEventListener('click', (e) => {
         const emojiPicker = document.getElementById('emojiPicker');
-        const emojiBtn = document.getElementById('emojiBtn');
         
         if (emojiPicker && emojiPicker.style.display === 'block' && 
-            !emojiPicker.contains(e.target) && 
-            !(emojiBtn && emojiBtn.contains(e.target))) {
+            !emojiPicker.contains(e.target)) {
             emojiPicker.style.display = 'none';
         }
     });
@@ -4584,11 +4612,6 @@ function setupEventListeners() {
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
         });
-    }
-
-    // Voice to text button
-    if (voiceToTextBtn) {
-        voiceToTextBtn.addEventListener('click', setupVoiceToText);
     }
 
     console.log('Event listeners setup completed');
