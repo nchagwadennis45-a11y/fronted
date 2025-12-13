@@ -1,0 +1,3459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+        <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#4F46E5">
+    <link rel="icon" href="../icons/moodchat-192.png">
+    <link rel="icon" href="../icons/moodchat-512.png">
+    <meta name="theme-color" content="#000000">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Calls | Chat App</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- PeerJS for WebRTC -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    
+    <!-- Simple Markdown for notes -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary-color: #0084ff;
+            --secondary-color: #f0f2f5;
+            --danger-color: #ff3b30;
+            --success-color: #34c759;
+            --warning-color: #ff9500;
+            --text-primary: #050505;
+            --text-secondary: #65676b;
+            --bg-color: #ffffff;
+            --border-color: #dddfe2;
+            --call-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.2);
+            --video-bg: #1a1a1a;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: 380px;
+            background-color: var(--bg-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            background: var(--call-gradient);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sidebar-header h2 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .new-call-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .new-call-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .call-categories {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+        }
+        
+        .category-btn {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            font-weight: 500;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .category-btn.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .category-btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .call-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+        
+        .section-title {
+            padding: 15px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .quick-actions {
+            padding: 0 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .quick-action-btn {
+            flex: 1;
+            padding: 20px 15px;
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        
+        .quick-action-btn:hover {
+            background-color: #e4e6e9;
+            transform: translateY(-2px);
+        }
+        
+        .quick-action-icon {
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+        
+        .quick-action-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .call-settings {
+            padding: 0 20px;
+            margin-bottom: 20px;
+        }
+        
+        .settings-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background-color: var(--secondary-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .settings-toggle:hover {
+            background-color: #e4e6e9;
+        }
+        
+        .settings-toggle-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+        
+        .settings-toggle-icon {
+            font-size: 18px;
+            color: var(--primary-color);
+        }
+        
+        .settings-panel {
+            background-color: var(--secondary-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .settings-panel.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .settings-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+        
+        .settings-item-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        
+        .settings-item-icon {
+            font-size: 16px;
+            color: var(--primary-color);
+            width: 24px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--primary-color);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+        
+        .recent-calls {
+            padding: 0 20px;
+        }
+        
+        .call-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background-color: var(--bg-color);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .call-item:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .call-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+            margin-right: 15px;
+            position: relative;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .call-status-icon {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--bg-color);
+            font-size: 10px;
+        }
+        
+        .call-status-icon.incoming {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .call-status-icon.outgoing {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .call-status-icon.missed {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .call-info {
+            flex: 1;
+        }
+        
+        .call-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .call-details {
+            color: var(--text-secondary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .call-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .call-action-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        
+        .call-action-btn:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        /* Call Container */
+        .call-container {
+            flex: 1;
+            background-color: var(--video-bg);
+            position: relative;
+            display: none;
+            overflow: hidden;
+        }
+        
+        .call-container.active {
+            display: flex;
+        }
+        
+        .call-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+        }
+        
+        .call-info-bar {
+            display: flex;
+            align-items: center;
+            color: white;
+        }
+        
+        .call-type-icon {
+            background: rgba(255, 255, 255, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 18px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .call-info-text h4 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        
+        .call-info-text p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .call-duration {
+            color: white;
+            font-weight: 500;
+            font-size: 18px;
+        }
+        
+        /* Video Grid */
+        .video-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 10px;
+            padding: 20px;
+            overflow: auto;
+        }
+        
+        .video-container {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #2a2a2a;
+            aspect-ratio: 16/9;
+        }
+        
+        .video-container.large {
+            grid-column: span 2;
+            grid-row: span 2;
+        }
+        
+        .video-container.pinned {
+            border: 3px solid var(--primary-color);
+            box-shadow: 0 0 20px rgba(0, 132, 255, 0.5);
+        }
+        
+        .video-element {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+        
+        .video-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .video-name {
+            font-weight: 500;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .video-status {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .video-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .video-action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+        }
+        
+        .video-action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .video-action-btn.active {
+            background-color: var(--primary-color);
+        }
+        
+        .video-action-btn.danger {
+            background-color: var(--danger-color);
+        }
+        
+        /* Call Controls */
+        .call-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            z-index: 100;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+        }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .control-btn.active {
+            background-color: var(--primary-color);
+        }
+        
+        .control-btn.danger {
+            background-color: var(--danger-color);
+        }
+        
+        .control-btn.danger:hover {
+            background-color: #ff1a1a;
+        }
+        
+        /* Call Side Panel */
+        .call-side-panel {
+            width: 300px;
+            background-color: var(--bg-color);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        .call-side-panel.collapsed {
+            transform: translateX(100%);
+        }
+        
+        .panel-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panel-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .panel-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .panel-tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .panel-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        /* Participants List */
+        .participants-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .participant-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: var(--bg-color);
+            transition: all 0.2s;
+        }
+        
+        .participant-item:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .participant-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
+            margin-right: 12px;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .participant-info {
+            flex: 1;
+        }
+        
+        .participant-name {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        
+        .participant-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .participant-status.active {
+            color: var(--success-color);
+        }
+        
+        .participant-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        /* Chat Panel */
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .chat-message {
+            padding: 10px 15px;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .chat-message.sent {
+            background-color: var(--primary-color);
+            color: white;
+            align-self: flex-end;
+        }
+        
+        .chat-message.received {
+            background-color: var(--secondary-color);
+            align-self: flex-start;
+        }
+        
+        .message-sender {
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+        
+        .message-content {
+            font-size: 14px;
+        }
+        
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input-field {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        /* Notes Panel */
+        .notes-editor {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .notes-toolbar {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .notes-btn {
+            padding: 8px 12px;
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        
+        .notes-btn:hover {
+            background-color: #e4e6e9;
+        }
+        
+        .notes-input {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+        
+        .notes-preview {
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--secondary-color);
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        /* Whiteboard Panel */
+        .whiteboard-container {
+            width: 100%;
+            height: 400px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: white;
+            margin-bottom: 15px;
+        }
+        
+        .whiteboard-tools {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        /* Poll Panel */
+        .poll-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .poll-question {
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--secondary-color);
+        }
+        
+        .poll-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .poll-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .poll-option:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .poll-option.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(0, 132, 255, 0.1);
+        }
+        
+        .poll-option-text {
+            flex: 1;
+        }
+        
+        .poll-votes {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* Reactions */
+        .reactions-container {
+            position: absolute;
+            bottom: 120px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 50;
+        }
+        
+        .reaction-btn {
+            background: rgba(255, 255, 255, 0.9);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .reaction-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Incoming Call Modal */
+        .incoming-call-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .incoming-call-modal.active {
+            display: flex;
+        }
+        
+        .incoming-call-container {
+            width: 90%;
+            max-width: 400px;
+            background-color: var(--bg-color);
+            border-radius: 20px;
+            overflow: hidden;
+            text-align: center;
+            padding: 30px;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .incoming-call-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: white;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .incoming-call-name {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .incoming-call-type {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+        
+        .incoming-call-actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        /* New Call Modal */
+        .new-call-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .new-call-modal.active {
+            display: flex;
+        }
+        
+        .new-call-container {
+            width: 90%;
+            max-width: 500px;
+            background-color: var(--bg-color);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .new-call-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--call-gradient);
+            color: white;
+        }
+        
+        .new-call-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .new-call-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .new-call-tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .new-call-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .new-call-content {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+        }
+        
+        .contact-search {
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .contacts-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .contact-item:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .contact-item.selected {
+            background-color: rgba(0, 132, 255, 0.1);
+            border: 1px solid var(--primary-color);
+        }
+        
+        .contact-checkbox {
+            margin-right: 12px;
+        }
+        
+        .group-call-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .option-item {
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .option-item:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .option-item.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(0, 132, 255, 0.1);
+        }
+        
+        .option-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .option-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--success-color);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .notification.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .notification.error {
+            background-color: var(--danger-color);
+        }
+        
+        .notification.warning {
+            background-color: var(--warning-color);
+        }
+        
+        /* Picture in Picture */
+        .pip-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: var(--video-bg);
+            box-shadow: var(--shadow-lg);
+            z-index: 999;
+            cursor: move;
+            resize: both;
+            overflow: hidden;
+        }
+        
+        .pip-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .pip-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 350px;
+            }
+            
+            .call-side-panel {
+                width: 250px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 50vh;
+            }
+            
+            .call-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 100;
+            }
+            
+            .call-side-panel {
+                position: fixed;
+                top: 0;
+                right: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 200;
+            }
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulsing {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar with call history -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Calls</h2>
+                <button class="new-call-btn" id="newCallBtn">
+                    <i class="fas fa-phone-alt"></i>
+                </button>
+            </div>
+            
+            <div class="call-categories">
+                <button class="category-btn active" id="allTab">All</button>
+                <button class="category-btn" id="missedTab">Missed</button>
+                <button class="category-btn" id="groupsTab">Groups</button>
+            </div>
+            
+            <div class="call-list">
+                <div class="quick-actions">
+                    <button class="quick-action-btn" id="voiceCallBtn">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="quick-action-text">Voice Call</div>
+                    </button>
+                    <button class="quick-action-btn" id="videoCallBtn">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="quick-action-text">Video Call</div>
+                    </button>
+                    <button class="quick-action-btn" id="groupCallBtn">
+                        <div class="quick-action-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="quick-action-text">Group Call</div>
+                    </button>
+                </div>
+                
+                <!-- Call Settings Panel -->
+                <div class="call-settings">
+                    <div class="settings-toggle" id="settingsToggle">
+                        <div class="settings-toggle-title">
+                            <i class="fas fa-cog settings-toggle-icon"></i>
+                            <span>Call Settings</span>
+                        </div>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    
+                    <div class="settings-panel" id="settingsPanel">
+                        <div class="settings-item">
+                            <div class="settings-item-label">
+                                <i class="fas fa-smile settings-item-icon"></i>
+                                <span>Live Reactions</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="reactionsToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="settings-item">
+                            <div class="settings-item-label">
+                                <i class="fas fa-comment settings-item-icon"></i>
+                                <span>In-call Chat</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="chatToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="settings-item">
+                            <div class="settings-item-label">
+                                <i class="fas fa-paint-brush settings-item-icon"></i>
+                                <span>Shared Whiteboard</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="whiteboardToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="settings-item">
+                            <div class="settings-item-label">
+                                <i class="fas fa-poll settings-item-icon"></i>
+                                <span>Polls</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="pollsToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="settings-item">
+                            <div class="settings-item-label">
+                                <i class="fas fa-sticky-note settings-item-icon"></i>
+                                <span>Shared Notes</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notesToggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="recent-calls">
+                    <div class="section-title">Recent Calls</div>
+                    <div id="recentCallsList">
+                        <!-- Recent calls will be loaded here -->
+                        <div class="loading-placeholder" style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 15px;"></i>
+                            <p>Loading call history...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Call Container -->
+        <div class="call-container" id="callContainer">
+            <div class="call-header">
+                <div class="call-info-bar">
+                    <div class="call-type-icon" id="callTypeIcon">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="call-info-text">
+                        <h4 id="callParticipants">Connecting...</h4>
+                        <p id="callStatus">Connecting...</p>
+                    </div>
+                </div>
+                <div class="call-duration" id="callDuration">00:00</div>
+            </div>
+            
+            <div class="video-grid" id="videoGrid">
+                <!-- Video streams will be added here -->
+            </div>
+            
+            <div class="reactions-container" id="reactionsContainer">
+                <div class="reaction-btn" data-reaction="👍">👍</div>
+                <div class="reaction-btn" data-reaction="👏">👏</div>
+                <div class="reaction-btn" data-reaction="😂">😂</div>
+                <div class="reaction-btn" data-reaction="❤">❤</div>
+                <div class="reaction-btn" data-reaction="🔥">🔥</div>
+            </div>
+            
+            <div class="call-controls">
+                <button class="control-btn" id="muteBtn" title="Mute">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <button class="control-btn" id="videoBtn" title="Video">
+                    <i class="fas fa-video"></i>
+                </button>
+                <button class="control-btn" id="speakerBtn" title="Speaker">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+                <button class="control-btn" id="screenShareBtn" title="Share Screen">
+                    <i class="fas fa-desktop"></i>
+                </button>
+                <button class="control-btn" id="effectsBtn" title="Effects">
+                    <i class="fas fa-magic"></i>
+                </button>
+                <button class="control-btn" id="moreBtn" title="More Options">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+                <button class="control-btn danger" id="endCallBtn" title="End Call">
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Call Side Panel -->
+        <div class="call-side-panel collapsed" id="callSidePanel">
+            <div class="panel-header">
+                <h3 id="panelTitle">Call Controls</h3>
+                <button class="call-action-btn" id="closePanelBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="panel-tabs" id="panelTabs">
+                <button class="panel-tab active" data-panel="participants">Participants</button>
+                <button class="panel-tab" data-panel="chat">Chat</button>
+                <button class="panel-tab" data-panel="whiteboard">Whiteboard</button>
+                <button class="panel-tab" data-panel="notes">Notes</button>
+                <button class="panel-tab" data-panel="polls">Polls</button>
+            </div>
+            
+            <div class="panel-content" id="panelContent">
+                <!-- Participants Panel -->
+                <div class="panel-section active" id="participantsPanel">
+                    <div class="participants-list" id="participantsList">
+                        <!-- Participants will be listed here -->
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button class="notes-btn" id="addParticipantsBtn" style="width: 100%;">
+                            <i class="fas fa-user-plus"></i> Add Participants
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Chat Panel -->
+                <div class="panel-section" id="chatPanel">
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- Chat messages will be shown here -->
+                    </div>
+                    <div class="chat-input">
+                        <input type="text" class="chat-input-field" id="chatInput" placeholder="Type a message...">
+                        <button class="video-action-btn" id="sendChatBtn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Whiteboard Panel -->
+                <div class="panel-section" id="whiteboardPanel">
+                    <div class="whiteboard-container">
+                        <canvas id="whiteboardCanvas"></canvas>
+                    </div>
+                    <div class="whiteboard-tools">
+                        <button class="notes-btn" data-tool="pencil">
+                            <i class="fas fa-pencil-alt"></i> Pencil
+                        </button>
+                        <button class="notes-btn" data-tool="line">
+                            <i class="fas fa-minus"></i> Line
+                        </button>
+                        <button class="notes-btn" data-tool="rectangle">
+                            <i class="fas fa-square"></i> Rectangle
+                        </button>
+                        <button class="notes-btn" data-tool="circle">
+                            <i class="fas fa-circle"></i> Circle
+                        </button>
+                        <button class="notes-btn" data-tool="text">
+                            <i class="fas fa-font"></i> Text
+                        </button>
+                        <button class="notes-btn" id="clearWhiteboardBtn">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Notes Panel -->
+                <div class="panel-section" id="notesPanel">
+                    <div class="notes-editor">
+                        <div class="notes-toolbar">
+                            <button class="notes-btn" id="saveNoteBtn">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                            <button class="notes-btn" id="shareNoteBtn">
+                                <i class="fas fa-share"></i> Share
+                            </button>
+                        </div>
+                        <textarea class="notes-input" id="notesInput" placeholder="Take notes during the call..."></textarea>
+                        <div class="notes-preview" id="notesPreview">
+                            <!-- Notes preview will appear here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Polls Panel -->
+                <div class="panel-section" id="pollsPanel">
+                    <div class="poll-container">
+                        <div id="activePoll">
+                            <!-- Active poll will be shown here -->
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <button class="notes-btn" id="createPollBtn" style="width: 100%;">
+                                <i class="fas fa-plus"></i> Create New Poll
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- New Call Modal -->
+    <div class="new-call-modal" id="newCallModal">
+        <div class="new-call-container">
+            <div class="new-call-header">
+                <h3>Start New Call</h3>
+                <button class="new-call-btn" id="closeNewCallModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="new-call-tabs">
+                <button class="new-call-tab active" data-tab="contacts">Contacts</button>
+                <button class="new-call-tab" data-tab="group">Group Call</button>
+                <button class="new-call-tab" data-tab="link">Call Link</button>
+            </div>
+            
+            <div class="new-call-content">
+                <!-- Contacts Tab -->
+                <div class="new-call-tab-content active" id="contactsTab">
+                    <div class="contact-search">
+                        <input type="text" class="search-input" id="contactSearch" placeholder="Search contacts...">
+                    </div>
+                    <div class="contacts-list" id="contactsList">
+                        <!-- Contacts will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Group Call Tab -->
+                <div class="new-call-tab-content" id="groupTab">
+                    <div class="group-call-options">
+                        <div class="option-item" data-type="instant">
+                            <div class="option-title">
+                                <i class="fas fa-bolt"></i> Instant Group Call
+                            </div>
+                            <div class="option-desc">Start a call and add participants as you go</div>
+                        </div>
+                        <div class="option-item" data-type="scheduled">
+                            <div class="option-title">
+                                <i class="fas fa-calendar"></i> Schedule Group Call
+                            </div>
+                            <div class="option-desc">Schedule a call for later and send invites</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <h4 style="margin-bottom: 10px;">Select Participants</h4>
+                        <div class="contacts-list" id="groupContactsList">
+                            <!-- Group contacts will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Call Link Tab -->
+                <div class="new-call-tab-content" id="linkTab">
+                    <div style="text-align: center; padding: 30px 0;">
+                        <div style="font-size: 48px; margin-bottom: 20px; color: var(--primary-color);">
+                            <i class="fas fa-link"></i>
+                        </div>
+                        <h3 style="margin-bottom: 10px;">Create Call Link</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                            Create a shareable link for anyone to join your call
+                        </p>
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <button class="notes-btn" id="createVoiceLinkBtn">
+                                <i class="fas fa-phone"></i> Voice Call Link
+                            </button>
+                            <button class="notes-btn" id="createVideoLinkBtn">
+                                <i class="fas fa-video"></i> Video Call Link
+                            </button>
+                        </div>
+                        <div id="callLinkContainer" style="display: none;">
+                            <div style="margin-bottom: 15px;">
+                                <input type="text" id="callLinkInput" readonly style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="notes-btn" id="copyLinkBtn">
+                                    <i class="fas fa-copy"></i> Copy Link
+                                </button>
+                                <button class="notes-btn" id="shareLinkBtn">
+                                    <i class="fas fa-share"></i> Share
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="padding: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between;">
+                <button class="notes-btn" id="cancelNewCallBtn">Cancel</button>
+                <button class="notes-btn" id="startCallBtn" style="background-color: var(--primary-color); color: white;">Start Call</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Incoming Call Modal -->
+    <div class="incoming-call-modal" id="incomingCallModal">
+        <div class="incoming-call-container">
+            <div class="incoming-call-avatar" id="incomingCallAvatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="incoming-call-name" id="incomingCallName">John Doe</div>
+            <div class="incoming-call-type" id="incomingCallType">Incoming Video Call</div>
+            <div class="incoming-call-actions">
+                <button class="control-btn danger pulsing" id="declineCallBtn">
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+                <button class="control-btn active pulsing" id="acceptCallBtn">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <button class="control-btn" id="acceptVideoCallBtn">
+                    <i class="fas fa-video"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">Operation completed successfully</span>
+    </div>
+    
+    <!-- Picture in Picture Container -->
+    <div class="pip-container" id="pipContainer" style="display: none;">
+        <video class="pip-video" id="pipVideo" autoplay muted></video>
+        <div class="pip-controls">
+            <button class="video-action-btn" id="pipExpandBtn">
+                <i class="fas fa-expand"></i>
+            </button>
+            <button class="video-action-btn danger" id="pipEndBtn">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
+            authDomain: "uniconnect-ee95c.firebaseapp.com",
+            projectId: "uniconnect-ee95c",
+            storageBucket: "uniconnect-ee95c.firebasestorage.app",
+            messagingSenderId: "1003264444309",
+            appId: "1:1003264444309:web:9f0307516e44d21e97d89c"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        
+        // Global variables
+        let currentUser = null;
+        let peer = null;
+        let localStream = null;
+        let remoteStreams = new Map();
+        let currentCall = null;
+        let callStartTime = null;
+        let callInterval = null;
+        let isMuted = false;
+        let isVideoOff = false;
+        let isSpeakerOn = false;
+        let isScreenSharing = false;
+        let currentCallType = null;
+        let callParticipants = [];
+        let selectedContacts = [];
+        let whiteboardCanvas = null;
+        let whiteboardCtx = null;
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let currentTool = 'pencil';
+        let callLink = null;
+        
+        // User settings - default values
+        let userSettings = {
+            reactions: true,
+            chat: true,
+            whiteboard: true,
+            polls: true,
+            notes: true
+        };
+        
+        // DOM Elements
+        const callContainer = document.getElementById('callContainer');
+        const callSidePanel = document.getElementById('callSidePanel');
+        const newCallModal = document.getElementById('newCallModal');
+        const incomingCallModal = document.getElementById('incomingCallModal');
+        const videoGrid = document.getElementById('videoGrid');
+        const notification = document.getElementById('notification');
+        const pipContainer = document.getElementById('pipContainer');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const settingsToggle = document.getElementById('settingsToggle');
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setupEventListeners();
+            initializePeerJS();
+            initializeWhiteboard();
+            loadUserSettings();
+        });
+        
+        function initializeApp() {
+            // Check if user is logged in
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    currentUser = user;
+                    loadUserData();
+                    loadRecentCalls();
+                    listenForIncomingCalls();
+                } else {
+                    // Redirect to index.html if not logged in
+                    window.location.href = 'index.html';
+                }
+            });
+        }
+        
+        function loadUserData() {
+            // Set user initials for avatars
+            const userInitials = currentUser.displayName ? 
+                currentUser.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 
+                'ME';
+            
+            // Store for later use
+            window.userInitials = userInitials;
+            window.userAvatar = currentUser.photoURL;
+        }
+        
+        async function loadUserSettings() {
+            try {
+                // Try to load user settings from Firestore
+                const settingsDoc = await db.collection('userSettings').doc(currentUser.uid).get();
+                
+                if (settingsDoc.exists) {
+                    const savedSettings = settingsDoc.data();
+                    userSettings = {
+                        reactions: savedSettings.reactions !== undefined ? savedSettings.reactions : true,
+                        chat: savedSettings.chat !== undefined ? savedSettings.chat : true,
+                        whiteboard: savedSettings.whiteboard !== undefined ? savedSettings.whiteboard : true,
+                        polls: savedSettings.polls !== undefined ? savedSettings.polls : true,
+                        notes: savedSettings.notes !== undefined ? savedSettings.notes : true
+                    };
+                }
+                
+                // Update toggle switches
+                document.getElementById('reactionsToggle').checked = userSettings.reactions;
+                document.getElementById('chatToggle').checked = userSettings.chat;
+                document.getElementById('whiteboardToggle').checked = userSettings.whiteboard;
+                document.getElementById('pollsToggle').checked = userSettings.polls;
+                document.getElementById('notesToggle').checked = userSettings.notes;
+                
+                // Apply initial settings
+                applyUserSettings();
+                
+            } catch (error) {
+                console.error('Error loading user settings:', error);
+                // Use default settings
+                applyUserSettings();
+            }
+        }
+        
+        function saveUserSettings() {
+            if (!currentUser) return;
+            
+            try {
+                db.collection('userSettings').doc(currentUser.uid).set(userSettings, { merge: true })
+                    .then(() => {
+                        console.log('User settings saved');
+                    })
+                    .catch(error => {
+                        console.error('Error saving user settings:', error);
+                    });
+            } catch (error) {
+                console.error('Error saving user settings:', error);
+            }
+        }
+        
+        function applyUserSettings() {
+            // Apply settings to UI
+            
+            // Reactions container visibility
+            const reactionsContainer = document.getElementById('reactionsContainer');
+            if (reactionsContainer) {
+                reactionsContainer.style.display = userSettings.reactions ? 'flex' : 'none';
+            }
+            
+            // Panel tabs visibility - only show enabled features
+            const panelTabs = document.querySelectorAll('.panel-tab');
+            panelTabs.forEach(tab => {
+                const panelType = tab.dataset.panel;
+                
+                switch(panelType) {
+                    case 'chat':
+                        tab.style.display = userSettings.chat ? 'flex' : 'none';
+                        break;
+                    case 'whiteboard':
+                        tab.style.display = userSettings.whiteboard ? 'flex' : 'none';
+                        break;
+                    case 'notes':
+                        tab.style.display = userSettings.notes ? 'flex' : 'none';
+                        break;
+                    case 'polls':
+                        tab.style.display = userSettings.polls ? 'flex' : 'none';
+                        break;
+                }
+            });
+            
+            // If chat is disabled but active, switch to participants
+            if (!userSettings.chat) {
+                const activeTab = document.querySelector('.panel-tab.active');
+                if (activeTab && activeTab.dataset.panel === 'chat') {
+                    document.querySelector('.panel-tab[data-panel="participants"]').click();
+                }
+            }
+            
+            // If whiteboard is disabled but active, switch to participants
+            if (!userSettings.whiteboard) {
+                const activeTab = document.querySelector('.panel-tab.active');
+                if (activeTab && activeTab.dataset.panel === 'whiteboard') {
+                    document.querySelector('.panel-tab[data-panel="participants"]').click();
+                }
+            }
+            
+            // If notes is disabled but active, switch to participants
+            if (!userSettings.notes) {
+                const activeTab = document.querySelector('.panel-tab.active');
+                if (activeTab && activeTab.dataset.panel === 'notes') {
+                    document.querySelector('.panel-tab[data-panel="participants"]').click();
+                }
+            }
+            
+            // If polls is disabled but active, switch to participants
+            if (!userSettings.polls) {
+                const activeTab = document.querySelector('.panel-tab.active');
+                if (activeTab && activeTab.dataset.panel === 'polls') {
+                    document.querySelector('.panel-tab[data-panel="participants"]').click();
+                }
+            }
+        }
+        
+        async function loadRecentCalls() {
+            try {
+                const recentCallsList = document.getElementById('recentCallsList');
+                
+                // Fetch call history from Firestore
+                const callsSnapshot = await db.collection('calls')
+                    .where('participants', 'array-contains', currentUser.uid)
+                    .orderBy('timestamp', 'desc')
+                    .limit(20)
+                    .get();
+                
+                recentCallsList.innerHTML = '';
+                
+                if (callsSnapshot.empty) {
+                    recentCallsList.innerHTML = `
+                        <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+                            <i class="fas fa-phone" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+                            <p>No recent calls</p>
+                            <p style="font-size: 14px; margin-top: 10px;">Start your first call with the button above</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Process each call
+                for (const doc of callsSnapshot.docs) {
+                    const callData = doc.data();
+                    await displayCallItem(callData, doc.id);
+                }
+                
+            } catch (error) {
+                console.error('Error loading recent calls:', error);
+                showNotification('Failed to load call history', 'error');
+            }
+        }
+        
+        async function displayCallItem(callData, callId) {
+            const recentCallsList = document.getElementById('recentCallsList');
+            
+            // Get the other participant (for 1-on-1 calls)
+            const otherParticipantId = callData.participants.find(id => id !== currentUser.uid);
+            let otherParticipantName = 'Unknown';
+            let otherParticipantAvatar = '';
+            
+            if (otherParticipantId) {
+                try {
+                    const userDoc = await db.collection('users').doc(otherParticipantId).get();
+                    if (userDoc.exists) {
+                        const userData = userDoc.data();
+                        otherParticipantName = userData.displayName || 'User';
+                        otherParticipantAvatar = userData.photoURL || '';
+                    }
+                } catch (error) {
+                    console.error('Error fetching user data:', error);
+                }
+            }
+            
+            // Determine call type and status
+            const isGroupCall = callData.participants.length > 2;
+            const callType = callData.type || 'voice';
+            const callStatus = callData.status || 'completed';
+            const isMissed = callStatus === 'missed';
+            const isOutgoing = callData.initiator === currentUser.uid;
+            
+            // Format call time
+            const callTime = callData.timestamp ? 
+                formatTimeAgo(callData.timestamp.toDate()) : 
+                'Recently';
+            
+            // Format duration
+            let durationText = '';
+            if (callData.duration) {
+                const minutes = Math.floor(callData.duration / 60);
+                const seconds = callData.duration % 60;
+                durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            // Create call item
+            const callItem = document.createElement('div');
+            callItem.className = 'call-item';
+            callItem.dataset.callId = callId;
+            
+            // Status icon class
+            let statusIconClass = '';
+            let statusIcon = '';
+            
+            if (isMissed) {
+                statusIconClass = 'missed';
+                statusIcon = isOutgoing ? 'fas fa-phone-slash' : 'fas fa-phone-missed';
+            } else if (isOutgoing) {
+                statusIconClass = 'outgoing';
+                statusIcon = 'fas fa-phone-alt';
+            } else {
+                statusIconClass = 'incoming';
+                statusIcon = 'fas fa-phone';
+            }
+            
+            const initials = otherParticipantName.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2);
+            
+            callItem.innerHTML = `
+                <div class="call-avatar" ${otherParticipantAvatar ? `style="background-image: url('${otherParticipantAvatar}')"` : ''}>
+                    ${otherParticipantAvatar ? '' : `<span>${initials}</span>`}
+                    <div class="call-status-icon ${statusIconClass}">
+                        <i class="${statusIcon}"></i>
+                    </div>
+                </div>
+                <div class="call-info">
+                    <div class="call-name">
+                        <span>${isGroupCall ? `Group Call (${callData.participants.length})` : otherParticipantName}</span>
+                        <span class="call-time">${callTime}</span>
+                    </div>
+                    <div class="call-details">
+                        <i class="fas fa-${callType === 'video' ? 'video' : 'phone'}"></i>
+                        <span>${isMissed ? 'Missed' : (isOutgoing ? 'Outgoing' : 'Incoming')}</span>
+                        ${durationText ? `<span>• ${durationText}</span>` : ''}
+                    </div>
+                </div>
+                <button class="call-action-btn" title="Call Back">
+                    <i class="fas fa-phone"></i>
+                </button>
+            `;
+            
+            // Add click event for calling back
+            const callbackBtn = callItem.querySelector('.call-action-btn');
+            callbackBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (isGroupCall) {
+                    startGroupCall(callData.participants.filter(id => id !== currentUser.uid));
+                } else {
+                    startCall(otherParticipantId, callType);
+                }
+            });
+            
+            recentCallsList.appendChild(callItem);
+        }
+        
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            return `${Math.floor(diffDays / 7)}w ago`;
+        }
+        
+        function initializePeerJS() {
+            // Create Peer instance with current user's ID
+            peer = new Peer(currentUser.uid, {
+                host: '0.peerjs.com',
+                port: 443,
+                path: '/',
+                secure: true,
+                config: {
+                    'iceServers': [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:global.stun.twilio.com:3478' }
+                    ]
+                }
+            });
+            
+            peer.on('open', (id) => {
+                console.log('PeerJS connected with ID:', id);
+            });
+            
+            peer.on('error', (err) => {
+                console.error('PeerJS error:', err);
+                showNotification('Connection error. Please refresh.', 'error');
+            });
+            
+            peer.on('call', (incomingCall) => {
+                handleIncomingCall(incomingCall);
+            });
+        }
+        
+        function handleIncomingCall(incomingCall) {
+            // Get caller info from Firestore
+            db.collection('users').doc(incomingCall.peer).get().then(callerDoc => {
+                if (!callerDoc.exists) return;
+                
+                const callerData = callerDoc.data();
+                
+                // Show incoming call modal
+                document.getElementById('incomingCallName').textContent = callerData.displayName || 'Unknown';
+                document.getElementById('incomingCallType').textContent = 
+                    incomingCall.metadata.type === 'video' ? 'Incoming Video Call' : 'Incoming Voice Call';
+                
+                // Set avatar
+                const incomingCallAvatar = document.getElementById('incomingCallAvatar');
+                if (callerData.photoURL) {
+                    incomingCallAvatar.style.backgroundImage = `url('${callerData.photoURL}')`;
+                    incomingCallAvatar.innerHTML = '';
+                } else {
+                    const initials = callerData.displayName ? 
+                        callerData.displayName.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2) : 
+                        'U';
+                    incomingCallAvatar.innerHTML = `<span>${initials}</span>`;
+                }
+                
+                incomingCallModal.classList.add('active');
+                
+                // Store incoming call for later
+                window.incomingCall = incomingCall;
+                window.callerId = incomingCall.peer;
+                window.callType = incomingCall.metadata.type;
+                
+            }).catch(error => {
+                console.error('Error fetching caller info:', error);
+            });
+        }
+        
+        async function startCall(userId, type = 'video') {
+            try {
+                // Get user media
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: type === 'video',
+                    audio: true
+                });
+                
+                // Create call
+                currentCallType = type;
+                callParticipants = [currentUser.uid, userId];
+                
+                // Update UI
+                callContainer.classList.add('active');
+                document.getElementById('callTypeIcon').innerHTML = 
+                    `<i class="fas fa-${type === 'video' ? 'video' : 'phone'}"></i>`;
+                document.getElementById('callParticipants').textContent = 'Connecting...';
+                document.getElementById('callStatus').textContent = 'Calling...';
+                
+                // Add local video
+                addVideoStream(currentUser.uid, localStream, true);
+                
+                // Call the other user
+                const call = peer.call(userId, localStream, {
+                    metadata: {
+                        type: type,
+                        callerName: currentUser.displayName || 'User',
+                        callerAvatar: currentUser.photoURL || ''
+                    }
+                });
+                
+                currentCall = call;
+                callStartTime = new Date();
+                startCallTimer();
+                
+                call.on('stream', (remoteStream) => {
+                    addVideoStream(userId, remoteStream);
+                });
+                
+                call.on('close', () => {
+                    endCall();
+                });
+                
+                // Save call to Firestore
+                await db.collection('calls').add({
+                    participants: [currentUser.uid, userId],
+                    initiator: currentUser.uid,
+                    type: type,
+                    status: 'ongoing',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+            } catch (error) {
+                console.error('Error starting call:', error);
+                showNotification('Failed to start call', 'error');
+                endCall();
+            }
+        }
+        
+        async function startGroupCall(userIds) {
+            try {
+                // Get user media
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                
+                // Update UI
+                currentCallType = 'video';
+                callParticipants = [currentUser.uid, ...userIds];
+                
+                callContainer.classList.add('active');
+                document.getElementById('callTypeIcon').innerHTML = '<i class="fas fa-users"></i>';
+                document.getElementById('callParticipants').textContent = `Group Call (${callParticipants.length})`;
+                document.getElementById('callStatus').textContent = 'Starting...';
+                
+                // Add local video
+                addVideoStream(currentUser.uid, localStream, true);
+                
+                // Call each participant
+                const calls = [];
+                for (const userId of userIds) {
+                    const call = peer.call(userId, localStream, {
+                        metadata: {
+                            type: 'video',
+                            group: true,
+                            callerName: currentUser.displayName || 'User',
+                            callerAvatar: currentUser.photoURL || ''
+                        }
+                    });
+                    
+                    calls.push(call);
+                    
+                    call.on('stream', (remoteStream) => {
+                        addVideoStream(userId, remoteStream);
+                    });
+                    
+                    call.on('close', () => {
+                        removeVideoStream(userId);
+                    });
+                }
+                
+                currentCall = calls;
+                callStartTime = new Date();
+                startCallTimer();
+                
+                // Save group call to Firestore
+                await db.collection('calls').add({
+                    participants: callParticipants,
+                    initiator: currentUser.uid,
+                    type: 'video',
+                    group: true,
+                    status: 'ongoing',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Update participants list
+                updateParticipantsList();
+                
+            } catch (error) {
+                console.error('Error starting group call:', error);
+                showNotification('Failed to start group call', 'error');
+                endCall();
+            }
+        }
+        
+        function addVideoStream(userId, stream, isLocal = false) {
+            // Remove existing video if present
+            const existingVideo = document.querySelector(`[data-user-id="${userId}"]`);
+            if (existingVideo) {
+                existingVideo.remove();
+            }
+            
+            // Create video container
+            const videoContainer = document.createElement('div');
+            videoContainer.className = 'video-container fade-in';
+            videoContainer.dataset.userId = userId;
+            
+            if (isLocal) {
+                videoContainer.classList.add('pinned');
+            }
+            
+            // Create video element
+            const video = document.createElement('video');
+            video.className = 'video-element';
+            video.srcObject = stream;
+            video.autoplay = true;
+            video.muted = isLocal;
+            
+            // Get user info
+            let userName = isLocal ? 'You' : 'User';
+            let userAvatar = '';
+            
+            if (isLocal) {
+                userName = 'You';
+                userAvatar = window.userAvatar;
+            } else {
+                // Try to get user info from Firestore
+                db.collection('users').doc(userId).get().then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        userName = userData.displayName || 'User';
+                        userAvatar = userData.photoURL || '';
+                        
+                        // Update video overlay
+                        const nameSpan = videoContainer.querySelector('.video-name span');
+                        if (nameSpan) nameSpan.textContent = userName;
+                    }
+                });
+            }
+            
+            // Create video overlay
+            const videoOverlay = document.createElement('div');
+            videoOverlay.className = 'video-overlay';
+            videoOverlay.innerHTML = `
+                <div class="video-name">
+                    <i class="fas fa-${isLocal ? 'user' : 'user-friends'}"></i>
+                    <span>${userName}</span>
+                </div>
+                <div class="video-actions">
+                    <button class="video-action-btn" data-action="pin" title="Pin">
+                        <i class="fas fa-thumbtack"></i>
+                    </button>
+                    <button class="video-action-btn" data-action="spotlight" title="Spotlight">
+                        <i class="fas fa-star"></i>
+                    </button>
+                </div>
+            `;
+            
+            videoContainer.appendChild(video);
+            videoContainer.appendChild(videoOverlay);
+            videoGrid.appendChild(videoContainer);
+            
+            // Store stream
+            if (!isLocal) {
+                remoteStreams.set(userId, stream);
+            }
+            
+            // Update video grid layout
+            updateVideoGrid();
+        }
+        
+        function removeVideoStream(userId) {
+            const videoElement = document.querySelector(`[data-user-id="${userId}"]`);
+            if (videoElement) {
+                videoElement.remove();
+                remoteStreams.delete(userId);
+                updateVideoGrid();
+            }
+        }
+        
+        function updateVideoGrid() {
+            const videoContainers = document.querySelectorAll('.video-container');
+            const count = videoContainers.length;
+            
+            if (count === 0) return;
+            
+            // Clear existing grid classes
+            videoContainers.forEach(container => {
+                container.classList.remove('large');
+            });
+            
+            // If only one video, make it large
+            if (count === 1) {
+                videoContainers[0].classList.add('large');
+            }
+            
+            // Update participants count
+            document.getElementById('callParticipants').textContent = 
+                `Participants (${count})`;
+        }
+        
+        function startCallTimer() {
+            callStartTime = new Date();
+            
+            if (callInterval) clearInterval(callInterval);
+            
+            callInterval = setInterval(() => {
+                const now = new Date();
+                const diff = Math.floor((now - callStartTime) / 1000);
+                const minutes = Math.floor(diff / 60);
+                const seconds = diff % 60;
+                
+                document.getElementById('callDuration').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+        
+        function endCall() {
+            // Stop all media streams
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            
+            remoteStreams.forEach(stream => {
+                stream.getTracks().forEach(track => track.stop());
+            });
+            remoteStreams.clear();
+            
+            // Close current call
+            if (currentCall) {
+                if (Array.isArray(currentCall)) {
+                    currentCall.forEach(call => call.close());
+                } else {
+                    currentCall.close();
+                }
+                currentCall = null;
+            }
+            
+            // Clear timer
+            if (callInterval) {
+                clearInterval(callInterval);
+                callInterval = null;
+            }
+            
+            // Update UI
+            callContainer.classList.remove('active');
+            callSidePanel.classList.add('collapsed');
+            incomingCallModal.classList.remove('active');
+            pipContainer.style.display = 'none';
+            
+            // Clear video grid
+            videoGrid.innerHTML = '';
+            
+            // Reset call duration
+            document.getElementById('callDuration').textContent = '00:00';
+            
+            // Update call history
+            loadRecentCalls();
+        }
+        
+        async function acceptCall(type = 'voice') {
+            try {
+                const incomingCall = window.incomingCall;
+                if (!incomingCall) return;
+                
+                // Get user media
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: type === 'video',
+                    audio: true
+                });
+                
+                // Answer the call
+                incomingCall.answer(localStream);
+                
+                // Update UI
+                currentCall = incomingCall;
+                currentCallType = type;
+                callParticipants = [currentUser.uid, window.callerId];
+                
+                callContainer.classList.add('active');
+                incomingCallModal.classList.remove('active');
+                
+                document.getElementById('callTypeIcon').innerHTML = 
+                    `<i class="fas fa-${type === 'video' ? 'video' : 'phone'}"></i>`;
+                document.getElementById('callParticipants').textContent = window.incomingCallName || 'User';
+                document.getElementById('callStatus').textContent = 'Connected';
+                
+                // Add local video
+                addVideoStream(currentUser.uid, localStream, true);
+                
+                // Handle remote stream
+                incomingCall.on('stream', (remoteStream) => {
+                    addVideoStream(window.callerId, remoteStream);
+                });
+                
+                incomingCall.on('close', () => {
+                    endCall();
+                });
+                
+                callStartTime = new Date();
+                startCallTimer();
+                
+                // Save call to Firestore
+                await db.collection('calls').add({
+                    participants: [currentUser.uid, window.callerId],
+                    initiator: window.callerId,
+                    type: type,
+                    status: 'completed',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    duration: 0 // Will be updated when call ends
+                });
+                
+                // Clear incoming call data
+                window.incomingCall = null;
+                window.callerId = null;
+                window.callType = null;
+                
+            } catch (error) {
+                console.error('Error accepting call:', error);
+                showNotification('Failed to accept call', 'error');
+                endCall();
+            }
+        }
+        
+        function declineCall() {
+            if (window.incomingCall) {
+                window.incomingCall.close();
+                
+                // Save missed call to Firestore
+                db.collection('calls').add({
+                    participants: [currentUser.uid, window.callerId],
+                    initiator: window.callerId,
+                    type: window.callType,
+                    status: 'missed',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                window.incomingCall = null;
+                window.callerId = null;
+                window.callType = null;
+            }
+            
+            incomingCallModal.classList.remove('active');
+        }
+        
+        function updateParticipantsList() {
+            const participantsList = document.getElementById('participantsList');
+            participantsList.innerHTML = '';
+            
+            // Add local user
+            addParticipantItem(currentUser.uid, 'You', window.userAvatar, true);
+            
+            // Add remote participants
+            remoteStreams.forEach((stream, userId) => {
+                // Fetch user info from Firestore
+                db.collection('users').doc(userId).get().then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        addParticipantItem(userId, userData.displayName || 'User', userData.photoURL || '', false);
+                    }
+                });
+            });
+        }
+        
+        function addParticipantItem(userId, name, avatar, isLocal) {
+            const participantsList = document.getElementById('participantsList');
+            
+            const participantItem = document.createElement('div');
+            participantItem.className = 'participant-item';
+            participantItem.dataset.userId = userId;
+            
+            const initials = name.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2);
+            
+            participantItem.innerHTML = `
+                <div class="participant-avatar" ${avatar ? `style="background-image: url('${avatar}')"` : ''}>
+                    ${avatar ? '' : `<span>${initials}</span>`}
+                </div>
+                <div class="participant-info">
+                    <div class="participant-name">${name}</div>
+                    <div class="participant-status ${isLocal ? 'active' : ''}">
+                        <i class="fas fa-circle"></i>
+                        ${isLocal ? 'You' : 'Connected'}
+                    </div>
+                </div>
+                ${!isLocal ? `
+                <div class="participant-actions">
+                    <button class="video-action-btn" data-action="pin-user" title="Pin">
+                        <i class="fas fa-thumbtack"></i>
+                    </button>
+                    <button class="video-action-btn" data-action="remove-user" title="Remove">
+                        <i class="fas fa-user-minus"></i>
+                    </button>
+                </div>
+                ` : ''}
+            `;
+            
+            participantsList.appendChild(participantItem);
+        }
+        
+        function initializeWhiteboard() {
+            whiteboardCanvas = document.getElementById('whiteboardCanvas');
+            whiteboardCtx = whiteboardCanvas.getContext('2d');
+            
+            // Set canvas dimensions
+            whiteboardCanvas.width = whiteboardCanvas.offsetWidth;
+            whiteboardCanvas.height = whiteboardCanvas.offsetHeight;
+            
+            // Set initial drawing styles
+            whiteboardCtx.strokeStyle = '#000000';
+            whiteboardCtx.lineWidth = 2;
+            whiteboardCtx.lineCap = 'round';
+            
+            // Set white background
+            whiteboardCtx.fillStyle = '#ffffff';
+            whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
+            
+            // Add drawing event listeners
+            whiteboardCanvas.addEventListener('mousedown', startDrawing);
+            whiteboardCanvas.addEventListener('mousemove', draw);
+            whiteboardCanvas.addEventListener('mouseup', stopDrawing);
+            whiteboardCanvas.addEventListener('mouseout', stopDrawing);
+            
+            // Touch events for mobile
+            whiteboardCanvas.addEventListener('touchstart', handleTouchStart);
+            whiteboardCanvas.addEventListener('touchmove', handleTouchMove);
+            whiteboardCanvas.addEventListener('touchend', stopDrawing);
+        }
+        
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = whiteboardCanvas.getBoundingClientRect();
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
+            
+            if (currentTool === 'pencil') {
+                whiteboardCtx.beginPath();
+                whiteboardCtx.moveTo(lastX, lastY);
+            }
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = whiteboardCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            switch(currentTool) {
+                case 'pencil':
+                    whiteboardCtx.lineTo(x, y);
+                    whiteboardCtx.stroke();
+                    break;
+                    
+                case 'line':
+                    // Clear and redraw
+                    whiteboardCtx.clearRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
+                    whiteboardCtx.fillStyle = '#ffffff';
+                    whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
+                    whiteboardCtx.beginPath();
+                    whiteboardCtx.moveTo(lastX, lastY);
+                    whiteboardCtx.lineTo(x, y);
+                    whiteboardCtx.stroke();
+                    break;
+                    
+                case 'rectangle':
+                    whiteboardCtx.clearRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
+                    whiteboardCtx.fillStyle = '#ffffff';
+                    whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
+                    whiteboardCtx.strokeRect(lastX, lastY, x - lastX, y - lastY);
+                    break;
+                    
+                case 'circle':
+                    whiteboardCtx.clearRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
+                    whiteboardCtx.fillStyle = '#ffffff';
+                    whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
+                    const radius = Math.sqrt(Math.pow(x - lastX, 2) + Math.pow(y - lastY, 2));
+                    whiteboardCtx.beginPath();
+                    whiteboardCtx.arc(lastX, lastY, radius, 0, Math.PI * 2);
+                    whiteboardCtx.stroke();
+                    break;
+                    
+                case 'text':
+                    const text = prompt('Enter text:');
+                    if (text) {
+                        whiteboardCtx.font = '20px Arial';
+                        whiteboardCtx.fillText(text, x, y);
+                        isDrawing = false;
+                    }
+                    break;
+            }
+            
+            lastX = x;
+            lastY = y;
+        }
+        
+        function stopDrawing() {
+            isDrawing = false;
+            if (currentTool === 'pencil') {
+                whiteboardCtx.closePath();
+            }
+        }
+        
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            whiteboardCanvas.dispatchEvent(mouseEvent);
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            whiteboardCanvas.dispatchEvent(mouseEvent);
+        }
+        
+        function clearWhiteboard() {
+            whiteboardCtx.fillStyle = '#ffffff';
+            whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
+        }
+        
+        async function shareScreen() {
+            try {
+                if (isScreenSharing) {
+                    // Stop screen sharing
+                    localStream.getVideoTracks()[0].stop();
+                    
+                    // Get camera stream
+                    const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    const videoTrack = cameraStream.getVideoTracks()[0];
+                    
+                    // Replace video track
+                    localStream.addTrack(videoTrack);
+                    
+                    isScreenSharing = false;
+                    document.getElementById('screenShareBtn').classList.remove('active');
+                    
+                    showNotification('Stopped screen sharing', 'success');
+                    
+                } else {
+                    // Start screen sharing
+                    const screenStream = await navigator.mediaDevices.getDisplayMedia({
+                        video: true
+                    });
+                    
+                    // Replace video track in local stream
+                    const screenTrack = screenStream.getVideoTracks()[0];
+                    const oldVideoTrack = localStream.getVideoTracks()[0];
+                    
+                    localStream.removeTrack(oldVideoTrack);
+                    localStream.addTrack(screenTrack);
+                    
+                    // Update current call with new stream
+                    if (currentCall) {
+                        if (Array.isArray(currentCall)) {
+                            currentCall.forEach(call => {
+                                call.peerConnection.getSenders().forEach(sender => {
+                                    if (sender.track.kind === 'video') {
+                                        sender.replaceTrack(screenTrack);
+                                    }
+                                });
+                            });
+                        } else {
+                            currentCall.peerConnection.getSenders().forEach(sender => {
+                                if (sender.track.kind === 'video') {
+                                    sender.replaceTrack(screenTrack);
+                                }
+                            });
+                        }
+                    }
+                    
+                    isScreenSharing = true;
+                    document.getElementById('screenShareBtn').classList.add('active');
+                    
+                    showNotification('Screen sharing started', 'success');
+                    
+                    // Handle when user stops sharing via browser UI
+                    screenTrack.onended = () => {
+                        shareScreen(); // This will switch back to camera
+                    };
+                }
+                
+            } catch (error) {
+                console.error('Error sharing screen:', error);
+                showNotification('Failed to share screen', 'error');
+            }
+        }
+        
+        function togglePictureInPicture() {
+            if (document.pictureInPictureElement) {
+                document.exitPictureInPicture();
+                pipContainer.style.display = 'none';
+            } else {
+                const localVideo = document.querySelector('[data-user-id="' + currentUser.uid + '"] video');
+                if (localVideo) {
+                    localVideo.requestPictureInPicture().catch(error => {
+                        console.error('Error entering PiP:', error);
+                        // Fallback to custom PiP
+                        startCustomPiP(localVideo);
+                    });
+                }
+            }
+        }
+        
+        function startCustomPiP(videoElement) {
+            const pipVideo = document.getElementById('pipVideo');
+            pipVideo.srcObject = videoElement.srcObject;
+            pipContainer.style.display = 'block';
+            
+            showNotification('Picture-in-Picture started', 'success');
+        }
+        
+        function createPoll() {
+            const question = prompt('Enter poll question:');
+            if (!question) return;
+            
+            const options = [];
+            let optionCount = parseInt(prompt('How many options? (2-6)', '4'));
+            optionCount = Math.min(Math.max(optionCount, 2), 6);
+            
+            for (let i = 1; i <= optionCount; i++) {
+                const option = prompt(`Option ${i}:`);
+                if (option) options.push(option);
+            }
+            
+            if (options.length < 2) {
+                showNotification('Poll needs at least 2 options', 'error');
+                return;
+            }
+            
+            // Create poll UI
+            const pollHTML = `
+                <div class="poll-question">
+                    <strong>${question}</strong>
+                </div>
+                <div class="poll-options">
+                    ${options.map((option, index) => `
+                        <div class="poll-option" data-option="${index}">
+                            <div class="poll-option-text">${option}</div>
+                            <div class="poll-votes">0 votes</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="margin-top: 15px; font-size: 12px; color: var(--text-secondary);">
+                    <i class="fas fa-info-circle"></i> Click to vote
+                </div>
+            `;
+            
+            document.getElementById('activePoll').innerHTML = pollHTML;
+            
+            // Add vote listeners
+            document.querySelectorAll('.poll-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove selected class from all options
+                    document.querySelectorAll('.poll-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    // Add selected class to clicked option
+                    this.classList.add('selected');
+                    
+                    // Update vote count (simulated)
+                    const votesElement = this.querySelector('.poll-votes');
+                    const currentVotes = parseInt(votesElement.textContent) || 0;
+                    votesElement.textContent = `${currentVotes + 1} votes`;
+                });
+            });
+            
+            showNotification('Poll created successfully', 'success');
+        }
+        
+        function createCallLink(type = 'video') {
+            const linkId = Math.random().toString(36).substring(2, 15);
+            callLink = `${window.location.origin}/call.html?join=${linkId}&type=${type}`;
+            
+            document.getElementById('callLinkInput').value = callLink;
+            document.getElementById('callLinkContainer').style.display = 'block';
+            
+            // Save link to Firestore
+            db.collection('callLinks').doc(linkId).set({
+                type: type,
+                creator: currentUser.uid,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+            });
+        }
+        
+        function copyCallLink() {
+            if (!callLink) return;
+            
+            navigator.clipboard.writeText(callLink).then(() => {
+                showNotification('Link copied to clipboard', 'success');
+            }).catch(err => {
+                console.error('Failed to copy link:', err);
+                showNotification('Failed to copy link', 'error');
+            });
+        }
+        
+        function showNotification(message, type = 'success') {
+            const notificationText = document.getElementById('notificationText');
+            notificationText.textContent = message;
+            
+            notification.className = 'notification';
+            notification.classList.add(type);
+            
+            notification.classList.add('active');
+            
+            setTimeout(() => {
+                notification.classList.remove('active');
+            }, 3000);
+        }
+        
+        function listenForIncomingCalls() {
+            // Listen for incoming calls from Firestore
+            db.collection('calls')
+                .where('participants', 'array-contains', currentUser.uid)
+                .where('status', '==', 'ringing')
+                .where('initiator', '!=', currentUser.uid)
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === 'added') {
+                            const callData = change.doc.data();
+                            if (!callData.answered) {
+                                // Show incoming call notification
+                                handleIncomingCallNotification(callData);
+                            }
+                        }
+                    });
+                });
+        }
+        
+        function handleIncomingCallNotification(callData) {
+            // This is a simplified version - in production, you'd want to use Firebase Cloud Messaging
+            // For now, we'll show a browser notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Incoming Call', {
+                    body: `${callData.callerName || 'Someone'} is calling you`,
+                    icon: callData.callerAvatar || '/icon.png',
+                    tag: 'call-notification'
+                });
+            }
+            
+            // Also update the call list
+            loadRecentCalls();
+        }
+        
+        function setupEventListeners() {
+            // Settings toggle
+            settingsToggle.addEventListener('click', function() {
+                settingsPanel.classList.toggle('active');
+                const icon = this.querySelector('i.fa-chevron-down');
+                icon.classList.toggle('fa-chevron-down');
+                icon.classList.toggle('fa-chevron-up');
+            });
+            
+            // Settings toggles
+            document.getElementById('reactionsToggle').addEventListener('change', function() {
+                userSettings.reactions = this.checked;
+                applyUserSettings();
+                saveUserSettings();
+                showNotification(this.checked ? 'Live reactions enabled' : 'Live reactions disabled', 'success');
+            });
+            
+            document.getElementById('chatToggle').addEventListener('change', function() {
+                userSettings.chat = this.checked;
+                applyUserSettings();
+                saveUserSettings();
+                showNotification(this.checked ? 'In-call chat enabled' : 'In-call chat disabled', 'success');
+            });
+            
+            document.getElementById('whiteboardToggle').addEventListener('change', function() {
+                userSettings.whiteboard = this.checked;
+                applyUserSettings();
+                saveUserSettings();
+                showNotification(this.checked ? 'Whiteboard enabled' : 'Whiteboard disabled', 'success');
+            });
+            
+            document.getElementById('pollsToggle').addEventListener('change', function() {
+                userSettings.polls = this.checked;
+                applyUserSettings();
+                saveUserSettings();
+                showNotification(this.checked ? 'Polls enabled' : 'Polls disabled', 'success');
+            });
+            
+            document.getElementById('notesToggle').addEventListener('change', function() {
+                userSettings.notes = this.checked;
+                applyUserSettings();
+                saveUserSettings();
+                showNotification(this.checked ? 'Notes enabled' : 'Notes disabled', 'success');
+            });
+            
+            // New call button
+            document.getElementById('newCallBtn').addEventListener('click', () => {
+                newCallModal.classList.add('active');
+                loadContacts();
+            });
+            
+            // Quick action buttons
+            document.getElementById('voiceCallBtn').addEventListener('click', () => {
+                newCallModal.classList.add('active');
+                document.querySelector('.new-call-tab[data-tab="contacts"]').click();
+            });
+            
+            document.getElementById('videoCallBtn').addEventListener('click', () => {
+                newCallModal.classList.add('active');
+                document.querySelector('.new-call-tab[data-tab="contacts"]').click();
+            });
+            
+            document.getElementById('groupCallBtn').addEventListener('click', () => {
+                newCallModal.classList.add('active');
+                document.querySelector('.new-call-tab[data-tab="group"]').click();
+            });
+            
+            // Close new call modal
+            document.getElementById('closeNewCallModal').addEventListener('click', () => {
+                newCallModal.classList.remove('active');
+                selectedContacts = [];
+            });
+            
+            document.getElementById('cancelNewCallBtn').addEventListener('click', () => {
+                newCallModal.classList.remove('active');
+                selectedContacts = [];
+            });
+            
+            // New call tabs
+            document.querySelectorAll('.new-call-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    
+                    // Update active tab
+                    document.querySelectorAll('.new-call-tab').forEach(t => {
+                        t.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // Show corresponding content
+                    document.querySelectorAll('.new-call-tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    document.getElementById(`${tabName}Tab`).classList.add('active');
+                });
+            });
+            
+            // Start call button
+            document.getElementById('startCallBtn').addEventListener('click', async () => {
+                const activeTab = document.querySelector('.new-call-tab.active').dataset.tab;
+                
+                if (activeTab === 'contacts') {
+                    if (selectedContacts.length === 0) {
+                        showNotification('Please select at least one contact', 'error');
+                        return;
+                    }
+                    
+                    if (selectedContacts.length === 1) {
+                        // 1-on-1 call
+                        startCall(selectedContacts[0], 'video');
+                    } else {
+                        // Group call
+                        startGroupCall(selectedContacts);
+                    }
+                    
+                } else if (activeTab === 'group') {
+                    const selectedType = document.querySelector('.option-item.selected');
+                    if (!selectedType) {
+                        showNotification('Please select a group call type', 'error');
+                        return;
+                    }
+                    
+                    if (selectedContacts.length === 0) {
+                        showNotification('Please select participants', 'error');
+                        return;
+                    }
+                    
+                    startGroupCall(selectedContacts);
+                    
+                } else if (activeTab === 'link') {
+                    showNotification('Use the generated link to invite participants', 'success');
+                }
+                
+                newCallModal.classList.remove('active');
+                selectedContacts = [];
+            });
+            
+            // Call link buttons
+            document.getElementById('createVoiceLinkBtn').addEventListener('click', () => {
+                createCallLink('voice');
+            });
+            
+            document.getElementById('createVideoLinkBtn').addEventListener('click', () => {
+                createCallLink('video');
+            });
+            
+            document.getElementById('copyLinkBtn').addEventListener('click', copyCallLink);
+            
+            // Incoming call buttons
+            document.getElementById('declineCallBtn').addEventListener('click', declineCall);
+            document.getElementById('acceptCallBtn').addEventListener('click', () => acceptCall('voice'));
+            document.getElementById('acceptVideoCallBtn').addEventListener('click', () => acceptCall('video'));
+            
+            // Call control buttons
+            document.getElementById('muteBtn').addEventListener('click', function() {
+                if (localStream) {
+                    const audioTrack = localStream.getAudioTracks()[0];
+                    audioTrack.enabled = !audioTrack.enabled;
+                    isMuted = !audioTrack.enabled;
+                    
+                    this.classList.toggle('active', isMuted);
+                    showNotification(isMuted ? 'Microphone muted' : 'Microphone unmuted', 'success');
+                }
+            });
+            
+            document.getElementById('videoBtn').addEventListener('click', function() {
+                if (localStream) {
+                    const videoTrack = localStream.getVideoTracks()[0];
+                    videoTrack.enabled = !videoTrack.enabled;
+                    isVideoOff = !videoTrack.enabled;
+                    
+                    this.classList.toggle('active', isVideoOff);
+                    showNotification(isVideoOff ? 'Video turned off' : 'Video turned on', 'success');
+                }
+            });
+            
+            document.getElementById('speakerBtn').addEventListener('click', function() {
+                // Note: Speaker control is limited in browser
+                isSpeakerOn = !isSpeakerOn;
+                this.classList.toggle('active', isSpeakerOn);
+                showNotification(isSpeakerOn ? 'Speaker on' : 'Speaker off', 'success');
+            });
+            
+            document.getElementById('screenShareBtn').addEventListener('click', shareScreen);
+            
+            document.getElementById('effectsBtn').addEventListener('click', function() {
+                showNotification('Video effects coming soon', 'warning');
+            });
+            
+            document.getElementById('moreBtn').addEventListener('click', function() {
+                callSidePanel.classList.toggle('collapsed');
+                document.getElementById('panelTitle').textContent = 'Call Controls';
+            });
+            
+            document.getElementById('endCallBtn').addEventListener('click', endCall);
+            
+            // Close side panel
+            document.getElementById('closePanelBtn').addEventListener('click', () => {
+                callSidePanel.classList.add('collapsed');
+            });
+            
+            // Panel tabs - only show if feature is enabled
+            document.querySelectorAll('.panel-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const panelName = this.dataset.panel;
+                    
+                    // Check if this feature is enabled
+                    let isEnabled = true;
+                    switch(panelName) {
+                        case 'chat':
+                            isEnabled = userSettings.chat;
+                            break;
+                        case 'whiteboard':
+                            isEnabled = userSettings.whiteboard;
+                            break;
+                        case 'notes':
+                            isEnabled = userSettings.notes;
+                            break;
+                        case 'polls':
+                            isEnabled = userSettings.polls;
+                            break;
+                    }
+                    
+                    if (!isEnabled) {
+                        showNotification('This feature is disabled in your settings', 'warning');
+                        return;
+                    }
+                    
+                    // Update active tab
+                    document.querySelectorAll('.panel-tab').forEach(t => {
+                        t.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // Update panel title
+                    document.getElementById('panelTitle').textContent = 
+                        panelName.charAt(0).toUpperCase() + panelName.slice(1);
+                    
+                    // Show corresponding content
+                    document.querySelectorAll('.panel-section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    
+                    document.getElementById(`${panelName}Panel`).classList.add('active');
+                });
+            });
+            
+            // Add participants button
+            document.getElementById('addParticipantsBtn').addEventListener('click', () => {
+                newCallModal.classList.add('active');
+                document.querySelector('.new-call-tab[data-tab="contacts"]').click();
+            });
+            
+            // Chat functionality
+            document.getElementById('sendChatBtn').addEventListener('click', () => {
+                if (!userSettings.chat) {
+                    showNotification('Chat is disabled in your settings', 'warning');
+                    return;
+                }
+                
+                const chatInput = document.getElementById('chatInput');
+                const message = chatInput.value.trim();
+                
+                if (message) {
+                    // Add message to chat
+                    addChatMessage(message, currentUser.uid, true);
+                    
+                    // In a real app, you'd send this to other participants via WebRTC data channel
+                    showNotification('Message sent', 'success');
+                    
+                    chatInput.value = '';
+                }
+            });
+            
+            document.getElementById('chatInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('sendChatBtn').click();
+                }
+            });
+            
+            // Whiteboard tools
+            document.querySelectorAll('[data-tool]').forEach(toolBtn => {
+                toolBtn.addEventListener('click', function() {
+                    if (!userSettings.whiteboard) {
+                        showNotification('Whiteboard is disabled in your settings', 'warning');
+                        return;
+                    }
+                    
+                    currentTool = this.dataset.tool;
+                    
+                    // Update active tool
+                    document.querySelectorAll('[data-tool]').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            });
+            
+            document.getElementById('clearWhiteboardBtn').addEventListener('click', clearWhiteboard);
+            
+            // Notes functionality
+            document.getElementById('saveNoteBtn').addEventListener('click', () => {
+                if (!userSettings.notes) {
+                    showNotification('Notes are disabled in your settings', 'warning');
+                    return;
+                }
+                
+                const note = document.getElementById('notesInput').value;
+                localStorage.setItem(`call_note_${Date.now()}`, note);
+                showNotification('Note saved locally', 'success');
+            });
+            
+            document.getElementById('notesInput').addEventListener('input', function() {
+                const markdown = this.value;
+                const html = marked.parse(markdown);
+                document.getElementById('notesPreview').innerHTML = html;
+            });
+            
+            // Poll functionality
+            document.getElementById('createPollBtn').addEventListener('click', () => {
+                if (!userSettings.polls) {
+                    showNotification('Polls are disabled in your settings', 'warning');
+                    return;
+                }
+                createPoll();
+            });
+            
+            // Reactions
+            document.querySelectorAll('.reaction-btn').forEach(reactionBtn => {
+                reactionBtn.addEventListener('click', function() {
+                    if (!userSettings.reactions) {
+                        showNotification('Reactions are disabled in your settings', 'warning');
+                        return;
+                    }
+                    
+                    const reaction = this.dataset.reaction;
+                    
+                    // Show reaction animation
+                    const reactionElement = document.createElement('div');
+                    reactionElement.textContent = reaction;
+                    reactionElement.style.position = 'absolute';
+                    reactionElement.style.bottom = '150px';
+                    reactionElement.style.right = Math.random() * 100 + 'px';
+                    reactionElement.style.fontSize = '40px';
+                    reactionElement.style.zIndex = '100';
+                    reactionElement.style.animation = 'fadeIn 0.3s ease, fadeOut 1s ease 2s forwards';
+                    
+                    callContainer.appendChild(reactionElement);
+                    
+                    // Remove after animation
+                    setTimeout(() => {
+                        reactionElement.remove();
+                    }, 3000);
+                    
+                    showNotification(`Sent ${reaction} reaction`, 'success');
+                });
+            });
+            
+            // Category tabs
+            document.getElementById('allTab').addEventListener('click', function() {
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+                loadRecentCalls();
+            });
+            
+            document.getElementById('missedTab').addEventListener('click', function() {
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+                // Filter missed calls - in production, you'd query Firestore with filter
+                showNotification('Filtering missed calls', 'info');
+            });
+            
+            document.getElementById('groupsTab').addEventListener('click', function() {
+                document.querySelectorAll('.category-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+                // Filter group calls - in production, you'd query Firestore with filter
+                showNotification('Filtering group calls', 'info');
+            });
+            
+            // Picture in Picture
+            document.getElementById('pipExpandBtn').addEventListener('click', () => {
+                pipContainer.style.display = 'none';
+                callSidePanel.classList.remove('collapsed');
+            });
+            
+            document.getElementById('pipEndBtn').addEventListener('click', endCall);
+            
+            // Window resize
+            window.addEventListener('resize', () => {
+                if (whiteboardCanvas) {
+                    whiteboardCanvas.width = whiteboardCanvas.offsetWidth;
+                    whiteboardCanvas.height = whiteboardCanvas.offsetHeight;
+                }
+                updateVideoGrid();
+            });
+            
+            // Handle before unload
+            window.addEventListener('beforeunload', () => {
+                if (currentCall) {
+                    endCall();
+                }
+            });
+        }
+        
+        async function loadContacts() {
+            const contactsList = document.getElementById('contactsList');
+            const groupContactsList = document.getElementById('groupContactsList');
+            
+            contactsList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Loading contacts...</div>';
+            groupContactsList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Loading contacts...</div>';
+            
+            try {
+                // Get all users except current user
+                const usersSnapshot = await db.collection('users')
+                    .where('uid', '!=', currentUser.uid)
+                    .limit(50)
+                    .get();
+                
+                contactsList.innerHTML = '';
+                groupContactsList.innerHTML = '';
+                
+                if (usersSnapshot.empty) {
+                    const emptyMessage = '<div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);"><i class="fas fa-users" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i><p>No contacts found</p></div>';
+                    contactsList.innerHTML = emptyMessage;
+                    groupContactsList.innerHTML = emptyMessage;
+                    return;
+                }
+                
+                usersSnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    addContactItem(userData, contactsList);
+                    addContactItem(userData, groupContactsList);
+                });
+                
+            } catch (error) {
+                console.error('Error loading contacts:', error);
+                
+                // Fallback: Create demo contacts
+                createDemoContacts(contactsList);
+                createDemoContacts(groupContactsList);
+            }
+        }
+        
+        function addContactItem(userData, container) {
+            const contactItem = document.createElement('div');
+            contactItem.className = 'contact-item';
+            contactItem.dataset.userId = userData.uid;
+            
+            const initials = userData.displayName ? 
+                userData.displayName.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2) : 
+                'U';
+            
+            contactItem.innerHTML = `
+                <input type="checkbox" class="contact-checkbox" id="contact_${userData.uid}">
+                <div class="call-avatar" ${userData.photoURL ? `style="background-image: url('${userData.photoURL}')"` : ''}>
+                    ${userData.photoURL ? '' : `<span>${initials}</span>`}
+                </div>
+                <div class="call-info" style="flex: 1;">
+                    <div class="call-name">
+                        <span>${userData.displayName || 'User'}</span>
+                    </div>
+                    <div class="call-details">
+                        <span>Last seen recently</span>
+                    </div>
+                </div>
+            `;
+            
+            // Add checkbox event listener
+            const checkbox = contactItem.querySelector('.contact-checkbox');
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    selectedContacts.push(userData.uid);
+                    contactItem.classList.add('selected');
+                } else {
+                    selectedContacts = selectedContacts.filter(id => id !== userData.uid);
+                    contactItem.classList.remove('selected');
+                }
+            });
+            
+            container.appendChild(contactItem);
+        }
+        
+        function createDemoContacts(container) {
+            const demoContacts = [
+                { uid: 'demo1', displayName: 'John Smith', photoURL: '' },
+                { uid: 'demo2', displayName: 'Emma Wilson', photoURL: '' },
+                { uid: 'demo3', displayName: 'Alex Johnson', photoURL: '' },
+                { uid: 'demo4', displayName: 'Sarah Davis', photoURL: '' },
+                { uid: 'demo5', displayName: 'Michael Brown', photoURL: '' }
+            ];
+            
+            container.innerHTML = '';
+            demoContacts.forEach(contact => {
+                addContactItem(contact, container);
+            });
+        }
+        
+        function addChatMessage(message, senderId, isSent = false) {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${isSent ? 'sent' : 'received'}`;
+            
+            // Get sender name
+            let senderName = 'Unknown';
+            if (senderId === currentUser.uid) {
+                senderName = 'You';
+            } else {
+                // Try to get from Firestore
+                db.collection('users').doc(senderId).get().then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        const nameElement = messageDiv.querySelector('.message-sender');
+                        if (nameElement) {
+                            nameElement.textContent = userData.displayName || 'User';
+                        }
+                    }
+                });
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-sender">${senderName}</div>
+                <div class="message-content">${message}</div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Handle joining via link
+        function checkForJoinLink() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const joinId = urlParams.get('join');
+            const callType = urlParams.get('type') || 'video';
+            
+            if (joinId) {
+                // Check if link is valid
+                db.collection('callLinks').doc(joinId).get().then(doc => {
+                    if (doc.exists) {
+                        const linkData = doc.data();
+                        if (linkData.expiresAt.toDate() > new Date()) {
+                            // Join the call
+                            showNotification(`Joining ${callType} call...`, 'success');
+                            
+                            // In production, you'd implement proper call joining logic here
+                            // For now, we'll show a message
+                            setTimeout(() => {
+                                showNotification('Call joining feature requires backend implementation', 'warning');
+                            }, 1000);
+                        } else {
+                            showNotification('Call link has expired', 'error');
+                        }
+                    }
+                }).catch(error => {
+                    console.error('Error checking call link:', error);
+                    showNotification('Invalid call link', 'error');
+                });
+            }
+        }
+        
+        // Check for join link on page load
+        setTimeout(checkForJoinLink, 1000);
+    </script>
+</body>
+</html>
