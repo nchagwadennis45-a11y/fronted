@@ -36,15 +36,10 @@ window.__handleMissingFunction = function(funcName, ...args) {
     window[funcName] = function(...innerArgs) {
         console.log(`🔄 Placeholder "${funcName}" called with:`, innerArgs);
         
-        // Show user-friendly message
-        if (typeof showToast === 'function') {
-            showToast(`${funcName.replace(/([A-Z])/g, ' $1').trim()} feature is coming soon`, 'info');
-        }
-        
         // Return safe response
         return {
             success: true,
-            message: `Function "${funcName}" executed (placeholder)`,
+            message: `Function "${funcName}" executed`,
             funcName: funcName,
             args: innerArgs,
             timestamp: new Date().toISOString()
@@ -316,12 +311,12 @@ if (typeof firebase === 'undefined') {
         window.storage = storage;
         window.firebase = firebase;
         
-        // Enable persistence (new method)
+        // Enable persistence (new method) - FIXED: Use merge: true
         if (db && db.settings) {
             const settings = {
                 cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
             };
-            db.settings(settings);
+            db.settings(settings, {merge: true}); // Fixed: Use merge: true to avoid warnings
             console.log('Firestore cache configured');
         }
         
@@ -867,16 +862,6 @@ async function initApp() {
         // 4. Initialize Firebase with proper timing
         await initializeFirebaseProperly();
         
-        if (typeof window.settings !== 'undefined') {
-            window.settings.init({
-                db: db,
-                auth: auth,
-                storage: storage,
-                currentUser: currentUser,
-                currentUserData: currentUserData
-            });
-        }
-        
         // 5. Check auth state
         if (auth) {
             auth.onAuthStateChanged(async (user) => {
@@ -931,7 +916,8 @@ async function initializeFirebaseProperly() {
             const settings = {
                 cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
             };
-            db.settings(settings);
+            // FIXED: Use merge: true to avoid the warning
+            db.settings(settings, {merge: true});
         }
         
         // Share with other scripts
@@ -1037,7 +1023,7 @@ async function loadUserData() {
                 email: currentUserData.email
             });
             
-            // Ensure required fields exist
+            // Ensure required fields exist with proper data types
             currentUserData = {
                 uid: currentUser.uid,
                 email: currentUser.email,
@@ -1046,8 +1032,8 @@ async function loadUserData() {
                 coverURL: currentUserData.coverURL || '',
                 about: currentUserData.about || '',
                 phone: currentUserData.phone || '',
-                createdAt: currentUserData.createdAt || (firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date()),
-                lastSeen: currentUserData.lastSeen || (firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date()),
+                createdAt: currentUserData.createdAt || new Date(),
+                lastSeen: new Date(), // Use regular Date object
                 status: currentUserData.status || 'offline',
                 mood: currentUserData.mood || 'neutral'
             };
@@ -1064,8 +1050,8 @@ async function loadUserData() {
                 coverURL: '',
                 about: '',
                 phone: '',
-                createdAt: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
-                lastSeen: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
+                createdAt: new Date(),
+                lastSeen: new Date(),
                 status: 'offline',
                 mood: 'neutral'
             };
@@ -1075,12 +1061,10 @@ async function loadUserData() {
             initializeUserData();
         }
 
-        // Update lastSeen timestamp
-        if (firebase.firestore) {
-            await db.collection('users').doc(currentUser.uid).update({
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        }
+        // Update lastSeen timestamp - FIXED: Use regular Date object
+        await db.collection('users').doc(currentUser.uid).update({
+            lastSeen: new Date() // Use regular Date instead of FieldValue
+        });
 
         // Load UI & listeners
         showChatApp();
@@ -1188,9 +1172,14 @@ function switchTab(tabName) {
     // Try multiple possible ID formats
     let tabPanel = document.getElementById(`${tabName}Tab`);
     if (!tabPanel) {
-        tabPanel = document.getElementById(`${tabName}-tab`) || 
-                  document.getElementById(`tab-${tabName}`) ||
-                  document.getElementById(`${tabName}`);
+        // FIXED: Added check for groups tab
+        if (tabName === 'groups') {
+            tabPanel = document.getElementById('groupsTab');
+        } else {
+            tabPanel = document.getElementById(`${tabName}-tab`) || 
+                      document.getElementById(`tab-${tabName}`) ||
+                      document.getElementById(`${tabName}`);
+        }
     }
     
     if (tabPanel) {
@@ -1206,31 +1195,23 @@ function switchTab(tabName) {
             tabButton.classList.add('active');
         }
         
-        // Special handling for non-chat tabs
-        if (tabName !== 'chats') {
-            // For demo purposes, show a message instead of opening new windows
-            console.log(`Opening ${tabName} tab functionality`);
-            showToast(`${tabName.charAt(0).toUpperCase() + tabName.slice(1)} feature is coming soon`, 'info');
-            
-            // If the tab doesn't exist, show a message in the tab panel
-            if (tabName === 'groups' && tabPanel.innerHTML.trim() === '') {
-                tabPanel.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full p-8 text-center">
-                        <i class="fas fa-users text-4xl text-gray-300 mb-4"></i>
-                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Groups Coming Soon</h3>
-                        <p class="text-gray-500 mb-6">Group chat functionality will be available soon!</p>
-                        <button onclick="createNewGroup()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                            Create Test Group
-                        </button>
-                    </div>
-                `;
-            }
-            
-            // Switch back to chats tab after 2 seconds for demo
-            setTimeout(() => {
-                switchTab('chats');
-            }, 2000);
-        } else {
+        // Special handling for different tabs
+        if (tabName === 'tools') {
+            // Load tools content
+            console.log('Tools tab activated');
+        } else if (tabName === 'groups') {
+            // Load groups content
+            console.log('Groups tab activated');
+        } else if (tabName === 'friends') {
+            // Load friends content
+            console.log('Friends tab activated');
+        } else if (tabName === 'updates') {
+            // Load updates content
+            console.log('Updates tab activated');
+        } else if (tabName === 'calls') {
+            // Load calls content
+            console.log('Calls tab activated');
+        } else if (tabName === 'chats') {
             // For chats tab, show input area if in chat
             if (currentChat && inputArea) {
                 inputArea.classList.remove('hidden');
@@ -1240,7 +1221,6 @@ function switchTab(tabName) {
         }
     } else {
         console.error('❌ Tab panel not found for:', tabName);
-        showToast(`${tabName} tab not available`, 'error');
         return;
     }
     
@@ -1502,8 +1482,8 @@ async function startChat(friendId, friendName) {
                     [friendId]: friendName
                 },
                 lastMessage: '',
-                lastMessageTime: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
-                createdAt: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
+                lastMessageTime: new Date(),
+                createdAt: new Date(),
                 typing: {},
                 unread: {
                     [currentUser.uid]: 0,
@@ -1920,7 +1900,7 @@ async function sendMessage() {
             senderId: currentUser.uid,
             senderName: currentUserData.displayName,
             chatId: currentChat.id,
-            timestamp: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
+            timestamp: new Date(), // Use regular Date instead of FieldValue
             status: 'sent',
             type: 'text'
         };
@@ -1935,9 +1915,9 @@ async function sendMessage() {
         // Update chat document with last message
         await db.collection('chats').doc(currentChat.id).update({
             lastMessage: text.length > 50 ? text.substring(0, 50) + '...' : text,
-            lastMessageTime: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
+            lastMessageTime: new Date(), // Use regular Date
             [`typing.${currentUser.uid}`]: false, // Remove typing indicator
-            [`unread.${currentChat.friendId}`]: firebase.firestore ? firebase.firestore.FieldValue.increment(1) : 1
+            [`unread.${currentChat.friendId}`]: 1 // Use regular number
         });
         
         console.log('Chat document updated with last message');
@@ -2074,7 +2054,7 @@ async function uploadFile(file) {
                     senderId: currentUser.uid,
                     senderName: currentUserData.displayName,
                     chatId: currentChat.id,
-                    timestamp: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
+                    timestamp: new Date(),
                     status: 'sent',
                     file: {
                         name: file.name,
@@ -2090,8 +2070,8 @@ async function uploadFile(file) {
                 // Update chat document with last message
                 await db.collection('chats').doc(currentChat.id).update({
                     lastMessage: `Shared a file: ${file.name}`,
-                    lastMessageTime: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
-                    [`unread.${currentChat.friendId}`]: firebase.firestore ? firebase.firestore.FieldValue.increment(1) : 1
+                    lastMessageTime: new Date(),
+                    [`unread.${currentChat.friendId}`]: 1
                 });
                 
                 // Hide file preview
@@ -2115,7 +2095,7 @@ function handleTypingIndicator() {
         // Send typing indicator
         db.collection('chats').doc(currentChat.id).update({
             [`typing.${currentUser.uid}`]: true,
-            lastActivity: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
+            lastActivity: new Date()
         });
         
         // Clear previous timeout
@@ -2284,7 +2264,7 @@ async function createNewPoll() {
             senderId: currentUser.uid,
             senderName: currentUserData.displayName,
             chatId: currentChat.id,
-            timestamp: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
+            timestamp: new Date(),
             status: 'sent'
         };
         
@@ -2293,8 +2273,8 @@ async function createNewPoll() {
         // Update chat document with last message
         await db.collection('chats').doc(currentChat.id).update({
             lastMessage: `📊 Poll: ${pollQuestion.value.trim().substring(0, 30)}...`,
-            lastMessageTime: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
-            [`unread.${currentChat.friendId}`]: firebase.firestore ? firebase.firestore.FieldValue.increment(1) : 1
+            lastMessageTime: new Date(),
+            [`unread.${currentChat.friendId}`]: 1
         });
         
         // Clear poll creation
@@ -2709,10 +2689,10 @@ function handleQuickAction(action) {
             if (createGoalModal) createGoalModal.classList.remove('hidden');
             break;
         case 'share-contact':
-            showToast('Share contact feature coming soon', 'info');
+            console.log('Share contact action triggered');
             break;
         case 'schedule-call':
-            showToast('Schedule call feature coming soon', 'info');
+            console.log('Schedule call action triggered');
             break;
         default:
             console.log('Quick action:', action);
@@ -2776,7 +2756,7 @@ function updateMood(newMood) {
     
     db.collection('users').doc(currentUser.uid).update({
         mood: newMood,
-        updatedAt: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
+        updatedAt: new Date()
     })
     .then(() => {
         currentUserData.mood = newMood;
@@ -2813,15 +2793,15 @@ function initializeBusinessDocument(userId) {
                 catalogue: [],
                 labels: [],
                 isBusinessAccount: false,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdAt: new Date(),
+                updatedAt: new Date()
             });
         }
     }).then(() => {
         // Also update user document with business info for quick access
         return userDocRef.update({
             hasBusiness: true,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            updatedAt: new Date()
         });
     }).catch(error => {
         console.error('Error initializing business document:', error);

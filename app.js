@@ -18,7 +18,7 @@ const TAB_CONFIG = {
   chats: {
     container: '#chatsTab',
     icon: '[data-tab="chats"]',
-    default: false
+    isExternal: false
   },
   groups: {
     container: '#groupsTab',
@@ -63,20 +63,62 @@ let isSidebarOpen = true;
  * Toggle sidebar visibility on mobile
  */
 window.toggleSidebar = function() {
-  document.querySelector('.sidebar')?.classList.toggle('open');
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('open');
+    isSidebarOpen = sidebar.classList.contains('open');
+  }
 };
 
 /**
  * Load an HTML page into the content area without reloading
  */
 window.loadPage = function(page) {
+  const contentArea = document.querySelector(APP_CONFIG.contentArea);
+  if (!contentArea) {
+    console.error('Content area not found:', APP_CONFIG.contentArea);
+    return;
+  }
+
   fetch(page)
-    .then(res => res.text())
+    .then(res => {
+      if (!res.ok) throw new Error(`Failed to load ${page}: ${res.status}`);
+      return res.text();
+    })
     .then(html => {
-      document.getElementById('content-area').innerHTML = html;
+      contentArea.innerHTML = html;
+      // Initialize any scripts in the loaded content
+      initializeLoadedContent(contentArea);
     })
     .catch(err => console.error("Load error:", err));
 };
+
+/**
+ * Initialize scripts and components in loaded content
+ */
+function initializeLoadedContent(container) {
+  // Find and execute inline scripts
+  const scripts = container.querySelectorAll('script');
+  scripts.forEach(script => {
+    if (script.src) {
+      // Load external script
+      const newScript = document.createElement('script');
+      newScript.src = script.src;
+      newScript.async = false;
+      document.head.appendChild(newScript);
+    } else if (script.textContent.trim()) {
+      try {
+        // Execute inline script
+        const scriptContent = script.textContent;
+        // Wrap in try-catch to avoid scope issues
+        const executeScript = new Function(scriptContent);
+        executeScript();
+      } catch (error) {
+        console.error('Error executing inline script:', error);
+      }
+    }
+  });
+}
 
 // ============================================================================
 // TAB MANAGEMENT
@@ -109,7 +151,10 @@ function switchTab(tabName) {
  */
 function showTab(tabName) {
   const config = TAB_CONFIG[tabName];
-  if (!config) return;
+  if (!config) {
+    console.error(`Config not found for tab: ${tabName}`);
+    return;
+  }
   
   // Hide all tabs
   hideAllTabs();
@@ -119,18 +164,24 @@ function showTab(tabName) {
   if (tabContainer) {
     tabContainer.classList.remove('hidden');
     tabContainer.classList.add('active');
+    
+    // Update current tab
+    currentTab = tabName;
+    
+    // Update active tab UI
+    updateActiveTabUI(tabName);
+    
+    // Update chat area visibility based on tab
+    updateChatAreaVisibility(tabName);
+    
+    console.log(`Switched to tab: ${tabName}`);
+  } else {
+    console.error(`Tab container not found: ${config.container} for tab: ${tabName}`);
+    // Fallback: try to load as external tab if available
+    if (EXTERNAL_TABS[tabName]) {
+      loadExternalTab(tabName, EXTERNAL_TABS[tabName]);
+    }
   }
-  
-  // Update active tab UI
-  updateActiveTabUI(tabName);
-  
-  // Update chat area visibility based on tab
-  updateChatAreaVisibility(tabName);
-  
-  // Update current tab
-  currentTab = tabName;
-  
-  console.log(`Switched to tab: ${tabName}`);
 }
 
 /**
@@ -144,37 +195,52 @@ async function loadExternalTab(tabName, htmlFile) {
     showLoadingIndicator(`Loading ${tabName}...`);
     
     const response = await fetch(htmlFile);
-    if (!response.ok) throw new Error(`Failed to load ${htmlFile}`);
+    if (!response.ok) throw new Error(`Failed to load ${htmlFile}: ${response.status}`);
     
     const html = await response.text();
     
+    // Get or create external container
     let container = document.getElementById('externalTabContainer');
     if (!container) {
       container = document.createElement('div');
       container.id = 'externalTabContainer';
       container.className = 'tab-panel';
       
-      const tabPanels = document.querySelector('.tab-panels');
+      // Find tab panels container
+      const tabPanels = document.querySelector('.tab-panels') || document.querySelector('#content-area');
       if (tabPanels) {
         tabPanels.appendChild(container);
+      } else {
+        // Fallback to body
+        document.body.appendChild(container);
       }
     }
     
+    // Hide all tabs before showing new content
     hideAllTabs();
     
+    // Extract and insert content
     container.innerHTML = extractBodyContent(html);
     container.classList.remove('hidden');
     container.classList.add('active');
     
+    // Update UI
     updateActiveTabUI(tabName);
     updateChatAreaVisibility(tabName);
     
+    // Initialize scripts in loaded content
     initializeExternalContent(container);
     
+    // Update current tab
     currentTab = tabName;
+    
+    console.log(`Loaded external tab: ${tabName} from ${htmlFile}`);
     
   } catch (error) {
     console.error(`Error loading ${tabName}:`, error);
+    showError(`Failed to load ${tabName}. Please try again.`);
+    
+    // Fallback to internal tab if available
     if (TAB_CONFIG[tabName] && !TAB_CONFIG[tabName].isExternal) {
       showTab(tabName);
     }
@@ -188,15 +254,28 @@ async function loadExternalTab(tabName, htmlFile) {
  * Hide all tab panels
  */
 function hideAllTabs() {
+  // Hide all .tab-panel elements
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.add('hidden');
     panel.classList.remove('active');
   });
   
+  // Also hide external container if it exists
   const externalContainer = document.getElementById('externalTabContainer');
   if (externalContainer) {
     externalContainer.classList.add('hidden');
     externalContainer.classList.remove('active');
+  }
+  
+  // Hide any content in main content area that's not a tab panel
+  const contentArea = document.querySelector(APP_CONFIG.contentArea);
+  if (contentArea) {
+    const nonTabChildren = Array.from(contentArea.children).filter(child => 
+      !child.classList.contains('tab-panel') && child.id !== 'externalTabContainer'
+    );
+    nonTabChildren.forEach(child => {
+      child.classList.add('hidden');
+    });
   }
 }
 
@@ -204,11 +283,13 @@ function hideAllTabs() {
  * Update the active tab UI in the sidebar
  */
 function updateActiveTabUI(tabName) {
-  document.querySelectorAll('.nav-icon').forEach(icon => {
+  // Reset all tab icons
+  document.querySelectorAll('.nav-icon[data-tab]').forEach(icon => {
     icon.classList.remove('text-white', 'bg-purple-700', 'active');
     icon.classList.add('text-gray-400', 'hover:text-white', 'hover:bg-gray-800');
   });
   
+  // Activate current tab icon
   const activeIcon = document.querySelector(`[data-tab="${tabName}"]`);
   if (activeIcon) {
     activeIcon.classList.remove('text-gray-400', 'hover:text-white', 'hover:bg-gray-800');
@@ -229,8 +310,12 @@ function updateChatAreaVisibility(tabName) {
   
   const isMobile = window.innerWidth < 768;
   
+  // Show/hide based on tab
   if (tabName === 'chats' || tabName === 'groups') {
-    if (chatHeader && !chatHeader.classList.contains('hidden')) {
+    // Check if we're viewing a specific chat or the list
+    const hasActiveChat = chatHeader && !chatHeader.classList.contains('hidden');
+    
+    if (hasActiveChat) {
       if (isMobile) {
         chatArea.classList.remove('hidden');
         chatListContainer.classList.add('hidden');
@@ -242,8 +327,12 @@ function updateChatAreaVisibility(tabName) {
     } else {
       chatArea.classList.add('hidden');
       chatListContainer.classList.remove('hidden');
+      
+      if (inputArea) inputArea.classList.add('hidden');
+      if (chatHeader) chatHeader.classList.add('hidden');
     }
   } else {
+    // For non-chat tabs, hide chat area
     chatArea.classList.add('hidden');
     chatListContainer.classList.remove('hidden');
     
@@ -251,6 +340,7 @@ function updateChatAreaVisibility(tabName) {
     if (chatHeader) chatHeader.classList.add('hidden');
   }
   
+  // Update chat title for groups tab
   if (tabName === 'groups') {
     const chatTitle = document.getElementById('chatTitle');
     if (chatTitle) chatTitle.textContent = 'Group Chat';
@@ -261,28 +351,88 @@ function updateChatAreaVisibility(tabName) {
 // UTILITY FUNCTIONS
 // ============================================================================
 
+/**
+ * Extract body content from HTML string
+ */
 function extractBodyContent(html) {
+  // Try to extract body content
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
   if (bodyMatch && bodyMatch[1]) {
     return bodyMatch[1];
   }
+  
+  // If no body tag, try to extract main content
+  const mainMatch = html.match(/<main[^>]*>([\s\S]*)<\/main>/i);
+  if (mainMatch && mainMatch[1]) {
+    return mainMatch[1];
+  }
+  
+  // Return the entire HTML if no specific tags found
   return html;
 }
 
+/**
+ * Initialize scripts and events in external content
+ */
 function initializeExternalContent(container) {
+  // Execute inline scripts
   const scripts = container.querySelectorAll('script');
   scripts.forEach(script => {
     if (script.src) {
+      // Load external script
       const newScript = document.createElement('script');
       newScript.src = script.src;
+      newScript.async = false;
       document.head.appendChild(newScript);
-    } else {
+    } else if (script.textContent.trim()) {
       try {
-        eval(script.textContent);
+        // Create and execute function from script content
+        const executeScript = new Function(script.textContent);
+        executeScript();
       } catch (error) {
-        console.error('Error executing inline script:', error);
+        console.error('Error executing inline script in external content:', error);
       }
     }
+  });
+  
+  // Re-attach event listeners for buttons and links in the new content
+  setTimeout(() => {
+    attachEventListenersToNewContent(container);
+  }, 100);
+}
+
+/**
+ * Attach event listeners to elements in newly loaded content
+ */
+function attachEventListenersToNewContent(container) {
+  // Handle modal triggers
+  container.querySelectorAll('[data-modal]').forEach(element => {
+    element.addEventListener('click', function(e) {
+      e.preventDefault();
+      const modalId = this.getAttribute('data-modal');
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+    });
+  });
+  
+  // Handle modal closers
+  container.querySelectorAll('[data-close-modal]').forEach(element => {
+    element.addEventListener('click', function(e) {
+      e.preventDefault();
+      const modalId = this.getAttribute('data-close-modal');
+      closeModal(modalId);
+    });
+  });
+  
+  // Handle form submissions
+  container.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      // Add your form handling logic here
+      console.log('Form submitted:', this.id || this.className);
+    });
   });
 }
 
@@ -294,7 +444,7 @@ function showLoadingIndicator(message = 'Loading...') {
     loader.className = 'tab-loading-indicator';
     loader.innerHTML = `
       <div class="loading-spinner"></div>
-      <div>${message}</div>
+      <div class="loading-text">${message}</div>
     `;
     document.body.appendChild(loader);
   }
@@ -309,6 +459,9 @@ function hideLoadingIndicator() {
 }
 
 function showError(message) {
+  // Remove existing error messages
+  document.querySelectorAll('.error-message').forEach(el => el.remove());
+  
   const errorDiv = document.createElement('div');
   errorDiv.className = 'error-message';
   errorDiv.textContent = message;
@@ -322,12 +475,18 @@ function showError(message) {
     border-radius: 8px;
     z-index: 10000;
     max-width: 300px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s ease-out;
   `;
   
   document.body.appendChild(errorDiv);
   
+  // Auto-remove after 5 seconds
   setTimeout(() => {
-    errorDiv.remove();
+    if (errorDiv.parentNode) {
+      errorDiv.style.animation = 'slideOut 0.3s ease-in';
+      setTimeout(() => errorDiv.remove(), 300);
+    }
   }, 5000);
 }
 
@@ -338,12 +497,15 @@ function showError(message) {
 function setupEventListeners() {
   // Tab click handlers
   document.querySelectorAll('.nav-icon[data-tab]').forEach(icon => {
-    const tabName = icon.getAttribute('data-tab');
+    // Remove existing listeners by cloning
     const newIcon = icon.cloneNode(true);
     icon.parentNode.replaceChild(newIcon, icon);
     
+    const tabName = newIcon.getAttribute('data-tab');
+    
     newIcon.addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       switchTab(tabName);
     });
   });
@@ -351,7 +513,11 @@ function setupEventListeners() {
   // Sidebar toggle
   const sidebarToggle = document.querySelector(APP_CONFIG.sidebarToggle);
   if (sidebarToggle) {
-    sidebarToggle.addEventListener('click', toggleSidebar);
+    sidebarToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleSidebar();
+    });
   }
   
   // Mobile back button
@@ -363,39 +529,68 @@ function setupEventListeners() {
       if (chatListContainer && chatArea) {
         chatListContainer.classList.remove('hidden');
         chatArea.classList.add('hidden');
+        updateChatAreaVisibility(currentTab);
       }
     });
   }
   
-  // Mobile chat item clicks
+  // Mobile chat item clicks - using event delegation
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.chat-item')) {
+    const chatItem = e.target.closest('.chat-item');
+    if (chatItem) {
       const chatListContainer = document.getElementById('chatListContainer');
       const chatArea = document.getElementById('chatArea');
+      const chatHeader = document.getElementById('chatHeader');
+      
       if (chatListContainer && chatArea) {
         chatListContainer.classList.add('hidden');
         chatArea.classList.remove('hidden');
+        
+        if (chatHeader) {
+          chatHeader.classList.remove('hidden');
+        }
+        
+        // Update chat title if available
+        const chatName = chatItem.querySelector('.chat-name');
+        if (chatName) {
+          const chatTitle = document.getElementById('chatTitle');
+          if (chatTitle) {
+            chatTitle.textContent = chatName.textContent;
+          }
+        }
+        
+        updateChatAreaVisibility(currentTab);
       }
     }
   });
   
   // Window resize handling
+  let resizeTimeout;
   window.addEventListener('resize', () => {
-    updateChatAreaVisibility(currentTab);
-    
-    // Ensure sidebar is visible on desktop
-    const sidebar = document.querySelector(APP_CONFIG.sidebar);
-    if (sidebar && window.innerWidth >= 768) {
-      sidebar.classList.remove('hidden', 'translate-x-full');
-      sidebar.classList.add('translate-x-0');
-      isSidebarOpen = true;
-    }
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      updateChatAreaVisibility(currentTab);
+      
+      // Ensure sidebar is visible on desktop, hidden on mobile
+      const sidebar = document.querySelector(APP_CONFIG.sidebar);
+      if (sidebar) {
+        if (window.innerWidth >= 768) {
+          sidebar.classList.remove('hidden', 'translate-x-full');
+          sidebar.classList.add('translate-x-0');
+          isSidebarOpen = true;
+        } else {
+          sidebar.classList.remove('translate-x-0');
+          sidebar.classList.add('translate-x-full');
+          isSidebarOpen = false;
+        }
+      }
+    }, 250);
   });
   
   // Handle browser back/forward
   window.addEventListener('popstate', (event) => {
-    if (event.state && event.state.page) {
-      loadPage(event.state.page);
+    if (event.state && event.state.tab) {
+      switchTab(event.state.tab);
     }
   });
   
@@ -408,7 +603,25 @@ function setupEventListeners() {
       if (sidebar && 
           !sidebar.contains(e.target) && 
           toggleBtn && 
-          !toggleBtn.contains(e.target)) {
+          !toggleBtn.contains(e.target) &&
+          !e.target.closest('.nav-icon[data-tab]')) {
+        toggleSidebar();
+      }
+    }
+  });
+  
+  // Handle Escape key to close modals and sidebar
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      // Close open modals
+      document.querySelectorAll('.modal:not(.hidden)').forEach(modal => {
+        if (!modal.classList.contains('hidden')) {
+          modal.classList.add('hidden');
+        }
+      });
+      
+      // Close sidebar on mobile
+      if (window.innerWidth < 768 && isSidebarOpen) {
         toggleSidebar();
       }
     }
@@ -427,15 +640,15 @@ window.closeModal = function(modalId) {
 };
 
 window.showSettingsSection = function(sectionName) {
-  const settingsModal = document.getElementById('settingsModal');
-  if (settingsModal) {
-    settingsModal.classList.add('hidden');
-  }
+  // First hide all settings modals
+  document.querySelectorAll('.settings-section').forEach(section => {
+    section.classList.add('hidden');
+  });
   
-  const modalId = sectionName + 'SettingsModal';
-  const modal = document.getElementById(modalId);
-  if (modal) {
-    modal.classList.remove('hidden');
+  // Show the selected section
+  const sectionElement = document.getElementById(sectionName + 'Settings');
+  if (sectionElement) {
+    sectionElement.classList.remove('hidden');
   }
 };
 
@@ -443,6 +656,8 @@ window.openSettingsModal = function() {
   const modal = document.getElementById('settingsModal');
   if (modal) {
     modal.classList.remove('hidden');
+    // Show default section
+    showSettingsSection('account');
   }
 };
 
@@ -460,38 +675,98 @@ window.triggerFileInput = function(inputId) {
 function initializeApp() {
   console.log('Initializing Kynecta Application Shell...');
   
-  // Setup event listeners
-  setupEventListeners();
-  
-  // Ensure sidebar and icons are visible
-  const sidebar = document.querySelector(APP_CONFIG.sidebar);
-  if (sidebar) {
-    sidebar.classList.remove('hidden');
+  // Ensure DOM is ready
+  if (document.readyState !== 'loading') {
+    runInitialization();
+  } else {
+    document.addEventListener('DOMContentLoaded', runInitialization);
   }
-  
-  // Load default page
-  loadPage(APP_CONFIG.defaultPage);
-  
-  // Set default tab to groups
-  setTimeout(() => {
-    switchTab('groups');
-  }, 100);
-  
-  // Hide loading screen
-  const loadingScreen = document.getElementById('loadingScreen');
-  if (loadingScreen) {
+}
+
+function runInitialization() {
+  try {
+    // Setup event listeners
+    setupEventListeners();
+    
+    // Ensure sidebar is properly initialized
+    const sidebar = document.querySelector(APP_CONFIG.sidebar);
+    if (sidebar) {
+      sidebar.classList.remove('hidden');
+      
+      // Set initial sidebar state based on screen size
+      if (window.innerWidth >= 768) {
+        sidebar.classList.remove('translate-x-full');
+        sidebar.classList.add('translate-x-0');
+        isSidebarOpen = true;
+      } else {
+        sidebar.classList.remove('translate-x-0');
+        sidebar.classList.add('translate-x-full');
+        isSidebarOpen = false;
+      }
+    }
+    
+    // Ensure content area exists
+    let contentArea = document.querySelector(APP_CONFIG.contentArea);
+    if (!contentArea) {
+      // Create content area if it doesn't exist
+      contentArea = document.createElement('main');
+      contentArea.id = 'content-area';
+      document.body.appendChild(contentArea);
+    }
+    
+    // Load default page
+    loadPage(APP_CONFIG.defaultPage);
+    
+    // Set default tab to groups with a slight delay to ensure DOM is ready
     setTimeout(() => {
-      loadingScreen.classList.add('hidden');
-    }, 500);
+      try {
+        // First try to show the groups tab
+        const groupsTab = document.querySelector(TAB_CONFIG.groups.container);
+        if (groupsTab) {
+          showTab('groups');
+        } else {
+          // If groups tab doesn't exist, try to load it as external
+          console.log('Groups tab not found in DOM, loading as external...');
+          loadExternalTab('groups', EXTERNAL_TABS.groups);
+        }
+      } catch (error) {
+        console.error('Error setting default tab:', error);
+        // Fallback to chats tab
+        if (TAB_CONFIG.chats.container && document.querySelector(TAB_CONFIG.chats.container)) {
+          showTab('chats');
+        }
+      }
+    }, 300);
+    
+    // Hide loading screen if it exists
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+      setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+        // Remove from DOM after animation
+        setTimeout(() => {
+          if (loadingScreen.parentNode) {
+            loadingScreen.parentNode.removeChild(loadingScreen);
+          }
+        }, 500);
+      }, 500);
+    }
+    
+    // Inject CSS styles
+    injectStyles();
+    
+    console.log('Kynecta Application Shell initialized successfully');
+    
+  } catch (error) {
+    console.error('Error during app initialization:', error);
+    showError('Application initialization failed. Please refresh the page.');
   }
-  
-  // Inject CSS styles
-  injectStyles();
-  
-  console.log('Kynecta Application Shell initialized');
 }
 
 function injectStyles() {
+  // Check if styles are already injected
+  if (document.getElementById('app-styles')) return;
+  
   const styles = `
     .tab-loading-indicator {
       position: fixed;
@@ -507,6 +782,7 @@ function injectStyles() {
       z-index: 9999;
       color: white;
       font-size: 16px;
+      backdrop-filter: blur(4px);
     }
     
     .loading-spinner {
@@ -519,8 +795,36 @@ function injectStyles() {
       margin-bottom: 15px;
     }
     
+    .loading-text {
+      margin-top: 10px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
     @keyframes spin {
       to { transform: rotate(360deg); }
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
     }
     
     /* Sidebar transition */
@@ -532,10 +836,55 @@ function injectStyles() {
     #content-area {
       flex: 1;
       overflow: auto;
+      min-height: 100vh;
+    }
+    
+    .tab-panel {
+      display: none;
+    }
+    
+    .tab-panel.active {
+      display: block;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    /* Mobile sidebar styles */
+    @media (max-width: 767px) {
+      #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 50;
+        transform: translateX(-100%);
+      }
+      
+      #sidebar.open {
+        transform: translateX(0);
+      }
+      
+      #sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 49;
+        display: none;
+      }
+      
+      #sidebar.open + #sidebar-overlay {
+        display: block;
+      }
     }
   `;
   
   const styleSheet = document.createElement('style');
+  styleSheet.id = 'app-styles';
   styleSheet.textContent = styles;
   document.head.appendChild(styleSheet);
 }
@@ -546,22 +895,42 @@ function injectStyles() {
 
 // Expose application functions
 window.switchTab = switchTab;
+window.toggleSidebar = toggleSidebar;
+window.loadPage = loadPage;
+window.closeModal = closeModal;
+window.openSettingsModal = openSettingsModal;
 
 window.showChatArea = function() {
   const chatListContainer = document.getElementById('chatListContainer');
   const chatArea = document.getElementById('chatArea');
+  const chatHeader = document.getElementById('chatHeader');
+  
   if (chatListContainer && chatArea) {
     chatListContainer.classList.add('hidden');
     chatArea.classList.remove('hidden');
+    
+    if (chatHeader) {
+      chatHeader.classList.remove('hidden');
+    }
+    
+    updateChatAreaVisibility(currentTab);
   }
 };
 
 window.showChatList = function() {
   const chatListContainer = document.getElementById('chatListContainer');
   const chatArea = document.getElementById('chatArea');
+  const chatHeader = document.getElementById('chatHeader');
+  
   if (chatListContainer && chatArea) {
     chatListContainer.classList.remove('hidden');
     chatArea.classList.add('hidden');
+    
+    if (chatHeader) {
+      chatHeader.classList.add('hidden');
+    }
+    
+    updateChatAreaVisibility(currentTab);
   }
 };
 
@@ -569,15 +938,12 @@ window.showChatList = function() {
 // STARTUP
 // ============================================================================
 
-// default load
-window.addEventListener("DOMContentLoaded", () => {
-  loadPage('group.html');
-});
-
+// Initialize app when ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
-  setTimeout(initializeApp, 100);
+  // DOM already loaded, initialize immediately
+  setTimeout(initializeApp, 0);
 }
 
 console.log('Kynecta app.js loaded - Application shell ready');

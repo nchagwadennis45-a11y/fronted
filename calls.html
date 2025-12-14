@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-        <link rel="manifest" href="../manifest.json">
+    <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#4F46E5">
     <link rel="icon" href="../icons/moodchat-192.png">
     <link rel="icon" href="../icons/moodchat-512.png">
@@ -727,6 +726,10 @@
         
         .participant-status.active {
             color: var(--success-color);
+        }
+        
+        .participant-status.offline {
+            color: var(--text-secondary);
         }
         
         .participant-actions {
@@ -1681,7 +1684,7 @@
     </div>
 
     <script>
-        // Firebase Configuration
+        // Firebase Configuration - REPLACE WITH YOUR CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
             authDomain: "uniconnect-ee95c.firebaseapp.com",
@@ -1718,8 +1721,10 @@
         let lastY = 0;
         let currentTool = 'pencil';
         let callLink = null;
+        let activeCalls = new Map(); // Track active peer connections
+        let userPresenceRef = null; // Track user online status
         
-        // User settings - default values
+        // User settings
         let userSettings = {
             reactions: true,
             chat: true,
@@ -1742,41 +1747,928 @@
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
-            setupEventListeners();
-            initializePeerJS();
-            initializeWhiteboard();
-            loadUserSettings();
         });
         
-        function initializeApp() {
+        async function initializeApp() {
             // Check if user is logged in
-            auth.onAuthStateChanged(user => {
+            auth.onAuthStateChanged(async user => {
                 if (user) {
                     currentUser = user;
-                    loadUserData();
+                    await initializeUser();
+                    await loadUserSettings();
+                    setupEventListeners();
+                    initializeWhiteboard();
                     loadRecentCalls();
-                    listenForIncomingCalls();
+                    setupPresenceTracking();
+                    // Delay PeerJS initialization to ensure user data is ready
+                    setTimeout(() => {
+                        initializePeerJS();
+                    }, 1000);
                 } else {
-                    // Redirect to index.html if not logged in
+                    // Redirect to login if not logged in
                     window.location.href = 'index.html';
                 }
             });
         }
         
-        function loadUserData() {
-            // Set user initials for avatars
-            const userInitials = currentUser.displayName ? 
-                currentUser.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 
-                'ME';
+        async function initializeUser() {
+            // Ensure user exists in Firestore
+            const userRef = db.collection('users').doc(currentUser.uid);
+            const userDoc = await userRef.get();
             
-            // Store for later use
-            window.userInitials = userInitials;
-            window.userAvatar = currentUser.photoURL;
+            if (!userDoc.exists) {
+                // Create user document
+                await userRef.set({
+                    uid: currentUser.uid,
+                    displayName: currentUser.displayName || `User_${currentUser.uid.substring(0, 8)}`,
+                    email: currentUser.email || '',
+                    photoURL: currentUser.photoURL || '',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+                    online: true
+                });
+            } else {
+                // Update last seen
+                await userRef.update({
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+                    online: true
+                });
+            }
+            
+            // Set user initials for avatars
+            const userData = userDoc.exists ? userDoc.data() : {
+                displayName: currentUser.displayName || 'User'
+            };
+            
+            window.userInitials = userData.displayName 
+                ? userData.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+                : 'ME';
+            window.userAvatar = userData.photoURL || currentUser.photoURL || '';
+        }
+        
+        function setupPresenceTracking() {
+            if (!currentUser) return;
+            
+            // Create presence reference
+            userPresenceRef = db.collection('userPresence').doc(currentUser.uid);
+            
+            // Set user as online
+            const presenceData = {
+                uid: currentUser.uid,
+                online: true,
+                lastOnline: firebase.firestore.FieldValue.serverTimestamp(),
+                peerId: null // Will be set when PeerJS initializes
+            };
+            
+            userPresenceRef.set(presenceData, { merge: true });
+            
+            // Update presence when PeerJS is ready
+            const updatePresenceWithPeerId = () => {
+                if (peer && peer.id) {
+                    userPresenceRef.update({
+                        peerId: peer.id,
+                        lastOnline: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            };
+            
+            // Listen for PeerJS connection
+            if (peer) {
+                peer.on('open', updatePresenceWithPeerId);
+            }
+            
+            // Handle page visibility change
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    userPresenceRef.update({
+                        online: false,
+                        lastOnline: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } else {
+                    userPresenceRef.update({
+                        online: true,
+                        lastOnline: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            });
+            
+            // Handle before unload
+            window.addEventListener('beforeunload', () => {
+                userPresenceRef.update({
+                    online: false,
+                    lastOnline: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+        }
+        
+        function initializePeerJS() {
+            if (!currentUser) {
+                console.error('Cannot initialize PeerJS: No user logged in');
+                return;
+            }
+            
+            // Generate a unique ID for PeerJS (combine user ID with timestamp)
+            const peerId = `${currentUser.uid}_${Date.now()}`;
+            
+            console.log('Initializing PeerJS with ID:', peerId);
+            
+            peer = new Peer(peerId, {
+                host: '0.peerjs.com',
+                port: 443,
+                path: '/',
+                secure: true,
+                config: {
+                    'iceServers': [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                        { urls: 'stun:stun4.l.google.com:19302' },
+                        { 
+                            urls: 'turn:global.relay.metered.ca:80',
+                            username: 'b8f6a16efef38f4e90fc6883',
+                            credential: 'Y5wLCL3AAvX3g0cG'
+                        },
+                        { 
+                            urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+                            username: 'b8f6a16efef38f4e90fc6883',
+                            credential: 'Y5wLCL3AAvX3g0cG'
+                        },
+                        { 
+                            urls: 'turn:global.relay.metered.ca:443',
+                            username: 'b8f6a16efef38f4e90fc6883',
+                            credential: 'Y5wLCL3AAvX3g0cG'
+                        },
+                        { 
+                            urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+                            username: 'b8f6a16efef38f4e90fc6883',
+                            credential: 'Y5wLCL3AAvX3g0cG'
+                        }
+                    ]
+                },
+                debug: 3 // Enable verbose logging
+            });
+            
+            peer.on('open', (id) => {
+                console.log('✅ PeerJS connected successfully with ID:', id);
+                
+                // Update presence with PeerJS ID
+                if (userPresenceRef) {
+                    userPresenceRef.update({
+                        peerId: id,
+                        lastOnline: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                
+                showNotification('Connected to call server', 'success');
+            });
+            
+            peer.on('error', (err) => {
+                console.error('❌ PeerJS error:', err.type, err.message);
+                
+                let errorMessage = 'Connection error';
+                if (err.type === 'unavailable-id') {
+                    errorMessage = 'User ID already in use. Refreshing...';
+                    setTimeout(() => location.reload(), 2000);
+                } else if (err.type === 'network') {
+                    errorMessage = 'Network error. Check your connection';
+                } else if (err.type === 'peer-unavailable') {
+                    errorMessage = 'User is offline or not connected';
+                }
+                
+                showNotification(errorMessage, 'error');
+            });
+            
+            peer.on('connection', (conn) => {
+                console.log('Incoming data connection from:', conn.peer);
+            });
+            
+            peer.on('call', async (incomingCall) => {
+                console.log('📞 Incoming call from:', incomingCall.peer);
+                
+                try {
+                    // Get caller info from metadata
+                    const metadata = incomingCall.metadata || {};
+                    const callerId = metadata.callerId || incomingCall.peer.split('_')[0];
+                    
+                    // Fetch caller details
+                    const callerDoc = await db.collection('users').doc(callerId).get();
+                    if (!callerDoc.exists) {
+                        console.error('Caller not found:', callerId);
+                        incomingCall.close();
+                        return;
+                    }
+                    
+                    const callerData = callerDoc.data();
+                    
+                    // Show incoming call modal
+                    document.getElementById('incomingCallName').textContent = callerData.displayName || 'Unknown';
+                    document.getElementById('incomingCallType').textContent = 
+                        metadata.type === 'video' ? 'Incoming Video Call' : 'Incoming Voice Call';
+                    
+                    // Set avatar
+                    const incomingCallAvatar = document.getElementById('incomingCallAvatar');
+                    if (callerData.photoURL) {
+                        incomingCallAvatar.style.backgroundImage = `url('${callerData.photoURL}')`;
+                        incomingCallAvatar.innerHTML = '';
+                    } else {
+                        const initials = callerData.displayName ? 
+                            callerData.displayName.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2) : 
+                            'U';
+                        incomingCallAvatar.innerHTML = `<span style="color: white; font-size: 24px;">${initials}</span>`;
+                    }
+                    
+                    // Store call data
+                    window.incomingCall = incomingCall;
+                    window.callerData = {
+                        id: callerId,
+                        name: callerData.displayName,
+                        avatar: callerData.photoURL,
+                        peerId: incomingCall.peer,
+                        type: metadata.type || 'video'
+                    };
+                    
+                    incomingCallModal.classList.add('active');
+                    
+                    // Auto decline after 45 seconds
+                    setTimeout(() => {
+                        if (incomingCallModal.classList.contains('active')) {
+                            declineCall();
+                            showNotification('Missed call from ' + callerData.displayName, 'warning');
+                        }
+                    }, 45000);
+                    
+                } catch (error) {
+                    console.error('Error handling incoming call:', error);
+                    incomingCall.close();
+                }
+            });
+            
+            peer.on('disconnected', () => {
+                console.log('PeerJS disconnected, attempting reconnect...');
+                peer.reconnect();
+            });
+            
+            peer.on('close', () => {
+                console.log('PeerJS connection closed');
+            });
+        }
+        
+        async function checkUserOnlineStatus(userId) {
+            try {
+                const presenceDoc = await db.collection('userPresence').doc(userId).get();
+                if (presenceDoc.exists) {
+                    const presenceData = presenceDoc.data();
+                    const lastOnline = presenceData.lastOnline?.toDate();
+                    const now = new Date();
+                    const minutesAgo = lastOnline ? Math.floor((now - lastOnline) / 60000) : 999;
+                    
+                    return {
+                        online: presenceData.online === true,
+                        lastOnline: minutesAgo,
+                        peerId: presenceData.peerId
+                    };
+                }
+                return { online: false, lastOnline: 999, peerId: null };
+            } catch (error) {
+                console.error('Error checking user status:', error);
+                return { online: false, lastOnline: 999, peerId: null };
+            }
+        }
+        
+        async function startCall(userId, type = 'video') {
+            console.log('Starting call to:', userId, 'type:', type);
+            
+            // Check if we're connected to PeerJS
+            if (!peer || !peer.id || peer.disconnected) {
+                showNotification('Not connected to call server. Please wait...', 'error');
+                return;
+            }
+            
+            // Check if target user is online
+            const status = await checkUserOnlineStatus(userId);
+            console.log('User status:', status);
+            
+            if (!status.online) {
+                showNotification('User is offline. They will see missed call when back online.', 'warning');
+                
+                // Create missed call record
+                await db.collection('calls').add({
+                    participants: [currentUser.uid, userId],
+                    initiator: currentUser.uid,
+                    type: type,
+                    status: 'missed',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    missedReason: 'user_offline'
+                });
+                
+                return;
+            }
+            
+            if (!status.peerId) {
+                showNotification('User is not connected to call server', 'error');
+                return;
+            }
+            
+            try {
+                // Get user media
+                console.log('Requesting media permissions...');
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: type === 'video',
+                    audio: true
+                });
+                console.log('Media permissions granted');
+                
+                // Create call invitation in Firestore
+                const callRef = db.collection('callInvitations').doc();
+                const callId = callRef.id;
+                
+                await callRef.set({
+                    callId: callId,
+                    from: currentUser.uid,
+                    to: userId,
+                    type: type,
+                    status: 'ringing',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    expiresAt: new Date(Date.now() + 60000) // Expires in 1 minute
+                });
+                
+                // Update UI
+                currentCallType = type;
+                callParticipants = [currentUser.uid, userId];
+                
+                callContainer.classList.add('active');
+                document.getElementById('callTypeIcon').innerHTML = 
+                    `<i class="fas fa-${type === 'video' ? 'video' : 'phone'}"></i>`;
+                document.getElementById('callParticipants').textContent = 'Calling...';
+                document.getElementById('callStatus').textContent = 'Connecting...';
+                
+                // Add local video
+                addVideoStream(currentUser.uid, localStream, true);
+                
+                // Store call data
+                currentCall = {
+                    callId: callId,
+                    targetId: userId,
+                    targetPeerId: status.peerId,
+                    type: type,
+                    startTime: new Date()
+                };
+                
+                // Start calling process
+                initiateWebRTCCall(status.peerId, userId, type, callId);
+                
+                // Start timeout for no answer
+                setTimeout(async () => {
+                    if (currentCall && currentCall.status !== 'connected') {
+                        console.log('Call timeout - no answer');
+                        showNotification('No answer. Call ended.', 'warning');
+                        
+                        // Update call status
+                        await db.collection('calls').add({
+                            participants: [currentUser.uid, userId],
+                            initiator: currentUser.uid,
+                            type: type,
+                            status: 'missed',
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                            duration: 0
+                        });
+                        
+                        endCall();
+                    }
+                }, 45000); // 45 second timeout
+                
+            } catch (error) {
+                console.error('Error starting call:', error);
+                
+                if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                    showNotification('Camera or microphone not found', 'error');
+                } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                    showNotification('Camera or microphone is already in use', 'error');
+                } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
+                    showNotification('Camera or microphone constraints cannot be satisfied', 'error');
+                } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                    showNotification('Camera or microphone permission denied', 'error');
+                } else if (error.name === 'TypeError' || error.name === 'TypeError') {
+                    showNotification('Camera or microphone access not supported', 'error');
+                } else {
+                    showNotification('Failed to start call: ' + error.message, 'error');
+                }
+                
+                endCall();
+            }
+        }
+        
+        async function initiateWebRTCCall(targetPeerId, userId, type, callId) {
+            try {
+                console.log('Initiating WebRTC call to peer:', targetPeerId);
+                
+                const call = peer.call(targetPeerId, localStream, {
+                    metadata: {
+                        callerId: currentUser.uid,
+                        callerName: currentUser.displayName || 'User',
+                        callerAvatar: currentUser.photoURL || '',
+                        type: type,
+                        callId: callId
+                    }
+                });
+                
+                if (!call) {
+                    throw new Error('Failed to create call object');
+                }
+                
+                // Store the call
+                activeCalls.set(userId, call);
+                
+                call.on('stream', (remoteStream) => {
+                    console.log('Received remote stream from:', userId);
+                    addVideoStream(userId, remoteStream);
+                    
+                    // Update call status
+                    currentCall.status = 'connected';
+                    callStartTime = new Date();
+                    startCallTimer();
+                    
+                    document.getElementById('callParticipants').textContent = 'Connected';
+                    document.getElementById('callStatus').textContent = 'In call';
+                    
+                    // Remove the invitation
+                    db.collection('callInvitations').doc(callId).delete();
+                    
+                    // Create call record
+                    db.collection('calls').add({
+                        participants: [currentUser.uid, userId],
+                        initiator: currentUser.uid,
+                        type: type,
+                        status: 'connected',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        startTime: callStartTime
+                    });
+                });
+                
+                call.on('close', () => {
+                    console.log('Call closed with:', userId);
+                    removeVideoStream(userId);
+                    activeCalls.delete(userId);
+                    
+                    if (activeCalls.size === 0 && currentCall) {
+                        endCall();
+                    }
+                });
+                
+                call.on('error', (err) => {
+                    console.error('Call error with', userId, ':', err);
+                    showNotification('Call error: ' + err.message, 'error');
+                    removeVideoStream(userId);
+                    activeCalls.delete(userId);
+                });
+                
+                // Handle ICE connection state
+                if (call.peerConnection) {
+                    call.peerConnection.oniceconnectionstatechange = () => {
+                        console.log('ICE connection state:', call.peerConnection.iceConnectionState);
+                        if (call.peerConnection.iceConnectionState === 'failed' ||
+                            call.peerConnection.iceConnectionState === 'disconnected') {
+                            showNotification('Network connection unstable', 'warning');
+                        }
+                    };
+                }
+                
+            } catch (error) {
+                console.error('Error initiating WebRTC call:', error);
+                showNotification('Failed to connect call: ' + error.message, 'error');
+                endCall();
+            }
+        }
+        
+        async function startGroupCall(userIds) {
+            console.log('Starting group call with:', userIds);
+            
+            if (!peer || !peer.id || peer.disconnected) {
+                showNotification('Not connected to call server', 'error');
+                return;
+            }
+            
+            // Check online status for all users
+            const onlineUsers = [];
+            const offlineUsers = [];
+            
+            for (const userId of userIds) {
+                const status = await checkUserOnlineStatus(userId);
+                if (status.online && status.peerId) {
+                    onlineUsers.push({ id: userId, peerId: status.peerId });
+                } else {
+                    offlineUsers.push(userId);
+                }
+            }
+            
+            if (onlineUsers.length === 0) {
+                showNotification('All selected users are offline', 'warning');
+                return;
+            }
+            
+            if (offlineUsers.length > 0) {
+                showNotification(`${offlineUsers.length} user(s) offline and won't join the call`, 'warning');
+            }
+            
+            try {
+                // Get user media
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                
+                // Update UI
+                currentCallType = 'video';
+                callParticipants = [currentUser.uid, ...onlineUsers.map(u => u.id)];
+                
+                callContainer.classList.add('active');
+                document.getElementById('callTypeIcon').innerHTML = '<i class="fas fa-users"></i>';
+                document.getElementById('callParticipants').textContent = `Group Call (${callParticipants.length})`;
+                document.getElementById('callStatus').textContent = 'Starting...';
+                
+                // Add local video
+                addVideoStream(currentUser.uid, localStream, true);
+                
+                // Store group call data
+                currentCall = {
+                    group: true,
+                    participants: onlineUsers,
+                    startTime: new Date(),
+                    status: 'connecting'
+                };
+                
+                // Call each online participant
+                const callPromises = [];
+                for (const user of onlineUsers) {
+                    const callId = `group_${Date.now()}_${user.id}`;
+                    callPromises.push(initiateWebRTCCall(user.peerId, user.id, 'video', callId));
+                }
+                
+                await Promise.all(callPromises);
+                
+                // Start call timer
+                callStartTime = new Date();
+                startCallTimer();
+                currentCall.status = 'connected';
+                
+                // Create group call record
+                await db.collection('calls').add({
+                    participants: callParticipants,
+                    initiator: currentUser.uid,
+                    type: 'video',
+                    group: true,
+                    status: 'connected',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    startTime: callStartTime
+                });
+                
+                // Update participants list
+                updateParticipantsList();
+                
+                showNotification(`Group call started with ${onlineUsers.length} participant(s)`, 'success');
+                
+            } catch (error) {
+                console.error('Error starting group call:', error);
+                showNotification('Failed to start group call: ' + error.message, 'error');
+                endCall();
+            }
+        }
+        
+        function addVideoStream(userId, stream, isLocal = false) {
+            // Remove existing video if present
+            const existingVideo = document.querySelector(`[data-user-id="${userId}"]`);
+            if (existingVideo) {
+                existingVideo.remove();
+            }
+            
+            // Create video container
+            const videoContainer = document.createElement('div');
+            videoContainer.className = 'video-container fade-in';
+            videoContainer.dataset.userId = userId;
+            
+            if (isLocal) {
+                videoContainer.classList.add('pinned');
+            }
+            
+            // Create video element
+            const video = document.createElement('video');
+            video.className = 'video-element';
+            video.srcObject = stream;
+            video.autoplay = true;
+            video.muted = isLocal;
+            video.playsInline = true;
+            
+            // Get user info
+            let userName = isLocal ? 'You' : 'User';
+            let userAvatar = '';
+            
+            if (isLocal) {
+                userName = 'You';
+                userAvatar = window.userAvatar;
+            } else {
+                // Fetch user info
+                db.collection('users').doc(userId).get().then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        userName = userData.displayName || 'User';
+                        userAvatar = userData.photoURL || '';
+                        
+                        // Update video overlay
+                        const nameSpan = videoContainer.querySelector('.video-name span');
+                        if (nameSpan) nameSpan.textContent = userName;
+                    }
+                }).catch(console.error);
+            }
+            
+            // Create video overlay
+            const videoOverlay = document.createElement('div');
+            videoOverlay.className = 'video-overlay';
+            videoOverlay.innerHTML = `
+                <div class="video-name">
+                    <i class="fas fa-${isLocal ? 'user' : 'user-friends'}"></i>
+                    <span>${userName}</span>
+                </div>
+                <div class="video-actions">
+                    <button class="video-action-btn" data-action="pin" title="Pin">
+                        <i class="fas fa-thumbtack"></i>
+                    </button>
+                    <button class="video-action-btn" data-action="spotlight" title="Spotlight">
+                        <i class="fas fa-star"></i>
+                    </button>
+                </div>
+            `;
+            
+            videoContainer.appendChild(video);
+            videoContainer.appendChild(videoOverlay);
+            videoGrid.appendChild(videoContainer);
+            
+            // Store stream
+            if (!isLocal) {
+                remoteStreams.set(userId, stream);
+            }
+            
+            // Update video grid layout
+            updateVideoGrid();
+            
+            // Add click handlers for video actions
+            videoOverlay.querySelectorAll('.video-action-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const action = btn.dataset.action;
+                    if (action === 'pin') {
+                        videoContainer.classList.toggle('pinned');
+                        btn.classList.toggle('active');
+                    }
+                });
+            });
+        }
+        
+        function removeVideoStream(userId) {
+            const videoElement = document.querySelector(`[data-user-id="${userId}"]`);
+            if (videoElement) {
+                videoElement.remove();
+                remoteStreams.delete(userId);
+                updateVideoGrid();
+            }
+        }
+        
+        function updateVideoGrid() {
+            const videoContainers = document.querySelectorAll('.video-container');
+            const count = videoContainers.length;
+            
+            if (count === 0) return;
+            
+            // Clear existing grid classes
+            videoContainers.forEach(container => {
+                container.classList.remove('large');
+            });
+            
+            // If only one video, make it large
+            if (count === 1) {
+                videoContainers[0].classList.add('large');
+            }
+            
+            // Update participants count if in group call
+            if (currentCall && currentCall.group) {
+                document.getElementById('callParticipants').textContent = 
+                    `Group Call (${count})`;
+            }
+        }
+        
+        function startCallTimer() {
+            callStartTime = new Date();
+            
+            if (callInterval) clearInterval(callInterval);
+            
+            callInterval = setInterval(() => {
+                if (!callStartTime) return;
+                
+                const now = new Date();
+                const diff = Math.floor((now - callStartTime) / 1000);
+                const minutes = Math.floor(diff / 60);
+                const seconds = diff % 60;
+                
+                document.getElementById('callDuration').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+        
+        async function endCall() {
+            console.log('Ending call...');
+            
+            // Stop all media streams
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    track.stop();
+                    track.enabled = false;
+                });
+                localStream = null;
+            }
+            
+            // Close all active peer connections
+            activeCalls.forEach((call, userId) => {
+                try {
+                    call.close();
+                } catch (e) {
+                    console.error('Error closing call with', userId, ':', e);
+                }
+            });
+            activeCalls.clear();
+            
+            remoteStreams.forEach(stream => {
+                stream.getTracks().forEach(track => track.stop());
+            });
+            remoteStreams.clear();
+            
+            // Clear timer
+            if (callInterval) {
+                clearInterval(callInterval);
+                callInterval = null;
+            }
+            
+            // Save call duration if call was connected
+            if (currentCall && callStartTime) {
+                const endTime = new Date();
+                const duration = Math.floor((endTime - callStartTime) / 1000);
+                
+                // Update call record with duration
+                const participants = currentCall.group ? 
+                    callParticipants : 
+                    [currentUser.uid, currentCall.targetId];
+                
+                await db.collection('calls').add({
+                    participants: participants,
+                    initiator: currentCall.group ? currentUser.uid : currentCall.initiator,
+                    type: currentCallType,
+                    status: 'completed',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    startTime: callStartTime,
+                    endTime: endTime,
+                    duration: duration,
+                    group: currentCall.group || false
+                });
+            }
+            
+            // Update UI
+            callContainer.classList.remove('active');
+            callSidePanel.classList.add('collapsed');
+            incomingCallModal.classList.remove('active');
+            pipContainer.style.display = 'none';
+            
+            // Clear video grid
+            videoGrid.innerHTML = '';
+            
+            // Reset call duration
+            document.getElementById('callDuration').textContent = '00:00';
+            
+            // Reset current call
+            currentCall = null;
+            callStartTime = null;
+            currentCallType = null;
+            callParticipants = [];
+            
+            // Update call history
+            loadRecentCalls();
+            
+            showNotification('Call ended', 'success');
+        }
+        
+        async function acceptCall(type = 'voice') {
+            try {
+                const incomingCall = window.incomingCall;
+                if (!incomingCall) {
+                    showNotification('No incoming call to accept', 'error');
+                    return;
+                }
+                
+                // Get user media
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: type === 'video',
+                    audio: true
+                });
+                
+                // Answer the call
+                incomingCall.answer(localStream);
+                
+                // Update UI
+                currentCall = {
+                    targetId: window.callerData.id,
+                    type: type,
+                    startTime: new Date()
+                };
+                
+                currentCallType = type;
+                callParticipants = [currentUser.uid, window.callerData.id];
+                
+                callContainer.classList.add('active');
+                incomingCallModal.classList.remove('active');
+                
+                document.getElementById('callTypeIcon').innerHTML = 
+                    `<i class="fas fa-${type === 'video' ? 'video' : 'phone'}"></i>`;
+                document.getElementById('callParticipants').textContent = window.callerData.name;
+                document.getElementById('callStatus').textContent = 'Connected';
+                
+                // Add local video
+                addVideoStream(currentUser.uid, localStream, true);
+                
+                // Handle remote stream
+                incomingCall.on('stream', (remoteStream) => {
+                    addVideoStream(window.callerData.id, remoteStream);
+                    activeCalls.set(window.callerData.id, incomingCall);
+                });
+                
+                incomingCall.on('close', () => {
+                    console.log('Incoming call closed by caller');
+                    endCall();
+                });
+                
+                incomingCall.on('error', (err) => {
+                    console.error('Incoming call error:', err);
+                    showNotification('Call error: ' + err.message, 'error');
+                    endCall();
+                });
+                
+                callStartTime = new Date();
+                startCallTimer();
+                
+                // Remove the invitation
+                if (incomingCall.metadata && incomingCall.metadata.callId) {
+                    await db.collection('callInvitations').doc(incomingCall.metadata.callId).delete();
+                }
+                
+                // Create call record
+                await db.collection('calls').add({
+                    participants: [currentUser.uid, window.callerData.id],
+                    initiator: window.callerData.id,
+                    type: type,
+                    status: 'completed',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    startTime: callStartTime
+                });
+                
+                // Clear incoming call data
+                window.incomingCall = null;
+                window.callerData = null;
+                
+            } catch (error) {
+                console.error('Error accepting call:', error);
+                showNotification('Failed to accept call: ' + error.message, 'error');
+                declineCall();
+            }
+        }
+        
+        async function declineCall() {
+            console.log('Declining call...');
+            
+            if (window.incomingCall) {
+                try {
+                    window.incomingCall.close();
+                } catch (e) {
+                    console.error('Error closing incoming call:', e);
+                }
+                
+                // Create missed call record
+                if (window.callerData) {
+                    await db.collection('calls').add({
+                        participants: [currentUser.uid, window.callerData.id],
+                        initiator: window.callerData.id,
+                        type: window.callerData.type,
+                        status: 'missed',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                
+                window.incomingCall = null;
+                window.callerData = null;
+            }
+            
+            incomingCallModal.classList.remove('active');
+            showNotification('Call declined', 'success');
         }
         
         async function loadUserSettings() {
             try {
-                // Try to load user settings from Firestore
                 const settingsDoc = await db.collection('userSettings').doc(currentUser.uid).get();
                 
                 if (settingsDoc.exists) {
@@ -1797,12 +2689,10 @@
                 document.getElementById('pollsToggle').checked = userSettings.polls;
                 document.getElementById('notesToggle').checked = userSettings.notes;
                 
-                // Apply initial settings
                 applyUserSettings();
                 
             } catch (error) {
                 console.error('Error loading user settings:', error);
-                // Use default settings
                 applyUserSettings();
             }
         }
@@ -1812,9 +2702,6 @@
             
             try {
                 db.collection('userSettings').doc(currentUser.uid).set(userSettings, { merge: true })
-                    .then(() => {
-                        console.log('User settings saved');
-                    })
                     .catch(error => {
                         console.error('Error saving user settings:', error);
                     });
@@ -1825,14 +2712,12 @@
         
         function applyUserSettings() {
             // Apply settings to UI
-            
-            // Reactions container visibility
             const reactionsContainer = document.getElementById('reactionsContainer');
             if (reactionsContainer) {
                 reactionsContainer.style.display = userSettings.reactions ? 'flex' : 'none';
             }
             
-            // Panel tabs visibility - only show enabled features
+            // Panel tabs visibility
             const panelTabs = document.querySelectorAll('.panel-tab');
             panelTabs.forEach(tab => {
                 const panelType = tab.dataset.panel;
@@ -1852,45 +2737,13 @@
                         break;
                 }
             });
-            
-            // If chat is disabled but active, switch to participants
-            if (!userSettings.chat) {
-                const activeTab = document.querySelector('.panel-tab.active');
-                if (activeTab && activeTab.dataset.panel === 'chat') {
-                    document.querySelector('.panel-tab[data-panel="participants"]').click();
-                }
-            }
-            
-            // If whiteboard is disabled but active, switch to participants
-            if (!userSettings.whiteboard) {
-                const activeTab = document.querySelector('.panel-tab.active');
-                if (activeTab && activeTab.dataset.panel === 'whiteboard') {
-                    document.querySelector('.panel-tab[data-panel="participants"]').click();
-                }
-            }
-            
-            // If notes is disabled but active, switch to participants
-            if (!userSettings.notes) {
-                const activeTab = document.querySelector('.panel-tab.active');
-                if (activeTab && activeTab.dataset.panel === 'notes') {
-                    document.querySelector('.panel-tab[data-panel="participants"]').click();
-                }
-            }
-            
-            // If polls is disabled but active, switch to participants
-            if (!userSettings.polls) {
-                const activeTab = document.querySelector('.panel-tab.active');
-                if (activeTab && activeTab.dataset.panel === 'polls') {
-                    document.querySelector('.panel-tab[data-panel="participants"]').click();
-                }
-            }
         }
         
         async function loadRecentCalls() {
             try {
                 const recentCallsList = document.getElementById('recentCallsList');
                 
-                // Fetch call history from Firestore
+                // Fetch call history
                 const callsSnapshot = await db.collection('calls')
                     .where('participants', 'array-contains', currentUser.uid)
                     .orderBy('timestamp', 'desc')
@@ -1925,32 +2778,36 @@
         async function displayCallItem(callData, callId) {
             const recentCallsList = document.getElementById('recentCallsList');
             
-            // Get the other participant (for 1-on-1 calls)
-            const otherParticipantId = callData.participants.find(id => id !== currentUser.uid);
-            let otherParticipantName = 'Unknown';
-            let otherParticipantAvatar = '';
+            // Get other participants
+            const otherParticipantIds = callData.participants.filter(id => id !== currentUser.uid);
+            let displayName = '';
+            let avatar = '';
             
-            if (otherParticipantId) {
+            if (otherParticipantIds.length === 1) {
+                // 1-on-1 call
                 try {
-                    const userDoc = await db.collection('users').doc(otherParticipantId).get();
+                    const userDoc = await db.collection('users').doc(otherParticipantIds[0]).get();
                     if (userDoc.exists) {
                         const userData = userDoc.data();
-                        otherParticipantName = userData.displayName || 'User';
-                        otherParticipantAvatar = userData.photoURL || '';
+                        displayName = userData.displayName || 'User';
+                        avatar = userData.photoURL || '';
                     }
                 } catch (error) {
                     console.error('Error fetching user data:', error);
                 }
+            } else {
+                // Group call
+                displayName = `Group Call (${callData.participants.length})`;
             }
             
-            // Determine call type and status
+            // Determine call status
             const isGroupCall = callData.participants.length > 2;
             const callType = callData.type || 'voice';
             const callStatus = callData.status || 'completed';
             const isMissed = callStatus === 'missed';
             const isOutgoing = callData.initiator === currentUser.uid;
             
-            // Format call time
+            // Format time
             const callTime = callData.timestamp ? 
                 formatTimeAgo(callData.timestamp.toDate()) : 
                 'Recently';
@@ -1968,7 +2825,7 @@
             callItem.className = 'call-item';
             callItem.dataset.callId = callId;
             
-            // Status icon class
+            // Status icon
             let statusIconClass = '';
             let statusIcon = '';
             
@@ -1983,18 +2840,18 @@
                 statusIcon = 'fas fa-phone';
             }
             
-            const initials = otherParticipantName.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2);
+            const initials = displayName.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2);
             
             callItem.innerHTML = `
-                <div class="call-avatar" ${otherParticipantAvatar ? `style="background-image: url('${otherParticipantAvatar}')"` : ''}>
-                    ${otherParticipantAvatar ? '' : `<span>${initials}</span>`}
+                <div class="call-avatar" ${avatar ? `style="background-image: url('${avatar}')"` : ''}>
+                    ${avatar ? '' : `<span>${initials}</span>`}
                     <div class="call-status-icon ${statusIconClass}">
                         <i class="${statusIcon}"></i>
                     </div>
                 </div>
                 <div class="call-info">
                     <div class="call-name">
-                        <span>${isGroupCall ? `Group Call (${callData.participants.length})` : otherParticipantName}</span>
+                        <span>${displayName}</span>
                         <span class="call-time">${callTime}</span>
                     </div>
                     <div class="call-details">
@@ -2008,14 +2865,14 @@
                 </button>
             `;
             
-            // Add click event for calling back
+            // Add callback functionality
             const callbackBtn = callItem.querySelector('.call-action-btn');
             callbackBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (isGroupCall) {
-                    startGroupCall(callData.participants.filter(id => id !== currentUser.uid));
-                } else {
-                    startCall(otherParticipantId, callType);
+                    startGroupCall(otherParticipantIds);
+                } else if (otherParticipantIds.length === 1) {
+                    startCall(otherParticipantIds[0], callType);
                 }
             });
             
@@ -2036,511 +2893,14 @@
             return `${Math.floor(diffDays / 7)}w ago`;
         }
         
-        function initializePeerJS() {
-            // Create Peer instance with current user's ID
-            peer = new Peer(currentUser.uid, {
-                host: '0.peerjs.com',
-                port: 443,
-                path: '/',
-                secure: true,
-                config: {
-                    'iceServers': [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:global.stun.twilio.com:3478' }
-                    ]
-                }
-            });
-            
-            peer.on('open', (id) => {
-                console.log('PeerJS connected with ID:', id);
-            });
-            
-            peer.on('error', (err) => {
-                console.error('PeerJS error:', err);
-                showNotification('Connection error. Please refresh.', 'error');
-            });
-            
-            peer.on('call', (incomingCall) => {
-                handleIncomingCall(incomingCall);
-            });
-        }
-        
-        function handleIncomingCall(incomingCall) {
-            // Get caller info from Firestore
-            db.collection('users').doc(incomingCall.peer).get().then(callerDoc => {
-                if (!callerDoc.exists) return;
-                
-                const callerData = callerDoc.data();
-                
-                // Show incoming call modal
-                document.getElementById('incomingCallName').textContent = callerData.displayName || 'Unknown';
-                document.getElementById('incomingCallType').textContent = 
-                    incomingCall.metadata.type === 'video' ? 'Incoming Video Call' : 'Incoming Voice Call';
-                
-                // Set avatar
-                const incomingCallAvatar = document.getElementById('incomingCallAvatar');
-                if (callerData.photoURL) {
-                    incomingCallAvatar.style.backgroundImage = `url('${callerData.photoURL}')`;
-                    incomingCallAvatar.innerHTML = '';
-                } else {
-                    const initials = callerData.displayName ? 
-                        callerData.displayName.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2) : 
-                        'U';
-                    incomingCallAvatar.innerHTML = `<span>${initials}</span>`;
-                }
-                
-                incomingCallModal.classList.add('active');
-                
-                // Store incoming call for later
-                window.incomingCall = incomingCall;
-                window.callerId = incomingCall.peer;
-                window.callType = incomingCall.metadata.type;
-                
-            }).catch(error => {
-                console.error('Error fetching caller info:', error);
-            });
-        }
-        
-        async function startCall(userId, type = 'video') {
-            try {
-                // Get user media
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    video: type === 'video',
-                    audio: true
-                });
-                
-                // Create call
-                currentCallType = type;
-                callParticipants = [currentUser.uid, userId];
-                
-                // Update UI
-                callContainer.classList.add('active');
-                document.getElementById('callTypeIcon').innerHTML = 
-                    `<i class="fas fa-${type === 'video' ? 'video' : 'phone'}"></i>`;
-                document.getElementById('callParticipants').textContent = 'Connecting...';
-                document.getElementById('callStatus').textContent = 'Calling...';
-                
-                // Add local video
-                addVideoStream(currentUser.uid, localStream, true);
-                
-                // Call the other user
-                const call = peer.call(userId, localStream, {
-                    metadata: {
-                        type: type,
-                        callerName: currentUser.displayName || 'User',
-                        callerAvatar: currentUser.photoURL || ''
-                    }
-                });
-                
-                currentCall = call;
-                callStartTime = new Date();
-                startCallTimer();
-                
-                call.on('stream', (remoteStream) => {
-                    addVideoStream(userId, remoteStream);
-                });
-                
-                call.on('close', () => {
-                    endCall();
-                });
-                
-                // Save call to Firestore
-                await db.collection('calls').add({
-                    participants: [currentUser.uid, userId],
-                    initiator: currentUser.uid,
-                    type: type,
-                    status: 'ongoing',
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-            } catch (error) {
-                console.error('Error starting call:', error);
-                showNotification('Failed to start call', 'error');
-                endCall();
-            }
-        }
-        
-        async function startGroupCall(userIds) {
-            try {
-                // Get user media
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: true
-                });
-                
-                // Update UI
-                currentCallType = 'video';
-                callParticipants = [currentUser.uid, ...userIds];
-                
-                callContainer.classList.add('active');
-                document.getElementById('callTypeIcon').innerHTML = '<i class="fas fa-users"></i>';
-                document.getElementById('callParticipants').textContent = `Group Call (${callParticipants.length})`;
-                document.getElementById('callStatus').textContent = 'Starting...';
-                
-                // Add local video
-                addVideoStream(currentUser.uid, localStream, true);
-                
-                // Call each participant
-                const calls = [];
-                for (const userId of userIds) {
-                    const call = peer.call(userId, localStream, {
-                        metadata: {
-                            type: 'video',
-                            group: true,
-                            callerName: currentUser.displayName || 'User',
-                            callerAvatar: currentUser.photoURL || ''
-                        }
-                    });
-                    
-                    calls.push(call);
-                    
-                    call.on('stream', (remoteStream) => {
-                        addVideoStream(userId, remoteStream);
-                    });
-                    
-                    call.on('close', () => {
-                        removeVideoStream(userId);
-                    });
-                }
-                
-                currentCall = calls;
-                callStartTime = new Date();
-                startCallTimer();
-                
-                // Save group call to Firestore
-                await db.collection('calls').add({
-                    participants: callParticipants,
-                    initiator: currentUser.uid,
-                    type: 'video',
-                    group: true,
-                    status: 'ongoing',
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                // Update participants list
-                updateParticipantsList();
-                
-            } catch (error) {
-                console.error('Error starting group call:', error);
-                showNotification('Failed to start group call', 'error');
-                endCall();
-            }
-        }
-        
-        function addVideoStream(userId, stream, isLocal = false) {
-            // Remove existing video if present
-            const existingVideo = document.querySelector(`[data-user-id="${userId}"]`);
-            if (existingVideo) {
-                existingVideo.remove();
-            }
-            
-            // Create video container
-            const videoContainer = document.createElement('div');
-            videoContainer.className = 'video-container fade-in';
-            videoContainer.dataset.userId = userId;
-            
-            if (isLocal) {
-                videoContainer.classList.add('pinned');
-            }
-            
-            // Create video element
-            const video = document.createElement('video');
-            video.className = 'video-element';
-            video.srcObject = stream;
-            video.autoplay = true;
-            video.muted = isLocal;
-            
-            // Get user info
-            let userName = isLocal ? 'You' : 'User';
-            let userAvatar = '';
-            
-            if (isLocal) {
-                userName = 'You';
-                userAvatar = window.userAvatar;
-            } else {
-                // Try to get user info from Firestore
-                db.collection('users').doc(userId).get().then(doc => {
-                    if (doc.exists) {
-                        const userData = doc.data();
-                        userName = userData.displayName || 'User';
-                        userAvatar = userData.photoURL || '';
-                        
-                        // Update video overlay
-                        const nameSpan = videoContainer.querySelector('.video-name span');
-                        if (nameSpan) nameSpan.textContent = userName;
-                    }
-                });
-            }
-            
-            // Create video overlay
-            const videoOverlay = document.createElement('div');
-            videoOverlay.className = 'video-overlay';
-            videoOverlay.innerHTML = `
-                <div class="video-name">
-                    <i class="fas fa-${isLocal ? 'user' : 'user-friends'}"></i>
-                    <span>${userName}</span>
-                </div>
-                <div class="video-actions">
-                    <button class="video-action-btn" data-action="pin" title="Pin">
-                        <i class="fas fa-thumbtack"></i>
-                    </button>
-                    <button class="video-action-btn" data-action="spotlight" title="Spotlight">
-                        <i class="fas fa-star"></i>
-                    </button>
-                </div>
-            `;
-            
-            videoContainer.appendChild(video);
-            videoContainer.appendChild(videoOverlay);
-            videoGrid.appendChild(videoContainer);
-            
-            // Store stream
-            if (!isLocal) {
-                remoteStreams.set(userId, stream);
-            }
-            
-            // Update video grid layout
-            updateVideoGrid();
-        }
-        
-        function removeVideoStream(userId) {
-            const videoElement = document.querySelector(`[data-user-id="${userId}"]`);
-            if (videoElement) {
-                videoElement.remove();
-                remoteStreams.delete(userId);
-                updateVideoGrid();
-            }
-        }
-        
-        function updateVideoGrid() {
-            const videoContainers = document.querySelectorAll('.video-container');
-            const count = videoContainers.length;
-            
-            if (count === 0) return;
-            
-            // Clear existing grid classes
-            videoContainers.forEach(container => {
-                container.classList.remove('large');
-            });
-            
-            // If only one video, make it large
-            if (count === 1) {
-                videoContainers[0].classList.add('large');
-            }
-            
-            // Update participants count
-            document.getElementById('callParticipants').textContent = 
-                `Participants (${count})`;
-        }
-        
-        function startCallTimer() {
-            callStartTime = new Date();
-            
-            if (callInterval) clearInterval(callInterval);
-            
-            callInterval = setInterval(() => {
-                const now = new Date();
-                const diff = Math.floor((now - callStartTime) / 1000);
-                const minutes = Math.floor(diff / 60);
-                const seconds = diff % 60;
-                
-                document.getElementById('callDuration').textContent = 
-                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-        }
-        
-        function endCall() {
-            // Stop all media streams
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            
-            remoteStreams.forEach(stream => {
-                stream.getTracks().forEach(track => track.stop());
-            });
-            remoteStreams.clear();
-            
-            // Close current call
-            if (currentCall) {
-                if (Array.isArray(currentCall)) {
-                    currentCall.forEach(call => call.close());
-                } else {
-                    currentCall.close();
-                }
-                currentCall = null;
-            }
-            
-            // Clear timer
-            if (callInterval) {
-                clearInterval(callInterval);
-                callInterval = null;
-            }
-            
-            // Update UI
-            callContainer.classList.remove('active');
-            callSidePanel.classList.add('collapsed');
-            incomingCallModal.classList.remove('active');
-            pipContainer.style.display = 'none';
-            
-            // Clear video grid
-            videoGrid.innerHTML = '';
-            
-            // Reset call duration
-            document.getElementById('callDuration').textContent = '00:00';
-            
-            // Update call history
-            loadRecentCalls();
-        }
-        
-        async function acceptCall(type = 'voice') {
-            try {
-                const incomingCall = window.incomingCall;
-                if (!incomingCall) return;
-                
-                // Get user media
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    video: type === 'video',
-                    audio: true
-                });
-                
-                // Answer the call
-                incomingCall.answer(localStream);
-                
-                // Update UI
-                currentCall = incomingCall;
-                currentCallType = type;
-                callParticipants = [currentUser.uid, window.callerId];
-                
-                callContainer.classList.add('active');
-                incomingCallModal.classList.remove('active');
-                
-                document.getElementById('callTypeIcon').innerHTML = 
-                    `<i class="fas fa-${type === 'video' ? 'video' : 'phone'}"></i>`;
-                document.getElementById('callParticipants').textContent = window.incomingCallName || 'User';
-                document.getElementById('callStatus').textContent = 'Connected';
-                
-                // Add local video
-                addVideoStream(currentUser.uid, localStream, true);
-                
-                // Handle remote stream
-                incomingCall.on('stream', (remoteStream) => {
-                    addVideoStream(window.callerId, remoteStream);
-                });
-                
-                incomingCall.on('close', () => {
-                    endCall();
-                });
-                
-                callStartTime = new Date();
-                startCallTimer();
-                
-                // Save call to Firestore
-                await db.collection('calls').add({
-                    participants: [currentUser.uid, window.callerId],
-                    initiator: window.callerId,
-                    type: type,
-                    status: 'completed',
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    duration: 0 // Will be updated when call ends
-                });
-                
-                // Clear incoming call data
-                window.incomingCall = null;
-                window.callerId = null;
-                window.callType = null;
-                
-            } catch (error) {
-                console.error('Error accepting call:', error);
-                showNotification('Failed to accept call', 'error');
-                endCall();
-            }
-        }
-        
-        function declineCall() {
-            if (window.incomingCall) {
-                window.incomingCall.close();
-                
-                // Save missed call to Firestore
-                db.collection('calls').add({
-                    participants: [currentUser.uid, window.callerId],
-                    initiator: window.callerId,
-                    type: window.callType,
-                    status: 'missed',
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                window.incomingCall = null;
-                window.callerId = null;
-                window.callType = null;
-            }
-            
-            incomingCallModal.classList.remove('active');
-        }
-        
-        function updateParticipantsList() {
-            const participantsList = document.getElementById('participantsList');
-            participantsList.innerHTML = '';
-            
-            // Add local user
-            addParticipantItem(currentUser.uid, 'You', window.userAvatar, true);
-            
-            // Add remote participants
-            remoteStreams.forEach((stream, userId) => {
-                // Fetch user info from Firestore
-                db.collection('users').doc(userId).get().then(doc => {
-                    if (doc.exists) {
-                        const userData = doc.data();
-                        addParticipantItem(userId, userData.displayName || 'User', userData.photoURL || '', false);
-                    }
-                });
-            });
-        }
-        
-        function addParticipantItem(userId, name, avatar, isLocal) {
-            const participantsList = document.getElementById('participantsList');
-            
-            const participantItem = document.createElement('div');
-            participantItem.className = 'participant-item';
-            participantItem.dataset.userId = userId;
-            
-            const initials = name.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2);
-            
-            participantItem.innerHTML = `
-                <div class="participant-avatar" ${avatar ? `style="background-image: url('${avatar}')"` : ''}>
-                    ${avatar ? '' : `<span>${initials}</span>`}
-                </div>
-                <div class="participant-info">
-                    <div class="participant-name">${name}</div>
-                    <div class="participant-status ${isLocal ? 'active' : ''}">
-                        <i class="fas fa-circle"></i>
-                        ${isLocal ? 'You' : 'Connected'}
-                    </div>
-                </div>
-                ${!isLocal ? `
-                <div class="participant-actions">
-                    <button class="video-action-btn" data-action="pin-user" title="Pin">
-                        <i class="fas fa-thumbtack"></i>
-                    </button>
-                    <button class="video-action-btn" data-action="remove-user" title="Remove">
-                        <i class="fas fa-user-minus"></i>
-                    </button>
-                </div>
-                ` : ''}
-            `;
-            
-            participantsList.appendChild(participantItem);
-        }
-        
         function initializeWhiteboard() {
             whiteboardCanvas = document.getElementById('whiteboardCanvas');
-            whiteboardCtx = whiteboardCanvas.getContext('2d');
+            if (!whiteboardCanvas) return;
             
-            // Set canvas dimensions
+            whiteboardCtx = whiteboardCanvas.getContext('2d');
             whiteboardCanvas.width = whiteboardCanvas.offsetWidth;
             whiteboardCanvas.height = whiteboardCanvas.offsetHeight;
             
-            // Set initial drawing styles
             whiteboardCtx.strokeStyle = '#000000';
             whiteboardCtx.lineWidth = 2;
             whiteboardCtx.lineCap = 'round';
@@ -2555,13 +2915,15 @@
             whiteboardCanvas.addEventListener('mouseup', stopDrawing);
             whiteboardCanvas.addEventListener('mouseout', stopDrawing);
             
-            // Touch events for mobile
+            // Touch events
             whiteboardCanvas.addEventListener('touchstart', handleTouchStart);
             whiteboardCanvas.addEventListener('touchmove', handleTouchMove);
             whiteboardCanvas.addEventListener('touchend', stopDrawing);
         }
         
         function startDrawing(e) {
+            if (!userSettings.whiteboard) return;
+            
             isDrawing = true;
             const rect = whiteboardCanvas.getBoundingClientRect();
             lastX = e.clientX - rect.left;
@@ -2574,7 +2936,7 @@
         }
         
         function draw(e) {
-            if (!isDrawing) return;
+            if (!isDrawing || !userSettings.whiteboard) return;
             
             const rect = whiteboardCanvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -2584,43 +2946,6 @@
                 case 'pencil':
                     whiteboardCtx.lineTo(x, y);
                     whiteboardCtx.stroke();
-                    break;
-                    
-                case 'line':
-                    // Clear and redraw
-                    whiteboardCtx.clearRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
-                    whiteboardCtx.fillStyle = '#ffffff';
-                    whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
-                    whiteboardCtx.beginPath();
-                    whiteboardCtx.moveTo(lastX, lastY);
-                    whiteboardCtx.lineTo(x, y);
-                    whiteboardCtx.stroke();
-                    break;
-                    
-                case 'rectangle':
-                    whiteboardCtx.clearRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
-                    whiteboardCtx.fillStyle = '#ffffff';
-                    whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
-                    whiteboardCtx.strokeRect(lastX, lastY, x - lastX, y - lastY);
-                    break;
-                    
-                case 'circle':
-                    whiteboardCtx.clearRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
-                    whiteboardCtx.fillStyle = '#ffffff';
-                    whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
-                    const radius = Math.sqrt(Math.pow(x - lastX, 2) + Math.pow(y - lastY, 2));
-                    whiteboardCtx.beginPath();
-                    whiteboardCtx.arc(lastX, lastY, radius, 0, Math.PI * 2);
-                    whiteboardCtx.stroke();
-                    break;
-                    
-                case 'text':
-                    const text = prompt('Enter text:');
-                    if (text) {
-                        whiteboardCtx.font = '20px Arial';
-                        whiteboardCtx.fillText(text, x, y);
-                        isDrawing = false;
-                    }
                     break;
             }
             
@@ -2684,40 +3009,30 @@
                         video: true
                     });
                     
-                    // Replace video track in local stream
+                    // Replace video track
                     const screenTrack = screenStream.getVideoTracks()[0];
                     const oldVideoTrack = localStream.getVideoTracks()[0];
                     
                     localStream.removeTrack(oldVideoTrack);
                     localStream.addTrack(screenTrack);
                     
-                    // Update current call with new stream
-                    if (currentCall) {
-                        if (Array.isArray(currentCall)) {
-                            currentCall.forEach(call => {
-                                call.peerConnection.getSenders().forEach(sender => {
-                                    if (sender.track.kind === 'video') {
-                                        sender.replaceTrack(screenTrack);
-                                    }
-                                });
-                            });
-                        } else {
-                            currentCall.peerConnection.getSenders().forEach(sender => {
-                                if (sender.track.kind === 'video') {
-                                    sender.replaceTrack(screenTrack);
-                                }
-                            });
-                        }
-                    }
+                    // Update all active calls
+                    activeCalls.forEach(call => {
+                        call.peerConnection.getSenders().forEach(sender => {
+                            if (sender.track.kind === 'video') {
+                                sender.replaceTrack(screenTrack);
+                            }
+                        });
+                    });
                     
                     isScreenSharing = true;
                     document.getElementById('screenShareBtn').classList.add('active');
                     
                     showNotification('Screen sharing started', 'success');
                     
-                    // Handle when user stops sharing via browser UI
+                    // Handle when user stops sharing
                     screenTrack.onended = () => {
-                        shareScreen(); // This will switch back to camera
+                        shareScreen();
                     };
                 }
                 
@@ -2727,114 +3042,175 @@
             }
         }
         
-        function togglePictureInPicture() {
-            if (document.pictureInPictureElement) {
-                document.exitPictureInPicture();
-                pipContainer.style.display = 'none';
-            } else {
-                const localVideo = document.querySelector('[data-user-id="' + currentUser.uid + '"] video');
-                if (localVideo) {
-                    localVideo.requestPictureInPicture().catch(error => {
-                        console.error('Error entering PiP:', error);
-                        // Fallback to custom PiP
-                        startCustomPiP(localVideo);
-                    });
+        function updateParticipantsList() {
+            const participantsList = document.getElementById('participantsList');
+            participantsList.innerHTML = '';
+            
+            // Add local user
+            addParticipantItem(currentUser.uid, 'You', window.userAvatar, true, true);
+            
+            // Add remote participants
+            remoteStreams.forEach((stream, userId) => {
+                db.collection('users').doc(userId).get().then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        addParticipantItem(userId, userData.displayName || 'User', userData.photoURL || '', false, true);
+                    }
+                }).catch(console.error);
+            });
+        }
+        
+        function addParticipantItem(userId, name, avatar, isLocal, isOnline) {
+            const participantsList = document.getElementById('participantsList');
+            
+            const participantItem = document.createElement('div');
+            participantItem.className = 'participant-item';
+            participantItem.dataset.userId = userId;
+            
+            const initials = name.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2);
+            
+            participantItem.innerHTML = `
+                <div class="participant-avatar" ${avatar ? `style="background-image: url('${avatar}')"` : ''}>
+                    ${avatar ? '' : `<span>${initials}</span>`}
+                </div>
+                <div class="participant-info">
+                    <div class="participant-name">${name}</div>
+                    <div class="participant-status ${isOnline ? 'active' : 'offline'}">
+                        <i class="fas fa-circle"></i>
+                        ${isLocal ? 'You' : (isOnline ? 'Connected' : 'Offline')}
+                    </div>
+                </div>
+                ${!isLocal ? `
+                <div class="participant-actions">
+                    <button class="video-action-btn" data-action="pin-user" title="Pin">
+                        <i class="fas fa-thumbtack"></i>
+                    </button>
+                </div>
+                ` : ''}
+            `;
+            
+            participantsList.appendChild(participantItem);
+        }
+        
+        async function loadContacts() {
+            const contactsList = document.getElementById('contactsList');
+            const groupContactsList = document.getElementById('groupContactsList');
+            
+            contactsList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Loading contacts...</div>';
+            groupContactsList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Loading contacts...</div>';
+            
+            try {
+                // Get all users except current user
+                const usersSnapshot = await db.collection('users')
+                    .where('uid', '!=', currentUser.uid)
+                    .limit(50)
+                    .get();
+                
+                contactsList.innerHTML = '';
+                groupContactsList.innerHTML = '';
+                
+                if (usersSnapshot.empty) {
+                    const emptyMessage = '<div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);"><i class="fas fa-users" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i><p>No contacts found</p></div>';
+                    contactsList.innerHTML = emptyMessage;
+                    groupContactsList.innerHTML = emptyMessage;
+                    return;
                 }
+                
+                // Load online status for each user
+                for (const doc of usersSnapshot.docs) {
+                    const userData = doc.data();
+                    const status = await checkUserOnlineStatus(userData.uid);
+                    userData.online = status.online;
+                    userData.lastOnline = status.lastOnline;
+                    
+                    addContactItem(userData, contactsList);
+                    addContactItem(userData, groupContactsList);
+                }
+                
+            } catch (error) {
+                console.error('Error loading contacts:', error);
+                showNotification('Failed to load contacts', 'error');
             }
         }
         
-        function startCustomPiP(videoElement) {
-            const pipVideo = document.getElementById('pipVideo');
-            pipVideo.srcObject = videoElement.srcObject;
-            pipContainer.style.display = 'block';
+        function addContactItem(userData, container) {
+            const contactItem = document.createElement('div');
+            contactItem.className = 'contact-item';
+            contactItem.dataset.userId = userData.uid;
             
-            showNotification('Picture-in-Picture started', 'success');
-        }
-        
-        function createPoll() {
-            const question = prompt('Enter poll question:');
-            if (!question) return;
+            const initials = userData.displayName ? 
+                userData.displayName.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2) : 
+                'U';
             
-            const options = [];
-            let optionCount = parseInt(prompt('How many options? (2-6)', '4'));
-            optionCount = Math.min(Math.max(optionCount, 2), 6);
+            let statusText = userData.online ? 'Online now' : 
+                userData.lastOnline < 5 ? 'Just now' :
+                userData.lastOnline < 60 ? `${userData.lastOnline}m ago` :
+                `${Math.floor(userData.lastOnline / 60)}h ago`;
             
-            for (let i = 1; i <= optionCount; i++) {
-                const option = prompt(`Option ${i}:`);
-                if (option) options.push(option);
-            }
-            
-            if (options.length < 2) {
-                showNotification('Poll needs at least 2 options', 'error');
-                return;
-            }
-            
-            // Create poll UI
-            const pollHTML = `
-                <div class="poll-question">
-                    <strong>${question}</strong>
+            contactItem.innerHTML = `
+                <input type="checkbox" class="contact-checkbox" id="contact_${userData.uid}">
+                <div class="call-avatar" ${userData.photoURL ? `style="background-image: url('${userData.photoURL}')"` : ''}>
+                    ${userData.photoURL ? '' : `<span>${initials}</span>`}
+                    <div class="call-status-icon ${userData.online ? 'incoming' : 'missed'}" style="width: 12px; height: 12px;">
+                        <i class="fas fa-circle" style="font-size: 6px;"></i>
+                    </div>
                 </div>
-                <div class="poll-options">
-                    ${options.map((option, index) => `
-                        <div class="poll-option" data-option="${index}">
-                            <div class="poll-option-text">${option}</div>
-                            <div class="poll-votes">0 votes</div>
-                        </div>
-                    `).join('')}
-                </div>
-                <div style="margin-top: 15px; font-size: 12px; color: var(--text-secondary);">
-                    <i class="fas fa-info-circle"></i> Click to vote
+                <div class="call-info" style="flex: 1;">
+                    <div class="call-name">
+                        <span>${userData.displayName || 'User'}</span>
+                    </div>
+                    <div class="call-details">
+                        <span style="color: ${userData.online ? 'var(--success-color)' : 'var(--text-secondary)'}">
+                            ${statusText}
+                        </span>
+                    </div>
                 </div>
             `;
             
-            document.getElementById('activePoll').innerHTML = pollHTML;
-            
-            // Add vote listeners
-            document.querySelectorAll('.poll-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    // Remove selected class from all options
-                    document.querySelectorAll('.poll-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                    });
-                    
-                    // Add selected class to clicked option
-                    this.classList.add('selected');
-                    
-                    // Update vote count (simulated)
-                    const votesElement = this.querySelector('.poll-votes');
-                    const currentVotes = parseInt(votesElement.textContent) || 0;
-                    votesElement.textContent = `${currentVotes + 1} votes`;
-                });
+            // Add checkbox event listener
+            const checkbox = contactItem.querySelector('.contact-checkbox');
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    selectedContacts.push(userData.uid);
+                    contactItem.classList.add('selected');
+                } else {
+                    selectedContacts = selectedContacts.filter(id => id !== userData.uid);
+                    contactItem.classList.remove('selected');
+                }
             });
             
-            showNotification('Poll created successfully', 'success');
+            container.appendChild(contactItem);
         }
         
-        function createCallLink(type = 'video') {
-            const linkId = Math.random().toString(36).substring(2, 15);
-            callLink = `${window.location.origin}/call.html?join=${linkId}&type=${type}`;
+        function addChatMessage(message, senderId, isSent = false) {
+            const chatMessages = document.getElementById('chatMessages');
             
-            document.getElementById('callLinkInput').value = callLink;
-            document.getElementById('callLinkContainer').style.display = 'block';
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${isSent ? 'sent' : 'received'}`;
             
-            // Save link to Firestore
-            db.collection('callLinks').doc(linkId).set({
-                type: type,
-                creator: currentUser.uid,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-            });
-        }
-        
-        function copyCallLink() {
-            if (!callLink) return;
+            let senderName = 'Unknown';
+            if (senderId === currentUser.uid) {
+                senderName = 'You';
+            } else {
+                // Get sender name
+                db.collection('users').doc(senderId).get().then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        const nameElement = messageDiv.querySelector('.message-sender');
+                        if (nameElement) {
+                            nameElement.textContent = userData.displayName || 'User';
+                        }
+                    }
+                }).catch(console.error);
+            }
             
-            navigator.clipboard.writeText(callLink).then(() => {
-                showNotification('Link copied to clipboard', 'success');
-            }).catch(err => {
-                console.error('Failed to copy link:', err);
-                showNotification('Failed to copy link', 'error');
-            });
+            messageDiv.innerHTML = `
+                <div class="message-sender">${senderName}</div>
+                <div class="message-content">${message}</div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
         
         function showNotification(message, type = 'success') {
@@ -2851,40 +3227,6 @@
             }, 3000);
         }
         
-        function listenForIncomingCalls() {
-            // Listen for incoming calls from Firestore
-            db.collection('calls')
-                .where('participants', 'array-contains', currentUser.uid)
-                .where('status', '==', 'ringing')
-                .where('initiator', '!=', currentUser.uid)
-                .onSnapshot(snapshot => {
-                    snapshot.docChanges().forEach(change => {
-                        if (change.type === 'added') {
-                            const callData = change.doc.data();
-                            if (!callData.answered) {
-                                // Show incoming call notification
-                                handleIncomingCallNotification(callData);
-                            }
-                        }
-                    });
-                });
-        }
-        
-        function handleIncomingCallNotification(callData) {
-            // This is a simplified version - in production, you'd want to use Firebase Cloud Messaging
-            // For now, we'll show a browser notification
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('Incoming Call', {
-                    body: `${callData.callerName || 'Someone'} is calling you`,
-                    icon: callData.callerAvatar || '/icon.png',
-                    tag: 'call-notification'
-                });
-            }
-            
-            // Also update the call list
-            loadRecentCalls();
-        }
-        
         function setupEventListeners() {
             // Settings toggle
             settingsToggle.addEventListener('click', function() {
@@ -2899,41 +3241,37 @@
                 userSettings.reactions = this.checked;
                 applyUserSettings();
                 saveUserSettings();
-                showNotification(this.checked ? 'Live reactions enabled' : 'Live reactions disabled', 'success');
             });
             
             document.getElementById('chatToggle').addEventListener('change', function() {
                 userSettings.chat = this.checked;
                 applyUserSettings();
                 saveUserSettings();
-                showNotification(this.checked ? 'In-call chat enabled' : 'In-call chat disabled', 'success');
             });
             
             document.getElementById('whiteboardToggle').addEventListener('change', function() {
                 userSettings.whiteboard = this.checked;
                 applyUserSettings();
                 saveUserSettings();
-                showNotification(this.checked ? 'Whiteboard enabled' : 'Whiteboard disabled', 'success');
             });
             
             document.getElementById('pollsToggle').addEventListener('change', function() {
                 userSettings.polls = this.checked;
                 applyUserSettings();
                 saveUserSettings();
-                showNotification(this.checked ? 'Polls enabled' : 'Polls disabled', 'success');
             });
             
             document.getElementById('notesToggle').addEventListener('change', function() {
                 userSettings.notes = this.checked;
                 applyUserSettings();
                 saveUserSettings();
-                showNotification(this.checked ? 'Notes enabled' : 'Notes disabled', 'success');
             });
             
             // New call button
             document.getElementById('newCallBtn').addEventListener('click', () => {
                 newCallModal.classList.add('active');
                 loadContacts();
+                selectedContacts = [];
             });
             
             // Quick action buttons
@@ -2994,20 +3332,12 @@
                     }
                     
                     if (selectedContacts.length === 1) {
-                        // 1-on-1 call
                         startCall(selectedContacts[0], 'video');
                     } else {
-                        // Group call
                         startGroupCall(selectedContacts);
                     }
                     
                 } else if (activeTab === 'group') {
-                    const selectedType = document.querySelector('.option-item.selected');
-                    if (!selectedType) {
-                        showNotification('Please select a group call type', 'error');
-                        return;
-                    }
-                    
                     if (selectedContacts.length === 0) {
                         showNotification('Please select participants', 'error');
                         return;
@@ -3016,23 +3346,12 @@
                     startGroupCall(selectedContacts);
                     
                 } else if (activeTab === 'link') {
-                    showNotification('Use the generated link to invite participants', 'success');
+                    showNotification('Call link feature requires backend setup', 'warning');
                 }
                 
                 newCallModal.classList.remove('active');
                 selectedContacts = [];
             });
-            
-            // Call link buttons
-            document.getElementById('createVoiceLinkBtn').addEventListener('click', () => {
-                createCallLink('voice');
-            });
-            
-            document.getElementById('createVideoLinkBtn').addEventListener('click', () => {
-                createCallLink('video');
-            });
-            
-            document.getElementById('copyLinkBtn').addEventListener('click', copyCallLink);
             
             // Incoming call buttons
             document.getElementById('declineCallBtn').addEventListener('click', declineCall);
@@ -3062,22 +3381,10 @@
                 }
             });
             
-            document.getElementById('speakerBtn').addEventListener('click', function() {
-                // Note: Speaker control is limited in browser
-                isSpeakerOn = !isSpeakerOn;
-                this.classList.toggle('active', isSpeakerOn);
-                showNotification(isSpeakerOn ? 'Speaker on' : 'Speaker off', 'success');
-            });
-            
             document.getElementById('screenShareBtn').addEventListener('click', shareScreen);
-            
-            document.getElementById('effectsBtn').addEventListener('click', function() {
-                showNotification('Video effects coming soon', 'warning');
-            });
             
             document.getElementById('moreBtn').addEventListener('click', function() {
                 callSidePanel.classList.toggle('collapsed');
-                document.getElementById('panelTitle').textContent = 'Call Controls';
             });
             
             document.getElementById('endCallBtn').addEventListener('click', endCall);
@@ -3087,12 +3394,11 @@
                 callSidePanel.classList.add('collapsed');
             });
             
-            // Panel tabs - only show if feature is enabled
+            // Panel tabs
             document.querySelectorAll('.panel-tab').forEach(tab => {
                 tab.addEventListener('click', function() {
                     const panelName = this.dataset.panel;
                     
-                    // Check if this feature is enabled
                     let isEnabled = true;
                     switch(panelName) {
                         case 'chat':
@@ -3150,12 +3456,7 @@
                 const message = chatInput.value.trim();
                 
                 if (message) {
-                    // Add message to chat
                     addChatMessage(message, currentUser.uid, true);
-                    
-                    // In a real app, you'd send this to other participants via WebRTC data channel
-                    showNotification('Message sent', 'success');
-                    
                     chatInput.value = '';
                 }
             });
@@ -3176,7 +3477,6 @@
                     
                     currentTool = this.dataset.tool;
                     
-                    // Update active tool
                     document.querySelectorAll('[data-tool]').forEach(btn => {
                         btn.classList.remove('active');
                     });
@@ -3204,15 +3504,6 @@
                 document.getElementById('notesPreview').innerHTML = html;
             });
             
-            // Poll functionality
-            document.getElementById('createPollBtn').addEventListener('click', () => {
-                if (!userSettings.polls) {
-                    showNotification('Polls are disabled in your settings', 'warning');
-                    return;
-                }
-                createPoll();
-            });
-            
             // Reactions
             document.querySelectorAll('.reaction-btn').forEach(reactionBtn => {
                 reactionBtn.addEventListener('click', function() {
@@ -3223,7 +3514,6 @@
                     
                     const reaction = this.dataset.reaction;
                     
-                    // Show reaction animation
                     const reactionElement = document.createElement('div');
                     reactionElement.textContent = reaction;
                     reactionElement.style.position = 'absolute';
@@ -3235,12 +3525,9 @@
                     
                     callContainer.appendChild(reactionElement);
                     
-                    // Remove after animation
                     setTimeout(() => {
                         reactionElement.remove();
                     }, 3000);
-                    
-                    showNotification(`Sent ${reaction} reaction`, 'success');
                 });
             });
             
@@ -3258,8 +3545,8 @@
                     btn.classList.remove('active');
                 });
                 this.classList.add('active');
-                // Filter missed calls - in production, you'd query Firestore with filter
-                showNotification('Filtering missed calls', 'info');
+                // In production, filter missed calls
+                showNotification('Showing missed calls', 'info');
             });
             
             document.getElementById('groupsTab').addEventListener('click', function() {
@@ -3267,17 +3554,9 @@
                     btn.classList.remove('active');
                 });
                 this.classList.add('active');
-                // Filter group calls - in production, you'd query Firestore with filter
-                showNotification('Filtering group calls', 'info');
+                // In production, filter group calls
+                showNotification('Showing group calls', 'info');
             });
-            
-            // Picture in Picture
-            document.getElementById('pipExpandBtn').addEventListener('click', () => {
-                pipContainer.style.display = 'none';
-                callSidePanel.classList.remove('collapsed');
-            });
-            
-            document.getElementById('pipEndBtn').addEventListener('click', endCall);
             
             // Window resize
             window.addEventListener('resize', () => {
@@ -3293,167 +3572,67 @@
                 if (currentCall) {
                     endCall();
                 }
-            });
-        }
-        
-        async function loadContacts() {
-            const contactsList = document.getElementById('contactsList');
-            const groupContactsList = document.getElementById('groupContactsList');
-            
-            contactsList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Loading contacts...</div>';
-            groupContactsList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">Loading contacts...</div>';
-            
-            try {
-                // Get all users except current user
-                const usersSnapshot = await db.collection('users')
-                    .where('uid', '!=', currentUser.uid)
-                    .limit(50)
-                    .get();
                 
-                contactsList.innerHTML = '';
-                groupContactsList.innerHTML = '';
-                
-                if (usersSnapshot.empty) {
-                    const emptyMessage = '<div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);"><i class="fas fa-users" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i><p>No contacts found</p></div>';
-                    contactsList.innerHTML = emptyMessage;
-                    groupContactsList.innerHTML = emptyMessage;
-                    return;
-                }
-                
-                usersSnapshot.forEach(doc => {
-                    const userData = doc.data();
-                    addContactItem(userData, contactsList);
-                    addContactItem(userData, groupContactsList);
-                });
-                
-            } catch (error) {
-                console.error('Error loading contacts:', error);
-                
-                // Fallback: Create demo contacts
-                createDemoContacts(contactsList);
-                createDemoContacts(groupContactsList);
-            }
-        }
-        
-        function addContactItem(userData, container) {
-            const contactItem = document.createElement('div');
-            contactItem.className = 'contact-item';
-            contactItem.dataset.userId = userData.uid;
-            
-            const initials = userData.displayName ? 
-                userData.displayName.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2) : 
-                'U';
-            
-            contactItem.innerHTML = `
-                <input type="checkbox" class="contact-checkbox" id="contact_${userData.uid}">
-                <div class="call-avatar" ${userData.photoURL ? `style="background-image: url('${userData.photoURL}')"` : ''}>
-                    ${userData.photoURL ? '' : `<span>${initials}</span>`}
-                </div>
-                <div class="call-info" style="flex: 1;">
-                    <div class="call-name">
-                        <span>${userData.displayName || 'User'}</span>
-                    </div>
-                    <div class="call-details">
-                        <span>Last seen recently</span>
-                    </div>
-                </div>
-            `;
-            
-            // Add checkbox event listener
-            const checkbox = contactItem.querySelector('.contact-checkbox');
-            checkbox.addEventListener('change', function() {
-                if (this.checked) {
-                    selectedContacts.push(userData.uid);
-                    contactItem.classList.add('selected');
-                } else {
-                    selectedContacts = selectedContacts.filter(id => id !== userData.uid);
-                    contactItem.classList.remove('selected');
+                // Update user status to offline
+                if (userPresenceRef) {
+                    userPresenceRef.update({
+                        online: false,
+                        lastOnline: firebase.firestore.FieldValue.serverTimestamp()
+                    });
                 }
             });
             
-            container.appendChild(contactItem);
+            // Check for incoming call invitations
+            setupCallInvitationListener();
         }
         
-        function createDemoContacts(container) {
-            const demoContacts = [
-                { uid: 'demo1', displayName: 'John Smith', photoURL: '' },
-                { uid: 'demo2', displayName: 'Emma Wilson', photoURL: '' },
-                { uid: 'demo3', displayName: 'Alex Johnson', photoURL: '' },
-                { uid: 'demo4', displayName: 'Sarah Davis', photoURL: '' },
-                { uid: 'demo5', displayName: 'Michael Brown', photoURL: '' }
-            ];
+        function setupCallInvitationListener() {
+            if (!currentUser) return;
             
-            container.innerHTML = '';
-            demoContacts.forEach(contact => {
-                addContactItem(contact, container);
-            });
-        }
-        
-        function addChatMessage(message, senderId, isSent = false) {
-            const chatMessages = document.getElementById('chatMessages');
-            
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${isSent ? 'sent' : 'received'}`;
-            
-            // Get sender name
-            let senderName = 'Unknown';
-            if (senderId === currentUser.uid) {
-                senderName = 'You';
-            } else {
-                // Try to get from Firestore
-                db.collection('users').doc(senderId).get().then(doc => {
-                    if (doc.exists) {
-                        const userData = doc.data();
-                        const nameElement = messageDiv.querySelector('.message-sender');
-                        if (nameElement) {
-                            nameElement.textContent = userData.displayName || 'User';
-                        }
-                    }
-                });
-            }
-            
-            messageDiv.innerHTML = `
-                <div class="message-sender">${senderName}</div>
-                <div class="message-content">${message}</div>
-            `;
-            
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        
-        // Handle joining via link
-        function checkForJoinLink() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const joinId = urlParams.get('join');
-            const callType = urlParams.get('type') || 'video';
-            
-            if (joinId) {
-                // Check if link is valid
-                db.collection('callLinks').doc(joinId).get().then(doc => {
-                    if (doc.exists) {
-                        const linkData = doc.data();
-                        if (linkData.expiresAt.toDate() > new Date()) {
-                            // Join the call
-                            showNotification(`Joining ${callType} call...`, 'success');
+            // Listen for incoming call invitations
+            db.collection('callInvitations')
+                .where('to', '==', currentUser.uid)
+                .where('status', '==', 'ringing')
+                .where('expiresAt', '>', new Date())
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === 'added') {
+                            const invitation = change.doc.data();
+                            console.log('New call invitation:', invitation);
                             
-                            // In production, you'd implement proper call joining logic here
-                            // For now, we'll show a message
-                            setTimeout(() => {
-                                showNotification('Call joining feature requires backend implementation', 'warning');
-                            }, 1000);
-                        } else {
-                            showNotification('Call link has expired', 'error');
+                            // This is a backup notification system
+                            // The main incoming call handling is done via PeerJS
+                            // But this ensures users get notified even if PeerJS has issues
+                            
+                            if (!window.incomingCall) {
+                                // Show notification
+                                showNotification(`Incoming call from user`, 'warning');
+                                
+                                // Fetch caller info
+                                db.collection('users').doc(invitation.from).get().then(doc => {
+                                    if (doc.exists) {
+                                        const callerData = doc.data();
+                                        showNotification(`Missed call from ${callerData.displayName}`, 'warning');
+                                    }
+                                });
+                            }
                         }
-                    }
-                }).catch(error => {
-                    console.error('Error checking call link:', error);
-                    showNotification('Invalid call link', 'error');
+                    });
                 });
-            }
         }
         
-        // Check for join link on page load
-        setTimeout(checkForJoinLink, 1000);
+        // Set up periodic presence update
+        setInterval(() => {
+            if (userPresenceRef && currentUser) {
+                userPresenceRef.update({
+                    lastOnline: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        }, 30000); // Update every 30 seconds
+        
+        // Initial setup complete
+        console.log('Video call system initialized successfully');
+        showNotification('Video call system ready', 'success');
     </script>
 </body>
 </html>
