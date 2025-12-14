@@ -1,22 +1,29 @@
-// app.js - Tab Controller for Kynecta (chat.html contains all tabs)
-// Manages visibility of tab panels within chat.html
+// app.js - Application Shell & Tab Controller for Kynecta
+// Manages the single-page application shell and tab visibility
 
 // ============================================================================
-// CONFIGURATION - Based on your chat.html structure
+// CONFIGURATION
 // ============================================================================
+
+// Application configuration
+const APP_CONFIG = {
+  defaultPage: 'group.html',
+  contentArea: '#content-area',
+  sidebar: '#sidebar',
+  sidebarToggle: '#sidebarToggle'
+};
 
 // Map tab names to their container IDs in chat.html
 const TAB_CONFIG = {
   chats: {
     container: '#chatsTab',
     icon: '[data-tab="chats"]',
-    default: true
+    default: false
   },
   groups: {
-    // Check if groups tab exists in chat.html or needs separate loading
     container: '#groupsTab',
     icon: '[data-tab="groups"]',
-    isExternal: false // Set to true if you want to load from group.html
+    isExternal: false
   },
   friends: {
     container: '#friendsTab',
@@ -35,17 +42,41 @@ const TAB_CONFIG = {
   }
 };
 
-// If you DO want to load groups from separate file, update this:
+// External page configurations
 const EXTERNAL_TABS = {
-  groups: 'group.html' // Only if groups should load from external file
+  groups: 'group.html'
 };
 
 // ============================================================================
 // STATE MANAGEMENT
 // ============================================================================
 
-let currentTab = 'chats';
+let currentTab = 'groups'; // Default to groups
 let isLoading = false;
+let isSidebarOpen = true;
+
+// ============================================================================
+// APPLICATION SHELL FUNCTIONS
+// ============================================================================
+
+/**
+ * Toggle sidebar visibility on mobile
+ */
+window.toggleSidebar = function() {
+  document.querySelector('.sidebar')?.classList.toggle('open');
+};
+
+/**
+ * Load an HTML page into the content area without reloading
+ */
+window.loadPage = function(page) {
+  fetch(page)
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById('content-area').innerHTML = html;
+    })
+    .catch(err => console.error("Load error:", err));
+};
 
 // ============================================================================
 // TAB MANAGEMENT
@@ -69,12 +100,12 @@ function switchTab(tabName) {
     return;
   }
   
-  // For internal tabs (already in chat.html)
+  // For internal tabs (already in DOM)
   showTab(tabName);
 }
 
 /**
- * Show an internal tab (already present in chat.html)
+ * Show an internal tab (already present in DOM)
  */
 function showTab(tabName) {
   const config = TAB_CONFIG[tabName];
@@ -110,49 +141,40 @@ async function loadExternalTab(tabName, htmlFile) {
   isLoading = true;
   
   try {
-    // Show loading indicator
-    showLoadingIndicator();
+    showLoadingIndicator(`Loading ${tabName}...`);
     
-    // Fetch the external HTML
     const response = await fetch(htmlFile);
     if (!response.ok) throw new Error(`Failed to load ${htmlFile}`);
     
     const html = await response.text();
     
-    // Create or get container for external content
     let container = document.getElementById('externalTabContainer');
     if (!container) {
       container = document.createElement('div');
       container.id = 'externalTabContainer';
       container.className = 'tab-panel';
       
-      // Insert after the tools tab or at the end of tab panels
       const tabPanels = document.querySelector('.tab-panels');
       if (tabPanels) {
         tabPanels.appendChild(container);
       }
     }
     
-    // Hide all internal tabs
     hideAllTabs();
     
-    // Load external content
     container.innerHTML = extractBodyContent(html);
     container.classList.remove('hidden');
     container.classList.add('active');
     
-    // Update UI
     updateActiveTabUI(tabName);
     updateChatAreaVisibility(tabName);
     
-    // Initialize any scripts in the external content
     initializeExternalContent(container);
     
     currentTab = tabName;
     
   } catch (error) {
     console.error(`Error loading ${tabName}:`, error);
-    // Fallback to internal tab if available
     if (TAB_CONFIG[tabName] && !TAB_CONFIG[tabName].isExternal) {
       showTab(tabName);
     }
@@ -166,13 +188,11 @@ async function loadExternalTab(tabName, htmlFile) {
  * Hide all tab panels
  */
 function hideAllTabs() {
-  // Hide all tab panels
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.add('hidden');
     panel.classList.remove('active');
   });
   
-  // Also hide external container if exists
   const externalContainer = document.getElementById('externalTabContainer');
   if (externalContainer) {
     externalContainer.classList.add('hidden');
@@ -184,13 +204,11 @@ function hideAllTabs() {
  * Update the active tab UI in the sidebar
  */
 function updateActiveTabUI(tabName) {
-  // Remove active classes from all tab icons
   document.querySelectorAll('.nav-icon').forEach(icon => {
     icon.classList.remove('text-white', 'bg-purple-700', 'active');
     icon.classList.add('text-gray-400', 'hover:text-white', 'hover:bg-gray-800');
   });
   
-  // Add active class to current tab icon
   const activeIcon = document.querySelector(`[data-tab="${tabName}"]`);
   if (activeIcon) {
     activeIcon.classList.remove('text-gray-400', 'hover:text-white', 'hover:bg-gray-800');
@@ -212,10 +230,7 @@ function updateChatAreaVisibility(tabName) {
   const isMobile = window.innerWidth < 768;
   
   if (tabName === 'chats' || tabName === 'groups') {
-    // For chat-related tabs
-    
     if (chatHeader && !chatHeader.classList.contains('hidden')) {
-      // If we're in a chat conversation
       if (isMobile) {
         chatArea.classList.remove('hidden');
         chatListContainer.classList.add('hidden');
@@ -225,12 +240,10 @@ function updateChatAreaVisibility(tabName) {
         inputArea.classList.remove('hidden');
       }
     } else {
-      // If we're in the chat list
       chatArea.classList.add('hidden');
       chatListContainer.classList.remove('hidden');
     }
   } else {
-    // For non-chat tabs (friends, calls, tools)
     chatArea.classList.add('hidden');
     chatListContainer.classList.remove('hidden');
     
@@ -238,7 +251,6 @@ function updateChatAreaVisibility(tabName) {
     if (chatHeader) chatHeader.classList.add('hidden');
   }
   
-  // Special handling for groups tab
   if (tabName === 'groups') {
     const chatTitle = document.getElementById('chatTitle');
     if (chatTitle) chatTitle.textContent = 'Group Chat';
@@ -250,7 +262,6 @@ function updateChatAreaVisibility(tabName) {
 // ============================================================================
 
 function extractBodyContent(html) {
-  // Simple extraction - gets content between <body> tags
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
   if (bodyMatch && bodyMatch[1]) {
     return bodyMatch[1];
@@ -259,16 +270,13 @@ function extractBodyContent(html) {
 }
 
 function initializeExternalContent(container) {
-  // Find and execute any script tags in the loaded content
   const scripts = container.querySelectorAll('script');
   scripts.forEach(script => {
     if (script.src) {
-      // External script - load it
       const newScript = document.createElement('script');
       newScript.src = script.src;
       document.head.appendChild(newScript);
     } else {
-      // Inline script - execute it
       try {
         eval(script.textContent);
       } catch (error) {
@@ -278,8 +286,7 @@ function initializeExternalContent(container) {
   });
 }
 
-function showLoadingIndicator() {
-  // Create or show loading indicator
+function showLoadingIndicator(message = 'Loading...') {
   let loader = document.getElementById('tab-loading');
   if (!loader) {
     loader = document.createElement('div');
@@ -287,7 +294,7 @@ function showLoadingIndicator() {
     loader.className = 'tab-loading-indicator';
     loader.innerHTML = `
       <div class="loading-spinner"></div>
-      <div>Loading ${currentTab}...</div>
+      <div>${message}</div>
     `;
     document.body.appendChild(loader);
   }
@@ -301,6 +308,29 @@ function hideLoadingIndicator() {
   }
 }
 
+function showError(message) {
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'error-message';
+  errorDiv.textContent = message;
+  errorDiv.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #f87171;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    z-index: 10000;
+    max-width: 300px;
+  `;
+  
+  document.body.appendChild(errorDiv);
+  
+  setTimeout(() => {
+    errorDiv.remove();
+  }, 5000);
+}
+
 // ============================================================================
 // EVENT HANDLERS
 // ============================================================================
@@ -308,19 +338,21 @@ function hideLoadingIndicator() {
 function setupEventListeners() {
   // Tab click handlers
   document.querySelectorAll('.nav-icon[data-tab]').forEach(icon => {
-    // Replace existing onclick with event listener
     const tabName = icon.getAttribute('data-tab');
-    
-    // Remove any existing listeners
     const newIcon = icon.cloneNode(true);
     icon.parentNode.replaceChild(newIcon, icon);
     
-    // Add new listener
     newIcon.addEventListener('click', (e) => {
       e.preventDefault();
       switchTab(tabName);
     });
   });
+  
+  // Sidebar toggle
+  const sidebarToggle = document.querySelector(APP_CONFIG.sidebarToggle);
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', toggleSidebar);
+  }
   
   // Mobile back button
   const backToChats = document.getElementById('backToChats');
@@ -350,6 +382,36 @@ function setupEventListeners() {
   // Window resize handling
   window.addEventListener('resize', () => {
     updateChatAreaVisibility(currentTab);
+    
+    // Ensure sidebar is visible on desktop
+    const sidebar = document.querySelector(APP_CONFIG.sidebar);
+    if (sidebar && window.innerWidth >= 768) {
+      sidebar.classList.remove('hidden', 'translate-x-full');
+      sidebar.classList.add('translate-x-0');
+      isSidebarOpen = true;
+    }
+  });
+  
+  // Handle browser back/forward
+  window.addEventListener('popstate', (event) => {
+    if (event.state && event.state.page) {
+      loadPage(event.state.page);
+    }
+  });
+  
+  // Close sidebar when clicking outside on mobile
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth < 768 && isSidebarOpen) {
+      const sidebar = document.querySelector(APP_CONFIG.sidebar);
+      const toggleBtn = document.querySelector(APP_CONFIG.sidebarToggle);
+      
+      if (sidebar && 
+          !sidebar.contains(e.target) && 
+          toggleBtn && 
+          !toggleBtn.contains(e.target)) {
+        toggleSidebar();
+      }
+    }
   });
 }
 
@@ -357,7 +419,6 @@ function setupEventListeners() {
 // OVERLAY MANAGEMENT (for compatibility)
 // ============================================================================
 
-// Simple overlay functions for compatibility with existing onclick handlers
 window.closeModal = function(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
@@ -397,14 +458,24 @@ window.triggerFileInput = function(inputId) {
 // ============================================================================
 
 function initializeApp() {
-  console.log('Initializing Kynecta Tab Controller...');
+  console.log('Initializing Kynecta Application Shell...');
   
   // Setup event listeners
   setupEventListeners();
   
-  // Show default tab
-  const defaultTab = Object.keys(TAB_CONFIG).find(tab => TAB_CONFIG[tab].default) || 'chats';
-  switchTab(defaultTab);
+  // Ensure sidebar and icons are visible
+  const sidebar = document.querySelector(APP_CONFIG.sidebar);
+  if (sidebar) {
+    sidebar.classList.remove('hidden');
+  }
+  
+  // Load default page
+  loadPage(APP_CONFIG.defaultPage);
+  
+  // Set default tab to groups
+  setTimeout(() => {
+    switchTab('groups');
+  }, 100);
   
   // Hide loading screen
   const loadingScreen = document.getElementById('loadingScreen');
@@ -414,10 +485,10 @@ function initializeApp() {
     }, 500);
   }
   
-  // Inject CSS for loading indicator
+  // Inject CSS styles
   injectStyles();
   
-  console.log('Kynecta Tab Controller initialized');
+  console.log('Kynecta Application Shell initialized');
 }
 
 function injectStyles() {
@@ -451,6 +522,17 @@ function injectStyles() {
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+    
+    /* Sidebar transition */
+    #sidebar {
+      transition: transform 0.3s ease-in-out;
+    }
+    
+    /* Ensure content area takes remaining space */
+    #content-area {
+      flex: 1;
+      overflow: auto;
+    }
   `;
   
   const styleSheet = document.createElement('style');
@@ -462,8 +544,9 @@ function injectStyles() {
 // PUBLIC API
 // ============================================================================
 
-// Expose for HTML onclick handlers
+// Expose application functions
 window.switchTab = switchTab;
+
 window.showChatArea = function() {
   const chatListContainer = document.getElementById('chatListContainer');
   const chatArea = document.getElementById('chatArea');
@@ -486,11 +569,15 @@ window.showChatList = function() {
 // STARTUP
 // ============================================================================
 
-// Start when DOM is ready
+// default load
+window.addEventListener("DOMContentLoaded", () => {
+  loadPage('group.html');
+});
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
   setTimeout(initializeApp, 100);
 }
 
-console.log('Kynecta app.js loaded - Tab controller ready');
+console.log('Kynecta app.js loaded - Application shell ready');

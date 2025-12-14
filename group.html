@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   
     <link rel="manifest" href="../manifest.json">
     <meta name="theme-color" content="#4F46E5">
     <link rel="icon" href="../icons/moodchat-192.png">
@@ -9,7 +8,7 @@
     <meta name="theme-color" content="#000000">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Groups</title>
+    <title>Kynecta Groups</title>
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -41,18 +40,18 @@
         
         :root {
             --primary-color: #0084ff;
-            --whatsapp-green: #00a884;
-            --whatsapp-light-green: #d9fdd3;
-            --whatsapp-dark-green: #005c4b;
+            --kynecta-blue: #4F46E5;
+            --kynecta-light-blue: #e0e7ff;
+            --kynecta-dark-blue: #3730a3;
             --secondary-color: #f0f2f5;
             --danger-color: #ff3b30;
-            --success-color: #34c759;
-            --warning-color: #ff9500;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
             --text-primary: #111b21;
             --text-secondary: #667781;
             --bg-color: #ffffff;
-            --chat-bg: #efeae2;
-            --border-color: #e9edef;
+            --chat-bg: #f5f7fa;
+            --border-color: #e5e7eb;
             --sidebar-width: 400px;
             --header-height: 60px;
             --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -63,7 +62,7 @@
             color: var(--text-primary);
             height: 100vh;
             overflow: hidden;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%2300a884' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%234F46E5' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
         }
         
         .app-container {
@@ -164,6 +163,7 @@
         
         .sidebar-action-btn:hover {
             background-color: var(--secondary-color);
+            color: var(--kynecta-blue);
         }
         
         .search-container {
@@ -193,6 +193,30 @@
             color: var(--text-secondary);
         }
         
+        .groups-tabs {
+            display: flex;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+        }
+        
+        .group-tab {
+            flex: 1;
+            padding: 12px 0;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .group-tab.active {
+            color: var(--kynecta-blue);
+            border-bottom-color: var(--kynecta-blue);
+        }
+        
         .groups-list {
             flex: 1;
             overflow-y: auto;
@@ -214,8 +238,8 @@
         }
         
         .group-item.active {
-            background-color: #e7f3ff;
-            border-left: 4px solid var(--whatsapp-green);
+            background-color: var(--kynecta-light-blue);
+            border-left: 4px solid var(--kynecta-blue);
         }
         
         .group-avatar {
@@ -257,14 +281,15 @@
             background-position: center;
         }
         
-        .online-indicator {
+        .group-badge {
             position: absolute;
-            bottom: 2px;
-            right: 2px;
-            width: 12px;
-            height: 12px;
-            background-color: var(--success-color);
-            border-radius: 50%;
+            top: -3px;
+            right: -3px;
+            background-color: var(--kynecta-blue);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
             border: 2px solid var(--bg-color);
         }
         
@@ -310,7 +335,7 @@
         }
         
         .group-unread {
-            background-color: var(--whatsapp-green);
+            background-color: var(--kynecta-blue);
             color: white;
             font-size: 12px;
             font-weight: 600;
@@ -364,6 +389,7 @@
             background-position: center;
             position: relative;
             flex-shrink: 0;
+            cursor: pointer;
         }
         
         .group-header-avatar-multi {
@@ -435,7 +461,7 @@
         
         .header-action-btn:hover {
             background-color: var(--secondary-color);
-            color: var(--whatsapp-green);
+            color: var(--kynecta-blue);
         }
         
         /* Chat Area */
@@ -445,7 +471,7 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%2300a884' fill-opacity='0.04' fill-rule='evenodd'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%234F46E5' fill-opacity='0.04' fill-rule='evenodd'/%3E%3C/svg%3E");
         }
         
         .message-date {
@@ -483,7 +509,7 @@
         }
         
         .message-bubble.sent {
-            background-color: var(--whatsapp-light-green);
+            background-color: var(--kynecta-light-blue);
             border-top-right-radius: 0;
         }
         
@@ -495,7 +521,7 @@
             font-weight: 600;
             font-size: 13px;
             margin-bottom: 4px;
-            color: var(--whatsapp-green);
+            color: var(--kynecta-blue);
         }
         
         .message-content {
@@ -533,7 +559,35 @@
         }
         
         .message-status.read {
-            color: var(--primary-color);
+            color: var(--kynecta-blue);
+        }
+        
+        .message-reactions {
+            display: flex;
+            gap: 2px;
+            margin-top: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .reaction {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2px 6px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+        }
+        
+        .reaction:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .reaction-count {
+            font-size: 10px;
+            color: var(--text-secondary);
         }
         
         /* Chat Input */
@@ -571,6 +625,7 @@
         
         .chat-action-btn:hover {
             background-color: var(--secondary-color);
+            color: var(--kynecta-blue);
         }
         
         .chat-input-area {
@@ -605,7 +660,7 @@
         }
         
         .send-btn {
-            background-color: var(--whatsapp-green);
+            background-color: var(--kynecta-blue);
             color: white;
             border: none;
             width: 40px;
@@ -620,7 +675,7 @@
         }
         
         .send-btn:hover {
-            background-color: var(--whatsapp-dark-green);
+            background-color: var(--kynecta-dark-blue);
         }
         
         .send-btn:disabled {
@@ -650,7 +705,7 @@
         
         .details-header {
             padding: 20px;
-            background-color: var(--whatsapp-green);
+            background-color: var(--kynecta-blue);
             color: white;
             display: flex;
             justify-content: space-between;
@@ -696,7 +751,7 @@
         }
         
         .edit-icon {
-            color: var(--whatsapp-green);
+            color: var(--kynecta-blue);
             cursor: pointer;
             font-size: 16px;
             padding: 5px;
@@ -793,7 +848,7 @@
         }
         
         .admin-badge {
-            background-color: var(--whatsapp-green);
+            background-color: var(--kynecta-blue);
             color: white;
             font-size: 10px;
             padding: 2px 8px;
@@ -824,7 +879,55 @@
         
         .participant-action-btn:hover {
             background-color: var(--secondary-color);
-            color: var(--whatsapp-green);
+            color: var(--kynecta-blue);
+        }
+        
+        /* Activity Feed */
+        .activity-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px;
+            background-color: var(--secondary-color);
+            border-radius: 8px;
+        }
+        
+        .activity-icon {
+            width: 30px;
+            height: 30px;
+            background-color: var(--kynecta-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-title {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        
+        .activity-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .activity-time {
+            font-size: 11px;
+            color: var(--text-secondary);
         }
         
         /* Media Grid */
@@ -843,6 +946,240 @@
             background-size: cover;
             background-position: center;
             cursor: pointer;
+        }
+        
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--kynecta-blue);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+        
+        .settings-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .settings-option:last-child {
+            border-bottom: none;
+        }
+        
+        .settings-info {
+            flex: 1;
+        }
+        
+        .settings-title {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        
+        .settings-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* Poll Styling */
+        .poll-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            margin: 10px 0;
+        }
+        
+        .poll-question {
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .poll-option {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+        
+        .poll-option:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .poll-bar {
+            height: 8px;
+            background-color: var(--secondary-color);
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .poll-fill {
+            height: 100%;
+            background-color: var(--kynecta-blue);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        
+        .poll-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+        
+        /* Task Styling */
+        .task-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            margin: 10px 0;
+        }
+        
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        
+        .task-checkbox {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .task-checkbox.completed {
+            background-color: var(--kynecta-blue);
+            border-color: var(--kynecta-blue);
+            color: white;
+        }
+        
+        .task-content {
+            flex: 1;
+        }
+        
+        .task-title {
+            font-weight: 500;
+        }
+        
+        .task-assignee {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* Event Styling */
+        .event-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            margin: 10px 0;
+        }
+        
+        .event-date {
+            color: var(--kynecta-blue);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .event-title {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .event-details {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+        
+        .event-rsvp {
+            display: flex;
+            gap: 10px;
+        }
+        
+        /* Statistics */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .stat-card {
+            background-color: var(--secondary-color);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--kynecta-blue);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 5px;
         }
         
         /* Modals */
@@ -865,7 +1202,7 @@
         
         .modal-content {
             background-color: var(--bg-color);
-            border-radius: 8px;
+            border-radius: 12px;
             width: 90%;
             max-width: 500px;
             max-height: 90vh;
@@ -944,7 +1281,29 @@
         
         .form-input:focus {
             outline: none;
-            border-color: var(--whatsapp-green);
+            border-color: var(--kynecta-blue);
+        }
+        
+        .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
         }
         
         .btn {
@@ -956,15 +1315,19 @@
             border: none;
             transition: all 0.2s;
             font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         
         .btn-primary {
-            background-color: var(--whatsapp-green);
+            background-color: var(--kynecta-blue);
             color: white;
         }
         
         .btn-primary:hover {
-            background-color: var(--whatsapp-dark-green);
+            background-color: var(--kynecta-dark-blue);
         }
         
         .btn-secondary {
@@ -985,6 +1348,15 @@
             background-color: #d70015;
         }
         
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #0da271;
+        }
+        
         /* Selected Participants */
         .selected-participants {
             display: flex;
@@ -997,7 +1369,7 @@
         .selected-participant-chip {
             display: inline-flex;
             align-items: center;
-            background-color: var(--whatsapp-green);
+            background-color: var(--kynecta-blue);
             color: white;
             padding: 5px 12px;
             border-radius: 20px;
@@ -1049,7 +1421,7 @@
         
         .spinner {
             border: 3px solid var(--secondary-color);
-            border-top: 3px solid var(--whatsapp-green);
+            border-top: 3px solid var(--kynecta-blue);
             border-radius: 50%;
             width: 24px;
             height: 24px;
@@ -1108,7 +1480,7 @@
         .play-btn {
             background: none;
             border: none;
-            color: var(--whatsapp-green);
+            color: var(--kynecta-blue);
             font-size: 20px;
             cursor: pointer;
         }
@@ -1126,57 +1498,10 @@
             color: var(--text-secondary);
         }
         
-        /* Poll Message */
-        .poll-message {
-            background-color: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 5px;
-            border: 1px solid var(--border-color);
-        }
-        
-        .poll-question {
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-        
-        .poll-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px;
-            margin-bottom: 5px;
-            background-color: var(--secondary-color);
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        .poll-option:hover {
-            background-color: #e4e6e9;
-        }
-        
-        .poll-percentage {
-            width: 60px;
-            height: 8px;
-            background-color: #ddd;
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .poll-fill {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            background-color: var(--whatsapp-green);
-            border-radius: 4px;
-        }
-        
         /* Reply Message */
         .reply-container {
             background-color: rgba(0, 0, 0, 0.05);
-            border-left: 3px solid var(--whatsapp-green);
+            border-left: 3px solid var(--kynecta-blue);
             padding: 8px;
             margin-bottom: 8px;
             border-radius: 4px;
@@ -1185,7 +1510,7 @@
         .reply-sender {
             font-weight: 600;
             font-size: 12px;
-            color: var(--whatsapp-green);
+            color: var(--kynecta-blue);
         }
         
         .reply-content {
@@ -1213,6 +1538,109 @@
             right: 5px;
             color: #ffc107;
             font-size: 12px;
+        }
+        
+        /* Reaction Picker */
+        .reaction-picker {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background-color: white;
+            border-radius: 20px;
+            padding: 5px;
+            display: flex;
+            gap: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .reaction-option {
+            font-size: 20px;
+            cursor: pointer;
+            padding: 2px;
+            transition: transform 0.2s;
+        }
+        
+        .reaction-option:hover {
+            transform: scale(1.2);
+        }
+        
+        /* Mention */
+        .mention {
+            background-color: rgba(79, 70, 229, 0.1);
+            color: var(--kynecta-blue);
+            padding: 0 4px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        /* Call Interface */
+        .call-interface {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a1a;
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .call-interface.active {
+            display: flex;
+        }
+        
+        .call-participants {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 10px;
+            padding: 20px;
+        }
+        
+        .call-participant {
+            background-color: #2d2d2d;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .call-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .call-controls {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .call-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .call-end-btn {
+            background-color: #ff3b30;
+            color: white;
+        }
+        
+        .call-mute-btn, .call-video-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
         }
         
         /* Responsive */
@@ -1247,6 +1675,10 @@
                 width: 95%;
                 max-width: 95%;
             }
+            
+            .call-participants {
+                grid-template-columns: 1fr;
+            }
         }
         
         /* Utility Classes */
@@ -1280,6 +1712,30 @@
         
         .cursor-pointer {
             cursor: pointer;
+        }
+        
+        .flex {
+            display: flex;
+        }
+        
+        .flex-col {
+            flex-direction: column;
+        }
+        
+        .items-center {
+            align-items: center;
+        }
+        
+        .justify-between {
+            justify-content: space-between;
+        }
+        
+        .gap-10 {
+            gap: 10px;
+        }
+        
+        .gap-20 {
+            gap: 20px;
         }
     </style>
 </head>
@@ -1319,9 +1775,15 @@
             
             <div class="search-container">
                 <div class="search-box">
-                    <input type="text" class="search-input" id="searchGroupsInput" placeholder="Search or start new chat">
+                    <input type="text" class="search-input" id="searchGroupsInput" placeholder="Search groups...">
                     <i class="fas fa-search search-icon"></i>
                 </div>
+            </div>
+            
+            <div class="groups-tabs">
+                <div class="group-tab active" data-tab="chats">Groups</div>
+                <div class="group-tab" data-tab="activity">Activity</div>
+                <div class="group-tab" data-tab="archived">Archived</div>
             </div>
             
             <div class="groups-list" id="groupsList">
@@ -1347,7 +1809,7 @@
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="group-header-details">
-                        <h3 id="groupHeaderName">WhatsApp Groups</h3>
+                        <h3 id="groupHeaderName">Kynecta Groups</h3>
                         <p id="groupHeaderStatus">Select a group to start chatting</p>
                     </div>
                 </div>
@@ -1356,11 +1818,14 @@
                     <button class="header-action-btn" id="searchChatBtn" title="Search in chat">
                         <i class="fas fa-search"></i>
                     </button>
+                    <button class="header-action-btn" id="groupCallBtn" title="Group Call">
+                        <i class="fas fa-phone"></i>
+                    </button>
                     <button class="header-action-btn" id="attachMenuBtn" title="Attach">
                         <i class="fas fa-paperclip"></i>
                     </button>
-                    <button class="header-action-btn" id="menuOptionsBtn" title="Menu">
-                        <i class="fas fa-ellipsis-v"></i>
+                    <button class="header-action-btn" id="groupInfoBtn" title="Group Info">
+                        <i class="fas fa-info-circle"></i>
                     </button>
                 </div>
             </div>
@@ -1370,7 +1835,7 @@
                     <div style="font-size: 80px; color: var(--border-color); margin-bottom: 20px;">
                         <i class="fas fa-comments"></i>
                     </div>
-                    <h3 style="margin-bottom: 10px; color: var(--text-primary); text-align: center;">Welcome to WhatsApp Groups</h3>
+                    <h3 style="margin-bottom: 10px; color: var(--text-primary); text-align: center;">Welcome to Kynecta Groups</h3>
                     <p style="text-align: center; max-width: 400px; margin-bottom: 30px; line-height: 1.5;">
                         Create groups with your friends and family. Share messages, photos, videos, and documents. Group chats make it easy to stay connected with everyone at once.
                     </p>
@@ -1443,6 +1908,15 @@
             
             <div class="details-section">
                 <div class="details-section-title">
+                    Activity Feed
+                </div>
+                <div class="activity-feed" id="activityFeed">
+                    <!-- Activity items loaded here -->
+                </div>
+            </div>
+            
+            <div class="details-section">
+                <div class="details-section-title">
                     Media, Links & Docs
                     <span class="edit-icon" id="viewAllMediaBtn">
                         <i class="fas fa-external-link-alt"></i>
@@ -1508,6 +1982,13 @@
             </div>
             
             <div class="details-section">
+                <div class="details-section-title">Group Statistics</div>
+                <div class="stats-grid" id="groupStats">
+                    <!-- Stats loaded here -->
+                </div>
+            </div>
+            
+            <div class="details-section">
                 <div class="details-section-title">Starred Messages</div>
                 <p style="color: var(--text-secondary); font-size: 14px;">View all messages you've starred in this group</p>
                 <button class="btn btn-secondary w-100 mt-10" id="starredMessagesBtn">
@@ -1539,8 +2020,13 @@
             
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Group Subject</label>
+                    <label class="form-label">Group Name</label>
                     <input type="text" class="form-input" id="groupNameInput" placeholder="Group name (max 25 characters)" maxlength="25">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Group Description (Optional)</label>
+                    <textarea class="form-textarea" id="groupDescriptionInput" placeholder="Add a description for your group" maxlength="500"></textarea>
                 </div>
                 
                 <div class="form-group">
@@ -1564,11 +2050,21 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Group Type</label>
+                    <select class="form-select" id="groupTypeSelect">
+                        <option value="standard">Standard Group</option>
+                        <option value="community">Community (With Channels)</option>
+                        <option value="event">Event Group</option>
+                        <option value="project">Project Group</option>
+                    </select>
+                </div>
             </div>
             
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelCreateGroup">Cancel</button>
-                <button class="btn btn-primary" id="createGroupBtn">Create</button>
+                <button class="btn btn-primary" id="createGroupBtn">Create Group</button>
             </div>
         </div>
     </div>
@@ -1585,13 +2081,13 @@
             
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Group Subject</label>
+                    <label class="form-label">Group Name</label>
                     <input type="text" class="form-input" id="editGroupNameInput" placeholder="Group name" maxlength="25">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Group Description</label>
-                    <textarea class="form-input" id="editGroupDescriptionInput" placeholder="Add a description for the group" rows="3" maxlength="500"></textarea>
+                    <textarea class="form-textarea" id="editGroupDescriptionInput" placeholder="Add a description for the group" rows="3" maxlength="500"></textarea>
                 </div>
                 
                 <div class="form-group">
@@ -1606,11 +2102,23 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Group Theme</label>
+                    <div class="theme-selector" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <div class="theme-option" data-theme="blue" style="width: 30px; height: 30px; background-color: #4F46E5; border-radius: 6px; cursor: pointer;"></div>
+                        <div class="theme-option" data-theme="green" style="width: 30px; height: 30px; background-color: #10b981; border-radius: 6px; cursor: pointer;"></div>
+                        <div class="theme-option" data-theme="purple" style="width: 30px; height: 30px; background-color: #8b5cf6; border-radius: 6px; cursor: pointer;"></div>
+                        <div class="theme-option" data-theme="red" style="width: 30px; height: 30px; background-color: #ef4444; border-radius: 6px; cursor: pointer;"></div>
+                        <div class="theme-option" data-theme="orange" style="width: 30px; height: 30px; background-color: #f59e0b; border-radius: 6px; cursor: pointer;"></div>
+                        <div class="theme-option" data-theme="pink" style="width: 30px; height: 30px; background-color: #ec4899; border-radius: 6px; cursor: pointer;"></div>
+                    </div>
+                </div>
             </div>
             
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelEditGroup">Cancel</button>
-                <button class="btn btn-primary" id="saveGroupBtn">Save</button>
+                <button class="btn btn-primary" id="saveGroupBtn">Save Changes</button>
             </div>
         </div>
     </div>
@@ -1636,7 +2144,155 @@
             
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="cancelAddParticipants">Cancel</button>
-                <button class="btn btn-primary" id="addParticipantsBtnConfirm">Add</button>
+                <button class="btn btn-primary" id="addParticipantsBtnConfirm">Add Participants</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create Poll Modal -->
+    <div class="modal" id="createPollModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create Poll</h3>
+                <button class="modal-close" id="closeCreatePollModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Poll Question</label>
+                    <input type="text" class="form-input" id="pollQuestionInput" placeholder="What's your question?">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Poll Options</label>
+                    <div id="pollOptionsContainer">
+                        <div class="poll-option-input" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <input type="text" class="form-input poll-option-input-field" placeholder="Option 1">
+                            <button class="btn btn-secondary remove-option-btn" style="padding: 5px 10px;">×</button>
+                        </div>
+                        <div class="poll-option-input" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <input type="text" class="form-input poll-option-input-field" placeholder="Option 2">
+                            <button class="btn btn-secondary remove-option-btn" style="padding: 5px 10px;">×</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary w-100 mt-10" id="addPollOptionBtn">Add Option</button>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Poll Settings</label>
+                    <div class="settings-option">
+                        <div class="settings-info">
+                            <div class="settings-title">Multiple Choice</div>
+                            <div class="settings-desc">Allow selecting multiple options</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="pollMultipleChoice">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="settings-option">
+                        <div class="settings-info">
+                            <div class="settings-title">Anonymous Voting</div>
+                            <div class="settings-desc">Hide who voted for what</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="pollAnonymous">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelCreatePoll">Cancel</button>
+                <button class="btn btn-primary" id="createPollBtn">Create Poll</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create Task Modal -->
+    <div class="modal" id="createTaskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create Task</h3>
+                <button class="modal-close" id="closeCreateTaskModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Task Title</label>
+                    <input type="text" class="form-input" id="taskTitleInput" placeholder="What needs to be done?">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Task Description</label>
+                    <textarea class="form-textarea" id="taskDescriptionInput" placeholder="Add details about the task"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Assign To</label>
+                    <select class="form-select" id="taskAssigneeSelect">
+                        <option value="">Unassigned</option>
+                        <!-- Participants will be populated here -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Due Date</label>
+                    <input type="date" class="form-input" id="taskDueDateInput">
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelCreateTask">Cancel</button>
+                <button class="btn btn-primary" id="createTaskBtn">Create Task</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create Event Modal -->
+    <div class="modal" id="createEventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create Event</h3>
+                <button class="modal-close" id="closeCreateEventModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Event Title</label>
+                    <input type="text" class="form-input" id="eventTitleInput" placeholder="Event name">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Event Description</label>
+                    <textarea class="form-textarea" id="eventDescriptionInput" placeholder="Event details"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Date & Time</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="date" class="form-input" id="eventDateInput">
+                        <input type="time" class="form-input" id="eventTimeInput">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Location</label>
+                    <input type="text" class="form-input" id="eventLocationInput" placeholder="Virtual or physical location">
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelCreateEvent">Cancel</button>
+                <button class="btn btn-primary" id="createEventBtn">Create Event</button>
             </div>
         </div>
     </div>
@@ -1673,7 +2329,7 @@
                 <div class="form-group">
                     <label class="form-label">QR Code</label>
                     <div style="text-align: center; padding: 20px; background-color: var(--secondary-color); border-radius: 8px;">
-                        <div style="width: 150px; height: 150px; background-color: white; margin: 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                        <div id="qrCodeContainer" style="width: 150px; height: 150px; background-color: white; margin: 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
                             <i class="fas fa-qrcode" style="font-size: 80px; color: var(--text-secondary);"></i>
                         </div>
                         <p style="margin-top: 15px; color: var(--text-secondary); font-size: 14px;">Scan QR code to join group</p>
@@ -1713,8 +2369,42 @@
                     <button class="btn btn-secondary" id="createPollBtn" style="justify-content: flex-start; text-align: left;">
                         <i class="fas fa-chart-bar"></i> Create Poll
                     </button>
+                    <button class="btn btn-secondary" id="createTaskBtnMain" style="justify-content: flex-start; text-align: left;">
+                        <i class="fas fa-tasks"></i> Create Task
+                    </button>
+                    <button class="btn btn-secondary" id="createEventBtnMain" style="justify-content: flex-start; text-align: left;">
+                        <i class="fas fa-calendar"></i> Create Event
+                    </button>
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- Reaction Picker -->
+    <div id="reactionPicker" class="reaction-picker hidden">
+        <div class="reaction-option" data-reaction="👍">👍</div>
+        <div class="reaction-option" data-reaction="❤️">❤️</div>
+        <div class="reaction-option" data-reaction="😂">😂</div>
+        <div class="reaction-option" data-reaction="😮">😮</div>
+        <div class="reaction-option" data-reaction="😢">😢</div>
+        <div class="reaction-option" data-reaction="😡">😡</div>
+    </div>
+    
+    <!-- Call Interface -->
+    <div class="call-interface" id="callInterface">
+        <div class="call-participants" id="callParticipants">
+            <!-- Participants video streams will be added here -->
+        </div>
+        <div class="call-controls">
+            <button class="call-btn call-mute-btn" id="callMuteBtn">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="call-btn call-video-btn" id="callVideoBtn">
+                <i class="fas fa-video"></i>
+            </button>
+            <button class="call-btn call-end-btn" id="callEndBtn">
+                <i class="fas fa-phone"></i>
+            </button>
         </div>
     </div>
     
@@ -1758,6 +2448,10 @@
         let userInterests = [];
         let emojiPicker = null;
         let realTimeListeners = [];
+        let activeTab = 'chats';
+        let currentCall = null;
+        let localStream = null;
+        let peerConnections = new Map();
 
         // DOM Elements
         const groupsList = document.getElementById('groupsList');
@@ -1781,6 +2475,8 @@
         const groupDescriptionText = document.getElementById('groupDescriptionText');
         const notification = document.getElementById('notification');
         const notificationText = document.getElementById('notificationText');
+        const activityFeed = document.getElementById('activityFeed');
+        const groupStats = document.getElementById('groupStats');
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', initializeApp);
@@ -1965,6 +2661,15 @@
                         group.lastMessageSender = '';
                     }
                     
+                    // Load activity count
+                    const activitySnapshot = await db.collection('groups')
+                        .doc(group.id)
+                        .collection('activities')
+                        .where('timestamp', '>', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+                        .get();
+                    
+                    group.recentActivity = activitySnapshot.size;
+                    
                     groups.push(group);
                 }
                 
@@ -1995,6 +2700,10 @@
                 return '📍 Location';
             } else if (message.type === 'poll') {
                 return '📊 Poll';
+            } else if (message.type === 'task') {
+                return '✅ Task';
+            } else if (message.type === 'event') {
+                return '📅 Event';
             } else if (message.type === 'system') {
                 return message.content;
             }
@@ -2025,7 +2734,16 @@
                 return;
             }
             
-            groups.forEach(group => {
+            let filteredGroups = groups;
+            
+            // Filter based on active tab
+            if (activeTab === 'archived') {
+                filteredGroups = groups.filter(group => group.isArchived);
+            } else if (activeTab === 'activity') {
+                filteredGroups = groups.sort((a, b) => (b.recentActivity || 0) - (a.recentActivity || 0));
+            }
+            
+            filteredGroups.forEach(group => {
                 const groupItem = document.createElement('div');
                 groupItem.className = 'group-item';
                 if (currentGroup && currentGroup.id === group.id) {
@@ -2033,7 +2751,7 @@
                 }
                 groupItem.dataset.groupId = group.id;
                 
-                // Create group avatar
+                // Create group avatar with theme
                 let avatarHTML = '';
                 if (group.photoURL) {
                     avatarHTML = `<div class="group-avatar" style="background-image: url('${group.photoURL}')"></div>`;
@@ -2052,6 +2770,16 @@
                     }
                 }
                 
+                // Add badge for activity
+                let badgeHTML = '';
+                if (group.recentActivity > 10 && activeTab === 'activity') {
+                    badgeHTML = `<div class="group-badge">🔥</div>`;
+                } else if (group.type === 'community') {
+                    badgeHTML = `<div class="group-badge">🌐</div>`;
+                } else if (group.type === 'event') {
+                    badgeHTML = `<div class="group-badge">📅</div>`;
+                }
+                
                 let lastMessagePreview = group.lastMessage;
                 if (group.lastMessageSender && group.lastMessage !== 'No messages yet') {
                     lastMessagePreview = `${group.lastMessageSender}: ${group.lastMessage}`;
@@ -2059,6 +2787,7 @@
                 
                 groupItem.innerHTML = `
                     ${avatarHTML}
+                    ${badgeHTML}
                     <div class="group-info">
                         <div class="group-name-row">
                             <div class="group-name">${group.name}</div>
@@ -2091,7 +2820,7 @@
                 // Update header
                 groupHeaderName.textContent = group.name;
                 const participantsCount = group.participants?.length || 0;
-                groupHeaderStatus.textContent = `${participantsCount} participants`;
+                groupHeaderStatus.textContent = `${participantsCount} members`;
                 
                 // Update avatar
                 updateGroupHeaderAvatar(group);
@@ -2102,6 +2831,12 @@
                 
                 // Load messages
                 await loadGroupMessages(group.id);
+                
+                // Load activity feed
+                await loadActivityFeed(group.id);
+                
+                // Load statistics
+                await loadGroupStatistics(group.id);
                 
                 // Mark as read
                 await markGroupAsRead(group.id);
@@ -2205,15 +2940,15 @@
                 switch (message.type) {
                     case 'text':
                         messageContent = `
-                            <div class="message-content">${escapeHtml(message.content)}</div>
+                            <div class="message-content">${formatMessageContent(message.content)}</div>
                         `;
                         break;
                         
                     case 'image':
                         messageContent = `
                             <div class="media-message">
-                                <div class="media-preview" style="background-image: url('${message.content}')" onclick="viewImage('${message.content}')"></div>
-                                <div class="media-info">📷 Photo</div>
+                                <img src="${message.content}" alt="Image" style="max-width: 100%; border-radius: 8px; cursor: pointer;" onclick="viewImage('${message.content}')">
+                                <div class="media-info" style="margin-top: 5px; color: var(--text-secondary); font-size: 12px;">📷 Photo</div>
                             </div>
                         `;
                         break;
@@ -2221,12 +2956,8 @@
                     case 'video':
                         messageContent = `
                             <div class="media-message">
-                                <div class="media-preview" style="background-image: url('${message.thumbnail || ''}')" onclick="playVideo('${message.content}')">
-                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 30px;">
-                                        <i class="fas fa-play-circle"></i>
-                                    </div>
-                                </div>
-                                <div class="media-info">🎥 Video</div>
+                                <video src="${message.content}" controls style="max-width: 100%; border-radius: 8px;"></video>
+                                <div class="media-info" style="margin-top: 5px; color: var(--text-secondary); font-size: 12px;">🎥 Video</div>
                             </div>
                         `;
                         break;
@@ -2238,7 +2969,7 @@
                                     <i class="fas fa-play"></i>
                                 </button>
                                 <div class="voice-waveform">
-                                    <div class="voice-waveform-fill" style="width: 50%; height: 100%; background-color: var(--whatsapp-green);"></div>
+                                    <div class="voice-waveform-fill" style="width: 50%; height: 100%; background-color: var(--kynecta-blue);"></div>
                                 </div>
                                 <div class="voice-duration">${message.duration || '0:30'}</div>
                             </div>
@@ -2253,42 +2984,23 @@
                                     <div style="font-weight: 500;">${message.fileName || 'Document'}</div>
                                     <div style="font-size: 12px; color: var(--text-secondary);">${message.fileSize || '1.2 MB'}</div>
                                 </div>
-                                <a href="${message.content}" download style="color: var(--whatsapp-green);">
+                                <a href="${message.content}" download style="color: var(--kynecta-blue);">
                                     <i class="fas fa-download"></i>
                                 </a>
                             </div>
                         `;
                         break;
                         
-                    case 'location':
-                        messageContent = `
-                            <div class="media-message">
-                                <div class="media-preview" style="background-color: #e3f2fd; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-map-marker-alt" style="font-size: 30px; color: #e74c3c;"></i>
-                                </div>
-                                <div class="media-info">📍 Location Shared</div>
-                            </div>
-                        `;
+                    case 'poll':
+                        messageContent = createPollMessage(message, doc.id);
                         break;
                         
-                    case 'poll':
-                        messageContent = `
-                            <div class="poll-message">
-                                <div class="poll-question">${escapeHtml(message.question)}</div>
-                                ${message.options ? message.options.map((option, index) => `
-                                    <div class="poll-option" onclick="voteInPoll('${doc.id}', ${index})">
-                                        <div>${option.text}</div>
-                                        <div class="poll-percentage">
-                                            <div class="poll-fill" style="width: ${option.votes ? (option.votes.length / Math.max(...message.options.map(o => o.votes ? o.votes.length : 0)) * 100) : 0}%"></div>
-                                        </div>
-                                        <div>${option.votes ? option.votes.length : 0} votes</div>
-                                    </div>
-                                `).join('') : ''}
-                                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 10px;">
-                                    ${message.totalVotes || 0} total votes
-                                </div>
-                            </div>
-                        `;
+                    case 'task':
+                        messageContent = createTaskMessage(message);
+                        break;
+                        
+                    case 'event':
+                        messageContent = createEventMessage(message);
                         break;
                         
                     case 'reply':
@@ -2325,6 +3037,22 @@
                         `;
                 }
                 
+                // Add reactions
+                let reactionsHTML = '';
+                if (message.reactions && Object.keys(message.reactions).length > 0) {
+                    reactionsHTML = '<div class="message-reactions">';
+                    for (const [reaction, users] of Object.entries(message.reactions)) {
+                        const count = users.length;
+                        const hasReacted = users.includes(currentUser.uid);
+                        reactionsHTML += `
+                            <div class="reaction ${hasReacted ? 'active' : ''}" data-message-id="${doc.id}" data-reaction="${reaction}">
+                                ${reaction} <span class="reaction-count">${count}</span>
+                            </div>
+                        `;
+                    }
+                    reactionsHTML += '</div>';
+                }
+                
                 // Add starred indicator if message is starred
                 const starredIndicator = message.starredBy && message.starredBy.includes(currentUser.uid) 
                     ? '<div class="starred-indicator"><i class="fas fa-star"></i></div>' 
@@ -2336,6 +3064,7 @@
                             ${starredIndicator}
                             ${!isSent && message.type !== 'system' ? `<div class="message-sender">${senderName}</div>` : ''}
                             ${messageContent}
+                            ${reactionsHTML}
                             <div class="message-meta">
                                 <div class="message-time">${timeStr}</div>
                                 ${isSent && message.type !== 'system' ? `
@@ -2354,6 +3083,87 @@
             
             // Add context menu to messages
             addMessageContextMenus();
+            
+            // Add reaction click handlers
+            document.querySelectorAll('.reaction').forEach(reaction => {
+                reaction.addEventListener('click', handleReactionClick);
+            });
+        }
+
+        function createPollMessage(message, messageId) {
+            const totalVotes = message.totalVotes || 0;
+            let optionsHTML = '';
+            
+            if (message.options) {
+                message.options.forEach((option, index) => {
+                    const voteCount = option.votes ? option.votes.length : 0;
+                    const percentage = totalVotes > 0 ? (voteCount / totalVotes * 100) : 0;
+                    const hasVoted = option.votes && option.votes.includes(currentUser.uid);
+                    
+                    optionsHTML += `
+                        <div class="poll-option ${hasVoted ? 'voted' : ''}" onclick="voteInPoll('${messageId}', ${index})">
+                            <div>${option.text}</div>
+                            <div class="poll-bar">
+                                <div class="poll-fill" style="width: ${percentage}%"></div>
+                            </div>
+                            <div class="poll-stats">
+                                <span>${percentage.toFixed(0)}%</span>
+                                <span>${voteCount} votes</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            return `
+                <div class="poll-container">
+                    <div class="poll-question">${escapeHtml(message.question)}</div>
+                    ${optionsHTML}
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 10px;">
+                        ${totalVotes} total votes • ${message.anonymous ? 'Anonymous poll' : 'Public poll'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function createTaskMessage(message) {
+            const completed = message.completed || false;
+            const assignee = message.assignee || 'Unassigned';
+            const dueDate = message.dueDate ? new Date(message.dueDate).toLocaleDateString() : 'No due date';
+            
+            return `
+                <div class="task-container">
+                    <div class="task-item">
+                        <div class="task-checkbox ${completed ? 'completed' : ''}">
+                            ${completed ? '<i class="fas fa-check"></i>' : ''}
+                        </div>
+                        <div class="task-content">
+                            <div class="task-title ${completed ? 'completed' : ''}">${escapeHtml(message.title)}</div>
+                            <div class="task-assignee">Assigned to: ${assignee} • Due: ${dueDate}</div>
+                        </div>
+                    </div>
+                    ${message.description ? `<p style="margin-top: 10px; font-size: 14px;">${escapeHtml(message.description)}</p>` : ''}
+                </div>
+            `;
+        }
+
+        function createEventMessage(message) {
+            const eventDate = message.eventDate ? new Date(message.eventDate).toLocaleDateString() : '';
+            const eventTime = message.eventTime || '';
+            
+            return `
+                <div class="event-container">
+                    <div class="event-date">${eventDate} ${eventTime}</div>
+                    <div class="event-title">${escapeHtml(message.title)}</div>
+                    ${message.location ? `<div class="event-details">📍 ${escapeHtml(message.location)}</div>` : ''}
+                    ${message.description ? `<div class="event-details">${escapeHtml(message.description)}</div>` : ''}
+                    <div class="event-rsvp">
+                        <button class="btn btn-success btn-sm" onclick="rsvpToEvent('${message.id}', 'yes')">Going</button>
+                        <button class="btn btn-secondary btn-sm" onclick="rsvpToEvent('${message.id}', 'maybe')">Maybe</button>
+                        <button class="btn btn-danger btn-sm" onclick="rsvpToEvent('${message.id}', 'no')">Can't Go</button>
+                    </div>
+                </div>
+            `;
         }
 
         async function sendMessage() {
@@ -2367,8 +3177,15 @@
                     content: content,
                     type: 'text',
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    readBy: []
+                    readBy: [],
+                    reactions: {}
                 };
+                
+                // Check for mentions
+                const mentions = extractMentions(content);
+                if (mentions.length > 0) {
+                    message.mentions = mentions;
+                }
                 
                 // Add message to Firestore
                 await db.collection('groups')
@@ -2384,6 +3201,9 @@
                         lastMessage: content.substring(0, 100)
                     });
                 
+                // Add activity
+                await addActivity('message', `${userData.displayName} sent a message`);
+                
                 // Clear input
                 messageInput.value = '';
                 sendBtn.disabled = true;
@@ -2396,6 +3216,31 @@
                 console.error('Error sending message:', error);
                 showNotification('Error sending message', 'error');
             }
+        }
+
+        function extractMentions(text) {
+            const mentionRegex = /@(\w+)/g;
+            const mentions = [];
+            let match;
+            
+            while ((match = mentionRegex.exec(text)) !== null) {
+                mentions.push(match[1]);
+            }
+            
+            return mentions;
+        }
+
+        function formatMessageContent(text) {
+            // Convert URLs to links
+            text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: var(--kynecta-blue);">$1</a>');
+            
+            // Format mentions
+            text = text.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
+            
+            // Preserve line breaks
+            text = text.replace(/\n/g, '<br>');
+            
+            return escapeHtml(text);
         }
 
         async function markGroupAsRead(groupId) {
@@ -2436,8 +3281,10 @@
                     settings: {
                         adminOnly: false,
                         disappearingMessages: false,
-                        inviteCode: generateInviteCode()
+                        inviteCode: generateInviteCode(),
+                        theme: groupData.theme || 'blue'
                     },
+                    type: groupData.type || 'standard',
                     lastRead: {
                         [currentUser.uid]: firebase.firestore.FieldValue.serverTimestamp()
                     }
@@ -2460,22 +3307,11 @@
                     .collection('messages')
                     .add(systemMessage);
                 
-                // Add participants
+                // Add participants activity
                 for (const participantId of selectedParticipants) {
                     const participantData = selectedParticipantsData.get(participantId);
                     
-                    const addMessage = {
-                        senderId: 'system',
-                        senderName: 'System',
-                        content: `${participantData.name} was added`,
-                        type: 'system',
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-                    
-                    await db.collection('groups')
-                        .doc(groupId)
-                        .collection('messages')
-                        .add(addMessage);
+                    await addActivity('member_added', `${participantData.name} joined the group`);
                 }
                 
                 // Clear selection
@@ -2504,6 +3340,131 @@
             return code;
         }
 
+        async function loadActivityFeed(groupId) {
+            try {
+                const activitiesSnapshot = await db.collection('groups')
+                    .doc(groupId)
+                    .collection('activities')
+                    .orderBy('timestamp', 'desc')
+                    .limit(10)
+                    .get();
+                
+                activityFeed.innerHTML = '';
+                
+                if (activitiesSnapshot.empty) {
+                    activityFeed.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No recent activity</p>';
+                    return;
+                }
+                
+                activitiesSnapshot.forEach(doc => {
+                    const activity = doc.data();
+                    const activityDate = activity.timestamp?.toDate() || new Date();
+                    
+                    let icon = 'fas fa-comment';
+                    if (activity.type === 'member_added') icon = 'fas fa-user-plus';
+                    else if (activity.type === 'poll_created') icon = 'fas fa-chart-bar';
+                    else if (activity.type === 'task_created') icon = 'fas fa-tasks';
+                    else if (activity.type === 'event_created') icon = 'fas fa-calendar';
+                    
+                    const activityItem = document.createElement('div');
+                    activityItem.className = 'activity-item';
+                    activityItem.innerHTML = `
+                        <div class="activity-icon">
+                            <i class="${icon}"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">${activity.content}</div>
+                            <div class="activity-time">${formatTime(activityDate)}</div>
+                        </div>
+                    `;
+                    
+                    activityFeed.appendChild(activityItem);
+                });
+                
+            } catch (error) {
+                console.error('Error loading activity feed:', error);
+            }
+        }
+
+        async function loadGroupStatistics(groupId) {
+            try {
+                // Get message count
+                const messagesSnapshot = await db.collection('groups')
+                    .doc(groupId)
+                    .collection('messages')
+                    .get();
+                
+                const messageCount = messagesSnapshot.size;
+                
+                // Get participant count
+                const groupDoc = await db.collection('groups').doc(groupId).get();
+                const groupData = groupDoc.data();
+                const participantCount = groupData.participants?.length || 0;
+                
+                // Get today's messages
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayMessagesSnapshot = await db.collection('groups')
+                    .doc(groupId)
+                    .collection('messages')
+                    .where('timestamp', '>', today)
+                    .get();
+                
+                const todayMessageCount = todayMessagesSnapshot.size;
+                
+                // Get media count
+                const mediaMessagesSnapshot = await db.collection('groups')
+                    .doc(groupId)
+                    .collection('messages')
+                    .where('type', 'in', ['image', 'video', 'audio', 'document'])
+                    .get();
+                
+                const mediaCount = mediaMessagesSnapshot.size;
+                
+                groupStats.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-value">${messageCount}</div>
+                        <div class="stat-label">Total Messages</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${participantCount}</div>
+                        <div class="stat-label">Members</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${todayMessageCount}</div>
+                        <div class="stat-label">Today</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${mediaCount}</div>
+                        <div class="stat-label">Media Files</div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        async function addActivity(type, content) {
+            if (!currentGroup) return;
+            
+            try {
+                await db.collection('groups')
+                    .doc(currentGroup.id)
+                    .collection('activities')
+                    .add({
+                        type: type,
+                        content: content,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        userId: currentUser.uid,
+                        userName: userData.displayName
+                    });
+                
+            } catch (error) {
+                console.error('Error adding activity:', error);
+            }
+        }
+
         function updateGroupDetails() {
             if (!currentGroup) return;
             
@@ -2522,6 +3483,12 @@
             
             // Load participants
             loadParticipantsList();
+            
+            // Load activity feed
+            loadActivityFeed(currentGroup.id);
+            
+            // Load statistics
+            loadGroupStatistics(currentGroup.id);
             
             // Update settings
             const settings = groupSettings.get(currentGroup.id) || {};
@@ -2624,6 +3591,7 @@
                 
                 currentGroup.admins = newAdmins;
                 updateGroupDetails();
+                await addActivity('admin_change', `${isAdmin ? 'Removed admin from' : 'Made admin'} ${getUserName(userId)}`);
                 
                 showNotification(`User ${isAdmin ? 'removed from' : 'added to'} admins`, 'success');
                 
@@ -2631,6 +3599,18 @@
                 console.error('Error updating admin status:', error);
                 showNotification('Error updating admin status', 'error');
             }
+        }
+
+        async function getUserName(userId) {
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (userDoc.exists) {
+                    return userDoc.data().displayName || userDoc.data().email.split('@')[0];
+                }
+            } catch (error) {
+                console.error('Error getting user name:', error);
+            }
+            return 'Unknown';
         }
 
         async function handleRemoveParticipant(e) {
@@ -2653,6 +3633,8 @@
                 currentGroup.admins = newAdmins;
                 updateGroupDetails();
                 groupHeaderStatus.textContent = `${newParticipants.length} participants`;
+                
+                await addActivity('member_removed', `Removed ${await getUserName(userId)} from group`);
                 
                 showNotification('Participant removed', 'success');
                 
@@ -2723,6 +3705,8 @@
         }
 
         function showMessageContextMenu(e, messageElement) {
+            const messageId = messageElement.closest('.message-wrapper').dataset.messageId;
+            
             // Create context menu
             const menu = document.createElement('div');
             menu.style.cssText = `
@@ -2736,20 +3720,23 @@
             `;
             
             menu.innerHTML = `
-                <div class="context-menu-item" style="padding: 10px 15px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='transparent'">
+                <div class="context-menu-item" style="padding: 10px 15px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='transparent'" onclick="replyToMessage('${messageId}')">
                     <i class="fas fa-reply" style="margin-right: 10px;"></i> Reply
                 </div>
-                <div class="context-menu-item" style="padding: 10px 15px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='transparent'">
+                <div class="context-menu-item" style="padding: 10px 15px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='transparent'" onclick="starMessage('${messageId}')">
                     <i class="far fa-star" style="margin-right: 10px;"></i> Star
                 </div>
-                <div class="context-menu-item" style="padding: 10px 15px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='transparent'">
+                <div class="context-menu-item" style="padding: 10px 15px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='transparent'" onclick="showReactionPicker('${messageId}', event)">
+                    <i class="far fa-smile" style="margin-right: 10px;"></i> React
+                </div>
+                <div class="context-menu-item" style="padding: 10px 15px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='transparent'" onclick="forwardMessage('${messageId}')">
                     <i class="fas fa-share" style="margin-right: 10px;"></i> Forward
                 </div>
-                <div class="context-menu-item" style="padding: 10px 15px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='transparent'">
+                <div class="context-menu-item" style="padding: 10px 15px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='transparent'" onclick="copyMessage('${messageId}')">
                     <i class="far fa-copy" style="margin-right: 10px;"></i> Copy
                 </div>
                 <hr style="margin: 5px 0; border: none; border-top: 1px solid #e9edef;">
-                <div class="context-menu-item" style="padding: 10px 15px; cursor: pointer; color: #ff3b30; transition: background 0.2s;" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='transparent'">
+                <div class="context-menu-item" style="padding: 10px 15px; cursor: pointer; color: #ff3b30; transition: background 0.2s;" onmouseover="this.style.background='#f0f2f5'" onmouseout="this.style.background='transparent'" onclick="deleteMessage('${messageId}')">
                     <i class="fas fa-trash" style="margin-right: 10px;"></i> Delete
                 </div>
             `;
@@ -2772,7 +3759,55 @@
             }, 0);
         }
 
+        async function handleReactionClick(e) {
+            const reactionEl = e.currentTarget;
+            const messageId = reactionEl.dataset.messageId;
+            const reaction = reactionEl.dataset.reaction;
+            
+            try {
+                const messageRef = db.collection('groups')
+                    .doc(currentGroup.id)
+                    .collection('messages')
+                    .doc(messageId);
+                
+                const messageDoc = await messageRef.get();
+                const message = messageDoc.data();
+                
+                let reactions = message.reactions || {};
+                if (!reactions[reaction]) {
+                    reactions[reaction] = [];
+                }
+                
+                const userIndex = reactions[reaction].indexOf(currentUser.uid);
+                if (userIndex > -1) {
+                    // Remove reaction
+                    reactions[reaction].splice(userIndex, 1);
+                    if (reactions[reaction].length === 0) {
+                        delete reactions[reaction];
+                    }
+                } else {
+                    // Add reaction
+                    reactions[reaction].push(currentUser.uid);
+                }
+                
+                await messageRef.update({ reactions: reactions });
+                
+            } catch (error) {
+                console.error('Error updating reaction:', error);
+            }
+        }
+
         function setupEventListeners() {
+            // Tab switching
+            document.querySelectorAll('.group-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.group-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    activeTab = tab.dataset.tab;
+                    renderGroupsList();
+                });
+            });
+            
             // New group buttons
             document.getElementById('newGroupBtn').addEventListener('click', showCreateGroupModal);
             document.getElementById('createFirstGroupBtn').addEventListener('click', showCreateGroupModal);
@@ -2782,6 +3817,11 @@
             document.getElementById('closeCreateGroupModal').addEventListener('click', hideCreateGroupModal);
             document.getElementById('cancelCreateGroup').addEventListener('click', hideCreateGroupModal);
             document.getElementById('createGroupBtn').addEventListener('click', handleCreateGroup);
+            
+            // Upload avatar
+            document.getElementById('uploadAvatarBtn').addEventListener('click', () => {
+                uploadGroupAvatar('groupAvatarPreview');
+            });
             
             // Group info
             document.getElementById('groupInfoBtn').addEventListener('click', () => {
@@ -2802,6 +3842,9 @@
             
             // Add participants
             document.getElementById('addParticipantsBtn').addEventListener('click', showAddParticipantsModal);
+            
+            // Group call
+            document.getElementById('groupCallBtn').addEventListener('click', startGroupCall);
             
             // Message input
             messageInput.addEventListener('input', function() {
@@ -2898,9 +3941,22 @@
                 });
             });
             
+            // Poll creation
+            document.getElementById('createPollBtn').addEventListener('click', showCreatePollModal);
+            document.getElementById('addPollOptionBtn').addEventListener('click', addPollOption);
+            document.getElementById('createPollBtn').addEventListener('click', handleCreatePoll);
+            
+            // Task creation
+            document.getElementById('createTaskBtnMain').addEventListener('click', showCreateTaskModal);
+            document.getElementById('createTaskBtn').addEventListener('click', handleCreateTask);
+            
+            // Event creation
+            document.getElementById('createEventBtnMain').addEventListener('click', showCreateEventModal);
+            document.getElementById('createEventBtn').addEventListener('click', handleCreateEvent);
+            
             // Window click to close modals
             window.addEventListener('click', function(e) {
-                const modals = ['createGroupModal', 'editGroupModal', 'addParticipantsModal', 'inviteLinkModal', 'attachMenuModal'];
+                const modals = ['createGroupModal', 'editGroupModal', 'addParticipantsModal', 'inviteLinkModal', 'attachMenuModal', 'createPollModal', 'createTaskModal', 'createEventModal'];
                 modals.forEach(modalId => {
                     const modal = document.getElementById(modalId);
                     if (modal && e.target === modal) {
@@ -2917,9 +3973,19 @@
             
             // Invite link
             document.getElementById('inviteLinkBtn').addEventListener('click', showInviteLinkModal);
+            document.getElementById('copyInviteLinkBtn').addEventListener('click', copyInviteLink);
+            document.getElementById('resetInviteLinkBtn').addEventListener('click', resetInviteLink);
             
             // Attach menu
             document.getElementById('attachMenuBtn').addEventListener('click', showAttachMenu);
+            
+            // Attach buttons
+            document.getElementById('attachDocumentBtn').addEventListener('click', attachDocument);
+            document.getElementById('attachCameraBtn').addEventListener('click', attachCamera);
+            document.getElementById('attachGalleryBtn').addEventListener('click', attachGallery);
+            document.getElementById('attachAudioBtn').addEventListener('click', attachAudio);
+            document.getElementById('attachLocationBtn').addEventListener('click', attachLocation);
+            document.getElementById('attachContactBtn').addEventListener('click', attachContact);
             
             // Emoji picker
             setupEmojiPicker();
@@ -2929,6 +3995,11 @@
             
             // User profile click
             document.getElementById('userProfileBtn').addEventListener('click', showUserProfile);
+            
+            // Call controls
+            document.getElementById('callMuteBtn').addEventListener('click', toggleMute);
+            document.getElementById('callVideoBtn').addEventListener('click', toggleVideo);
+            document.getElementById('callEndBtn').addEventListener('click', endCall);
         }
 
         function showCreateGroupModal() {
@@ -2939,6 +4010,7 @@
         function hideCreateGroupModal() {
             document.getElementById('createGroupModal').classList.remove('active');
             document.getElementById('groupNameInput').value = '';
+            document.getElementById('groupDescriptionInput').value = '';
             document.getElementById('searchParticipantsInput').value = '';
             document.getElementById('participantsSearchResults').style.display = 'none';
             document.getElementById('selectedParticipants').innerHTML = '';
@@ -2982,6 +4054,8 @@
 
         async function handleCreateGroup() {
             const groupName = document.getElementById('groupNameInput').value.trim();
+            const groupDescription = document.getElementById('groupDescriptionInput').value.trim();
+            const groupType = document.getElementById('groupTypeSelect').value;
             
             if (!groupName) {
                 showNotification('Please enter a group name', 'error');
@@ -2995,8 +4069,9 @@
             
             const groupData = {
                 name: groupName,
-                description: '',
-                photoURL: ''
+                description: groupDescription,
+                photoURL: document.getElementById('groupAvatarPreview').style.backgroundImage.slice(5, -2) || '',
+                type: groupType
             };
             
             await createGroup(groupData);
@@ -3019,11 +4094,214 @@
                 preview.innerHTML = `<span>${initials}</span>`;
             }
             
+            // Set theme
+            document.querySelectorAll('.theme-option').forEach(option => {
+                option.classList.remove('active');
+                if (option.dataset.theme === (currentGroup.settings?.theme || 'blue')) {
+                    option.classList.add('active');
+                }
+            });
+            
             document.getElementById('editGroupModal').classList.add('active');
         }
 
         function showAddParticipantsModal() {
             document.getElementById('addParticipantsModal').classList.add('active');
+        }
+
+        function showCreatePollModal() {
+            document.getElementById('createPollModal').classList.add('active');
+            document.getElementById('attachMenuModal').classList.remove('active');
+        }
+
+        function showCreateTaskModal() {
+            if (!currentGroup) {
+                showNotification('Select a group first', 'warning');
+                return;
+            }
+            
+            // Populate assignee dropdown
+            const assigneeSelect = document.getElementById('taskAssigneeSelect');
+            assigneeSelect.innerHTML = '<option value="">Unassigned</option>';
+            
+            currentGroup.participants.forEach(async (participantId) => {
+                const userName = await getUserName(participantId);
+                const option = document.createElement('option');
+                option.value = participantId;
+                option.textContent = userName;
+                assigneeSelect.appendChild(option);
+            });
+            
+            document.getElementById('createTaskModal').classList.add('active');
+            document.getElementById('attachMenuModal').classList.remove('active');
+        }
+
+        function showCreateEventModal() {
+            document.getElementById('createEventModal').classList.add('active');
+            document.getElementById('attachMenuModal').classList.remove('active');
+        }
+
+        function addPollOption() {
+            const container = document.getElementById('pollOptionsContainer');
+            const optionCount = container.children.length + 1;
+            
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'poll-option-input';
+            optionDiv.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px;';
+            optionDiv.innerHTML = `
+                <input type="text" class="form-input poll-option-input-field" placeholder="Option ${optionCount}">
+                <button class="btn btn-secondary remove-option-btn" style="padding: 5px 10px;">×</button>
+            `;
+            
+            container.appendChild(optionDiv);
+            
+            optionDiv.querySelector('.remove-option-btn').addEventListener('click', function() {
+                if (container.children.length > 2) {
+                    container.removeChild(optionDiv);
+                }
+            });
+        }
+
+        async function handleCreatePoll() {
+            if (!currentGroup) return;
+            
+            const question = document.getElementById('pollQuestionInput').value.trim();
+            const options = Array.from(document.querySelectorAll('.poll-option-input-field'))
+                .map(input => input.value.trim())
+                .filter(value => value !== '');
+            
+            const multipleChoice = document.getElementById('pollMultipleChoice').checked;
+            const anonymous = document.getElementById('pollAnonymous').checked;
+            
+            if (!question) {
+                showNotification('Please enter a poll question', 'error');
+                return;
+            }
+            
+            if (options.length < 2) {
+                showNotification('Please add at least 2 options', 'error');
+                return;
+            }
+            
+            try {
+                const pollData = {
+                    senderId: currentUser.uid,
+                    senderName: userData.displayName || currentUser.email.split('@')[0],
+                    type: 'poll',
+                    question: question,
+                    options: options.map(text => ({ text, votes: [] })),
+                    multipleChoice: multipleChoice,
+                    anonymous: anonymous,
+                    totalVotes: 0,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('groups')
+                    .doc(currentGroup.id)
+                    .collection('messages')
+                    .add(pollData);
+                
+                await addActivity('poll_created', `${userData.displayName} created a poll: "${question}"`);
+                
+                document.getElementById('createPollModal').classList.remove('active');
+                showNotification('Poll created successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error creating poll:', error);
+                showNotification('Error creating poll', 'error');
+            }
+        }
+
+        async function handleCreateTask() {
+            if (!currentGroup) return;
+            
+            const title = document.getElementById('taskTitleInput').value.trim();
+            const description = document.getElementById('taskDescriptionInput').value.trim();
+            const assignee = document.getElementById('taskAssigneeSelect').value;
+            const dueDate = document.getElementById('taskDueDateInput').value;
+            
+            if (!title) {
+                showNotification('Please enter a task title', 'error');
+                return;
+            }
+            
+            try {
+                const taskData = {
+                    senderId: currentUser.uid,
+                    senderName: userData.displayName || currentUser.email.split('@')[0],
+                    type: 'task',
+                    title: title,
+                    description: description,
+                    assignee: assignee,
+                    assigneeName: assignee ? await getUserName(assignee) : 'Unassigned',
+                    dueDate: dueDate || null,
+                    completed: false,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('groups')
+                    .doc(currentGroup.id)
+                    .collection('messages')
+                    .add(taskData);
+                
+                await addActivity('task_created', `${userData.displayName} created a task: "${title}"`);
+                
+                document.getElementById('createTaskModal').classList.remove('active');
+                showNotification('Task created successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error creating task:', error);
+                showNotification('Error creating task', 'error');
+            }
+        }
+
+        async function handleCreateEvent() {
+            if (!currentGroup) return;
+            
+            const title = document.getElementById('eventTitleInput').value.trim();
+            const description = document.getElementById('eventDescriptionInput').value.trim();
+            const date = document.getElementById('eventDateInput').value;
+            const time = document.getElementById('eventTimeInput').value;
+            const location = document.getElementById('eventLocationInput').value.trim();
+            
+            if (!title) {
+                showNotification('Please enter an event title', 'error');
+                return;
+            }
+            
+            if (!date) {
+                showNotification('Please select a date', 'error');
+                return;
+            }
+            
+            try {
+                const eventData = {
+                    senderId: currentUser.uid,
+                    senderName: userData.displayName || currentUser.email.split('@')[0],
+                    type: 'event',
+                    title: title,
+                    description: description,
+                    eventDate: date,
+                    eventTime: time || '',
+                    location: location,
+                    rsvp: { yes: [], maybe: [], no: [] },
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('groups')
+                    .doc(currentGroup.id)
+                    .collection('messages')
+                    .add(eventData);
+                
+                await addActivity('event_created', `${userData.displayName} created an event: "${title}"`);
+                
+                document.getElementById('createEventModal').classList.remove('active');
+                showNotification('Event created successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error creating event:', error);
+                showNotification('Error creating event', 'error');
+            }
         }
 
         function showInviteLinkModal() {
@@ -3036,6 +4314,36 @@
             document.getElementById('inviteLinkModal').classList.add('active');
         }
 
+        function copyInviteLink() {
+            const inviteLinkInput = document.getElementById('inviteLinkInput');
+            inviteLinkInput.select();
+            document.execCommand('copy');
+            showNotification('Invite link copied to clipboard!', 'success');
+        }
+
+        async function resetInviteLink() {
+            if (!currentGroup) return;
+            
+            const newInviteCode = generateInviteCode();
+            
+            try {
+                await db.collection('groups')
+                    .doc(currentGroup.id)
+                    .update({
+                        'settings.inviteCode': newInviteCode
+                    });
+                
+                const newInviteLink = `${window.location.origin}/join/${newInviteCode}`;
+                document.getElementById('inviteLinkInput').value = newInviteLink;
+                
+                showNotification('Invite link reset successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error resetting invite link:', error);
+                showNotification('Error resetting invite link', 'error');
+            }
+        }
+
         function showAttachMenu() {
             document.getElementById('attachMenuModal').classList.add('active');
         }
@@ -3043,14 +4351,243 @@
         function showJoinGroupModal() {
             const code = prompt('Enter group invite code:');
             if (code) {
-                // In a real app, this would validate and join the group
-                showNotification('Joining group...', 'success');
+                joinGroupByCode(code);
+            }
+        }
+
+        async function joinGroupByCode(code) {
+            try {
+                const groupsSnapshot = await db.collection('groups')
+                    .where('settings.inviteCode', '==', code)
+                    .get();
+                
+                if (groupsSnapshot.empty) {
+                    showNotification('Invalid invite code', 'error');
+                    return;
+                }
+                
+                const groupDoc = groupsSnapshot.docs[0];
+                const group = groupDoc.data();
+                
+                // Check if user is already in group
+                if (group.participants.includes(currentUser.uid)) {
+                    showNotification('You are already a member of this group', 'warning');
+                    return;
+                }
+                
+                // Add user to group
+                await db.collection('groups')
+                    .doc(groupDoc.id)
+                    .update({
+                        participants: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                    });
+                
+                // Add system message
+                const systemMessage = {
+                    senderId: 'system',
+                    senderName: 'System',
+                    content: `${userData.displayName || currentUser.email.split('@')[0]} joined the group via invite link`,
+                    type: 'system',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('groups')
+                    .doc(groupDoc.id)
+                    .collection('messages')
+                    .add(systemMessage);
+                
+                await addActivity('member_added', `${userData.displayName} joined the group`);
+                
+                // Reload groups and select the joined group
+                await loadGroups();
+                const joinedGroup = groups.find(g => g.id === groupDoc.id);
+                if (joinedGroup) await selectGroup(joinedGroup);
+                
+                showNotification('Successfully joined the group!', 'success');
+                
+            } catch (error) {
+                console.error('Error joining group:', error);
+                showNotification('Error joining group', 'error');
             }
         }
 
         function showUserProfile() {
-            // Show user profile modal
             alert(`User Profile:\n\nName: ${userData.displayName}\nEmail: ${userData.email}\nMood: ${userMood}\nInterests: ${userInterests.join(', ')}`);
+        }
+
+        async function startGroupCall() {
+            if (!currentGroup) return;
+            
+            if (currentGroup.participants.length > 32) {
+                showNotification('Group calls are limited to 32 participants', 'warning');
+                return;
+            }
+            
+            try {
+                // Start call in Firebase
+                const callId = db.collection('calls').doc().id;
+                
+                const callData = {
+                    groupId: currentGroup.id,
+                    participants: [currentUser.uid],
+                    startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    endedAt: null,
+                    type: 'video' // Default to video call
+                };
+                
+                await db.collection('calls').doc(callId).set(callData);
+                
+                // Add system message
+                const systemMessage = {
+                    senderId: 'system',
+                    senderName: 'System',
+                    content: `${userData.displayName || currentUser.email.split('@')[0]} started a group call`,
+                    type: 'system',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await db.collection('groups')
+                    .doc(currentGroup.id)
+                    .collection('messages')
+                    .add(systemMessage);
+                
+                await addActivity('call_started', `${userData.displayName} started a group call`);
+                
+                // Initialize WebRTC
+                await initializeCall(callId);
+                
+                showNotification('Group call started!', 'success');
+                
+            } catch (error) {
+                console.error('Error starting call:', error);
+                showNotification('Error starting call', 'error');
+            }
+        }
+
+        async function initializeCall(callId) {
+            try {
+                // Get user media
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                
+                // Show call interface
+                document.getElementById('callInterface').classList.add('active');
+                
+                // Add local video
+                const localVideo = document.createElement('video');
+                localVideo.id = 'localVideo';
+                localVideo.srcObject = localStream;
+                localVideo.autoplay = true;
+                localVideo.muted = true;
+                
+                const participantDiv = document.createElement('div');
+                participantDiv.className = 'call-participant';
+                participantDiv.appendChild(localVideo);
+                document.getElementById('callParticipants').appendChild(participantDiv);
+                
+                // Listen for new participants
+                db.collection('calls').doc(callId).onSnapshot(async (snapshot) => {
+                    const callData = snapshot.data();
+                    if (!callData) return;
+                    
+                    // Update participants
+                    callData.participants.forEach(async (participantId) => {
+                        if (participantId !== currentUser.uid && !peerConnections.has(participantId)) {
+                            await connectToPeer(participantId, callId);
+                        }
+                    });
+                });
+                
+                // Listen for call end
+                db.collection('calls').doc(callId).onSnapshot((snapshot) => {
+                    const callData = snapshot.data();
+                    if (callData && callData.endedAt) {
+                        endCall();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error initializing call:', error);
+                showNotification('Error accessing camera/microphone', 'error');
+            }
+        }
+
+        async function connectToPeer(peerId, callId) {
+            // WebRTC connection logic
+            // This is a simplified version - in production you'd use a signaling server
+            console.log('Connecting to peer:', peerId);
+            
+            // For now, we'll just show a placeholder
+            const participantDiv = document.createElement('div');
+            participantDiv.className = 'call-participant';
+            participantDiv.innerHTML = `
+                <div style="background-color: #2d2d2d; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white;">
+                    <i class="fas fa-user" style="font-size: 40px;"></i>
+                </div>
+                <div style="position: absolute; bottom: 10px; left: 10px; color: white; font-size: 12px;">
+                    ${await getUserName(peerId)}
+                </div>
+            `;
+            
+            document.getElementById('callParticipants').appendChild(participantDiv);
+        }
+
+        function toggleMute() {
+            if (!localStream) return;
+            
+            const audioTracks = localStream.getAudioTracks();
+            audioTracks.forEach(track => {
+                track.enabled = !track.enabled;
+            });
+            
+            const muteBtn = document.getElementById('callMuteBtn');
+            if (audioTracks[0].enabled) {
+                muteBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            } else {
+                muteBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+            }
+        }
+
+        function toggleVideo() {
+            if (!localStream) return;
+            
+            const videoTracks = localStream.getVideoTracks();
+            videoTracks.forEach(track => {
+                track.enabled = !track.enabled;
+            });
+            
+            const videoBtn = document.getElementById('callVideoBtn');
+            if (videoTracks[0].enabled) {
+                videoBtn.innerHTML = '<i class="fas fa-video"></i>';
+            } else {
+                videoBtn.innerHTML = '<i class="fas fa-video-slash"></i>';
+            }
+        }
+
+        async function endCall() {
+            // Stop all media streams
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Close all peer connections
+            peerConnections.forEach(pc => pc.close());
+            peerConnections.clear();
+            
+            // Hide call interface
+            document.getElementById('callInterface').classList.remove('active');
+            document.getElementById('callParticipants').innerHTML = '';
+            
+            // Update call in Firebase
+            if (currentCall) {
+                await db.collection('calls').doc(currentCall).update({
+                    endedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+            
+            showNotification('Call ended', 'success');
         }
 
         async function handleLeaveGroup() {
@@ -3083,11 +4620,13 @@
                     .collection('messages')
                     .add(systemMessage);
                 
+                await addActivity('member_left', `${userData.displayName} left the group`);
+                
                 // Clear current group
                 currentGroup = null;
                 
                 // Reset UI
-                groupHeaderName.textContent = 'WhatsApp Groups';
+                groupHeaderName.textContent = 'Kynecta Groups';
                 groupHeaderStatus.textContent = 'Select a group to start chatting';
                 groupHeaderAvatar.innerHTML = '<i class="fas fa-users"></i>';
                 groupHeaderAvatar.style.backgroundImage = '';
@@ -3218,6 +4757,22 @@
                 });
             
             realTimeListeners.push(unsubscribeFriends);
+            
+            // Listen for activity updates
+            const unsubscribeActivities = db.collection('groups')
+                .where('participants', 'array-contains', currentUser.uid)
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === 'modified') {
+                            const groupId = change.doc.id;
+                            if (currentGroup && currentGroup.id === groupId) {
+                                loadActivityFeed(groupId);
+                            }
+                        }
+                    });
+                });
+            
+            realTimeListeners.push(unsubscribeActivities);
         }
 
         // Auto-resize textarea
@@ -3228,10 +4783,6 @@
 
         // Utility functions for media handling
         window.viewImage = function(url) {
-            window.open(url, '_blank');
-        };
-
-        window.playVideo = function(url) {
             window.open(url, '_blank');
         };
 
@@ -3255,21 +4806,49 @@
                     opt.votes && opt.votes.includes(currentUser.uid)
                 );
                 
-                if (hasVoted) {
+                if (hasVoted && !message.multipleChoice) {
                     showNotification('You have already voted in this poll', 'warning');
                     return;
                 }
                 
-                // Add vote
+                // Add/remove vote
                 const updatedOptions = [...message.options];
-                if (!updatedOptions[optionIndex].votes) {
-                    updatedOptions[optionIndex].votes = [];
+                
+                if (message.multipleChoice) {
+                    // Toggle vote for multiple choice
+                    if (!updatedOptions[optionIndex].votes) {
+                        updatedOptions[optionIndex].votes = [];
+                    }
+                    
+                    const userIndex = updatedOptions[optionIndex].votes.indexOf(currentUser.uid);
+                    if (userIndex > -1) {
+                        updatedOptions[optionIndex].votes.splice(userIndex, 1);
+                    } else {
+                        updatedOptions[optionIndex].votes.push(currentUser.uid);
+                    }
+                } else {
+                    // Single choice - remove from all options, add to selected
+                    updatedOptions.forEach(opt => {
+                        if (opt.votes) {
+                            const userIndex = opt.votes.indexOf(currentUser.uid);
+                            if (userIndex > -1) {
+                                opt.votes.splice(userIndex, 1);
+                            }
+                        }
+                    });
+                    
+                    if (!updatedOptions[optionIndex].votes) {
+                        updatedOptions[optionIndex].votes = [];
+                    }
+                    updatedOptions[optionIndex].votes.push(currentUser.uid);
                 }
-                updatedOptions[optionIndex].votes.push(currentUser.uid);
+                
+                // Calculate total votes
+                const totalVotes = updatedOptions.reduce((sum, opt) => sum + (opt.votes ? opt.votes.length : 0), 0);
                 
                 await messageRef.update({
                     options: updatedOptions,
-                    totalVotes: (message.totalVotes || 0) + 1
+                    totalVotes: totalVotes
                 });
                 
                 showNotification('Vote submitted', 'success');
@@ -3279,6 +4858,616 @@
                 showNotification('Error voting in poll', 'error');
             }
         };
+
+        window.rsvpToEvent = async function(messageId, response) {
+            if (!currentGroup) return;
+            
+            try {
+                const messageRef = db.collection('groups').doc(currentGroup.id).collection('messages').doc(messageId);
+                const messageDoc = await messageRef.get();
+                const message = messageDoc.data();
+                
+                if (message.type !== 'event') return;
+                
+                // Update RSVP
+                const rsvp = message.rsvp || { yes: [], maybe: [], no: [] };
+                
+                // Remove from all responses
+                ['yes', 'maybe', 'no'].forEach(type => {
+                    const index = rsvp[type].indexOf(currentUser.uid);
+                    if (index > -1) {
+                        rsvp[type].splice(index, 1);
+                    }
+                });
+                
+                // Add to selected response
+                rsvp[response].push(currentUser.uid);
+                
+                await messageRef.update({ rsvp: rsvp });
+                
+                showNotification(`RSVP: ${response === 'yes' ? 'Going' : response === 'maybe' ? 'Maybe' : "Can't go"}`, 'success');
+                
+            } catch (error) {
+                console.error('Error updating RSVP:', error);
+                showNotification('Error updating RSVP', 'error');
+            }
+        };
+
+        window.replyToMessage = async function(messageId) {
+            const messageRef = db.collection('groups').doc(currentGroup.id).collection('messages').doc(messageId);
+            const messageDoc = await messageRef.get();
+            const message = messageDoc.data();
+            
+            messageInput.value = `Replying to ${message.senderName}: ${message.content.substring(0, 50)}...\n`;
+            messageInput.focus();
+            sendBtn.disabled = false;
+        };
+
+        window.starMessage = async function(messageId) {
+            try {
+                const messageRef = db.collection('groups').doc(currentGroup.id).collection('messages').doc(messageId);
+                const messageDoc = await messageRef.get();
+                const message = messageDoc.data();
+                
+                let starredBy = message.starredBy || [];
+                const userIndex = starredBy.indexOf(currentUser.uid);
+                
+                if (userIndex > -1) {
+                    starredBy.splice(userIndex, 1);
+                    showNotification('Message unstarred', 'success');
+                } else {
+                    starredBy.push(currentUser.uid);
+                    showNotification('Message starred', 'success');
+                }
+                
+                await messageRef.update({ starredBy: starredBy });
+                
+            } catch (error) {
+                console.error('Error starring message:', error);
+                showNotification('Error starring message', 'error');
+            }
+        };
+
+        window.showReactionPicker = function(messageId, event) {
+            const picker = document.getElementById('reactionPicker');
+            picker.style.left = `${event.clientX}px`;
+            picker.style.top = `${event.clientY - 50}px`;
+            picker.classList.remove('hidden');
+            
+            // Add event listeners to reactions
+            picker.querySelectorAll('.reaction-option').forEach(option => {
+                option.onclick = async function() {
+                    const reaction = this.dataset.reaction;
+                    
+                    try {
+                        const messageRef = db.collection('groups').doc(currentGroup.id).collection('messages').doc(messageId);
+                        const messageDoc = await messageRef.get();
+                        const message = messageDoc.data();
+                        
+                        let reactions = message.reactions || {};
+                        if (!reactions[reaction]) {
+                            reactions[reaction] = [];
+                        }
+                        
+                        const userIndex = reactions[reaction].indexOf(currentUser.uid);
+                        if (userIndex > -1) {
+                            reactions[reaction].splice(userIndex, 1);
+                            if (reactions[reaction].length === 0) {
+                                delete reactions[reaction];
+                            }
+                        } else {
+                            reactions[reaction].push(currentUser.uid);
+                        }
+                        
+                        await messageRef.update({ reactions: reactions });
+                        
+                        picker.classList.add('hidden');
+                        
+                    } catch (error) {
+                        console.error('Error adding reaction:', error);
+                        showNotification('Error adding reaction', 'error');
+                    }
+                };
+            });
+            
+            // Hide picker on click outside
+            setTimeout(() => {
+                const hidePicker = (e) => {
+                    if (!picker.contains(e.target)) {
+                        picker.classList.add('hidden');
+                        document.removeEventListener('click', hidePicker);
+                    }
+                };
+                document.addEventListener('click', hidePicker);
+            }, 0);
+        };
+
+        window.forwardMessage = async function(messageId) {
+            const groupsList = groups.filter(g => g.id !== currentGroup.id);
+            
+            if (groupsList.length === 0) {
+                showNotification('No other groups to forward to', 'warning');
+                return;
+            }
+            
+            const groupNames = groupsList.map(g => g.name).join(', ');
+            const targetGroup = prompt(`Forward to which group?\n\nAvailable groups: ${groupNames}`);
+            
+            if (targetGroup) {
+                const group = groupsList.find(g => g.name === targetGroup);
+                if (group) {
+                    // Get message content
+                    const messageRef = db.collection('groups').doc(currentGroup.id).collection('messages').doc(messageId);
+                    const messageDoc = await messageRef.get();
+                    const message = messageDoc.data();
+                    
+                    // Create forwarded message
+                    const forwardedMessage = {
+                        senderId: currentUser.uid,
+                        senderName: userData.displayName || currentUser.email.split('@')[0],
+                        content: message.content,
+                        type: 'forwarded',
+                        forwardedFrom: message.senderName,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        readBy: []
+                    };
+                    
+                    await db.collection('groups')
+                        .doc(group.id)
+                        .collection('messages')
+                        .add(forwardedMessage);
+                    
+                    showNotification('Message forwarded', 'success');
+                }
+            }
+        };
+
+        window.copyMessage = async function(messageId) {
+            const messageRef = db.collection('groups').doc(currentGroup.id).collection('messages').doc(messageId);
+            const messageDoc = await messageRef.get();
+            const message = messageDoc.data();
+            
+            navigator.clipboard.writeText(message.content)
+                .then(() => showNotification('Message copied to clipboard', 'success'))
+                .catch(() => showNotification('Failed to copy message', 'error'));
+        };
+
+        window.deleteMessage = async function(messageId) {
+            if (!confirm('Delete this message?')) return;
+            
+            try {
+                // For simplicity, we'll just mark as deleted
+                await db.collection('groups')
+                    .doc(currentGroup.id)
+                    .collection('messages')
+                    .doc(messageId)
+                    .update({
+                        deleted: true,
+                        content: '[This message was deleted]'
+                    });
+                
+                showNotification('Message deleted', 'success');
+                
+            } catch (error) {
+                console.error('Error deleting message:', error);
+                showNotification('Error deleting message', 'error');
+            }
+        };
+
+        // Media attachment functions
+        async function attachDocument() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.pdf,.doc,.docx,.txt';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                try {
+                    // Upload to Firebase Storage
+                    const storageRef = storage.ref();
+                    const fileRef = storageRef.child(`groups/${currentGroup.id}/documents/${file.name}`);
+                    await fileRef.put(file);
+                    const downloadURL = await fileRef.getDownloadURL();
+                    
+                    // Send as message
+                    const message = {
+                        senderId: currentUser.uid,
+                        senderName: userData.displayName || currentUser.email.split('@')[0],
+                        content: downloadURL,
+                        type: 'document',
+                        fileName: file.name,
+                        fileSize: formatFileSize(file.size),
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        readBy: []
+                    };
+                    
+                    await db.collection('groups')
+                        .doc(currentGroup.id)
+                        .collection('messages')
+                        .add(message);
+                    
+                    showNotification('Document sent', 'success');
+                    
+                } catch (error) {
+                    console.error('Error uploading document:', error);
+                    showNotification('Error uploading document', 'error');
+                }
+            };
+            
+            input.click();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' bytes';
+            else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            else return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        async function attachCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                
+                // Create canvas to capture photo
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                
+                // Show preview and capture button
+                const preview = document.createElement('div');
+                preview.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: black;
+                    z-index: 2000;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                `;
+                
+                video.style.cssText = 'max-width: 100%; max-height: 70%;';
+                
+                const captureBtn = document.createElement('button');
+                captureBtn.className = 'btn btn-primary';
+                captureBtn.innerHTML = '<i class="fas fa-camera"></i> Capture';
+                captureBtn.style.marginTop = '20px';
+                
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'btn btn-secondary';
+                cancelBtn.innerHTML = 'Cancel';
+                cancelBtn.style.marginTop = '10px';
+                
+                preview.appendChild(video);
+                preview.appendChild(captureBtn);
+                preview.appendChild(cancelBtn);
+                document.body.appendChild(preview);
+                
+                captureBtn.onclick = () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    context.drawImage(video, 0, 0);
+                    
+                    canvas.toBlob(async (blob) => {
+                        // Upload to Firebase Storage
+                        const storageRef = storage.ref();
+                        const fileRef = storageRef.child(`groups/${currentGroup.id}/photos/${Date.now()}.jpg`);
+                        await fileRef.put(blob);
+                        const downloadURL = await fileRef.getDownloadURL();
+                        
+                        // Send as message
+                        const message = {
+                            senderId: currentUser.uid,
+                            senderName: userData.displayName || currentUser.email.split('@')[0],
+                            content: downloadURL,
+                            type: 'image',
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                            readBy: []
+                        };
+                        
+                        await db.collection('groups')
+                            .doc(currentGroup.id)
+                            .collection('messages')
+                            .add(message);
+                        
+                        showNotification('Photo sent', 'success');
+                        
+                        // Clean up
+                        stream.getTracks().forEach(track => track.stop());
+                        document.body.removeChild(preview);
+                    }, 'image/jpeg');
+                };
+                
+                cancelBtn.onclick = () => {
+                    stream.getTracks().forEach(track => track.stop());
+                    document.body.removeChild(preview);
+                };
+                
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                showNotification('Error accessing camera', 'error');
+            }
+        }
+
+        async function attachGallery() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*,video/*';
+            input.multiple = true;
+            
+            input.onchange = async (e) => {
+                const files = Array.from(e.target.files);
+                
+                for (const file of files) {
+                    try {
+                        const storageRef = storage.ref();
+                        const fileType = file.type.startsWith('image/') ? 'image' : 'video';
+                        const folder = fileType === 'image' ? 'photos' : 'videos';
+                        const fileRef = storageRef.child(`groups/${currentGroup.id}/${folder}/${file.name}`);
+                        
+                        await fileRef.put(file);
+                        const downloadURL = await fileRef.getDownloadURL();
+                        
+                        const message = {
+                            senderId: currentUser.uid,
+                            senderName: userData.displayName || currentUser.email.split('@')[0],
+                            content: downloadURL,
+                            type: fileType,
+                            fileName: file.name,
+                            fileSize: formatFileSize(file.size),
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                            readBy: []
+                        };
+                        
+                        await db.collection('groups')
+                            .doc(currentGroup.id)
+                            .collection('messages')
+                            .add(message);
+                        
+                    } catch (error) {
+                        console.error('Error uploading file:', error);
+                        showNotification(`Error uploading ${file.name}`, 'error');
+                    }
+                }
+                
+                showNotification(`${files.length} file(s) sent`, 'success');
+            };
+            
+            input.click();
+        }
+
+        async function attachAudio() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream);
+                const audioChunks = [];
+                
+                // Show recording interface
+                const recorderUI = document.createElement('div');
+                recorderUI.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: white;
+                    padding: 30px;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                    z-index: 2000;
+                    text-align: center;
+                    min-width: 300px;
+                `;
+                
+                const timer = document.createElement('div');
+                timer.id = 'recordingTimer';
+                timer.textContent = '00:00';
+                timer.style.fontSize = '24px';
+                timer.style.marginBottom = '20px';
+                
+                const recordBtn = document.createElement('button');
+                recordBtn.className = 'btn btn-danger';
+                recordBtn.innerHTML = '<i class="fas fa-microphone"></i> Start Recording';
+                
+                const stopBtn = document.createElement('button');
+                stopBtn.className = 'btn btn-secondary';
+                stopBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+                stopBtn.disabled = true;
+                
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'btn btn-secondary';
+                cancelBtn.innerHTML = 'Cancel';
+                cancelBtn.style.marginLeft = '10px';
+                
+                recorderUI.appendChild(timer);
+                recorderUI.appendChild(recordBtn);
+                recorderUI.appendChild(stopBtn);
+                recorderUI.appendChild(cancelBtn);
+                document.body.appendChild(recorderUI);
+                
+                let startTime;
+                let timerInterval;
+                
+                recordBtn.onclick = () => {
+                    mediaRecorder.start();
+                    startTime = Date.now();
+                    recordBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    
+                    timerInterval = setInterval(() => {
+                        const elapsed = Date.now() - startTime;
+                        const seconds = Math.floor(elapsed / 1000);
+                        const minutes = Math.floor(seconds / 60);
+                        timer.textContent = `${minutes.toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+                    }, 1000);
+                };
+                
+                stopBtn.onclick = () => {
+                    mediaRecorder.stop();
+                    clearInterval(timerInterval);
+                };
+                
+                cancelBtn.onclick = () => {
+                    mediaRecorder.stop();
+                    clearInterval(timerInterval);
+                    stream.getTracks().forEach(track => track.stop());
+                    document.body.removeChild(recorderUI);
+                };
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    
+                    // Upload to Firebase Storage
+                    const storageRef = storage.ref();
+                    const fileRef = storageRef.child(`groups/${currentGroup.id}/audio/${Date.now()}.webm`);
+                    await fileRef.put(audioBlob);
+                    const downloadURL = await fileRef.getDownloadURL();
+                    
+                    // Calculate duration
+                    const duration = Math.floor((Date.now() - startTime) / 1000);
+                    
+                    // Send as message
+                    const message = {
+                        senderId: currentUser.uid,
+                        senderName: userData.displayName || currentUser.email.split('@')[0],
+                        content: downloadURL,
+                        type: 'audio',
+                        duration: `${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}`,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        readBy: []
+                    };
+                    
+                    await db.collection('groups')
+                        .doc(currentGroup.id)
+                        .collection('messages')
+                        .add(message);
+                    
+                    showNotification('Audio message sent', 'success');
+                    
+                    // Clean up
+                    stream.getTracks().forEach(track => track.stop());
+                    document.body.removeChild(recorderUI);
+                };
+                
+            } catch (error) {
+                console.error('Error recording audio:', error);
+                showNotification('Error recording audio', 'error');
+            }
+        }
+
+        async function attachLocation() {
+            if (!navigator.geolocation) {
+                showNotification('Geolocation is not supported by your browser', 'error');
+                return;
+            }
+            
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject);
+                });
+                
+                const { latitude, longitude } = position.coords;
+                const locationURL = `https://maps.google.com/?q=${latitude},${longitude}`;
+                
+                const message = {
+                    senderId: currentUser.uid,
+                    senderName: userData.displayName || currentUser.email.split('@')[0],
+                    content: locationURL,
+                    type: 'location',
+                    coordinates: { latitude, longitude },
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    readBy: []
+                };
+                
+                await db.collection('groups')
+                    .doc(currentGroup.id)
+                    .collection('messages')
+                    .add(message);
+                
+                showNotification('Location shared', 'success');
+                
+            } catch (error) {
+                console.error('Error getting location:', error);
+                showNotification('Error getting location', 'error');
+            }
+        }
+
+        async function attachContact() {
+            const contactName = prompt('Enter contact name:');
+            const contactPhone = prompt('Enter contact phone number:');
+            
+            if (contactName && contactPhone) {
+                const message = {
+                    senderId: currentUser.uid,
+                    senderName: userData.displayName || currentUser.email.split('@')[0],
+                    content: `Contact: ${contactName}\nPhone: ${contactPhone}`,
+                    type: 'text',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    readBy: []
+                };
+                
+                await db.collection('groups')
+                    .doc(currentGroup.id)
+                    .collection('messages')
+                    .add(message);
+                
+                showNotification('Contact shared', 'success');
+            }
+        }
+
+        async function uploadGroupAvatar(previewId) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                try {
+                    // Show loading
+                    const preview = document.getElementById(previewId);
+                    preview.innerHTML = '<div class="spinner" style="width: 20px; height: 20px;"></div>';
+                    
+                    // Upload to Firebase Storage
+                    const storageRef = storage.ref();
+                    const fileRef = storageRef.child(`group-avatars/${currentUser.uid}/${Date.now()}_${file.name}`);
+                    await fileRef.put(file);
+                    const downloadURL = await fileRef.getDownloadURL();
+                    
+                    // Update preview
+                    preview.style.backgroundImage = `url('${downloadURL}')`;
+                    preview.innerHTML = '';
+                    
+                    // Store URL for later use
+                    if (previewId === 'groupAvatarPreview') {
+                        preview.dataset.photoURL = downloadURL;
+                    }
+                    
+                    showNotification('Photo uploaded successfully', 'success');
+                    
+                } catch (error) {
+                    console.error('Error uploading avatar:', error);
+                    showNotification('Error uploading photo', 'error');
+                    
+                    // Reset preview
+                    const preview = document.getElementById(previewId);
+                    preview.style.backgroundImage = '';
+                    preview.innerHTML = '<i class="fas fa-users"></i>';
+                }
+            };
+            
+            input.click();
+        }
     </script>
 </body>
 </html>

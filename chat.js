@@ -27,7 +27,6 @@ if (typeof unsubscribeMessages === 'undefined') var unsubscribeMessages = null;
 if (typeof unsubscribeChats === 'undefined') var unsubscribeChats = null;
 if (typeof typingListener === 'undefined') var typingListener = null;
 if (typeof typingTimeout === 'undefined') var typingTimeout = null;
-if (typeof unsubscribeIncomingCalls === 'undefined') var unsubscribeIncomingCalls = null;
 
 // 2. Create a handler for ALL undefined function calls
 window.__handleMissingFunction = function(funcName, ...args) {
@@ -168,7 +167,6 @@ const globalVarsToProtect = [
     'currentUserData',
     'currentChat',
     'currentChatId',
-    'friends',
     'allUsers'
 ];
 
@@ -179,8 +177,6 @@ globalVarsToProtect.forEach(varName => {
 });
 
 // Only declare if they don't exist
-// ==================== PREVENT DUPLICATE DECLARATIONS ====================
-// Use window object to check and avoid redeclaration
 if (!window.closeStatusViewer) window.closeStatusViewer = null;
 if (!window.helpCenterModal) window.helpCenterModal = null;
 if (!window.statusViewerModal) window.statusViewerModal = null;
@@ -189,7 +185,6 @@ if (!window.currentUser) window.currentUser = null;
 if (!window.currentUserData) window.currentUserData = null;
 if (!window.currentChat) window.currentChat = null;
 if (!window.currentChatId) window.currentChatId = null;
-if (!window.friends) window.friends = [];
 if (!window.allUsers) window.allUsers = [];
 
 // Also declare them locally for backward compatibility
@@ -201,8 +196,8 @@ var currentUser = window.currentUser;
 var currentUserData = window.currentUserData;
 var currentChat = window.currentChat;
 var currentChatId = window.currentChatId;
-var friends = window.friends;
 var allUsers = window.allUsers;
+
 // ==================== IMAGE ERROR HANDLING ====================
 function setupImageErrorHandling() {
     console.log('Setting up image error handling...');
@@ -279,7 +274,6 @@ function handleImageError(img) {
 }
 
 // ==================== FIREBASE INITIALIZATION ====================
-// ==================== FIREBASE INITIALIZATION ====================
 const firebaseConfig = {
     apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
     authDomain: "uniconnect-ee95c.firebaseapp.com",
@@ -290,51 +284,52 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase only if not already initialized
-let auth, db, storage, messaging;
+let auth, db, storage;
 
-try {
-    // Check if Firebase is already initialized
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+// Check if Firebase is available
+if (typeof firebase === 'undefined') {
+    console.error('Firebase SDK not loaded. Make sure firebase scripts are included.');
+} else {
+    try {
+        // Check if Firebase is already initialized
+        if (!firebase.apps.length) {
+            console.log('Initializing Firebase app...');
+            const firebaseApp = firebase.initializeApp(firebaseConfig);
+            
+            // IMPORTANT: Initialize services AFTER app initialization
+            auth = firebase.auth();
+            db = firebase.firestore();
+            storage = firebase.storage();
+            
+            console.log('Firebase initialized successfully');
+        } else {
+            console.log('Firebase already initialized, using existing app');
+            // Use existing Firebase app
+            auth = firebase.auth();
+            db = firebase.firestore();
+            storage = firebase.storage();
+        }
         
-        // Enable persistence BEFORE getting any Firebase services
-        firebase.firestore().enablePersistence()
-            .then(() => console.log('Firestore persistence enabled'))
-            .catch(err => {
-                if (err.code === 'failed-precondition') {
-                    console.log('Multiple tabs open, persistence only in one tab');
-                } else if (err.code === 'unimplemented') {
-                    console.log('Browser doesn\'t support persistence');
-                }
-            });
+        // Share with other scripts
+        window.db = db;
+        window.auth = auth;
+        window.storage = storage;
+        window.firebase = firebase;
+        
+        // Enable persistence (new method)
+        if (db && db.settings) {
+            const settings = {
+                cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+            };
+            db.settings(settings);
+            console.log('Firestore cache configured');
+        }
+        
+    } catch (error) {
+        console.error('Firebase initialization failed:', error);
+        showToast('Firebase initialization failed: ' + error.message, 'error');
     }
-    
-    // Now get Firebase services
-    auth = firebase.auth();
-    db = firebase.firestore();
-    storage = firebase.storage();
-    messaging = firebase.messaging();
-    
-    console.log('Firebase initialized successfully');
-    
-    // Share with other scripts
-    window.db = db;
-    window.auth = auth;
-    window.storage = storage;
-    window.firebase = firebase;
-    
-} catch (error) {
-    console.error('Firebase initialization failed:', error);
 }
-
-// ADD NETWORK STATUS MONITORING - Add this:
-firebase.firestore().enableNetwork()
-  .then(() => {
-    console.log('Firestore online');
-  })
-  .catch((err) => {
-    console.log('Firestore offline:', err);
-  });
 
 const cloudinaryConfig = {
     cloudName: 'dhjnxa5rh',
@@ -342,32 +337,12 @@ const cloudinaryConfig = {
     uploadPreset: 'user_uploads'
 };
 
-// WebRTC Variables
-window.localStream = null;
-window.remoteStream = null;
-window.peerConnection = null;
-window.isMuted = false;
-window.isVideoOff = false;
-window.isInCall = false;
-window.lastCallTime = 0;
-window.CALL_COOLDOWN = 2000;
-
-// Call State Variables
-window.callState = {
-    isCaller: false,
-    isReceivingCall: false,
-    callType: null,
-    remoteUserId: null,
-    callId: null,
-    callStartTime: null
-};
-
 // ==================== DOM ELEMENTS INITIALIZATION ====================
 // Main Layout Elements
 const chatApp = document.getElementById('chatApp');
 const loadingScreen = document.getElementById('loadingScreen');
 const chatListContainer = document.getElementById('chatListContainer');
-const messagesContainer = document.getElementById('messagesContainer');
+const messagesContainer = document.getElementById('messagesContainer') || document.createElement('div');
 
 // Sidebar Navigation Elements
 const navIcons = document.querySelectorAll('.nav-icon[data-tab]');
@@ -383,63 +358,44 @@ const currentInterestsMini = document.getElementById('currentInterestsMini');
 
 // Search Elements
 const searchInput = document.getElementById('searchInput');
-const friendSearch = document.getElementById('friendSearch');
 
 // Tab Panels
 const chatsTab = document.getElementById('chatsTab');
 const friendsTab = document.getElementById('friendsTab');
 const updatesTab = document.getElementById('updatesTab');
 const callsTab = document.getElementById('callsTab');
+const groupsTab = document.getElementById('groupsTab');
 const toolsTab = document.getElementById('toolsTab');
 
 // Chat List Elements
-const chatList = document.getElementById('chatList');
+const chatList = document.getElementById('chatList') || (function() {
+    const element = document.createElement('div');
+    element.id = 'chatList';
+    element.className = 'space-y-2';
+    if (chatsTab) chatsTab.appendChild(element);
+    return element;
+})();
+
 const noChatsMessage = document.getElementById('noChatsMessage');
-
-// Friends Tab Elements
-const addFriendBtn = document.getElementById('addFriendBtn');
-const friendRequestsSection = document.getElementById('friendRequestsSection');
-const friendRequestsList = document.getElementById('friendRequestsList');
-const noFriendRequests = document.getElementById('noFriendRequests');
-const friendsList = document.getElementById('friendsList');
-const noFriendsMessage = document.getElementById('noFriendsMessage');
-
-// Updates Tab Elements
-const myStatus = document.getElementById('myStatus');
-const statusUpdates = document.getElementById('statusUpdates');
-
-// Calls Tab Elements
-const favoritesList = document.getElementById('favoritesList');
-const manageFavorites = document.getElementById('manageFavorites');
-const recentCalls = document.getElementById('recentCalls');
-
-// Tools Tab Elements
-const moodOptions = document.querySelectorAll('.mood-option');
-const quickActionBtns = document.querySelectorAll('.quick-action-btn');
-const catalogueBtn = document.getElementById('catalogueBtn');
-const advertiseBtn = document.getElementById('advertiseBtn');
-const labelsBtn = document.getElementById('labelsBtn');
-const greetingBtn = document.getElementById('greetingBtn');
-const awayBtn = document.getElementById('awayBtn');
-const aiSummarize = document.getElementById('aiSummarize');
-const aiReply = document.getElementById('aiReply');
 
 // Chat Header Elements
 const chatHeader = document.getElementById('chatHeader');
-const backToChats = document.getElementById('backToChats');
-const chatAvatar = document.getElementById('chatAvatar');
-const chatTitle = document.getElementById('chatTitle');
+const backToChats = document.getElementById('backToChats') || (function() {
+    const button = document.createElement('button');
+    button.id = 'backToChats';
+    button.innerHTML = '<i class="fas fa-arrow-left"></i>';
+    button.className = 'p-2 text-gray-600 hover:text-gray-900';
+    button.addEventListener('click', goBackToTabs);
+    return button;
+})();
+
+const chatAvatar = document.getElementById('chatAvatar') || document.createElement('img');
+const chatTitle = document.getElementById('chatTitle') || document.createElement('div');
 const chatStatus = document.getElementById('chatStatus');
 const moodIndicator = document.getElementById('moodIndicator');
 const statusText = document.getElementById('statusText');
 const typingIndicator = document.getElementById('typingIndicator');
 const chatMenuBtn = document.getElementById('chatMenuBtn');
-
-// Call buttons in chat header
-const callButtons = {
-    voice: document.querySelector('.friend-call-btn'),
-    video: document.querySelector('.friend-video-call-btn')
-};
 
 // Shared Goals Section
 const sharedGoalsSection = document.getElementById('sharedGoalsSection');
@@ -483,12 +439,6 @@ const dismissSuggestion = document.getElementById('dismissSuggestion');
 // Input Area Elements
 const inputArea = document.getElementById('inputArea');
 const attachBtn = document.getElementById('attachBtn');
-// Camera button removed as per your changes
-// const cameraBtn = document.getElementById('cameraBtn');
-// Emoji button removed as per your changes
-// const emojiBtn = document.getElementById('emojiBtn');
-// Voice to text button moved to header
-// const voiceToTextBtn = document.getElementById('voiceToTextBtn');
 const voiceRecordingIndicator = document.getElementById('voiceRecordingIndicator');
 const messageInput = document.getElementById('messageInput');
 const emojiPicker = document.getElementById('emojiPicker');
@@ -513,34 +463,6 @@ const fileSize = document.getElementById('fileSize');
 const uploadProgressBar = document.getElementById('uploadProgressBar');
 const removeFile = document.getElementById('removeFile');
 
-// Video Conference Elements
-const videoConference = document.getElementById('videoConference');
-const conferenceGrid = document.getElementById('conferenceGrid');
-const conferenceMuteBtn = document.getElementById('conferenceMuteBtn');
-const conferenceVideoBtn = document.getElementById('conferenceVideoBtn');
-const conferenceEndBtn = document.getElementById('conferenceEndBtn');
-
-// Video Call Elements
-const videoCallContainer = document.getElementById('videoCallContainer');
-const remoteVideo = document.getElementById('remoteVideo');
-const localVideo = document.getElementById('localVideo');
-const toggleMicBtn = document.getElementById('toggleMicBtn');
-const toggleCameraBtn = document.getElementById('toggleCameraBtn');
-const switchCameraBtn = document.getElementById('switchCameraBtn');
-const endCallBtn = document.getElementById('endCallBtn');
-const callStatus = document.getElementById('callStatus');
-const callTimer = document.getElementById('callTimer');
-
-// Incoming Call Popup
-const incomingCallPopup = document.getElementById('incomingCallPopup');
-const incomingCallerName = document.getElementById('incomingCallerName');
-const incomingCallType = document.getElementById('incomingCallType');
-const acceptCallBtn = document.getElementById('acceptCallBtn');
-const rejectCallBtn = document.getElementById('rejectCallBtn');
-
-// Active Call Container
-const callContainer = document.getElementById('callContainer');
-
 // Create Goal Modal
 const createGoalModal = document.getElementById('createGoalModal');
 const goalTitle = document.getElementById('goalTitle');
@@ -551,9 +473,6 @@ const goalProgressValue = document.getElementById('goalProgressValue');
 const saveGoal = document.getElementById('saveGoal');
 const cancelGoal = document.getElementById('cancelGoal');
 const closeCreateGoal = document.getElementById('closeCreateGoal');
-
-// Status Creation Modal
-const statusCreation = document.getElementById('statusCreation');
 
 // Context Menus
 const messageContextMenu = document.getElementById('messageContextMenu');
@@ -568,13 +487,6 @@ const filePreviewContent = document.getElementById('filePreviewContent');
 const downloadFileBtn = document.getElementById('downloadFileBtn');
 const closeEnhancedFilePreview = document.getElementById('closeEnhancedFilePreview');
 
-// All Friends Modal
-const allFriendsModal = document.getElementById('allFriendsModal');
-const allFriendsSearch = document.getElementById('allFriendsSearch');
-const allFriendsList = document.getElementById('allFriendsList');
-const noAllFriendsMessage = document.getElementById('noAllFriendsMessage');
-const closeAllFriends = document.getElementById('closeAllFriends');
-
 // Features Modal
 const featuresModal = document.getElementById('featuresModal');
 const closeFeatures = document.getElementById('closeFeatures');
@@ -587,34 +499,127 @@ const closeMood = document.getElementById('closeMood');
 const quickActionsModal = document.getElementById('quickActionsModal');
 const closeQuickActions = document.getElementById('closeQuickActions');
 
-// Add Friend Modal
-const addFriendModal = document.getElementById('addFriendModal');
-const friendSearchInput = document.getElementById('friendSearchInput');
-const searchResults = document.getElementById('searchResults');
-const searchFriend = document.getElementById('searchFriend');
-const cancelFriend = document.getElementById('cancelFriend');
-
-// Enhanced Friend Search Modal
-const friendSearchResultsModal = document.getElementById('friendSearchResultsModal');
-const enhancedSearchResults = document.getElementById('enhancedSearchResults');
-const closeEnhancedSearch = document.getElementById('closeEnhancedSearch');
-
-// Edit Friend Modal
-const editFriendModal = document.getElementById('editFriendModal');
-const editFriendName = document.getElementById('editFriendName');
-const editFriendStatus = document.getElementById('editFriendStatus');
-const messageFriend = document.getElementById('messageFriend');
-const callFriend = document.getElementById('callFriend');
-const removeFriendBtn = document.getElementById('removeFriend');
-const cancelEditFriend = document.getElementById('cancelEditFriend');
-
 // Toast Notifications Container
-const toastContainer = document.getElementById('toastContainer');
+const toastContainer = document.getElementById('toastContainer') || (function() {
+    const container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'fixed top-4 right-4 z-50 flex flex-col gap-2';
+    document.body.appendChild(container);
+    return container;
+})();
 
-// Business Profile Elements (assuming they exist)
-const businessProfileModal = document.getElementById('businessProfileModal');
-const aiSummaryModal = document.getElementById('aiSummaryModal');
-const smartRepliesModal = document.getElementById('smartRepliesModal');
+// Business Profile Elements
+const businessProfileModal = document.getElementById('businessProfileModal') || null;
+const aiSummaryModal = document.getElementById('aiSummaryModal') || null;
+const smartRepliesModal = document.getElementById('smartRepliesModal') || null;
+
+// Create missing chat interface elements if they don't exist
+function ensureChatInterfaceElements() {
+    // Ensure messages container exists
+    if (!document.getElementById('messagesContainer')) {
+        const container = document.createElement('div');
+        container.id = 'messagesContainer';
+        container.className = 'flex-1 overflow-y-auto p-4 space-y-4';
+        
+        // Find where to insert it (after chatHeader if it exists)
+        const mainChatArea = document.querySelector('.flex-1.flex.flex-col');
+        if (mainChatArea) {
+            if (chatHeader) {
+                chatHeader.after(container);
+            } else {
+                mainChatArea.prepend(container);
+            }
+        } else {
+            document.body.appendChild(container);
+        }
+        console.log('Created messagesContainer');
+    }
+    
+    // Ensure chat header exists
+    if (!document.getElementById('chatHeader')) {
+        const header = document.createElement('div');
+        header.id = 'chatHeader';
+        header.className = 'bg-white border-b p-4 flex items-center justify-between hidden';
+        header.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <button id="backToChats" class="p-2 text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <img id="chatAvatar" class="w-10 h-10 rounded-full" src="https://ui-avatars.com/api/?name=User&background=7C3AED&color=fff" alt="Chat">
+                <div>
+                    <div id="chatTitle" class="font-semibold">Chat</div>
+                    <div id="chatStatus" class="text-sm text-gray-500 flex items-center">
+                        <span id="statusText" class="mr-2">Online</span>
+                        <span id="typingIndicator" class="text-green-500 hidden">
+                            <i class="fas fa-circle-notch fa-spin mr-1"></i>typing...
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <button id="chatMenuBtn" class="p-2 text-gray-600 hover:text-gray-900">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        `;
+        
+        const appContainer = document.querySelector('#chatApp .flex-1');
+        if (appContainer) {
+            appContainer.prepend(header);
+        } else {
+            document.body.appendChild(header);
+        }
+        
+        // Add event listener to back button
+        const backBtn = document.getElementById('backToChats');
+        if (backBtn) {
+            backBtn.addEventListener('click', goBackToTabs);
+        }
+        console.log('Created chatHeader');
+    }
+    
+    // Ensure input area exists
+    if (!document.getElementById('inputArea')) {
+        const inputAreaEl = document.createElement('div');
+        inputAreaEl.id = 'inputArea';
+        inputAreaEl.className = 'bg-white border-t p-4 hidden';
+        inputAreaEl.innerHTML = `
+            <div class="flex items-center space-x-2">
+                <button id="attachBtn" class="p-3 text-gray-500 hover:text-purple-600 rounded-full hover:bg-gray-100">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <div class="flex-1 relative">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Type a message..." 
+                        rows="1"
+                        class="w-full p-3 border border-gray-300 rounded-full focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-none"
+                        style="min-height: 44px; max-height: 120px;"
+                    ></textarea>
+                    <button id="emojiPickerBtn" class="absolute right-3 top-3 text-gray-400 hover:text-gray-600">
+                        <i class="far fa-smile"></i>
+                    </button>
+                </div>
+                <button id="sendBtn" class="p-3 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition-colors">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div id="emojiPicker" class="absolute bottom-20 left-4 bg-white border rounded-lg shadow-lg p-2 hidden" style="z-index: 1000; max-height: 200px; overflow-y: auto;"></div>
+            <div id="isTyping" class="text-xs text-gray-500 mt-2 hidden">
+                <span id="typingUsers"></span> is typing...
+            </div>
+            <button id="scrollToBottom" class="fixed bottom-20 right-4 bg-purple-600 text-white p-2 rounded-full shadow-lg hover:bg-purple-700 hidden">
+                <i class="fas fa-arrow-down"></i>
+            </button>
+        `;
+        
+        const mainChatArea = document.querySelector('.flex-1.flex.flex-col');
+        if (mainChatArea) {
+            mainChatArea.appendChild(inputAreaEl);
+        } else {
+            document.body.appendChild(inputAreaEl);
+        }
+        console.log('Created inputArea');
+    }
+}
 
 // ==================== UTILITY FUNCTIONS ====================
 function formatFileSize(bytes) {
@@ -698,23 +703,33 @@ function formatTimeAgo(date) {
 
 function showToast(message, type = 'info') {
     console.log(`Toast: ${message} (${type})`);
-    if (!toastContainer) {
-        console.warn('Toast container not found');
-        return;
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast ${type} px-4 py-3 rounded-lg shadow-lg text-white max-w-xs transition-all duration-300 transform translate-x-full`;
+    
+    // Set background color based on type
+    switch(type) {
+        case 'success': toast.style.backgroundColor = '#10B981'; break;
+        case 'error': toast.style.backgroundColor = '#EF4444'; break;
+        case 'warning': toast.style.backgroundColor = '#F59E0B'; break;
+        case 'info': toast.style.backgroundColor = '#3B82F6'; break;
+        default: toast.style.backgroundColor = '#6B7280';
     }
     
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
     toast.textContent = message;
     
-    toastContainer.appendChild(toast);
+    const container = document.getElementById('toastContainer');
+    container.appendChild(toast);
     
     // Trigger animation
-    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.style.transform = 'translateX(0)';
+    }, 10);
     
     // Remove after delay
     setTimeout(() => {
-        toast.classList.remove('show');
+        toast.style.transform = 'translateX(100%)';
         setTimeout(() => {
             if (toast.parentNode) {
                 toast.parentNode.removeChild(toast);
@@ -739,31 +754,31 @@ function getFileIcon(fileType) {
     if (fileType.includes('zip') || fileType.includes('compressed')) return 'fa-file-archive';
     return 'fa-file';
 }
+
 // ==================== INTERNET CONNECTION DETECTION ====================
 function setupInternetDetection() {
     // Update UI based on connection status
     function updateConnectionStatus(isOnline) {
-        const statusElement = document.getElementById('connectionStatus');
+        let statusElement = document.getElementById('connectionStatus');
         if (!statusElement) {
             // Create status indicator if it doesn't exist
-            const statusDiv = document.createElement('div');
-            statusDiv.id = 'connectionStatus';
-            statusDiv.className = 'fixed top-0 left-0 right-0 z-50 text-center py-1 text-xs font-semibold transition-all duration-300';
-            statusDiv.style.display = 'none';
-            document.body.appendChild(statusDiv);
+            statusElement = document.createElement('div');
+            statusElement.id = 'connectionStatus';
+            statusElement.className = 'fixed top-0 left-0 right-0 z-50 text-center py-1 text-xs font-semibold transition-all duration-300';
+            statusElement.style.display = 'none';
+            document.body.appendChild(statusElement);
         }
         
-        const element = document.getElementById('connectionStatus');
         if (isOnline) {
-            element.textContent = '✅ Online';
-            element.className = 'fixed top-0 left-0 right-0 z-50 text-center py-1 text-xs font-semibold bg-green-500 text-white transition-all duration-300';
+            statusElement.textContent = '✅ Online';
+            statusElement.className = 'fixed top-0 left-0 right-0 z-50 text-center py-1 text-xs font-semibold bg-green-500 text-white transition-all duration-300';
             setTimeout(() => {
-                element.style.display = 'none';
+                statusElement.style.display = 'none';
             }, 3000);
         } else {
-            element.textContent = '⚠️ You are offline - Some features may not work';
-            element.className = 'fixed top-0 left-0 right-0 z-50 text-center py-1 text-xs font-semibold bg-red-500 text-white transition-all duration-300';
-            element.style.display = 'block';
+            statusElement.textContent = '⚠️ You are offline - Some features may not work';
+            statusElement.className = 'fixed top-0 left-0 right-0 z-50 text-center py-1 text-xs font-semibold bg-red-500 text-white transition-all duration-300';
+            statusElement.style.display = 'block';
         }
     }
     
@@ -774,7 +789,7 @@ function setupInternetDetection() {
         showToast('Back online!', 'success');
         
         // Re-enable Firestore
-        if (db) {
+        if (db && typeof db.enableNetwork === 'function') {
             db.enableNetwork().then(() => {
                 console.log('Firestore reconnected');
             });
@@ -796,12 +811,14 @@ function setupNetworkMonitoring() {
     window.addEventListener('online', () => {
         console.log('App is online');
         showToast('Connection restored', 'success');
-        firebase.firestore().enableNetwork().then(() => {
-            console.log('Firestore reconnected');
-            if (currentUser) {
-                loadUserData();
-            }
-        });
+        if (db && typeof db.enableNetwork === 'function') {
+            db.enableNetwork().then(() => {
+                console.log('Firestore reconnected');
+                if (currentUser) {
+                    loadUserData();
+                }
+            });
+        }
     });
 
     window.addEventListener('offline', () => {
@@ -811,231 +828,6 @@ function setupNetworkMonitoring() {
 
     if (!navigator.onLine) {
         showToast('You are currently offline', 'warning');
-    }
-}
-
-// ==================== AI FEATURES MANAGEMENT ====================
-function hideAIFeatures() {
-    console.log('Hiding AI features...');
-    
-    // Hide AI Summarize button
-    const aiSummarize = document.getElementById('aiSummarize');
-    if (aiSummarize) {
-        aiSummarize.style.display = 'none';
-        console.log('✅ Hidden: AI Summarize button');
-    }
-    
-    // Hide AI Reply button
-    const aiReply = document.getElementById('aiReply');
-    if (aiReply) {
-        aiReply.style.display = 'none';
-        console.log('✅ Hidden: AI Reply button');
-    }
-    
-    // Hide AI related modals if they exist
-    const aiSummaryModal = document.getElementById('aiSummaryModal');
-    if (aiSummaryModal) {
-        aiSummaryModal.style.display = 'none';
-    }
-    
-    const smartRepliesModal = document.getElementById('smartRepliesModal');
-    if (smartRepliesModal) {
-        smartRepliesModal.style.display = 'none';
-    }
-    
-    // Add enable button if not exists
-    const toolsTab = document.getElementById('toolsTab');
-    if (toolsTab && !document.getElementById('enableAIButton')) {
-        const enableButton = document.createElement('button');
-        enableButton.id = 'enableAIButton';
-        enableButton.className = 'enable-ai-button';
-        enableButton.innerHTML = `
-            <div class="text-center p-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg shadow-lg">
-                <i class="fas fa-robot text-3xl mb-2"></i>
-                <h3 class="font-bold text-lg mb-1">Enable AI Features</h3>
-                <p class="text-sm opacity-90 mb-3">Unlock smart replies, conversation summaries, and more</p>
-                <div class="flex space-x-2">
-                    <button id="enableAIFeaturesBtn" class="flex-1 bg-white text-purple-600 py-2 rounded-lg font-medium hover:bg-gray-100">
-                        Enable Now
-                    </button>
-                    <button id="learnMoreAIBtn" class="px-3 bg-transparent border border-white py-2 rounded-lg hover:bg-white hover:bg-opacity-20">
-                        Learn More
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        // Insert at the beginning of tools content
-        const toolsContent = toolsTab.querySelector('.p-4') || toolsTab;
-        if (toolsContent.firstChild) {
-            toolsContent.insertBefore(enableButton, toolsContent.firstChild);
-        } else {
-            toolsContent.appendChild(enableButton);
-        }
-        
-        // Add event listeners
-        document.getElementById('enableAIFeaturesBtn')?.addEventListener('click', enableAIFeatures);
-        document.getElementById('learnMoreAIBtn')?.addEventListener('click', showAILearnMore);
-    }
-}
-
-function showAIFeatures() {
-    console.log('Showing AI features...');
-    
-    // Show AI Summarize button
-    const aiSummarize = document.getElementById('aiSummarize');
-    if (aiSummarize) {
-        aiSummarize.style.display = 'flex';
-        console.log('✅ Showing: AI Summarize button');
-    }
-    
-    // Show AI Reply button
-    const aiReply = document.getElementById('aiReply');
-    if (aiReply) {
-        aiReply.style.display = 'flex';
-        console.log('✅ Showing: AI Reply button');
-    }
-    
-    // Remove enable button if exists
-    const enableButton = document.getElementById('enableAIButton');
-    if (enableButton) {
-        enableButton.remove();
-        console.log('✅ Removed enable AI button');
-    }
-}
-
-function enableAIFeatures() {
-    if (!currentUser || !currentUser.uid) {
-        showToast('Please sign in to enable AI features', 'error');
-        return;
-    }
-    
-    // Create a simple modal for confirmation
-    const modalHTML = `
-        <div id="aiEnableModal" class="modal fixed inset-0 flex items-center justify-center z-50">
-            <div class="modal-backdrop fixed inset-0 bg-black bg-opacity-50"></div>
-            <div class="modal-content bg-white rounded-lg shadow-xl max-w-md w-full mx-4 z-10">
-                <div class="p-6">
-                    <div class="text-center mb-4">
-                        <i class="fas fa-robot text-4xl text-purple-600 mb-3"></i>
-                        <h3 class="text-xl font-bold text-gray-800">Enable AI Features</h3>
-                    </div>
-                    
-                    <div class="space-y-3 mb-6">
-                        <div class="flex items-start">
-                            <i class="fas fa-comment-dots text-green-500 mt-1 mr-3"></i>
-                            <div>
-                                <p class="font-medium">Smart Replies</p>
-                                <p class="text-sm text-gray-600">AI-powered reply suggestions</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-file-alt text-blue-500 mt-1 mr-3"></i>
-                            <div>
-                                <p class="font-medium">Conversation Summaries</p>
-                                <p class="text-sm text-gray-600">AI-generated chat summaries</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-bolt text-yellow-500 mt-1 mr-3"></i>
-                            <div>
-                                <p class="font-medium">Fast & Smart</p>
-                                <p class="text-sm text-gray-600">Instant AI assistance</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex space-x-3">
-                        <button id="confirmEnableAI" class="flex-1 bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700">
-                            Enable AI Features
-                        </button>
-                        <button id="cancelEnableAI" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-medium hover:bg-gray-300">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Add modal to body
-    const modalDiv = document.createElement('div');
-    modalDiv.innerHTML = modalHTML;
-    document.body.appendChild(modalDiv);
-    
-    // Show modal
-    const modal = document.getElementById('aiEnableModal');
-    modal.classList.remove('hidden');
-    
-    // Event listeners
-    document.getElementById('confirmEnableAI').addEventListener('click', async () => {
-        try {
-            showToast('Enabling AI features...', 'info');
-            
-            // Save setting to Firebase
-            await db.collection('users').doc(currentUser.uid).update({
-                aiEnabled: true,
-                aiFeaturesEnabled: true,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            // Update local data
-            if (!currentUserData) currentUserData = {};
-            currentUserData.aiEnabled = true;
-            currentUserData.aiFeaturesEnabled = true;
-            
-            // Update UI
-            showAIFeatures();
-            
-            // Close modal
-            modal.remove();
-            
-            showToast('AI features enabled successfully!', 'success');
-            
-        } catch (error) {
-            console.error('Error enabling AI features:', error);
-            showToast('Error enabling AI features', 'error');
-            modal.remove();
-        }
-    });
-    
-    document.getElementById('cancelEnableAI').addEventListener('click', () => {
-        modal.remove();
-    });
-    
-    modal.querySelector('.modal-backdrop').addEventListener('click', () => {
-        modal.remove();
-    });
-}
-
-function showAILearnMore() {
-    alert('AI Features include:\n\n• Smart Reply Suggestions\n• Conversation Summaries\n• AI-powered assistance\n\nThese features help you communicate more effectively!');
-}
-
-function checkAIFeaturesStatus() {
-    console.log('Checking AI features status...');
-    
-    // Default to hidden if no user data
-    if (!currentUserData) {
-        console.log('No user data available, hiding AI features');
-        hideAIFeatures();
-        return;
-    }
-    
-    // Check if AI is enabled
-    const aiEnabled = currentUserData.aiEnabled || currentUserData.aiFeaturesEnabled;
-    
-    console.log('AI features status:', { 
-        aiEnabled: aiEnabled,
-        userData: currentUserData 
-    });
-    
-    if (aiEnabled) {
-        console.log('Showing AI features');
-        showAIFeatures();
-    } else {
-        console.log('Hiding AI features');
-        hideAIFeatures();
     }
 }
 
@@ -1049,13 +841,16 @@ async function initApp() {
     console.log('Initializing app...');
     
     try {
-        // 1. Setup basic error handlers
+        // 1. Ensure all UI elements exist
+        ensureChatInterfaceElements();
+        
+        // 2. Setup basic error handlers
         setupGlobalErrorHandling();
         setupImageErrorHandling();
         setupNetworkMonitoring();
         setupInternetDetection();
 
-        // 2. Setup UI components
+        // 3. Setup UI components
         initializeTabs();
         setupEventListeners();
         initEmojiPicker();
@@ -1064,57 +859,13 @@ async function initApp() {
         setupPollSystem();
         setupMoodSuggestions();
         setupBusinessTools();
-        setupAIFeatures();
         setupHelpCenter();
         setupModals();
         setupContextMenuActions();
         setupAutoScrollDetection();
         
-        // 3. Initialize Firebase with retry logic
-        let firebaseInitialized = false;
-        let retryCount = 0;
-        const maxRetries = 3;
-        
-        async function initializeFirebaseWithRetry() {
-            try {
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                
-                auth = firebase.auth();
-                db = firebase.firestore();
-                storage = firebase.storage();
-                
-                // Test connection
-                await db.collection('users').limit(1).get();
-                
-                console.log('✅ Firebase initialized successfully');
-                firebaseInitialized = true;
-                
-                // Share with other scripts
-                window.db = db;
-                window.auth = auth;
-                window.storage = storage;
-                window.firebase = firebase;
-                console.log('✅ Firebase shared with call.js');
-                
-                // Enable offline persistence
-                setupFirestoreOfflineHandler();
-                
-            } catch (error) {
-                console.error(`Firebase initialization failed (attempt ${retryCount + 1}/${maxRetries}):`, error);
-                retryCount++;
-                
-                if (retryCount < maxRetries) {
-                    console.log(`Retrying in ${retryCount * 2000}ms...`);
-                    setTimeout(initializeFirebaseWithRetry, retryCount * 2000);
-                } else {
-                    showToast('Connection error. Please check your internet connection.', 'error');
-                }
-            }
-        }
-        
-        await initializeFirebaseWithRetry();
+        // 4. Initialize Firebase with proper timing
+        await initializeFirebaseProperly();
         
         if (typeof window.settings !== 'undefined') {
             window.settings.init({
@@ -1127,28 +878,28 @@ async function initApp() {
         }
         
         // 5. Check auth state
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                console.log('✅ User authenticated:', user.uid);
-                currentUser = user;
-                
-                // Load user data
-                await loadUserData();
-                
-                // ⭐ CHECK AI FEATURES STATUS AFTER USER DATA LOADS
-                setTimeout(() => {
-                    checkAIFeaturesStatus();
-                }, 1000);
-                
-                // Notify other scripts
-                if (window.onUserAuthenticated) {
-                    window.onUserAuthenticated();
+        if (auth) {
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    console.log('✅ User authenticated:', user.uid);
+                    currentUser = user;
+                    
+                    // Load user data
+                    await loadUserData();
+                    
+                    // Notify other scripts
+                    if (window.onUserAuthenticated) {
+                        window.onUserAuthenticated();
+                    }
+                } else {
+                    console.log('⚠️ No user, redirecting...');
+                    window.location.href = 'index.html';
                 }
-            } else {
-                console.log('⚠️ No user, redirecting...');
-                window.location.href = 'index.html';
-            }
-        });
+            });
+        } else {
+            console.error('Firebase auth not initialized');
+            showToast('Authentication error. Please refresh the page.', 'error');
+        }
         
     } catch (error) {
         console.error('❌ Error in initApp:', error);
@@ -1156,30 +907,112 @@ async function initApp() {
     }
 }
 
+async function initializeFirebaseProperly() {
+    try {
+        // Check if Firebase is already available
+        if (typeof firebase === 'undefined') {
+            console.error('Firebase SDK not loaded');
+            throw new Error('Firebase SDK not loaded. Make sure firebase scripts are included.');
+        }
+        
+        // Initialize Firebase app if not already initialized
+        if (!firebase.apps.length) {
+            console.log('Initializing Firebase...');
+            firebase.initializeApp(firebaseConfig);
+        }
+        
+        // Initialize services
+        auth = firebase.auth();
+        db = firebase.firestore();
+        storage = firebase.storage();
+        
+        // Configure Firestore settings (this is the new way instead of enablePersistence)
+        if (db && db.settings) {
+            const settings = {
+                cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+            };
+            db.settings(settings);
+        }
+        
+        // Share with other scripts
+        window.db = db;
+        window.auth = auth;
+        window.storage = storage;
+        window.firebase = firebase;
+        
+        console.log('✅ Firebase initialized successfully');
+        return true;
+        
+    } catch (error) {
+        console.error('Firebase initialization error:', error);
+        
+        // Show user-friendly error based on error type
+        if (error.code === 'failed-precondition') {
+            showToast('Multiple tabs open. Please close other tabs or refresh.', 'error');
+        } else {
+            showToast('Database connection error. Some features may not work.', 'error');
+        }
+        
+        // Return a dummy db object to prevent further errors
+        db = {
+            collection: () => ({
+                doc: () => ({
+                    get: () => Promise.resolve({ exists: false }),
+                    set: () => Promise.resolve(),
+                    update: () => Promise.resolve(),
+                    onSnapshot: () => () => {}
+                }),
+                where: () => ({
+                    orderBy: () => ({
+                        onSnapshot: () => () => {}
+                    }),
+                    get: () => Promise.resolve({ empty: true, forEach: () => {} })
+                })
+            }),
+            enableNetwork: () => Promise.resolve(),
+            enablePersistence: () => Promise.resolve()
+        };
+        
+        window.db = db;
+        return false;
+    }
+}
+
 // ==================== FIREBASE OFFLINE HANDLER ====================
 function setupFirestoreOfflineHandler() {
-    // Enable offline persistence
-    db.enablePersistence()
-        .then(() => {
-            console.log('Firestore offline persistence enabled');
-        })
-        .catch((err) => {
-            if (err.code == 'failed-precondition') {
-                console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-            } else if (err.code == 'unimplemented') {
-                console.log('The current browser doesn\'t support offline persistence');
-            }
-        });
+    if (!db) return;
+    
+    // Enable offline persistence (old way - kept for compatibility)
+    if (typeof db.enablePersistence === 'function') {
+        db.enablePersistence()
+            .then(() => {
+                console.log('Firestore offline persistence enabled');
+            })
+            .catch((err) => {
+                if (err.code == 'failed-precondition') {
+                    console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+                } else if (err.code == 'unimplemented') {
+                    console.log('The current browser doesn\'t support offline persistence');
+                }
+            });
+    }
     
     // Handle network status
-    db.onSnapshotsInSync(() => {
-        console.log('Firestore is in sync with the server');
-    });
+    if (typeof db.onSnapshotsInSync === 'function') {
+        db.onSnapshotsInSync(() => {
+            console.log('Firestore is in sync with the server');
+        });
+    }
 }
 
 // ==================== USER DATA MANAGEMENT ====================
 async function loadUserData() {
     try {
+        if (!currentUser || !currentUser.uid) {
+            console.error('No authenticated user');
+            return;
+        }
+
         console.log('Loading user data for:', currentUser.uid);
 
         // Perform cleanup
@@ -1201,8 +1034,7 @@ async function loadUserData() {
             console.log('User data loaded:', {
                 uid: currentUser.uid,
                 displayName: currentUserData.displayName,
-                email: currentUserData.email,
-                aiEnabled: currentUserData.aiEnabled || false
+                email: currentUserData.email
             });
             
             // Ensure required fields exist
@@ -1214,20 +1046,13 @@ async function loadUserData() {
                 coverURL: currentUserData.coverURL || '',
                 about: currentUserData.about || '',
                 phone: currentUserData.phone || '',
-                createdAt: currentUserData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
-                lastSeen: currentUserData.lastSeen || firebase.firestore.FieldValue.serverTimestamp(),
+                createdAt: currentUserData.createdAt || (firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date()),
+                lastSeen: currentUserData.lastSeen || (firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date()),
                 status: currentUserData.status || 'offline',
-                mood: currentUserData.mood || 'neutral',
-                aiEnabled: currentUserData.aiEnabled || false,
-                aiFeaturesEnabled: currentUserData.aiFeaturesEnabled || false
+                mood: currentUserData.mood || 'neutral'
             };
             
             initializeUserData();
-            
-            // ⭐ IMPORTANT: Check AI features status HERE, after user data is loaded
-            setTimeout(() => {
-                checkAIFeaturesStatus();
-            }, 500);
             
         } else {
             console.log('Creating new user document');
@@ -1239,49 +1064,52 @@ async function loadUserData() {
                 coverURL: '',
                 about: '',
                 phone: '',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+                createdAt: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
+                lastSeen: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
                 status: 'offline',
-                mood: 'neutral',
-                aiEnabled: false,
-                aiFeaturesEnabled: false
+                mood: 'neutral'
             };
 
             await db.collection('users').doc(currentUser.uid).set(currentUserData);
             console.log('New user document created');
             initializeUserData();
-            
-            // ⭐ Check AI features for new users too
-            setTimeout(() => {
-                checkAIFeaturesStatus();
-            }, 500);
         }
 
-        // Update ONLY lastSeen timestamp, NOT status
-        await db.collection('users').doc(currentUser.uid).update({
-            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        // Update lastSeen timestamp
+        if (firebase.firestore) {
+            await db.collection('users').doc(currentUser.uid).update({
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
 
         // Load UI & listeners
         showChatApp();
-        loadFriends();
-        loadAllUsers();
         
         setTimeout(() => {
             loadChatsTemporary();
         }, 500);
         
         requestNotificationPermission();
-        listenForFriendRequests();
-        
         initializeBusinessDocument(currentUser.uid);
 
     } catch (error) {
         console.error('Error in loadUserData:', error);
-        showToast('Error loading user data', 'error');
+        showToast('Error loading user data: ' + error.message, 'error');
+        
+        // Fallback to offline mode
+        currentUserData = {
+            uid: currentUser.uid,
+            email: currentUser.email,
+            displayName: currentUser.displayName || currentUser.email?.split('@')[0] || 'User',
+            photoURL: currentUser.photoURL || getDefaultAvatar('User'),
+            mood: 'neutral',
+            status: 'offline'
+        };
+        
+        initializeUserData();
+        showChatApp();
     }
 }
-
 
 function initializeUserData() {
     console.log('Initializing UI with user data');
@@ -1378,49 +1206,50 @@ function switchTab(tabName) {
             tabButton.classList.add('active');
         }
         
-        // Show/hide chat input area based on tab
-        if (tabName === 'chats' && currentChat) {
-            // If we're in the chats tab and have an active chat, show input area
-            if (inputArea) inputArea.classList.remove('hidden');
+        // Special handling for non-chat tabs
+        if (tabName !== 'chats') {
+            // For demo purposes, show a message instead of opening new windows
+            console.log(`Opening ${tabName} tab functionality`);
+            showToast(`${tabName.charAt(0).toUpperCase() + tabName.slice(1)} feature is coming soon`, 'info');
+            
+            // If the tab doesn't exist, show a message in the tab panel
+            if (tabName === 'groups' && tabPanel.innerHTML.trim() === '') {
+                tabPanel.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full p-8 text-center">
+                        <i class="fas fa-users text-4xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Groups Coming Soon</h3>
+                        <p class="text-gray-500 mb-6">Group chat functionality will be available soon!</p>
+                        <button onclick="createNewGroup()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                            Create Test Group
+                        </button>
+                    </div>
+                `;
+            }
+            
+            // Switch back to chats tab after 2 seconds for demo
+            setTimeout(() => {
+                switchTab('chats');
+            }, 2000);
         } else {
-            // For all other tabs, hide input area
-            if (inputArea) inputArea.classList.add('hidden');
+            // For chats tab, show input area if in chat
+            if (currentChat && inputArea) {
+                inputArea.classList.remove('hidden');
+            } else if (inputArea) {
+                inputArea.classList.add('hidden');
+            }
         }
     } else {
         console.error('❌ Tab panel not found for:', tabName);
+        showToast(`${tabName} tab not available`, 'error');
         return;
     }
     
     // Load REAL tab-specific content from Firebase
     setTimeout(() => {
-        loadTabContent(tabName);
-    }, 100);
-}
-
-function loadTabContent(tabName) {
-    console.log('📥 Loading REAL content for tab:', tabName);
-    
-    switch(tabName) {
-        case 'chats':
+        if (tabName === 'chats') {
             loadChats();
-            break;
-        case 'friends':
-            loadFriendsFromFirebase();
-            loadFriendRequests();
-            break;
-        case 'updates':
-            loadRealStatusUpdates();
-            break;
-        case 'calls':
-            loadRealCallHistory();
-            loadFavorites();
-            break;
-        case 'tools':
-            loadToolsTab();
-            loadPersonalizationDisplay();
-            loadMoodSuggestions();
-            break;
-    }
+        }
+    }, 100);
 }
 
 // ==================== CHAT MANAGEMENT ====================
@@ -1534,8 +1363,8 @@ function loadChatsTemporary() {
                     
                     // Sort by last message time (newest first)
                     chats.sort((a, b) => {
-                        const timeA = a.lastMessageTime ? a.lastMessageTime.toDate() : new Date(0);
-                        const timeB = b.lastMessageTime ? b.lastMessageTime.toDate() : new Date(0);
+                        const timeA = a.lastMessageTime ? (a.lastMessageTime.toDate ? a.lastMessageTime.toDate() : new Date(a.lastMessageTime)) : new Date(0);
+                        const timeB = b.lastMessageTime ? (b.lastMessageTime.toDate ? b.lastMessageTime.toDate() : new Date(b.lastMessageTime)) : new Date(0);
                         return timeB.getTime() - timeA.getTime();
                     });
                     
@@ -1647,28 +1476,14 @@ function loadChatsTemporary() {
     }
 }
 
-
-function createChatListElement() {
-    const chatsTab = document.getElementById('chatsTab');
-    if (!chatsTab) {
-        console.error('❌ chatsTab not found - creating entire tab structure');
-        createChatsTabStructure();
-        return;
-    }
-    
-    // Create chatsList element
-    if (!document.getElementById('chatsList')) {
-        const chatsList = document.createElement('div');
-        chatsList.id = 'chatsList';
-        chatsList.className = 'chats-list space-y-2';
-        chatsTab.appendChild(chatsList);
-        console.log('✅ Created chatsList element');
-    }
-}
-
 async function startChat(friendId, friendName) {
     try {
         console.log('Starting chat with:', friendName, friendId);
+        
+        if (!currentUser || !currentUser.uid) {
+            showToast('Please log in first', 'error');
+            return;
+        }
         
         // Create or get chat ID
         const chatId = [currentUser.uid, friendId].sort().join('_');
@@ -1687,8 +1502,8 @@ async function startChat(friendId, friendName) {
                     [friendId]: friendName
                 },
                 lastMessage: '',
-                lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastMessageTime: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
+                createdAt: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
                 typing: {},
                 unread: {
                     [currentUser.uid]: 0,
@@ -1711,21 +1526,21 @@ async function startChat(friendId, friendName) {
         // Update UI - SHOW CHAT INTERFACE
         const chatHeader = document.getElementById('chatHeader');
         const inputArea = document.getElementById('inputArea');
-        const noMessagesMessage = document.getElementById('noMessagesMessage');
+        const messagesContainer = document.getElementById('messagesContainer');
         const chatTitle = document.getElementById('chatTitle');
         const chatAvatar = document.getElementById('chatAvatar');
-        const messagesContainer = document.getElementById('messagesContainer');
         
-        // Hide the tab content containers
+        // Hide all tab panels
         document.querySelectorAll('.tab-panel').forEach(panel => {
             panel.classList.add('hidden');
         });
         
-        // Show chat interface
+        // Show chat interface elements
         if (chatHeader) chatHeader.classList.remove('hidden');
         if (inputArea) inputArea.classList.remove('hidden');
         if (messagesContainer) messagesContainer.classList.remove('hidden');
-        if (noMessagesMessage) noMessagesMessage.classList.add('hidden');
+        
+        // Update chat header
         if (chatTitle) chatTitle.textContent = friendName;
         if (chatAvatar) chatAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(friendName)}&background=7C3AED&color=fff`;
         
@@ -1734,6 +1549,7 @@ async function startChat(friendId, friendName) {
             messageInput.style.fontSize = '16px';
             messageInput.style.lineHeight = '1.5';
             messageInput.disabled = false;
+            messageInput.focus();
         }
         
         if (sendBtn) {
@@ -1743,9 +1559,6 @@ async function startChat(friendId, friendName) {
             sendBtn.disabled = false;
         }
         
-        // Add call buttons to chat header
-        addCallButtonsToChatHeader(friendId, friendName);
-        
         // Load messages
         loadMessages(chatId);
         
@@ -1754,46 +1567,7 @@ async function startChat(friendId, friendName) {
         
     } catch (error) {
         console.error('Error starting chat:', error);
-        showToast('Error starting chat', 'error');
-    }
-}
-
-function addCallButtonsToChatHeader(friendId, friendName) {
-    // Remove existing call buttons if any
-    const existingCallButtons = document.querySelectorAll('.call-btn-header');
-    existingCallButtons.forEach(btn => btn.remove());
-    
-    // Add voice call button
-    const voiceCallBtn = document.createElement('button');
-    voiceCallBtn.className = 'call-btn-header friend-call-btn';
-    voiceCallBtn.innerHTML = '<i class="fas fa-phone"></i>';
-    voiceCallBtn.title = 'Voice Call';
-    voiceCallBtn.dataset.id = friendId;
-    voiceCallBtn.dataset.name = friendName;
-    voiceCallBtn.onclick = () => {
-        if (window.startVoiceCallWithFriend) {
-            window.startVoiceCallWithFriend(friendId, friendName);
-        }
-    };
-    
-    // Add video call button
-    const videoCallBtn = document.createElement('button');
-    videoCallBtn.className = 'call-btn-header friend-video-call-btn';
-    videoCallBtn.innerHTML = '<i class="fas fa-video"></i>';
-    videoCallBtn.title = 'Video Call';
-    videoCallBtn.dataset.id = friendId;
-    videoCallBtn.dataset.name = friendName;
-    videoCallBtn.onclick = () => {
-        if (window.startVideoCallWithFriend) {
-            window.startVideoCallWithFriend(friendId, friendName);
-        }
-    };
-    
-    // Add to chat header actions
-    const chatActions = document.querySelector('.chat-header-actions');
-    if (chatActions) {
-        chatActions.appendChild(voiceCallBtn);
-        chatActions.appendChild(videoCallBtn);
+        showToast('Error starting chat: ' + error.message, 'error');
     }
 }
 
@@ -1801,6 +1575,10 @@ function goBackToTabs() {
     console.log('Going back to tabs');
     
     // Hide chat interface
+    const chatHeader = document.getElementById('chatHeader');
+    const inputArea = document.getElementById('inputArea');
+    const messagesContainer = document.getElementById('messagesContainer');
+    
     if (chatHeader) chatHeader.classList.add('hidden');
     if (inputArea) inputArea.classList.add('hidden');
     if (messagesContainer) messagesContainer.classList.add('hidden');
@@ -1916,7 +1694,9 @@ function loadMessages(chatId) {
                     hasNewMessages = true;
                     
                     // Check if we need to add a date separator
-                    const messageDate = message.timestamp ? message.timestamp.toDate().toDateString() : new Date().toDateString();
+                    const messageDate = message.timestamp ? 
+                        (message.timestamp.toDate ? message.timestamp.toDate().toDateString() : new Date(message.timestamp).toDateString()) 
+                        : new Date().toDateString();
                     if (messageDate !== lastDate) {
                         addDateSeparator(messageDate);
                         lastDate = messageDate;
@@ -1965,7 +1745,11 @@ function loadMessages(chatId) {
                     
                     const typingUsersList = Object.keys(typing).filter(userId => typing[userId] === true);
                     
-                    if (typingUsers && isTyping) {
+                    const typingIndicator = document.getElementById('typingIndicator');
+                    const isTyping = document.getElementById('isTyping');
+                    const typingUsers = document.getElementById('typingUsers');
+                    
+                    if (typingUsers && isTyping && typingIndicator) {
                         if (typingUsersList.length > 0) {
                             // Get names of typing users
                             const typingNames = typingUsersList.map(userId => {
@@ -1976,8 +1760,10 @@ function loadMessages(chatId) {
                             
                             typingUsers.textContent = typingNames.join(', ');
                             isTyping.classList.remove('hidden');
+                            typingIndicator.classList.remove('hidden');
                         } else {
                             isTyping.classList.add('hidden');
+                            typingIndicator.classList.add('hidden');
                         }
                     }
                 }
@@ -1993,22 +1779,27 @@ function addDateSeparator(dateString) {
     if (!messagesContainer) return;
     
     const dateElement = document.createElement('div');
-    dateElement.className = 'date-separator';
+    dateElement.className = 'date-separator text-center my-4';
+    dateElement.innerHTML = `
+        <span class="inline-block px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+            ${getDisplayDate(dateString)}
+        </span>
+    `;
     
+    messagesContainer.appendChild(dateElement);
+}
+
+function getDisplayDate(dateString) {
     const today = new Date().toDateString();
     const yesterday = new Date(Date.now() - 86400000).toDateString();
     
-    let displayDate = dateString;
     if (dateString === today) {
-        displayDate = 'Today';
+        return 'Today';
     } else if (dateString === yesterday) {
-        displayDate = 'Yesterday';
+        return 'Yesterday';
     } else {
-        displayDate = new Date(dateString).toLocaleDateString();
+        return new Date(dateString).toLocaleDateString();
     }
-    
-    dateElement.innerHTML = `<span>${displayDate}</span>`;
-    messagesContainer.appendChild(dateElement);
 }
 
 function addMessageToUI(message, messageId) {
@@ -2018,61 +1809,77 @@ function addMessageToUI(message, messageId) {
     const messageElement = document.createElement('div');
     
     const isSent = message.senderId === currentUser.uid;
-    const messageTime = message.timestamp ? message.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now';
+    const messageTime = message.timestamp ? 
+        (message.timestamp.toDate ? message.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) 
+        : 'Just now';
     
     let statusIcon = '🕒'; // sent
     if (message.status === 'delivered') statusIcon = '✓✓';
     if (message.status === 'read') statusIcon = '✓✓👁️';
     
-    messageElement.className = `message-item ${isSent ? 'outgoing' : 'incoming'}`;
+    messageElement.className = `flex ${isSent ? 'justify-end' : 'justify-start'} mb-4`;
     messageElement.dataset.messageId = messageId;
-    messageElement.dataset.senderId = message.senderId;
-    messageElement.dataset.timestamp = message.timestamp ? message.timestamp.toMillis() : Date.now();
-    messageElement.dataset.type = message.type || 'text';
     
     // Check if message has file attachment
     if (message.file) {
         messageElement.innerHTML = `
-            <div class="message-content">
-                <div class="message-sender">${message.senderName || 'Unknown'}</div>
-                <div class="file-message">
-                    <div class="file-icon">
+            <div class="max-w-xs lg:max-w-md ${isSent ? 'bg-purple-100' : 'bg-gray-100'} rounded-2xl p-3">
+                <div class="text-sm font-medium ${isSent ? 'text-purple-700' : 'text-gray-700'} mb-1">
+                    ${isSent ? 'You' : (message.senderName || 'Unknown')}
+                </div>
+                <div class="flex items-center space-x-3 p-2 bg-white rounded-lg">
+                    <div class="text-purple-600 text-xl">
                         <i class="fas ${getFileIcon(message.file.type)}"></i>
                     </div>
-                    <div class="file-info">
-                        <div class="file-name">${message.file.name}</div>
-                        <div class="file-size">${formatFileSize(message.file.size)}</div>
-                        <a href="${message.file.url}" target="_blank" class="download-link">Download</a>
+                    <div class="flex-1">
+                        <div class="font-medium text-gray-800">${message.file.name}</div>
+                        <div class="text-xs text-gray-500">${formatFileSize(message.file.size)}</div>
+                        <a href="${message.file.url}" target="_blank" class="text-purple-600 hover:text-purple-800 text-xs mt-1 inline-block">
+                            <i class="fas fa-download mr-1"></i>Download
+                        </a>
                     </div>
                 </div>
-                <div class="message-time">${messageTime} ${isSent ? '<span class="message-status">' + statusIcon + '</span>' : ''}</div>
+                <div class="text-xs text-gray-500 mt-2 flex justify-between items-center">
+                    <span>${messageTime}</span>
+                    ${isSent ? `<span class="ml-2">${statusIcon}</span>` : ''}
+                </div>
             </div>
         `;
     } else if (message.type === 'poll') {
         messageElement.innerHTML = `
-            <div class="message-content">
-                <div class="message-sender">${message.senderName || 'Unknown'}</div>
-                <div class="poll-message">
-                    <div class="poll-question">${message.pollQuestion}</div>
-                    <div class="poll-options">
+            <div class="max-w-xs lg:max-w-md ${isSent ? 'bg-purple-100' : 'bg-gray-100'} rounded-2xl p-3">
+                <div class="text-sm font-medium ${isSent ? 'text-purple-700' : 'text-gray-700'} mb-1">
+                    ${isSent ? 'You' : (message.senderName || 'Unknown')}
+                </div>
+                <div class="bg-white rounded-lg p-3">
+                    <div class="font-medium text-gray-800 mb-2">📊 ${message.pollQuestion}</div>
+                    <div class="space-y-2">
                         ${message.pollOptions ? message.pollOptions.map((option, index) => `
-                            <div class="poll-option" data-option-index="${index}">
-                                <button class="poll-vote-btn">${option}</button>
-                                <span class="poll-vote-count">${message.pollVotes ? message.pollVotes[index] || 0 : 0}</span>
+                            <div class="poll-option flex justify-between items-center p-2 border rounded-lg hover:bg-gray-50 cursor-pointer" data-option-index="${index}">
+                                <span>${option}</span>
+                                <span class="text-sm text-gray-500">${message.pollVotes ? message.pollVotes[index] || 0 : 0}</span>
                             </div>
                         `).join('') : ''}
                     </div>
-                    <div class="poll-total">Total votes: ${message.totalVotes || 0}</div>
+                    <div class="text-xs text-gray-500 mt-2">Total votes: ${message.totalVotes || 0}</div>
                 </div>
-                <div class="message-time">${messageTime} ${isSent ? '<span class="message-status">' + statusIcon + '</span>' : ''}</div>
+                <div class="text-xs text-gray-500 mt-2 flex justify-between items-center">
+                    <span>${messageTime}</span>
+                    ${isSent ? `<span class="ml-2">${statusIcon}</span>` : ''}
+                </div>
             </div>
         `;
     } else {
         messageElement.innerHTML = `
-            <div class="message-content">
-                <div class="message-sender">${message.senderName || 'Unknown'}</div>
-                <div class="message-text">${escapeHtml(message.text)}</div>
-                <div class="message-time">${messageTime} ${isSent ? '<span class="message-status">' + statusIcon + '</span>' : ''}</div>
+            <div class="max-w-xs lg:max-w-md ${isSent ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-800'} rounded-2xl p-3">
+                <div class="text-sm font-medium ${isSent ? 'text-purple-100' : 'text-gray-700'} mb-1">
+                    ${isSent ? 'You' : (message.senderName || 'Unknown')}
+                </div>
+                <div class="text-sm">${escapeHtml(message.text)}</div>
+                <div class="text-xs ${isSent ? 'text-purple-200' : 'text-gray-500'} mt-2 flex justify-between items-center">
+                    <span>${messageTime}</span>
+                    ${isSent ? `<span class="ml-2">${statusIcon}</span>` : ''}
+                </div>
             </div>
         `;
     }
@@ -2084,8 +1891,8 @@ function addMessageToUI(message, messageId) {
     
     // Add click event for polls
     if (message.type === 'poll') {
-        messageElement.querySelectorAll('.poll-vote-btn').forEach((btn, index) => {
-            btn.addEventListener('click', () => {
+        messageElement.querySelectorAll('.poll-option').forEach((option, index) => {
+            option.addEventListener('click', () => {
                 voteOnPoll(messageId, index);
             });
         });
@@ -2093,6 +1900,7 @@ function addMessageToUI(message, messageId) {
 }
 
 async function sendMessage() {
+    const messageInput = document.getElementById('messageInput');
     if (!messageInput) return;
     
     const text = messageInput.value.trim();
@@ -2112,7 +1920,7 @@ async function sendMessage() {
             senderId: currentUser.uid,
             senderName: currentUserData.displayName,
             chatId: currentChat.id,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            timestamp: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
             status: 'sent',
             type: 'text'
         };
@@ -2127,9 +1935,9 @@ async function sendMessage() {
         // Update chat document with last message
         await db.collection('chats').doc(currentChat.id).update({
             lastMessage: text.length > 50 ? text.substring(0, 50) + '...' : text,
-            lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
+            lastMessageTime: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
             [`typing.${currentUser.uid}`]: false, // Remove typing indicator
-            [`unread.${currentChat.friendId}`]: firebase.firestore.FieldValue.increment(1)
+            [`unread.${currentChat.friendId}`]: firebase.firestore ? firebase.firestore.FieldValue.increment(1) : 1
         });
         
         console.log('Chat document updated with last message');
@@ -2138,6 +1946,7 @@ async function sendMessage() {
         updateMessageStatus(currentChat.id, 'delivered');
         
         // Scroll to bottom
+        const messagesContainer = document.getElementById('messagesContainer');
         if (messagesContainer) {
             setTimeout(() => {
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -2149,12 +1958,14 @@ async function sendMessage() {
         
     } catch (error) {
         console.error('Error sending message:', error);
-        showToast('Error sending message', 'error');
+        showToast('Error sending message: ' + error.message, 'error');
     }
 }
 
 function updateMessageStatus(chatId, status) {
     console.log('Updating message status to:', status, 'for chat:', chatId);
+    
+    if (!db || !currentUser) return;
     
     // Update all messages in this chat that are sent by the current user
     db.collection('messages')
@@ -2181,6 +1992,8 @@ function updateMessageStatus(chatId, status) {
 
 function markMessagesAsRead(chatId) {
     console.log('Marking messages as read for chat:', chatId);
+    
+    if (!db || !currentUser) return;
     
     // Mark all messages in this chat as read
     db.collection('messages')
@@ -2212,1055 +2025,15 @@ function markMessagesAsRead(chatId) {
         });
 }
 
-// ==================== FRIEND MANAGEMENT ====================
-function loadFriends() {
-    console.log('Loading friends for user:', currentUser.uid);
-    
-    // Fetch friends from Firebase with real-time listener
-    db.collection('friendships')
-        .where('users', 'array-contains', currentUser.uid)
-        .where('status', '==', 'accepted')
-        .onSnapshot(snapshot => {
-            console.log('Friends snapshot received:', snapshot.size, 'documents');
-            friends = [];
-            const friendPromises = [];
-            
-            snapshot.forEach(doc => {
-                const friendship = doc.data();
-                const friendId = friendship.users.find(id => id !== currentUser.uid);
-                
-                console.log('Processing friendship with friend:', friendId);
-                
-                // Get friend details
-                const friendPromise = db.collection('users').doc(friendId).get().then(friendDoc => {
-                    if (friendDoc.exists) {
-                        const friendData = friendDoc.data();
-                        console.log('Friend data loaded:', friendData.displayName);
-                        friends.push({
-                            id: friendId,
-                            friendshipId: doc.id,
-                            ...friendData
-                        });
-                    }
-                });
-                
-                friendPromises.push(friendPromise);
-            });
-            
-            Promise.all(friendPromises).then(() => {
-                console.log('All friend data loaded, rendering', friends.length, 'friends');
-                renderFriends(friends);
-                
-                if (noFriendsMessage) {
-                    if (friends.length === 0) {
-                        noFriendsMessage.classList.remove('hidden');
-                    } else {
-                        noFriendsMessage.classList.add('hidden');
-                    }
-                }
-            });
-        }, error => {
-            console.error('Error loading friends:', error);
-            showToast('Error loading friends', 'error');
-        });
-}
-
-function renderFriends(friendsToRender) {
-    if (!friendsList) {
-        console.warn('Friends list element not found');
-        return;
-    }
-    
-    console.log('Rendering', friendsToRender.length, 'friends');
-    friendsList.innerHTML = '';
-    
-    if (friendsToRender.length === 0) {
-        friendsList.innerHTML = `
-            <div class="text-center text-gray-500 py-8">
-                <i class="fas fa-users text-4xl mb-3 text-gray-300 block"></i>
-                <p>No friends yet</p>
-                <p class="text-sm mt-1">Add friends to start chatting</p>
-            </div>
-        `;
-        return;
-    }
-    
-    friendsToRender.forEach(friend => {
-        const friendItem = document.createElement('div');
-        friendItem.className = 'friend-item';
-        friendItem.dataset.friendId = friend.id;
-        
-        const lastSeen = friend.lastSeen ? formatTimeAgo(friend.lastSeen) : 'Never';
-        
-        friendItem.innerHTML = `
-            <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
-                <div class="flex items-center space-x-3 flex-1">
-                    <div class="relative">
-                        <img class="w-12 h-12 rounded-full object-cover" 
-                             src="${friend.photoURL || getDefaultAvatar(friend.displayName)}" 
-                             alt="${friend.displayName}"
-                             onerror="this.src='${getDefaultAvatar(friend.displayName)}'">
-                        <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${friend.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}"></div>
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex items-center space-x-2">
-                            <h3 class="font-medium text-gray-800">${friend.displayName}</h3>
-                            ${friend.status === 'online' ? 
-                                '<span class="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">Online</span>' : 
-                                `<span class="text-xs text-gray-500">Last seen ${lastSeen}</span>`}
-                        </div>
-                        <p class="text-sm text-gray-500 mt-1 truncate">${friend.about || 'Hey there! I am using Kynecta'}</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center space-x-2 ml-4">
-                    <button class="message-friend p-2 text-purple-600 hover:bg-purple-50 rounded-full" 
-                            data-id="${friend.id}" data-name="${friend.displayName}" title="Message">
-                        <i class="fas fa-comment"></i>
-                    </button>
-                    <button class="call-friend p-2 text-green-600 hover:bg-green-50 rounded-full" 
-                            data-id="${friend.id}" data-name="${friend.displayName}" title="Voice Call">
-                        <i class="fas fa-phone"></i>
-                    </button>
-                    <button class="video-call-friend p-2 text-blue-600 hover:bg-blue-50 rounded-full" 
-                            data-id="${friend.id}" data-name="${friend.displayName}" title="Video Call">
-                        <i class="fas fa-video"></i>
-                    </button>
-                    <div class="relative">
-                        <button class="friend-options-btn p-2 text-gray-600 hover:bg-gray-100 rounded-full" title="Options">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </button>
-                        <div class="friend-options-menu absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10 hidden min-w-32">
-                            <button class="view-profile-btn w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700" data-id="${friend.id}">
-                                <i class="fas fa-user mr-2"></i>View Profile
-                            </button>
-                            <button class="remove-friend-btn w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600" data-id="${friend.id}" data-name="${friend.displayName}">
-                                <i class="fas fa-user-times mr-2"></i>Remove
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        friendsList.appendChild(friendItem);
-    });
-
-    // Add event listeners using event delegation
-    friendsList.addEventListener('click', function(e) {
-        // Message button
-        if (e.target.closest('.message-friend')) {
-            const btn = e.target.closest('.message-friend');
-            const friendId = btn.dataset.id;
-            const friendName = btn.dataset.name;
-            console.log('Starting chat with:', friendName, friendId);
-            startChat(friendId, friendName);
-        }
-        
-        // Voice call button
-        if (e.target.closest('.call-friend')) {
-            const btn = e.target.closest('.call-friend');
-            const friendId = btn.dataset.id;
-            const friendName = btn.dataset.name;
-            console.log('Voice calling:', friendName, friendId);
-            
-            if (window.startVoiceCallWithFriend) {
-                window.startVoiceCallWithFriend(friendId, friendName);
-            } else {
-                console.error('Call system not initialized');
-                showToast('Call feature not available', 'error');
-            }
-        }
-        
-        // Video call button
-        if (e.target.closest('.video-call-friend')) {
-            const btn = e.target.closest('.video-call-friend');
-            const friendId = btn.dataset.id;
-            const friendName = btn.dataset.name;
-            console.log('Video calling:', friendName, friendId);
-            
-            if (window.startVideoCallWithFriend) {
-                window.startVideoCallWithFriend(friendId, friendName);
-            } else {
-                console.error('Video call system not initialized');
-                showToast('Video call feature not available', 'error');
-            }
-        }
-        
-        // Options button toggle
-        if (e.target.closest('.friend-options-btn')) {
-            const btn = e.target.closest('.friend-options-btn');
-            const menu = btn.nextElementSibling;
-            // Close all other menus
-            document.querySelectorAll('.friend-options-menu').forEach(m => {
-                if (m !== menu) m.classList.add('hidden');
-            });
-            menu.classList.toggle('hidden');
-        }
-        
-        // View profile
-        if (e.target.closest('.view-profile-btn')) {
-            const btn = e.target.closest('.view-profile-btn');
-            const friendId = btn.dataset.id;
-            console.log('Viewing profile of:', friendId);
-            viewFriendProfile(friendId);
-            btn.closest('.friend-options-menu').classList.add('hidden');
-        }
-        
-        // Remove friend
-        if (e.target.closest('.remove-friend-btn')) {
-            const btn = e.target.closest('.remove-friend-btn');
-            const friendId = btn.dataset.id;
-            const friendName = btn.dataset.name;
-            console.log('Removing friend:', friendName, friendId);
-            confirmRemoveFriend(friendId, friendName);
-            btn.closest('.friend-options-menu').classList.add('hidden');
-        }
-    });
-
-    // Close dropdown menus when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.friend-options-btn')) {
-            document.querySelectorAll('.friend-options-menu').forEach(menu => {
-                menu.classList.add('hidden');
-            });
-        }
-    });
-    
-    console.log('✅ Friends rendered with action buttons');
-}
-
-// In chat.js, when creating friend call buttons:
-function createFriendCallButtons(friendId, friendData) {
-    return `
-        <div class="friend-call-buttons">
-            <button class="friend-call-btn voice-call-btn p-2 rounded-full hover:bg-blue-50"
-                    data-user-id="${friendId}"
-                    data-user-name="${friendData.displayName}"
-                    title="Voice Call">
-                <i class="fas fa-phone text-blue-600"></i>
-            </button>
-            <button class="friend-call-btn video-call-btn p-2 rounded-full hover:bg-green-50"
-                    data-user-id="${friendId}"
-                    data-user-name="${friendData.displayName}"
-                    title="Video Call">
-                <i class="fas fa-video text-green-600"></i>
-            </button>
-        </div>
-    `;
-}
-
-function loadFriendsFromFirebase() {
-    const friendsTab = document.getElementById('friendsTab');
-    if (!friendsTab) return;
-    
-    console.log('👥 Loading real friends from Firebase...');
-    
-    // Show loading state
-    friendsTab.innerHTML = `
-        <div class="p-4">
-            <h3 class="text-lg font-semibold mb-4">Friends</h3>
-            <div class="text-center text-gray-500 py-8">
-                <i class="fas fa-spinner fa-spin text-4xl mb-3 text-gray-300 block"></i>
-                <p>Loading friends from your network...</p>
-            </div>
-        </div>
-    `;
-    
-    // Your friends are already loaded via the real-time listener in loadFriends()
-    // Just render them in the friends tab
-    setTimeout(() => {
-        if (friends.length > 0) {
-            friendsTab.innerHTML = `
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold mb-4">Your Friends (${friends.length})</h3>
-                    <div id="friendsTabList"></div>
-                </div>
-            `;
-            renderFriendsInTab(friends);
-        } else {
-            friendsTab.innerHTML = `
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold mb-4">Friends</h3>
-                    <div class="text-center text-gray-500 py-8">
-                        <i class="fas fa-users text-4xl mb-3 text-gray-300 block"></i>
-                        <p>No friends yet</p>
-                        <p class="text-sm mt-1">Add friends to start chatting</p>
-                    </div>
-                </div>
-            `;
-        }
-    }, 500);
-}
-
-function renderFriendsInTab(friendsList) {
-    const friendsTabList = document.getElementById('friendsTabList');
-    if (!friendsTabList) return;
-    
-    friendsTabList.innerHTML = '';
-    
-    friendsList.forEach(friend => {
-        const friendItem = document.createElement('div');
-        friendItem.className = 'friend-item-tab';
-        friendItem.dataset.friendId = friend.id;
-        
-        const lastSeen = friend.lastSeen ? formatTimeAgo(friend.lastSeen) : 'Never';
-        
-        friendItem.innerHTML = `
-            <div class="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg">
-                <div class="relative">
-                    <img class="w-12 h-12 rounded-full object-cover" 
-                         src="${friend.photoURL || getDefaultAvatar(friend.displayName)}" 
-                         alt="${friend.displayName}"
-                         onerror="this.src='${getDefaultAvatar(friend.displayName)}'">
-                    <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${friend.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}"></div>
-                </div>
-                <div class="flex-1">
-                    <div class="flex items-center space-x-2">
-                        <h3 class="font-medium text-gray-800">${friend.displayName}</h3>
-                        ${friend.status === 'online' ? 
-                            '<span class="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">Online</span>' : 
-                            `<span class="text-xs text-gray-500">Last seen ${lastSeen}</span>`}
-                    </div>
-                    <p class="text-sm text-gray-500 mt-1">${friend.about || 'Hey there! I am using Kynecta'}</p>
-                </div>
-                <div class="flex space-x-2">
-                    <button class="message-friend-tab p-2 text-purple-600 hover:bg-purple-50 rounded-full" 
-                            data-id="${friend.id}" data-name="${friend.displayName}" title="Message">
-                        <i class="fas fa-comment"></i>
-                    </button>
-                    <button class="call-friend-tab p-2 text-green-600 hover:bg-green-50 rounded-full" 
-                            data-id="${friend.id}" data-name="${friend.displayName}" title="Call">
-                        <i class="fas fa-phone"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        friendsTabList.appendChild(friendItem);
-    });
-    
-    // Add event listeners
-    friendsTabList.addEventListener('click', function(e) {
-        if (e.target.closest('.message-friend-tab')) {
-            const btn = e.target.closest('.message-friend-tab');
-            const friendId = btn.dataset.id;
-            const friendName = btn.dataset.name;
-            startChat(friendId, friendName);
-        }
-        
-        if (e.target.closest('.call-friend-tab')) {
-            const btn = e.target.closest('.call-friend-tab');
-            const friendId = btn.dataset.id;
-            const friendName = btn.dataset.name;
-            
-            if (window.startVoiceCallWithFriend) {
-                window.startVoiceCallWithFriend(friendId, friendName);
-            }
-        }
-    });
-}
-
-// In chat.js - when rendering friends, make sure to include:
-function renderFriendItem(friendId, friendData) {
-    return `
-        <div class="friend-item" data-user-id="${friendId}" data-user-name="${friendData.displayName}">
-            <div class="friend-avatar">
-                <!-- Avatar content -->
-            </div>
-            <div class="friend-info">
-                <div class="friend-name">${friendData.displayName}</div>
-                <div class="friend-status">${friendData.status || 'offline'}</div>
-            </div>
-            <div class="friend-actions">
-                <button class="friend-call-btn voice-call-btn"
-                        data-user-id="${friendId}"
-                        data-user-name="${friendData.displayName}"
-                        title="Voice Call">
-                    <i class="fas fa-phone"></i>
-                </button>
-                <button class="friend-call-btn video-call-btn"
-                        data-user-id="${friendId}"
-                        data-user-name="${friendData.displayName}"
-                        title="Video Call">
-                    <i class="fas fa-video"></i>
-                </button>
-            </div>
-        </div>
-    `;
-}
-function listenForFriendRequests() {
-    console.log('Setting up friend request listener for user:', currentUser.uid);
-    
-    db.collection('friendships')
-        .where('users', 'array-contains', currentUser.uid)
-        .where('status', '==', 'pending')
-        .where('requestedBy', '!=', currentUser.uid)
-        .onSnapshot(snapshot => {
-            console.log('Friend requests snapshot:', snapshot.size, 'pending requests');
-            
-            snapshot.docChanges().forEach(change => {
-                if (change.type === 'added') {
-                    const request = change.doc.data();
-                    const requesterId = request.requestedBy;
-                    const friendshipId = change.doc.id;
-                    
-                    console.log('New friend request from:', requesterId);
-                    
-                    // Get requester details
-                    db.collection('users').doc(requesterId).get().then(requesterDoc => {
-                        if (requesterDoc.exists) {
-                            const requesterData = requesterDoc.data();
-                            showFriendRequestNotification(requesterData, friendshipId);
-                        }
-                    });
-                }
-            });
-        }, error => {
-            console.error('Error listening for friend requests:', error);
-        });
-}
-
-function showFriendRequestNotification(requesterData, friendshipId) {
-    const notification = document.createElement('div');
-    notification.className = 'friend-request-notification';
-    notification.innerHTML = `
-        <div class="flex items-center space-x-3 p-4 bg-white rounded-lg shadow-lg border border-gray-200">
-            <img class="w-12 h-12 rounded-full" src="${requesterData.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(requesterData.displayName)}&background=7C3AED&color=fff`}" alt="${requesterData.displayName}">
-            <div class="flex-1">
-                <p class="font-semibold">${requesterData.displayName}</p>
-                <p class="text-sm text-gray-600">Sent you a friend request</p>
-            </div>
-            <div class="flex space-x-2">
-                <button class="px-3 py-1 bg-green-500 text-white rounded-lg accept-request" data-friendship-id="${friendshipId}">Accept</button>
-                <button class="px-3 py-1 bg-red-500 text-white rounded-lg decline-request" data-friendship-id="${friendshipId}">Decline</button>
-            </div>
-        </div>
-    `;
-    
-    // Add to notifications container
-    const notificationsContainer = document.getElementById('notificationsContainer') || createNotificationsContainer();
-    notificationsContainer.appendChild(notification);
-    
-    // Auto-remove after 10 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-    }, 10000);
-    
-    // Add event listeners
-    notification.querySelector('.accept-request').addEventListener('click', function() {
-        acceptFriendRequest(this.dataset.friendshipId);
-        notification.remove();
-    });
-    
-    notification.querySelector('.decline-request').addEventListener('click', function() {
-        declineFriendRequest(this.dataset.friendshipId);
-        notification.remove();
-    });
-}
-
-function createNotificationsContainer() {
-    const container = document.createElement('div');
-    container.id = 'notificationsContainer';
-    container.className = 'fixed top-4 right-4 z-50 space-y-2 max-w-sm';
-    document.body.appendChild(container);
-    return container;
-}
-
-function loadFriendRequests() {
-    if (!currentUser || !friendRequestsList) return;
-    
-    db.collection('friendships')
-        .where('users', 'array-contains', currentUser.uid)
-        .where('status', '==', 'pending')
-        .where('requestedBy', '!=', currentUser.uid)
-        .get()
-        .then(snapshot => {
-            if (!friendRequestsList) return;
-            
-            friendRequestsList.innerHTML = '';
-            
-            if (snapshot.empty) {
-                if (noFriendRequests) {
-                    noFriendRequests.classList.remove('hidden');
-                }
-                return;
-            }
-            
-            if (noFriendRequests) {
-                noFriendRequests.classList.add('hidden');
-            }
-            
-            snapshot.forEach(async doc => {
-                const request = doc.data();
-                const requesterId = request.requestedBy;
-                
-                const requesterDoc = await db.collection('users').doc(requesterId).get();
-                if (requesterDoc.exists) {
-                    const requesterData = requesterDoc.data();
-                    
-                    const requestItem = document.createElement('div');
-                    requestItem.className = 'friend-request-item';
-                    requestItem.innerHTML = `
-                        <div class="flex items-center justify-between p-3 border-b border-gray-200">
-                            <div class="flex items-center space-x-3">
-                                <img class="w-10 h-10 rounded-full" src="${requesterData.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(requesterData.displayName)}&background=7C3AED&color=fff`}" alt="${requesterData.displayName}">
-                                <div>
-                                    <p class="font-medium">${requesterData.displayName}</p>
-                                    <p class="text-sm text-gray-500">Wants to be your friend</p>
-                                </div>
-                            </div>
-                            <div class="flex space-x-2">
-                                <button class="accept-friend-request px-3 py-1 bg-green-500 text-white rounded-lg" data-friendship-id="${doc.id}">
-                                    Accept
-                                </button>
-                                <button class="decline-friend-request px-3 py-1 bg-red-500 text-white rounded-lg" data-friendship-id="${doc.id}">
-                                    Decline
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    friendRequestsList.appendChild(requestItem);
-                }
-            });
-            
-            // Add event listeners for accept/decline buttons
-            friendRequestsList.addEventListener('click', function(e) {
-                if (e.target.closest('.accept-friend-request')) {
-                    const btn = e.target.closest('.accept-friend-request');
-                    const friendshipId = btn.dataset.friendshipId;
-                    acceptFriendRequest(friendshipId);
-                }
-                
-                if (e.target.closest('.decline-friend-request')) {
-                    const btn = e.target.closest('.decline-friend-request');
-                    const friendshipId = btn.dataset.friendshipId;
-                    declineFriendRequest(friendshipId);
-                }
-            });
-            
-        })
-        .catch(error => {
-            console.error('Error loading friend requests:', error);
-        });
-}
-
-function acceptFriendRequest(friendshipId) {
-    db.collection('friendships').doc(friendshipId).update({
-        status: 'accepted',
-        acceptedAt: firebase.firestore.FieldValue.serverTimestamp()
-    })
-    .then(() => {
-        showToast('Friend request accepted!', 'success');
-    })
-    .catch(error => {
-        console.error('Error accepting friend request:', error);
-        showToast('Error accepting friend request', 'error');
-    });
-}
-
-function declineFriendRequest(friendshipId) {
-    db.collection('friendships').doc(friendshipId).delete()
-    .then(() => {
-        showToast('Friend request declined', 'info');
-    })
-    .catch(error => {
-        console.error('Error declining friend request:', error);
-        showToast('Error declining friend request', 'error');
-    });
-}
-
-function viewFriendProfile(friendId) {
-    console.log('Viewing friend profile:', friendId);
-    // Implementation for viewing friend profile
-    showToast('Viewing friend profile - feature coming soon', 'info');
-}
-
-function confirmRemoveFriend(friendId, friendName) {
-    if (confirm(`Are you sure you want to remove ${friendName} from your friends?`)) {
-        removeFriend(friendId);
-    }
-}
-
-function removeFriend(friendId) {
-    console.log('Removing friend:', friendId);
-    
-    db.collection('friendships')
-        .where('users', 'array-contains', currentUser.uid)
-        .where('status', '==', 'accepted')
-        .get()
-        .then(snapshot => {
-            snapshot.forEach(doc => {
-                const friendship = doc.data();
-                if (friendship.users.includes(friendId)) {
-                    // Delete the friendship
-                    db.collection('friendships').doc(doc.id).delete()
-                        .then(() => {
-                            console.log('Friend removed successfully');
-                            showToast('Friend removed successfully', 'success');
-                        })
-                        .catch(error => {
-                            console.error('Error removing friend:', error);
-                            showToast('Error removing friend', 'error');
-                        });
-                }
-            });
-        })
-        .catch(error => {
-            console.error('Error finding friendship:', error);
-            showToast('Error removing friend', 'error');
-        });
-}
-
-// ==================== UPDATES TAB ====================
-function loadRealStatusUpdates() {
-    const statusUpdates = document.getElementById('statusUpdates');
-    if (!statusUpdates) return;
-    
-    console.log('📰 Loading real status updates from Firebase...');
-    
-    // Show loading state
-    statusUpdates.innerHTML = `
-        <div class="text-center text-gray-500 py-8">
-            <i class="fas fa-spinner fa-spin text-4xl mb-3 text-gray-300 block"></i>
-            <p>Loading status updates...</p>
-        </div>
-    `;
-    
-    if (!currentUser) {
-        statusUpdates.innerHTML = `
-            <div class="text-center text-gray-500 py-8">
-                <i class="fas fa-exclamation-triangle text-4xl mb-3 text-gray-300 block"></i>
-                <p>Please sign in to view updates</p>
-            </div>
-        `;
-        return;
-    }
-    
-    // Load actual status updates from Firebase
-    db.collection('friendships')
-        .where('users', 'array-contains', currentUser.uid)
-        .where('status', '==', 'accepted')
-        .get()
-        .then(snapshot => {
-            const friendPromises = [];
-            const statusUpdatesList = [];
-            
-            snapshot.forEach(doc => {
-                const friendship = doc.data();
-                const friendId = friendship.users.find(id => id !== currentUser.uid);
-                
-                // Get friend's recent status updates
-                const statusPromise = db.collection('status_updates')
-                    .where('userId', '==', friendId)
-                    .orderBy('createdAt', 'desc')
-                    .limit(3)
-                    .get()
-                    .then(statusSnapshot => {
-                        statusSnapshot.forEach(statusDoc => {
-                            const statusData = statusDoc.data();
-                            statusUpdatesList.push({
-                                ...statusData,
-                                id: statusDoc.id,
-                                friendId: friendId
-                            });
-                        });
-                    });
-                
-                friendPromises.push(statusPromise);
-            });
-            
-            Promise.all(friendPromises).then(() => {
-                if (statusUpdatesList.length === 0) {
-                    // If no status updates, show friends' recent activity
-                    loadFriendsRecentActivity(statusUpdates);
-                    return;
-                }
-                
-                // Sort by timestamp
-                statusUpdatesList.sort((a, b) => b.createdAt - a.createdAt);
-                
-                // Render status updates
-                renderStatusUpdates(statusUpdates, statusUpdatesList);
-            });
-        })
-        .catch(error => {
-            console.error('Error loading status updates:', error);
-            statusUpdates.innerHTML = `
-                <div class="text-center text-gray-500 py-8">
-                    <i class="fas fa-exclamation-triangle text-4xl mb-3 text-gray-300 block"></i>
-                    <p>Error loading updates</p>
-                    <p class="text-sm mt-1">Please try again later</p>
-                </div>
-            `;
-        });
-}
-
-function loadFriendsRecentActivity(container) {
-    if (friends.length === 0) {
-        container.innerHTML = `
-            <div class="text-center text-gray-500 py-8">
-                <i class="fas fa-newspaper text-4xl mb-3 text-gray-300 block"></i>
-                <p>No updates yet</p>
-                <p class="text-sm mt-1">Your friends' activity will appear here</p>
-            </div>
-        `;
-        return;
-    }
-    
-    container.innerHTML = `
-        <h4 class="font-semibold mb-3 text-gray-700">Friends' Recent Activity</h4>
-        <div class="space-y-3">
-            ${friends.slice(0, 5).map(friend => {
-                const lastSeen = friend.lastSeen ? formatTimeAgo(friend.lastSeen) : 'Never online';
-                
-                return `
-                    <div class="status-update-item bg-white p-3 rounded-lg border border-gray-200">
-                        <div class="flex items-center space-x-3">
-                            <img class="w-10 h-10 rounded-full" 
-                                 src="${friend.photoURL || getDefaultAvatar(friend.displayName)}" 
-                                 alt="${friend.displayName}"
-                                 onerror="this.src='${getDefaultAvatar(friend.displayName)}'">
-                            <div class="flex-1">
-                                <p class="font-medium text-gray-800">${friend.displayName}</p>
-                                <div class="flex items-center space-x-2 mt-1">
-                                    <span class="text-xs ${friend.status === 'online' ? 'text-green-600' : 'text-gray-500'}">
-                                        <i class="fas fa-circle text-xs ${friend.status === 'online' ? 'text-green-500' : 'text-gray-400'}"></i>
-                                        ${friend.status === 'online' ? 'Online now' : `Last seen ${lastSeen}`}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('')}
-        </div>
-    `;
-}
-
-async function renderStatusUpdates(container, updates) {
-    container.innerHTML = `
-        <h4 class="font-semibold mb-3 text-gray-700">Recent Updates</h4>
-        <div class="space-y-3">
-            ${await Promise.all(updates.map(async (update) => {
-                // Get friend details
-                const friendDoc = await db.collection('users').doc(update.friendId).get();
-                const friend = friendDoc.exists ? friendDoc.data() : { displayName: 'Unknown User' };
-                
-                const timeAgo = update.createdAt ? formatTimeAgo(update.createdAt) : 'Recently';
-                const updateText = update.text || update.content || 'Shared an update';
-                
-                return `
-                    <div class="status-update-item bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                        <div class="flex items-start space-x-3">
-                            <img class="w-12 h-12 rounded-full" 
-                                 src="${friend.photoURL || getDefaultAvatar(friend.displayName)}" 
-                                 alt="${friend.displayName}"
-                                 onerror="this.src='${getDefaultAvatar(friend.displayName)}'">
-                            <div class="flex-1">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="font-semibold text-gray-800">${friend.displayName}</p>
-                                        <p class="text-xs text-gray-500 mt-1">${timeAgo}</p>
-                                    </div>
-                                </div>
-                                <p class="mt-2 text-gray-700">${updateText}</p>
-                                ${update.mediaUrl ? `
-                                    <div class="mt-3">
-                                        <img src="${update.mediaUrl}" alt="Update media" 
-                                             class="rounded-lg w-full max-h-64 object-cover"
-                                             onerror="this.style.display='none'">
-                                    </div>
-                                ` : ''}
-                                <div class="mt-3 flex space-x-4 text-sm text-gray-500">
-                                    <button class="like-update hover:text-purple-600" data-update-id="${update.id}">
-                                        <i class="far fa-heart"></i> Like
-                                    </button>
-                                    <button class="comment-update hover:text-blue-600" data-update-id="${update.id}">
-                                        <i class="far fa-comment"></i> Comment
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            })).then(html => html.join(''))}
-        </div>
-    `;
-    
-    // Add event listeners for like/comment buttons
-    container.querySelectorAll('.like-update').forEach(btn => {
-        btn.addEventListener('click', () => handleLikeUpdate(btn.dataset.updateId));
-    });
-    
-    container.querySelectorAll('.comment-update').forEach(btn => {
-        btn.addEventListener('click', () => handleCommentUpdate(btn.dataset.updateId));
-    });
-}
-
-function handleLikeUpdate(updateId) {
-    console.log('Liking update:', updateId);
-    showToast('Liked update', 'success');
-}
-
-function handleCommentUpdate(updateId) {
-    console.log('Commenting on update:', updateId);
-    const comment = prompt('Enter your comment:');
-    if (comment) {
-        showToast('Comment added', 'success');
-    }
-}
-
-// ==================== CALLS TAB ====================
-function loadRealCallHistory() {
-    const recentCalls = document.getElementById('recentCalls');
-    if (!recentCalls) return;
-    
-    console.log('📞 Loading real call history from Firebase...');
-    
-    // Show loading state
-    recentCalls.innerHTML = `
-        <div class="text-center text-gray-500 py-8">
-            <i class="fas fa-spinner fa-spin text-4xl mb-3 text-gray-300 block"></i>
-            <p>Loading your call history...</p>
-        </div>
-    `;
-    
-    if (!currentUser) {
-        recentCalls.innerHTML = `
-            <div class="text-center text-gray-500 py-8">
-                <i class="fas fa-exclamation-triangle text-4xl mb-3 text-gray-300 block"></i>
-                <p>Please sign in to view call history</p>
-            </div>
-        `;
-        return;
-    }
-    
-    // Load actual call history from Firebase
-    db.collection('calls')
-        .where('participants', 'array-contains', currentUser.uid)
-        .orderBy('startedAt', 'desc')
-        .limit(20)
-        .get()
-        .then(snapshot => {
-            if (snapshot.empty) {
-                recentCalls.innerHTML = `
-                    <div class="text-center text-gray-500 py-8">
-                        <i class="fas fa-phone text-4xl mb-3 text-gray-300 block"></i>
-                        <p>No call history yet</p>
-                        <p class="text-sm mt-1">Start calling your friends!</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            const callPromises = [];
-            const calls = [];
-            
-            snapshot.forEach(doc => {
-                const callData = doc.data();
-                calls.push({
-                    id: doc.id,
-                    ...callData
-                });
-                
-                // Get the other participant's details
-                const otherParticipantId = callData.participants.find(id => id !== currentUser.uid);
-                if (otherParticipantId) {
-                    const userPromise = db.collection('users').doc(otherParticipantId).get()
-                        .then(userDoc => {
-                            return userDoc.exists ? userDoc.data() : null;
-                        });
-                    callPromises.push(userPromise);
-                }
-            });
-            
-            Promise.all(callPromises).then(participants => {
-                renderCallHistory(recentCalls, calls, participants);
-            });
-        })
-        .catch(error => {
-            console.error('Error loading call history:', error);
-            recentCalls.innerHTML = `
-                <div class="text-center text-gray-500 py-8">
-                    <i class="fas fa-exclamation-triangle text-4xl mb-3 text-gray-300 block"></i>
-                    <p>Error loading call history</p>
-                    <p class="text-sm mt-1">Please try again later</p>
-                </div>
-            `;
-        });
-}
-
-function renderCallHistory(container, calls, participants) {
-    container.innerHTML = `
-        <h4 class="font-semibold mb-4 text-gray-700">Recent Calls</h4>
-        <div class="space-y-3">
-            ${calls.map((call, index) => {
-                const participant = participants[index] || { displayName: 'Unknown User' };
-                const callTime = call.startedAt ? formatTimeAgo(call.startedAt) : 'Unknown time';
-                const isOutgoing = call.callerId === currentUser.uid;
-                const callTypeIcon = call.callType === 'video' ? 'fa-video' : 'fa-phone';
-                const callDuration = call.endedAt && call.startedAt 
-                    ? Math.round((call.endedAt.toDate() - call.startedAt.toDate()) / 60000) + ' min'
-                    : '--:--';
-                const callStatus = call.status || 'completed';
-                const statusColor = callStatus === 'missed' ? 'text-red-600' : 
-                                 callStatus === 'rejected' ? 'text-yellow-600' : 
-                                 'text-green-600';
-                
-                return `
-                    <div class="call-item bg-white p-4 rounded-lg border border-gray-200 hover:shadow-sm transition-shadow">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <div class="relative">
-                                    <img class="w-12 h-12 rounded-full" 
-                                         src="${participant.photoURL || getDefaultAvatar(participant.displayName)}" 
-                                         alt="${participant.displayName}"
-                                         onerror="this.src='${getDefaultAvatar(participant.displayName)}'">
-                                    <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white flex items-center justify-center border border-gray-300">
-                                        <i class="${callTypeIcon} text-xs ${isOutgoing ? 'text-green-600' : 'text-blue-600'}"></i>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-800">${participant.displayName}</p>
-                                    <div class="flex items-center space-x-2 mt-1">
-                                        <span class="text-xs ${statusColor}">
-                                            ${isOutgoing ? 'Outgoing' : 'Incoming'} • ${callStatus}
-                                        </span>
-                                        <span class="text-xs text-gray-500">${callDuration}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-sm text-gray-500">${callTime}</p>
-                                <div class="flex space-x-2 mt-2">
-                                    <button class="call-back-btn w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200" 
-                                            data-id="${participant.id || call.participants.find(id => id !== currentUser.uid)}" 
-                                            data-name="${participant.displayName}">
-                                        <i class="fas fa-phone text-xs"></i>
-                                    </button>
-                                    ${call.callType === 'video' ? `
-                                        <button class="video-call-btn w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200" 
-                                                data-id="${participant.id || call.participants.find(id => id !== currentUser.uid)}" 
-                                                data-name="${participant.displayName}">
-                                            <i class="fas fa-video text-xs"></i>
-                                        </button>
-                                    ` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('')}
-        </div>
-    `;
-    
-    // Add event listeners for call back buttons
-    container.querySelectorAll('.call-back-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const friendId = this.dataset.id;
-            const friendName = this.dataset.name;
-            
-            if (window.startVoiceCallWithFriend) {
-                window.startVoiceCallWithFriend(friendId, friendName);
-            }
-        });
-    });
-    
-    container.querySelectorAll('.video-call-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const friendId = this.dataset.id;
-            const friendName = this.dataset.name;
-            
-            if (window.startVideoCallWithFriend) {
-                window.startVideoCallWithFriend(friendId, friendName);
-            }
-        });
-    });
-}
-
-// ==================== TOOLS TAB ====================
-function loadToolsTab() {
-    console.log('Loading tools tab...');
-    // Business data is loaded separately when modals open
-}
-
-function loadPersonalizationDisplay() {
-    if (!currentUserData) return;
-    
-    // Load moods
-    if (currentMoodsMini) {
-        const moods = currentUserData.moods || ['happy'];
-        currentMoodsMini.innerHTML = moods.map(mood => `
-            <span class="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs mr-1">
-                ${mood}
-            </span>
-        `).join('');
-    }
-    
-    // Load interests
-    if (currentInterestsMini) {
-        const interests = currentUserData.interests || ['chatting', 'music'];
-        currentInterestsMini.innerHTML = interests.map(interest => `
-            <span class="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs mr-1">
-                ${interest}
-            </span>
-        `).join('');
-    }
-}
-
-function loadMoodSuggestions() {
-    if (!currentUserData || !moodSuggestion) return;
-    
-    const mood = currentUserData.mood || 'happy';
-    const suggestions = {
-        happy: ["Share your happiness with friends!", "Spread positivity today!"],
-        sad: ["Talk to a friend who makes you smile", "Listen to your favorite music"],
-        excited: ["Plan something fun!", "Share your excitement with others"],
-        tired: ["Take a break and relax", "Listen to calming music"],
-        angry: ["Take deep breaths", "Talk it out with someone you trust"],
-        neutral: ["Start a conversation with a friend", "Share what's on your mind"]
-    };
-    
-    const moodSuggestions = suggestions[mood] || suggestions.neutral;
-    const randomSuggestion = moodSuggestions[Math.floor(Math.random() * moodSuggestions.length)];
-    
-    if (suggestionText) {
-        suggestionText.textContent = randomSuggestion;
-        moodSuggestion.classList.remove('hidden');
-    }
-}
-
-function updateMood(newMood) {
-    if (!currentUser) return;
-    
-    db.collection('users').doc(currentUser.uid).update({
-        mood: newMood,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    })
-    .then(() => {
-        currentUserData.mood = newMood;
-        if (userMood) userMood.textContent = newMood;
-        showToast(`Mood updated to ${newMood}`, 'success');
-        
-        // Reload mood suggestions
-        loadMoodSuggestions();
-        
-        if (moodModal) moodModal.classList.add('hidden');
-    })
-    .catch(error => {
-        console.error('Error updating mood:', error);
-        showToast('Error updating mood', 'error');
-    });
-}
-
 // ==================== FILE UPLOAD ====================
 async function uploadFile(file) {
     if (!currentChat) {
         showToast('Please select a chat first', 'error');
+        return;
+    }
+    
+    if (!storage) {
+        showToast('File upload not available', 'error');
         return;
     }
     
@@ -3301,7 +2074,7 @@ async function uploadFile(file) {
                     senderId: currentUser.uid,
                     senderName: currentUserData.displayName,
                     chatId: currentChat.id,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    timestamp: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
                     status: 'sent',
                     file: {
                         name: file.name,
@@ -3317,8 +2090,8 @@ async function uploadFile(file) {
                 // Update chat document with last message
                 await db.collection('chats').doc(currentChat.id).update({
                     lastMessage: `Shared a file: ${file.name}`,
-                    lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
-                    [`unread.${currentChat.friendId}`]: firebase.firestore.FieldValue.increment(1)
+                    lastMessageTime: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
+                    [`unread.${currentChat.friendId}`]: firebase.firestore ? firebase.firestore.FieldValue.increment(1) : 1
                 });
                 
                 // Hide file preview
@@ -3330,19 +2103,19 @@ async function uploadFile(file) {
         );
     } catch (error) {
         console.error('Error uploading file:', error);
-        showToast('Error uploading file', 'error');
+        showToast('Error uploading file: ' + error.message, 'error');
     }
 }
 
 // ==================== TYPING INDICATOR ====================
 function handleTypingIndicator() {
-    if (currentChat) {
+    if (currentChat && db) {
         console.log('Sending typing indicator for chat:', currentChat.id);
         
         // Send typing indicator
         db.collection('chats').doc(currentChat.id).update({
             [`typing.${currentUser.uid}`]: true,
-            lastActivity: firebase.firestore.FieldValue.serverTimestamp()
+            lastActivity: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
         });
         
         // Clear previous timeout
@@ -3352,15 +2125,18 @@ function handleTypingIndicator() {
         
         // Set timeout to remove typing indicator
         typingTimeout = setTimeout(() => {
-            db.collection('chats').doc(currentChat.id).update({
-                [`typing.${currentUser.uid}`]: false
-            });
+            if (db) {
+                db.collection('chats').doc(currentChat.id).update({
+                    [`typing.${currentUser.uid}`]: false
+                });
+            }
         }, 1000);
     }
 }
 
 // ==================== EMOJI PICKER ====================
 function initEmojiPicker() {
+    const emojiPicker = document.getElementById('emojiPicker');
     if (!emojiPicker) return;
     
     const emojiCategories = [
@@ -3378,20 +2154,21 @@ function initEmojiPicker() {
 
     emojiCategories.forEach(category => {
         const categoryElement = document.createElement('div');
-        categoryElement.className = 'emoji-category';
+        categoryElement.className = 'emoji-category mb-3';
         
         const categoryTitle = document.createElement('div');
-        categoryTitle.className = 'emoji-category-title';
+        categoryTitle.className = 'emoji-category-title text-xs font-medium text-gray-500 mb-2 px-2';
         categoryTitle.textContent = category.title;
         
         const emojiGrid = document.createElement('div');
-        emojiGrid.className = 'emoji-grid';
+        emojiGrid.className = 'emoji-grid grid grid-cols-8 gap-1';
         
         category.emojis.forEach(emoji => {
             const emojiOption = document.createElement('div');
-            emojiOption.className = 'emoji-option';
+            emojiOption.className = 'emoji-option text-xl p-1 hover:bg-gray-100 rounded cursor-pointer text-center';
             emojiOption.textContent = emoji;
             emojiOption.addEventListener('click', () => {
+                const messageInput = document.getElementById('messageInput');
                 if (messageInput) {
                     messageInput.value += emoji;
                     emojiPicker.style.display = 'none';
@@ -3507,7 +2284,7 @@ async function createNewPoll() {
             senderId: currentUser.uid,
             senderName: currentUserData.displayName,
             chatId: currentChat.id,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            timestamp: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
             status: 'sent'
         };
         
@@ -3516,8 +2293,8 @@ async function createNewPoll() {
         // Update chat document with last message
         await db.collection('chats').doc(currentChat.id).update({
             lastMessage: `📊 Poll: ${pollQuestion.value.trim().substring(0, 30)}...`,
-            lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
-            [`unread.${currentChat.friendId}`]: firebase.firestore.FieldValue.increment(1)
+            lastMessageTime: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date(),
+            [`unread.${currentChat.friendId}`]: firebase.firestore ? firebase.firestore.FieldValue.increment(1) : 1
         });
         
         // Clear poll creation
@@ -3531,12 +2308,12 @@ async function createNewPoll() {
         
     } catch (error) {
         console.error('Error creating poll:', error);
-        showToast('Error creating poll', 'error');
+        showToast('Error creating poll: ' + error.message, 'error');
     }
 }
 
 async function voteOnPoll(messageId, optionIndex) {
-    if (!currentUser || !currentChat) return;
+    if (!currentUser || !currentChat || !db) return;
     
     try {
         const messageRef = db.collection('messages').doc(messageId);
@@ -3567,71 +2344,8 @@ async function voteOnPoll(messageId, optionIndex) {
         
     } catch (error) {
         console.error('Error voting on poll:', error);
-        showToast('Error voting on poll', 'error');
+        showToast('Error voting on poll: ' + error.message, 'error');
     }
-}
-
-// Add this function anywhere after the AI functions
-function addAISettingsToProfile() {
-    // This function can be called from your profile/settings page
-    // to add a toggle for AI features
-    console.log('Adding AI settings to profile...');
-    
-    const profileModal = document.getElementById('profileModal');
-    if (!profileModal) return;
-    
-    // Look for settings section
-    const settingsSection = profileModal.querySelector('.settings-section') || profileModal;
-    
-    // Create AI settings toggle
-    const aiToggleHTML = `
-        <div class="setting-item">
-            <div class="flex items-center justify-between p-3 border-b border-gray-200">
-                <div class="flex items-center">
-                    <i class="fas fa-robot text-purple-600 mr-3 text-lg"></i>
-                    <div>
-                        <p class="font-medium">AI Features</p>
-                        <p class="text-sm text-gray-500">Smart replies, summaries</p>
-                    </div>
-                </div>
-                <label class="switch">
-                    <input type="checkbox" id="aiFeaturesToggle" ${currentUserData?.aiEnabled ? 'checked' : ''}>
-                    <span class="slider"></span>
-                </label>
-            </div>
-        </div>
-    `;
-    
-    // Add to settings
-    settingsSection.insertAdjacentHTML('beforeend', aiToggleHTML);
-    
-    // Add event listener
-    setTimeout(() => {
-        const toggle = document.getElementById('aiFeaturesToggle');
-        if (toggle) {
-            toggle.addEventListener('change', async function() {
-                const enabled = this.checked;
-                
-                // Update in database
-                await db.collection('users').doc(currentUser.uid).update({
-                    aiEnabled: enabled,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                // Update local data
-                currentUserData.aiEnabled = enabled;
-                
-                // Update UI
-                if (enabled) {
-                    showAIFeatures();
-                    showToast('AI features enabled', 'success');
-                } else {
-                    hideAIFeatures();
-                    showToast('AI features disabled', 'info');
-                }
-            });
-        }
-    }, 100);
 }
 
 // ==================== MESSAGE SELECTION ====================
@@ -3712,7 +2426,7 @@ async function starSelectedMessages() {
         
     } catch (error) {
         console.error('Error starring messages:', error);
-        showToast('Error starring messages', 'error');
+        showToast('Error starring messages: ' + error.message, 'error');
     }
 }
 
@@ -3733,7 +2447,7 @@ async function deleteSelectedMessages() {
             
         } catch (error) {
             console.error('Error deleting messages:', error);
-            showToast('Error deleting messages', 'error');
+            showToast('Error deleting messages: ' + error.message, 'error');
         }
     }
 }
@@ -3871,160 +2585,17 @@ function setupMoodSuggestions() {
 
 // ==================== BUSINESS TOOLS ====================
 function setupBusinessTools() {
-    if (catalogueBtn) {
-        catalogueBtn.addEventListener('click', () => {
-            if (catalogueModal) catalogueModal.classList.remove('hidden');
-        });
-    }
-    
-    if (advertiseBtn) {
-        advertiseBtn.addEventListener('click', () => {
-            if (advertiseModal) advertiseModal.classList.remove('hidden');
-        });
-    }
-    
-    if (labelsBtn) {
-        labelsBtn.addEventListener('click', () => {
-            if (labelsModal) labelsModal.classList.remove('hidden');
-        });
-    }
-    
-    if (greetingBtn) {
-        greetingBtn.addEventListener('click', () => {
-            if (greetingModal) greetingModal.classList.remove('hidden');
-        });
-    }
-    
-    if (awayBtn) {
-        awayBtn.addEventListener('click', () => {
-            if (awayModal) awayModal.classList.remove('hidden');
-        });
-    }
-}
-
-// ==================== AI FEATURES ====================
-function setupAIFeatures() {
-    if (aiSummarize) {
-        aiSummarize.addEventListener('click', generateAISummary);
-    }
-    
-    if (aiReply) {
-        aiReply.addEventListener('click', generateSmartReplies);
-    }
-}
-
-async function generateAISummary() {
-    if (!currentChat) {
-        showToast('Please open a chat first', 'error');
-        return;
-    }
-    
-    showToast('Generating AI summary...', 'info');
-    
-    try {
-        // Get recent messages for summary
-        const messagesSnapshot = await db.collection('messages')
-            .where('chatId', '==', currentChat.id)
-            .orderBy('timestamp', 'desc')
-            .limit(20)
-            .get();
-        
-        if (messagesSnapshot.empty) {
-            showToast('Not enough messages to summarize', 'error');
-            return;
-        }
-        
-        const messages = [];
-        messagesSnapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.text && !data.deleted) {
-                messages.push({
-                    sender: data.senderName,
-                    text: data.text,
-                    time: data.timestamp?.toDate?.() || new Date()
-                });
-            }
-        });
-        
-        // Simulate AI summary
-        const summary = `Conversation Summary (${messages.length} recent messages):
-        
-        ${messages.slice(0, 3).map(msg => `• ${msg.sender}: ${msg.text.substring(0, 50)}...`).join('\n')}
-        
-        ${messages.length > 3 ? `... and ${messages.length - 3} more messages` : ''}`;
-        
-        // Display summary
-        if (aiSummaryModal) {
-            const aiSummaryContent = document.getElementById('aiSummaryContent');
-            if (aiSummaryContent) {
-                aiSummaryContent.textContent = summary;
-                aiSummaryModal.classList.remove('hidden');
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error generating summary:', error);
-        showToast('Error generating summary', 'error');
-    }
-}
-
-async function generateSmartReplies() {
-    if (!currentChat) {
-        showToast('Please open a chat first', 'error');
-        return;
-    }
-    
-    showToast('Generating smart replies...', 'info');
-    
-    try {
-        // Simulate AI-generated replies
-        const smartReplies = [
-            "Yes, that sounds good!",
-            "No, I don't think so.",
-            "Let me think about it.",
-            "Can we discuss this later?",
-            "I agree with you.",
-            "That's interesting!",
-            "Thanks for sharing!"
-        ];
-        
-        // Display smart replies
-        if (smartRepliesModal) {
-            const smartRepliesList = document.getElementById('smartRepliesList');
-            if (smartRepliesList) {
-                smartRepliesList.innerHTML = '';
-                
-                smartReplies.forEach(reply => {
-                    const replyItem = document.createElement('div');
-                    replyItem.className = 'smart-reply-item';
-                    replyItem.textContent = reply;
-                    replyItem.addEventListener('click', () => {
-                        if (messageInput) {
-                            messageInput.value = reply;
-                            messageInput.focus();
-                            smartRepliesModal.classList.add('hidden');
-                        }
-                    });
-                    smartRepliesList.appendChild(replyItem);
-                });
-                
-                smartRepliesModal.classList.remove('hidden');
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error generating smart replies:', error);
-        showToast('Error generating smart replies', 'error');
-    }
+    // Business tools initialization
+    console.log('Business tools setup');
 }
 
 // ==================== HELP CENTER ====================
 function setupHelpCenter() {
     // This function sets up help center functionality
+    console.log('Help center setup');
 }
 
 // ==================== MODALS ====================
-// ==================== UNIVERSAL MODAL HANDLER ====================
 function setupModals() {
     console.log('Setting up modals...');
     
@@ -4033,7 +2604,7 @@ function setupModals() {
         // If clicking on modal backdrop (the dark background)
         if (e.target.classList.contains('modal') || 
             e.target.classList.contains('modal-backdrop') ||
-            e.target.hasAttribute('data-modal-backdrop')) {
+            (e.target.hasAttribute && e.target.hasAttribute('data-modal-backdrop'))) {
             
             // Find and close the modal
             let modal = e.target;
@@ -4065,10 +2636,6 @@ function setupModals() {
         { closeBtn: 'closeMood', modal: 'moodModal' },
         { closeBtn: 'closeQuickActions', modal: 'quickActionsModal' },
         { closeBtn: 'closeStatusViewer', modal: 'statusViewerModal' },
-        { closeBtn: 'closeEnhancedSearch', modal: 'friendSearchResultsModal' },
-        { closeBtn: 'cancelFriend', modal: 'addFriendModal' },
-        { closeBtn: 'cancelEditFriend', modal: 'editFriendModal' },
-        { closeBtn: 'closeAllFriends', modal: 'allFriendsModal' },
         { closeBtn: 'closeCreateGoal', modal: 'createGoalModal' },
         { closeBtn: 'closePollCreation', modal: 'pollCreationSection' },
         { closeBtn: 'cancelGoal', modal: 'createGoalModal' },
@@ -4089,7 +2656,7 @@ function setupModals() {
                 console.log(`Closed ${modal.id} via ${closeBtn.id}`);
             });
         } else {
-            console.warn(`Could not connect: ${pair.closeBtn} → ${pair.modal}`);
+            console.log(`Could not connect: ${pair.closeBtn} → ${pair.modal}`);
         }
     });
     
@@ -4132,14 +2699,12 @@ function setupModals() {
             }
         });
     }
+    
+    console.log('Modals setup complete');
 }
-
 
 function handleQuickAction(action) {
     switch(action) {
-        case 'create-status':
-            if (statusCreation) statusCreation.classList.remove('hidden');
-            break;
         case 'create-goal':
             if (createGoalModal) createGoalModal.classList.remove('hidden');
             break;
@@ -4154,277 +2719,87 @@ function handleQuickAction(action) {
     }
 }
 
-// ==================== SEARCH FUNCTIONALITY ====================
-async function searchUsers(query) {
-    if (!query) return [];
+// ==================== TOOLS TAB ====================
+function loadToolsTab() {
+    console.log('Loading tools tab...');
+    // Business data is loaded separately when modals open
+}
+
+function loadPersonalizationDisplay() {
+    if (!currentUserData) return;
     
-    console.log('Searching users for:', query);
+    // Load moods
+    if (currentMoodsMini) {
+        const moods = currentUserData.moods || ['happy'];
+        currentMoodsMini.innerHTML = moods.map(mood => `
+            <span class="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs mr-1">
+                ${mood}
+            </span>
+        `).join('');
+    }
     
-    try {
-        // Search by name
-        const nameQuery = await db.collection('users')
-            .where('displayName', '>=', query)
-            .where('displayName', '<=', query + '\uf8ff')
-            .limit(10)
-            .get();
-        
-        const results = [];
-        nameQuery.forEach(doc => {
-            if (doc.id !== currentUser.uid) {
-                results.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
-            }
-        });
-        
-        console.log('Search results:', results.length, 'users found');
-        return results;
-        
-    } catch (error) {
-        console.error('Error searching users:', error);
-        return [];
+    // Load interests
+    if (currentInterestsMini) {
+        const interests = currentUserData.interests || ['chatting', 'music'];
+        currentInterestsMini.innerHTML = interests.map(interest => `
+            <span class="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs mr-1">
+                ${interest}
+            </span>
+        `).join('');
     }
 }
 
-function displayEnhancedSearchResults(results) {
-    if (!enhancedSearchResults) return;
+function loadMoodSuggestions() {
+    if (!currentUserData || !moodSuggestion) return;
     
-    enhancedSearchResults.innerHTML = '';
+    const mood = currentUserData.mood || 'happy';
+    const suggestions = {
+        happy: ["Share your happiness with friends!", "Spread positivity today!"],
+        sad: ["Talk to a friend who makes you smile", "Listen to your favorite music"],
+        excited: ["Plan something fun!", "Share your excitement with others"],
+        tired: ["Take a break and relax", "Listen to calming music"],
+        angry: ["Take deep breaths", "Talk it out with someone you trust"],
+        neutral: ["Start a conversation with a friend", "Share what's on your mind"]
+    };
     
-    if (results.length === 0) {
-        enhancedSearchResults.innerHTML = '<p class="text-center text-gray-500 py-4">No users found</p>';
-        return;
-    }
+    const moodSuggestions = suggestions[mood] || suggestions.neutral;
+    const randomSuggestion = moodSuggestions[Math.floor(Math.random() * moodSuggestions.length)];
     
-    console.log('Displaying', results.length, 'search results');
-    
-    results.forEach(user => {
-        const resultItem = document.createElement('div');
-        resultItem.className = 'search-result-item';
-        resultItem.innerHTML = `
-            <div class="flex items-center p-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
-                <img class="w-10 h-10 rounded-full mr-3" src="${user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=7C3AED&color=fff`}" alt="${user.displayName}">
-                <div class="flex-1">
-                    <p class="font-medium">${user.displayName}</p>
-                    <p class="text-sm text-gray-500">${user.email || ''}</p>
-                </div>
-                <div class="flex space-x-2">
-                    <button class="add-friend bg-purple-600 text-white px-3 py-1 rounded-lg" data-id="${user.id}" data-name="${user.displayName}">
-                        <i class="fas fa-user-plus"></i>
-                    </button>
-                    <button class="message-user bg-green-600 text-white px-3 py-1 rounded-lg" data-id="${user.id}" data-name="${user.displayName}">
-                        <i class="fas fa-comment"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        enhancedSearchResults.appendChild(resultItem);
-    });
-    
-    // Add event listeners to buttons using event delegation
-    enhancedSearchResults.addEventListener('click', function(e) {
-        if (e.target.closest('.add-friend')) {
-            const btn = e.target.closest('.add-friend');
-            const userId = btn.dataset.id;
-            const userName = btn.dataset.name;
-            sendFriendRequest(userId);
-            if (friendSearchResultsModal) friendSearchResultsModal.classList.add('hidden');
-            showToast(`Friend request sent to ${userName}`, 'success');
-        }
-        
-        if (e.target.closest('.message-user')) {
-            const btn = e.target.closest('.message-user');
-            const userId = btn.dataset.id;
-            const userName = btn.dataset.name;
-            startChat(userId, userName);
-            if (friendSearchResultsModal) friendSearchResultsModal.classList.add('hidden');
-        }
-    });
-}
-
-async function sendFriendRequest(friendId) {
-    try {
-        console.log('Sending friend request to:', friendId);
-        
-        // Check if friendship already exists
-        const existingFriendship = await db.collection('friendships')
-            .where('users', 'array-contains', currentUser.uid)
-            .where('status', 'in', ['pending', 'accepted'])
-            .get();
-        
-        const alreadyFriends = existingFriendship.docs.some(doc => {
-            const data = doc.data();
-            return data.users.includes(friendId);
-        });
-        
-        if (alreadyFriends) {
-            showToast('Friend request already sent or user is already your friend', 'error');
-            return;
-        }
-        
-        // Create friendship document
-        const friendship = {
-            users: [currentUser.uid, friendId],
-            status: 'pending',
-            requestedBy: currentUser.uid,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        
-        await db.collection('friendships').add(friendship);
-        console.log('Friend request sent successfully');
-        showToast('Friend request sent successfully', 'success');
-    } catch (error) {
-        console.error('Error sending friend request:', error);
-        showToast('Error sending friend request', 'error');
+    if (suggestionText) {
+        suggestionText.textContent = randomSuggestion;
+        moodSuggestion.classList.remove('hidden');
     }
 }
 
-// ==================== FAVORITES MANAGEMENT ====================
-function loadFavorites() {
-    if (!currentUser || !favoritesList) return;
+function updateMood(newMood) {
+    if (!currentUser || !db) return;
     
-    // Load favorites from user data
-    db.collection('users').doc(currentUser.uid).get()
-        .then(doc => {
-            if (doc.exists) {
-                const userData = doc.data();
-                const favorites = userData.favorites || [];
-                
-                favoritesList.innerHTML = '';
-                
-                if (favorites.length === 0) {
-                    favoritesList.innerHTML = `
-                        <div class="text-center text-gray-500 py-8">
-                            <i class="fas fa-star text-4xl mb-3 text-gray-300 block"></i>
-                            <p>No favorites yet</p>
-                            <p class="text-sm mt-1">Add friends to your favorites list</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                // Load favorite friends details
-                const favoritePromises = favorites.map(friendId => {
-                    return db.collection('users').doc(friendId).get();
-                });
-                
-                Promise.all(favoritePromises).then(docs => {
-                    docs.forEach((doc, index) => {
-                        if (doc.exists) {
-                            const friendData = doc.data();
-                            const friendItem = document.createElement('div');
-                            friendItem.className = 'favorite-item';
-                            friendItem.innerHTML = `
-                                <div class="flex items-center justify-between p-3 border-b border-gray-200">
-                                    <div class="flex items-center space-x-3">
-                                        <img class="w-10 h-10 rounded-full" src="${friendData.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(friendData.displayName)}&background=7C3AED&color=fff`}" alt="${friendData.displayName}">
-                                        <div>
-                                            <p class="font-medium">${friendData.displayName}</p>
-                                            <p class="text-xs text-gray-500">⭐ Favorite</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex space-x-2">
-                                        <button class="call-favorite px-3 py-1 bg-green-500 text-white rounded-lg" data-id="${favorites[index]}" data-name="${friendData.displayName}">
-                                            Call
-                                        </button>
-                                    </div>
-                                </div>
-                            `;
-                            
-                            favoritesList.appendChild(friendItem);
-                        }
-                    });
-                    
-                    // Add event listeners for call buttons
-                    favoritesList.addEventListener('click', function(e) {
-                        if (e.target.closest('.call-favorite')) {
-                            const btn = e.target.closest('.call-favorite');
-                            const friendId = btn.dataset.id;
-                            const friendName = btn.dataset.name;
-                            if (window.startVoiceCallWithFriend) {
-                                window.startVoiceCallWithFriend(friendId, friendName);
-                            }
-                        }
-                    });
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error loading favorites:', error);
-        });
-}
-
-// ==================== ALL FRIENDS VIEW ====================
-function loadAllFriendsView() {
-    if (!allFriendsList) return;
-    
-    allFriendsList.innerHTML = '';
-    
-    if (friends.length === 0) {
-        if (noAllFriendsMessage) {
-            noAllFriendsMessage.classList.remove('hidden');
-        }
-        return;
-    }
-    
-    if (noAllFriendsMessage) {
-        noAllFriendsMessage.classList.add('hidden');
-    }
-    
-    friends.forEach(friend => {
-        const friendItem = document.createElement('div');
-        friendItem.className = 'all-friend-item';
-        friendItem.innerHTML = `
-            <div class="flex items-center justify-between p-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer">
-                <div class="flex items-center space-x-3">
-                    <img class="w-10 h-10 rounded-full" src="${friend.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.displayName)}&background=7C3AED&color=fff`}" alt="${friend.displayName}">
-                    <div>
-                        <p class="font-medium">${friend.displayName}</p>
-                        <p class="text-sm text-gray-500">${friend.about || 'Hey there! I am using Kynecta'}</p>
-                    </div>
-                </div>
-                <div class="flex space-x-2">
-                    <button class="message-all-friend px-3 py-1 bg-purple-500 text-white rounded-lg" data-id="${friend.id}" data-name="${friend.displayName}">
-                        Message
-                    </button>
-                    <button class="call-all-friend px-3 py-1 bg-green-500 text-white rounded-lg" data-id="${friend.id}" data-name="${friend.displayName}">
-                        Call
-                    </button>
-                </div>
-            </div>
-        `;
+    db.collection('users').doc(currentUser.uid).update({
+        mood: newMood,
+        updatedAt: firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
+    })
+    .then(() => {
+        currentUserData.mood = newMood;
+        if (userMood) userMood.textContent = newMood;
+        showToast(`Mood updated to ${newMood}`, 'success');
         
-        allFriendsList.appendChild(friendItem);
-    });
-    
-    // Add event listeners for message/call buttons
-    allFriendsList.addEventListener('click', function(e) {
-        if (e.target.closest('.message-all-friend')) {
-            const btn = e.target.closest('.message-all-friend');
-            const friendId = btn.dataset.id;
-            const friendName = btn.dataset.name;
-            startChat(friendId, friendName);
-            if (allFriendsModal) allFriendsModal.classList.add('hidden');
-        }
+        // Reload mood suggestions
+        loadMoodSuggestions();
         
-        if (e.target.closest('.call-all-friend')) {
-            const btn = e.target.closest('.call-all-friend');
-            const friendId = btn.dataset.id;
-            const friendName = btn.dataset.name;
-            if (window.startVoiceCallWithFriend) {
-                window.startVoiceCallWithFriend(friendId, friendName);
-            }
-            if (allFriendsModal) allFriendsModal.classList.add('hidden');
-        }
+        if (moodModal) moodModal.classList.add('hidden');
+    })
+    .catch(error => {
+        console.error('Error updating mood:', error);
+        showToast('Error updating mood: ' + error.message, 'error');
     });
 }
 
 // ==================== BUSINESS DOCUMENT INITIALIZATION ====================
 function initializeBusinessDocument(userId) {
-    const businessDocRef = firebase.firestore().collection('business').doc(userId);
-    const userDocRef = firebase.firestore().collection('users').doc(userId);
+    if (!firebase.firestore || !db) return;
+    
+    const businessDocRef = db.collection('business').doc(userId);
+    const userDocRef = db.collection('users').doc(userId);
     
     businessDocRef.get().then((doc) => {
         if (!doc.exists) {
@@ -4456,6 +2831,12 @@ function initializeBusinessDocument(userId) {
 // ==================== NOTIFICATION PERMISSION ====================
 async function requestNotificationPermission() {
     try {
+        // Check if notification API is available
+        if (!('Notification' in window)) {
+            console.log('Notifications not supported in this browser');
+            return;
+        }
+        
         // Check if permission is already denied/blocked
         if (Notification.permission === 'denied') {
             console.log('Notifications blocked by user. User must manually enable in browser settings.');
@@ -4484,6 +2865,8 @@ async function sendPushNotification(userId, senderName, message) {
     try {
         console.log('Sending push notification to:', userId);
         // Get recipient's FCM token
+        if (!db) return;
+        
         const recipientDoc = await db.collection('users').doc(userId).get();
         if (recipientDoc.exists) {
             const recipientData = recipientDoc.data();
@@ -4513,8 +2896,9 @@ function setupEventListeners() {
     }
 
     // Back to chats (mobile)
-    if (backToChats) {
-        backToChats.addEventListener('click', goBackToTabs);
+    const backToChatsBtn = document.getElementById('backToChats');
+    if (backToChatsBtn) {
+        backToChatsBtn.addEventListener('click', goBackToTabs);
     }
     
     // Also handle escape key to go back
@@ -4525,6 +2909,7 @@ function setupEventListeners() {
     });
 
     // Message input and sending
+    const messageInput = document.getElementById('messageInput');
     if (messageInput) {
         // Apply enhanced text input styles
         messageInput.style.fontSize = '16px';
@@ -4533,13 +2918,14 @@ function setupEventListeners() {
         messageInput.addEventListener('input', handleTypingIndicator);
         
         messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 sendMessage();
             }
         });
     }
 
+    const sendBtn = document.getElementById('sendBtn');
     if (sendBtn) {
         // Minimized send button as per your changes
         sendBtn.style.width = '40px'; // w-10 = 2.5rem = 40px
@@ -4548,6 +2934,7 @@ function setupEventListeners() {
     }
 
     // File attachment (using the plus icon)
+    const attachBtn = document.getElementById('attachBtn');
     if (attachBtn) {
         attachBtn.addEventListener('click', () => {
             console.log('Attach file clicked');
@@ -4565,18 +2952,19 @@ function setupEventListeners() {
         });
     }
 
+    // Emoji picker button
+    const emojiPickerBtn = document.getElementById('emojiPickerBtn');
+    if (emojiPickerBtn) {
+        emojiPickerBtn.addEventListener('click', toggleEmojiPicker);
+    }
+
     // Remove file preview
-    if (removeFile) {
-        removeFile.addEventListener('click', () => {
+    const removeFileBtn = document.getElementById('removeFile');
+    if (removeFileBtn) {
+        removeFileBtn.addEventListener('click', () => {
             console.log('Remove file preview clicked');
             if (filePreview) filePreview.classList.add('hidden');
         });
-    }
-
-    // Voice to text button in chat header
-    const voiceToTextBtnHeader = document.getElementById('voiceToTextBtnHeader');
-    if (voiceToTextBtnHeader) {
-        voiceToTextBtnHeader.addEventListener('click', setupVoiceToText);
     }
 
     // Close emoji picker when clicking outside (if emoji picker exists)
@@ -4584,7 +2972,8 @@ function setupEventListeners() {
         const emojiPicker = document.getElementById('emojiPicker');
         
         if (emojiPicker && emojiPicker.style.display === 'block' && 
-            !emojiPicker.contains(e.target)) {
+            !emojiPicker.contains(e.target) && 
+            !e.target.closest('#emojiPickerBtn')) {
             emojiPicker.style.display = 'none';
         }
     });
@@ -4595,19 +2984,25 @@ function setupEventListeners() {
         logoutBtn.addEventListener('click', () => {
             if (confirm('Are you sure you want to log out?')) {
                 console.log('Logging out user');
-                auth.signOut().then(() => {
-                    window.location.href = 'index.html';
-                }).catch(error => {
-                    console.error('Error signing out:', error);
-                    showToast('Error signing out', 'error');
-                });
+                if (auth) {
+                    auth.signOut().then(() => {
+                        window.location.href = 'index.html';
+                    }).catch(error => {
+                        console.error('Error signing out:', error);
+                        showToast('Error signing out', 'error');
+                    });
+                } else {
+                    showToast('Authentication not available', 'error');
+                }
             }
         });
     }
 
     // Scroll to bottom button
-    if (scrollToBottom) {
-        scrollToBottom.addEventListener('click', () => {
+    const scrollToBottomBtn = document.getElementById('scrollToBottom');
+    if (scrollToBottomBtn) {
+        scrollToBottomBtn.addEventListener('click', () => {
+            const messagesContainer = document.getElementById('messagesContainer');
             if (messagesContainer) {
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
@@ -4628,54 +3023,11 @@ function setTheme(theme) {
     }
 }
 
-// ==================== VOICE TO TEXT ====================
-function setupVoiceToText() {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        
-        recognition.start();
-        showToast('Listening... Speak now', 'info');
-        
-        if (voiceRecordingIndicator) {
-            voiceRecordingIndicator.classList.remove('hidden');
-        }
-        
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            if (messageInput) {
-                messageInput.value = transcript;
-            }
-            
-            if (voiceRecordingIndicator) {
-                voiceRecordingIndicator.classList.add('hidden');
-            }
-            
-            showToast('Speech recognized', 'success');
-        };
-        
-        recognition.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
-            if (voiceRecordingIndicator) {
-                voiceRecordingIndicator.classList.add('hidden');
-            }
-            showToast('Speech recognition failed', 'error');
-        };
-        
-        recognition.onend = () => {
-            if (voiceRecordingIndicator) {
-                voiceRecordingIndicator.classList.add('hidden');
-            }
-        };
-    } else {
-        showToast('Speech recognition not supported in this browser', 'error');
-    }
-}
-
 // ==================== AUTO SCROLL DETECTION ====================
 function setupAutoScrollDetection() {
+    const messagesContainer = document.getElementById('messagesContainer');
+    const scrollToBottom = document.getElementById('scrollToBottom');
+    
     if (!messagesContainer || !scrollToBottom) return;
     
     messagesContainer.addEventListener('scroll', () => {
@@ -4695,7 +3047,7 @@ async function loadAllUsers() {
         if (!currentUser || !db) {
             console.log('User not authenticated or database not available');
             allUsers = [];
-            return;
+            return [];
         }
         
         console.log('Loading all users...');
@@ -4754,20 +3106,19 @@ if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
 // Call initialization functions
 setupAutoScrollDetection();
 
-// Dispatch event when friends are rendered
-window.dispatchEvent(new CustomEvent('friendsRendered'));
+// Make functions available globally
+window.startChat = startChat;
+window.goBackToTabs = goBackToTabs;
+window.sendMessage = sendMessage;
+window.uploadFile = uploadFile;
+window.toggleEmojiPicker = toggleEmojiPicker;
+window.loadChatsTemporary = loadChatsTemporary;
+window.loadAllUsers = loadAllUsers;
+window.updateMood = updateMood;
+window.loadToolsTab = loadToolsTab;
+window.loadPersonalizationDisplay = loadPersonalizationDisplay;
+window.loadMoodSuggestions = loadMoodSuggestions;
+window.handleQuickAction = handleQuickAction;
+window.showToast = showToast;
 
-// Listen for friends rendered event to add call buttons
-window.addEventListener('friendsRendered', () => {
-    console.log('🎯 Friends rendered, adding call buttons');
-    setTimeout(() => {
-        if (window.addCallButtonsToFriendList) {
-            window.addCallButtonsToFriendList();
-        }
-        if (window.addCallButtonsToChat) {
-            window.addCallButtonsToChat();
-        }
-    }, 100);
-});
-
-console.log('✅ chat.js fully loaded with all features');
+console.log('✅ chat.js fully loaded with all chat features');

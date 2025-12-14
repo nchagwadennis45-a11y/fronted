@@ -23,15 +23,75 @@
     
     <meta name="ignore-tailwind-cdn-warning" content="true">
     <script>
+        // Disable right-click and inspect
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+        
+        // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+        document.addEventListener('keydown', function(e) {
+            if (
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                (e.ctrlKey && e.shiftKey && e.key === 'J') ||
+                (e.ctrlKey && e.key === 'U') ||
+                (e.ctrlKey && e.shiftKey && e.key === 'C')
+            ) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
         window.tailwindConfig = { ignoreCDNWarning: true };
         
         // Navigation state management
         let currentPage = 'chats';
         let lastChatState = null;
         
+        // Function to show loading screen
+        function showLoading() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.classList.remove('hidden');
+            }
+        }
+        
+        // Function to hide loading screen
+        function hideLoading() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.classList.add('hidden');
+            }
+        }
+        
+        // Pre-load iframes on app initialization
+        function preloadIframes() {
+            const iframes = [
+                { id: 'statusIframe', src: 'status.html' },
+                { id: 'groupIframe', src: 'group.html' },
+                { id: 'callsIframe', src: 'call.html' },
+                { id: 'friendsIframe', src: 'friend.html' }
+            ];
+            
+            iframes.forEach(iframe => {
+                const element = document.getElementById(iframe.id);
+                if (element) {
+                    element.onload = function() {
+                        console.log(`${iframe.id} pre-loaded successfully`);
+                    };
+                    // Set src to pre-load but keep hidden
+                    element.src = iframe.src;
+                }
+            });
+        }
+        
         function switchPage(pageName) {
             console.log('Switching to page:', pageName);
             currentPage = pageName;
+            
+            // Show loading screen
+            showLoading();
             
             // Save chat state if leaving chat interface
             if (pageName !== 'chats' && pageName !== 'groups') {
@@ -42,10 +102,11 @@
                 };
             }
             
-            // Hide all content areas
+            // Hide all content areas immediately
             const contentAreas = document.querySelectorAll('.content-area');
             contentAreas.forEach(area => {
                 area.classList.add('hidden');
+                area.style.opacity = '0';
             });
             
             // Hide all iframes first
@@ -53,8 +114,11 @@
                 iframe.classList.add('hidden');
             });
             
-            // Handle iframe pages
-            if (pageName === 'status' || pageName === 'group' || pageName === 'calls') {
+            // Update active navigation icon immediately for better UX
+            updateActiveNavIcon(pageName);
+            
+            // Handle iframe pages (Status, Group, Calls, Friends)
+            if (pageName === 'status' || pageName === 'group' || pageName === 'calls' || pageName === 'friends') {
                 // Hide the main chat app interface
                 document.getElementById('chatApp').classList.add('hidden');
                 
@@ -62,28 +126,60 @@
                 const iframeContainer = document.getElementById(`${pageName}Content`);
                 if (iframeContainer) {
                     iframeContainer.classList.remove('hidden');
+                    iframeContainer.style.opacity = '0';
                     
                     // Load iframe content
                     const iframe = document.getElementById(`${pageName}Iframe`);
                     if (iframe) {
-                        if (pageName === 'status') {
-                            iframe.src = 'status.html';
-                        } else if (pageName === 'group') {
-                            iframe.src = 'group.html';
-                        } else if (pageName === 'calls') {
-                            iframe.src = 'call.html';
+                        // Check if iframe is already loaded
+                        if (iframe.src.includes('.html')) {
+                            iframe.classList.remove('hidden');
+                            // Fade in animation
+                            setTimeout(() => {
+                                iframeContainer.style.opacity = '1';
+                                hideLoading();
+                            }, 50);
+                        } else {
+                            if (pageName === 'status') {
+                                iframe.src = 'status.html';
+                            } else if (pageName === 'group') {
+                                iframe.src = 'group.html';
+                            } else if (pageName === 'calls') {
+                                iframe.src = 'call.html';
+                            } else if (pageName === 'friends') {
+                                iframe.src = 'friend.html';
+                            }
+                            
+                            iframe.onload = function() {
+                                iframe.classList.remove('hidden');
+                                // Fade in animation
+                                setTimeout(() => {
+                                    iframeContainer.style.opacity = '1';
+                                    hideLoading();
+                                }, 50);
+                            };
+                            
+                            // Fallback timeout in case iframe fails to load
+                            setTimeout(() => {
+                                if (!iframe.classList.contains('hidden')) {
+                                    hideLoading();
+                                }
+                            }, 1000);
                         }
-                        iframe.classList.remove('hidden');
                     }
                 }
             } else {
-                // Show chat app interface for other pages
+                // Show chat app interface for other pages (chats, tools, settings)
                 document.getElementById('chatApp').classList.remove('hidden');
                 
                 // Show selected content area
                 const targetArea = document.getElementById(`${pageName}Content`);
                 if (targetArea) {
                     targetArea.classList.remove('hidden');
+                    // Fade in animation
+                    setTimeout(() => {
+                        targetArea.style.opacity = '1';
+                    }, 10);
                 }
                 
                 // Restore chat state if returning to chats
@@ -107,13 +203,15 @@
                 }
                 
                 // Call existing switchTab function for compatibility
-                if (pageName === 'chats' || pageName === 'friends' || pageName === 'tools' || pageName === 'settings') {
+                if (pageName === 'chats' || pageName === 'tools' || pageName === 'settings') {
                     switchTab(pageName);
                 }
+                
+                // Hide loading screen after animation
+                setTimeout(() => {
+                    hideLoading();
+                }, 200);
             }
-            
-            // Update active navigation icon
-            updateActiveNavIcon(pageName);
         }
         
         function updateActiveNavIcon(pageName) {
@@ -210,7 +308,7 @@
             }
             const chatArea = document.getElementById('chatArea');
             const chatListContainer = document.getElementById('chatListContainer');
-            if (tabName !== 'chats' && tabName !== 'groups') {
+            if (tabName !== 'chats') {
                 if (chatArea) chatArea.classList.add('hidden');
                 if (chatListContainer) chatListContainer.classList.remove('hidden');
                 const inputArea = document.getElementById('inputArea');
@@ -238,9 +336,6 @@
                     if (chatListContainer) chatListContainer.classList.remove('hidden');
                 }
             }
-            if (tabName === 'groups') {
-                document.getElementById('chatTitle').textContent = 'Group Chat';
-            }
         }
         
         document.addEventListener('DOMContentLoaded', function() {
@@ -265,6 +360,9 @@
                 });
             }
             
+            // Pre-load iframes for faster navigation
+            preloadIframes();
+            
             // Initialize navigation
             document.querySelectorAll('.nav-icon[data-page]').forEach(icon => {
                 icon.addEventListener('click', function() {
@@ -274,23 +372,56 @@
             });
             
             // Initialize with chats page
-            switchPage('chats');
+            setTimeout(() => {
+                switchPage('chats');
+                hideLoading();
+            }, 500);
+        });
+        
+        // Handle back button for mobile
+        window.addEventListener('popstate', function(event) {
+            if (window.innerWidth < 768) {
+                const chatArea = document.getElementById('chatArea');
+                if (chatArea && !chatArea.classList.contains('hidden')) {
+                    showChatList();
+                    event.preventDefault();
+                }
+            }
         });
     </script>
     
     <link rel="stylesheet" href="chat.css">
     <link rel="stylesheet" href="desktop.css">
     <style>
+        /* Disable text selection */
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Allow selection in input and textarea */
+        input, textarea {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+        
+        /* Optimized iframe container for all screen sizes */
         .iframe-container {
             position: fixed;
             top: 0;
-            left: 64px;
+            left: 64px; /* Leave space for sidebar */
             right: 0;
             bottom: 0;
             width: calc(100% - 64px);
             height: 100vh;
             background: white;
             z-index: 30;
+            transition: opacity 0.3s ease;
+            opacity: 1;
         }
         
         .content-iframe {
@@ -300,6 +431,7 @@
             display: block;
         }
         
+        /* Navigation styles */
         .nav-icon {
             transition: all 0.2s ease;
         }
@@ -309,12 +441,111 @@
             color: white;
         }
         
+        /* Content area transitions */
         .content-area {
             display: none;
+            transition: opacity 0.3s ease;
+            opacity: 1;
         }
         
         .content-area:not(.hidden) {
             display: block;
+        }
+        
+        /* Sidebar permanent visibility - Always on top */
+        .fixed.left-0 {
+            z-index: 100 !important;
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            height: 100vh;
+        }
+        
+        /* Loading screen animation */
+        #loadingScreen {
+            transition: opacity 0.3s ease;
+            z-index: 9999;
+        }
+        
+        /* Ensure sidebar is always visible and on top */
+        #permanentSidebar {
+            z-index: 1000 !important;
+            transform: translateZ(0);
+            will-change: transform;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 767px) {
+            .iframe-container {
+                left: 64px;
+                width: calc(100% - 64px);
+                z-index: 30;
+            }
+            
+            .fixed.left-0 {
+                z-index: 1000 !important;
+                width: 64px;
+            }
+        }
+        
+        /* Tablet optimizations */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .iframe-container {
+                left: 64px;
+                width: calc(100% - 64px);
+            }
+            
+            .fixed.left-0 {
+                z-index: 1000 !important;
+            }
+        }
+        
+        /* Desktop optimizations */
+        @media (min-width: 1024px) {
+            .iframe-container {
+                left: 64px;
+                width: calc(100% - 64px);
+            }
+            
+            .fixed.left-0 {
+                z-index: 1000 !important;
+            }
+        }
+        
+        /* Animation for page transitions */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease forwards;
+        }
+        
+        /* Ensure sidebar stays on top of everything */
+        #permanentSidebar {
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Adjust chat app margin for sidebar */
+        #chatApp {
+            margin-left: 64px;
+            width: calc(100% - 64px);
+        }
+        
+        /* Adjust content areas for sidebar */
+        #chatsContent,
+        #toolsContent,
+        #settingsContent {
+            margin-left: 0;
+            width: 100%;
+        }
+        
+        /* Make sure iframe pages don't hide sidebar */
+        .content-area.iframe-container {
+            left: 64px;
+            width: calc(100% - 64px);
         }
     </style>
 </head>
@@ -327,8 +558,45 @@
                 <span class="text-white text-2xl">🧠</span>
             </div>
             <h2 class="text-xl font-semibold text-gray-700 mb-2">Kynecta</h2>
-            <p class="text-gray-500">Initializing mood-aware chat...</p>
+            <p class="text-gray-500">Loading...</p>
         </div>
+    </div>
+
+    <!-- Permanent Sidebar - Always Visible -->
+    <div id="permanentSidebar" class="fixed left-0 top-0 bottom-0 w-16 bg-gray-900 z-40 flex flex-col items-center py-6 space-y-8">
+        <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-green-500 rounded-2xl flex items-center justify-center">
+            <span class="text-white text-xl font-bold">K</span>
+        </div>
+        
+        <div class="flex-1 flex flex-col items-center space-y-8">
+            <button class="nav-icon text-white text-2xl p-3 rounded-2xl bg-purple-700" data-page="chats" title="Chats">
+                <i class="fas fa-comments"></i>
+            </button>
+            
+            <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="status" title="Status">
+                <i class="fas fa-circle"></i>
+            </button>
+            
+            <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="group" title="Groups">
+                <i class="fas fa-users"></i>
+            </button>
+            
+            <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="friends" title="Friends">
+                <i class="fas fa-user-friends"></i>
+            </button>
+            
+            <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="calls" title="Calls">
+                <i class="fas fa-phone"></i>
+            </button>
+            
+            <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="tools" title="Tools">
+                <i class="fas fa-tools"></i>
+            </button>
+        </div>
+        
+        <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="settings" title="Settings">
+            <i class="fas fa-cog"></i>
+        </button>
     </div>
 
     <!-- Status Page Iframe -->
@@ -341,6 +609,11 @@
         <iframe id="groupIframe" class="content-iframe" src="" title="Groups"></iframe>
     </div>
 
+    <!-- Friends Page Iframe -->
+    <div id="friendsContent" class="content-area iframe-container hidden">
+        <iframe id="friendsIframe" class="content-iframe" src="" title="Friends"></iframe>
+    </div>
+
     <!-- Calls Page Iframe -->
     <div id="callsContent" class="content-area iframe-container hidden">
         <iframe id="callsIframe" class="content-iframe" src="" title="Calls"></iframe>
@@ -348,45 +621,9 @@
 
     <!-- Main Chat Application -->
     <div id="chatApp" class="h-full">
-        <div class="fixed left-0 top-0 bottom-0 w-16 bg-gray-900 z-40 flex flex-col items-center py-6 space-y-8">
-            <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-green-500 rounded-2xl flex items-center justify-center">
-                <span class="text-white text-xl font-bold">K</span>
-            </div>
-            
-            <div class="flex-1 flex flex-col items-center space-y-8">
-                <button class="nav-icon text-white text-2xl p-3 rounded-2xl bg-purple-700" data-page="chats" title="Chats">
-                    <i class="fas fa-comments"></i>
-                </button>
-                
-                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="status" title="Status">
-                    <i class="fas fa-circle"></i>
-                </button>
-                
-                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="group" title="Groups">
-                    <i class="fas fa-users"></i>
-                </button>
-                
-                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="friends" title="Friends">
-                    <i class="fas fa-user-friends"></i>
-                </button>
-                
-                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="calls" title="Calls">
-                    <i class="fas fa-phone"></i>
-                </button>
-                
-                <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="tools" title="Tools">
-                    <i class="fas fa-tools"></i>
-                </button>
-            </div>
-            
-            <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="settings" title="Settings">
-                <i class="fas fa-cog"></i>
-            </button>
-        </div>
-
         <!-- Chats Page Content -->
         <div id="chatsContent" class="content-area h-full">
-            <div class="flex h-full pb-0 ml-16">
+            <div class="flex h-full pb-0">
                 <div id="chatListContainer" class="chat-list-container w-full md:w-1/3 lg:w-1/4 bg-white flex flex-col border-r border-gray-200">
                     <div class="kynecta-header p-4 flex justify-between items-center">
                         <div class="flex items-center">
@@ -659,110 +896,9 @@
             </div>
         </div>
 
-        <!-- Friends Page Content -->
-        <div id="friendsContent" class="content-area hidden h-full">
-            <div class="flex h-full pb-0 ml-16">
-                <div class="chat-list-container w-full md:w-1/3 lg:w-1/4 bg-white flex flex-col border-r border-gray-200">
-                    <div class="kynecta-header p-4 flex justify-between items-center">
-                        <div class="flex items-center">
-                            <img id="userAvatarFriends" class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-white font-semibold mr-3 object-cover border-2 border-white/30" src="" alt="Profile">
-                            <div>
-                                <span id="userNameFriends" class="font-semibold text-white block"></span>
-                                <span id="userMoodFriends" class="text-white/80 text-sm"></span>
-                            </div>
-                        </div>
-                        <div class="flex space-x-3 text-white">
-                            <button id="themeToggleFriends" class="text-xl cursor-pointer hover:scale-110 transition-transform">
-                                <i class="fas fa-moon" id="themeIconFriends"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-3">
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-search text-gray-400"></i>
-                            </div>
-                            <input type="text" id="searchInputFriends" class="w-full bg-gray-100 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all" placeholder="Search friends...">
-                        </div>
-                    </div>
-
-                    <div class="tab-panels flex-1 overflow-y-auto custom-scrollbar">
-                        <div id="friendsTab" class="tab-panel active p-4">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="font-semibold text-lg">Friends</h3>
-                                <button id="addFriendBtn" class="bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-colors">
-                                    <i class="fas fa-user-plus mr-2"></i>Add Friend
-                                </button>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-search text-gray-400"></i>
-                                    </div>
-                                    <input type="text" id="friendSearch" class="w-full bg-gray-100 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all" placeholder="Search friends by name, email, or phone...">
-                                </div>
-                            </div>
-                            
-                            <div class="flex space-x-2 mb-4">
-                                <button id="filterAllFriends" class="px-3 py-1 bg-purple-600 text-white text-sm rounded-lg">All</button>
-                                <button id="filterSameMood" class="px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-lg hover:bg-purple-200">Same Mood</button>
-                                <button id="filterContacts" class="px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-lg hover:bg-purple-200">Phone Contacts</button>
-                            </div>
-                            
-                            <div id="friendRequestsSection" class="mb-4">
-                                <h4 class="font-medium text-gray-700 mb-2">Friend Requests</h4>
-                                <div id="friendRequestsList" class="space-y-2">
-                                </div>
-                                <div id="noFriendRequests" class="text-center text-gray-500 py-2 text-sm">
-                                    No pending friend requests
-                                </div>
-                            </div>
-                            
-                            <div id="sameMoodFriendsSection" class="mb-4 hidden">
-                                <h4 class="font-medium text-gray-700 mb-2 flex items-center">
-                                    <i class="fas fa-smile text-yellow-500 mr-2"></i>
-                                    Friends with Similar Mood
-                                </h4>
-                                <div id="sameMoodFriendsList" class="space-y-2">
-                                </div>
-                            </div>
-                            
-                            <div id="phoneContactsSection" class="mb-4 hidden">
-                                <h4 class="font-medium text-gray-700 mb-2 flex items-center">
-                                    <i class="fas fa-address-book text-blue-500 mr-2"></i>
-                                    Phone Contacts
-                                </h4>
-                                <div id="phoneContactsList" class="space-y-2">
-                                </div>
-                            </div>
-                            
-                            <div id="friendsList" class="space-y-2">
-                            </div>
-                            
-                            <div id="noFriendsMessage" class="p-8 text-center text-gray-500">
-                                <i class="fas fa-user-friends text-4xl mb-3 text-gray-300 block"></i>
-                                <p>No friends yet</p>
-                                <p class="text-sm mt-1">Add friends to start messaging</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="chat-area flex-1 flex flex-col bg-gray-50 w-full h-full hidden md:flex items-center justify-center">
-                    <div class="text-center p-8">
-                        <i class="fas fa-user-friends text-6xl text-purple-400 mb-4"></i>
-                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Friends Management</h3>
-                        <p class="text-gray-500 max-w-md">Select a friend from the list to start chatting, or add new friends to connect with them.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Tools Page Content -->
         <div id="toolsContent" class="content-area hidden h-full">
-            <div class="flex h-full pb-0 ml-16">
+            <div class="flex h-full pb-0">
                 <div class="chat-list-container w-full md:w-1/3 lg:w-1/4 bg-white flex flex-col border-r border-gray-200">
                     <div class="kynecta-header p-4 flex justify-between items-center">
                         <div class="flex items-center">
@@ -856,7 +992,7 @@
 
         <!-- Settings Page Content -->
         <div id="settingsContent" class="content-area hidden h-full">
-            <div class="flex h-full pb-0 ml-16">
+            <div class="flex h-full pb-0">
                 <div class="chat-list-container w-full md:w-1/3 lg:w-1/4 bg-white flex flex-col border-r border-gray-200">
                     <div class="kynecta-header p-4 flex justify-between items-center">
                         <div class="flex items-center">
