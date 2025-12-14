@@ -20,10 +20,6 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- User data and theme scripts -->
-    <script src="user-data.js"></script>
-    <script src="display-user-selections.js"></script>
-    
     <style>
         * {
             margin: 0;
@@ -125,6 +121,7 @@
             color: var(--text-secondary);
             transition: all 0.2s;
             border-bottom: 3px solid transparent;
+            position: relative;
         }
         
         .friend-tab.active {
@@ -706,218 +703,20 @@
             color: var(--danger-color) !important;
         }
         
-        /* Mini Games */
-        .mini-game-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
+        /* Blocked Friends */
+        .blocked-friends-section {
+            padding: 0 20px;
+            margin-top: 20px;
         }
         
-        .mini-game-modal.active {
+        .blocked-friend-item {
             display: flex;
-        }
-        
-        .mini-game-container {
-            width: 90%;
-            max-width: 600px;
+            align-items: center;
+            padding: 12px 15px;
             background-color: var(--bg-color);
-            border-radius: 20px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            max-height: 90vh;
-            box-shadow: var(--shadow-lg);
-        }
-        
-        .mini-game-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .mini-game-title {
-            font-size: 20px;
-            font-weight: 600;
-        }
-        
-        .games-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            padding: 25px;
-        }
-        
-        .game-card {
-            background-color: var(--secondary-color);
             border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 2px solid transparent;
-        }
-        
-        .game-card:hover {
-            background-color: #e4e6e9;
-            border-color: var(--primary-color);
-            transform: translateY(-2px);
-        }
-        
-        .game-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-            color: var(--primary-color);
-        }
-        
-        .game-name {
-            font-size: 18px;
-            font-weight: 600;
             margin-bottom: 8px;
-        }
-        
-        .game-description {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        
-        /* Game Session */
-        .game-session-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1100;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .game-session-modal.active {
-            display: flex;
-        }
-        
-        .game-session-container {
-            width: 90%;
-            max-width: 800px;
-            background-color: var(--bg-color);
-            border-radius: 20px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 90vh;
-            box-shadow: var(--shadow-lg);
-        }
-        
-        .game-session-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .game-session-players {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .game-session-content {
-            flex: 1;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .game-board {
-            width: 100%;
-            max-width: 500px;
-            aspect-ratio: 1;
-            background-color: var(--secondary-color);
-            border-radius: 12px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            gap: 10px;
-            padding: 10px;
-            margin-bottom: 30px;
-        }
-        
-        .game-cell {
-            background-color: var(--bg-color);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .game-cell:hover {
-            background-color: #e4e6e9;
-        }
-        
-        .game-info {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .game-turn {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-        
-        .game-status {
-            font-size: 16px;
-            color: var(--text-secondary);
-        }
-        
-        .game-controls {
-            display: flex;
-            gap: 15px;
-        }
-        
-        .game-control-btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        
-        .game-control-primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        
-        .game-control-primary:hover {
-            background-color: #0073e6;
-        }
-        
-        .game-control-secondary {
-            background-color: var(--secondary-color);
-            color: var(--text-primary);
-        }
-        
-        .game-control-secondary:hover {
-            background-color: #e4e6e9;
+            border: 1px solid var(--border-color);
         }
         
         /* Notification */
@@ -971,6 +770,38 @@
             gap: 4px;
         }
         
+        /* Context Menu */
+        .context-menu {
+            position: fixed;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            min-width: 200px;
+            padding: 8px 0;
+        }
+        
+        .context-menu-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.2s;
+            color: var(--text-primary);
+        }
+        
+        .context-menu-item:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .context-divider {
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 4px 0;
+        }
+        
         /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
@@ -978,16 +809,8 @@
                 height: 100%;
             }
             
-            .games-grid {
-                grid-template-columns: 1fr;
-            }
-            
             .friend-actions-grid {
                 grid-template-columns: repeat(3, 1fr);
-            }
-            
-            .game-board {
-                max-width: 400px;
             }
         }
         
@@ -1013,6 +836,20 @@
             justify-content: center;
             animation: pulse 2s infinite;
         }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -1037,6 +874,9 @@
                     <i class="fas fa-clock"></i> Pending
                     <span class="friend-request-badge" id="pendingCountBadge" style="display: none;">0</span>
                 </button>
+                <button class="friend-tab" id="blockedTab">
+                    <i class="fas fa-ban"></i> Blocked
+                </button>
             </div>
             
             <div class="friends-list-container">
@@ -1047,13 +887,17 @@
                 <div class="friends-section" id="friendsSection">
                     <!-- Friends will be loaded here -->
                     <div class="loading-placeholder" style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
-                        <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 15px;"></i>
+                        <div class="loading-spinner"></div>
                         <p>Loading friends...</p>
                     </div>
                 </div>
                 
                 <div class="friends-section" id="friendsRequestsSection" style="display: none;">
                     <!-- Friend requests will be loaded here -->
+                </div>
+                
+                <div class="friends-section" id="blockedFriendsSection" style="display: none;">
+                    <!-- Blocked friends will be loaded here -->
                 </div>
             </div>
         </div>
@@ -1095,6 +939,11 @@
                     <i class="fas fa-search empty-state-icon"></i>
                     <p>No results found</p>
                     <p style="font-size: 14px; margin-top: 10px;">Try searching by username, email, or phone number</p>
+                </div>
+                
+                <div id="searchLoading" class="empty-state" style="display: none;">
+                    <div class="loading-spinner" style="margin: 0 auto 15px;"></div>
+                    <p>Searching...</p>
                 </div>
             </div>
         </div>
@@ -1154,92 +1003,6 @@
         </div>
     </div>
     
-    <!-- Mini Games Modal -->
-    <div class="mini-game-modal" id="miniGameModal">
-        <div class="mini-game-container">
-            <div class="mini-game-header">
-                <h3 class="mini-game-title">Play with Friends</h3>
-                <button class="add-friend-close" id="closeMiniGameModal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="games-grid">
-                <div class="game-card" data-game="tictactoe">
-                    <div class="game-icon">
-                        <i class="fas fa-times"></i>
-                    </div>
-                    <div class="game-name">Tic Tac Toe</div>
-                    <div class="game-description">Classic 3x3 game</div>
-                </div>
-                
-                <div class="game-card" data-game="chess">
-                    <div class="game-icon">
-                        <i class="fas fa-chess"></i>
-                    </div>
-                    <div class="game-name">Chess</div>
-                    <div class="game-description">Strategic board game</div>
-                </div>
-                
-                <div class="game-card" data-game="pictionary">
-                    <div class="game-icon">
-                        <i class="fas fa-paint-brush"></i>
-                    </div>
-                    <div class="game-name">Pictionary</div>
-                    <div class="game-description">Draw and guess</div>
-                </div>
-                
-                <div class="game-card" data-game="quiz">
-                    <div class="game-icon">
-                        <i class="fas fa-question-circle"></i>
-                    </div>
-                    <div class="game-name">Quiz Battle</div>
-                    <div class="game-description">Trivia challenge</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Game Session Modal (Tic Tac Toe) -->
-    <div class="game-session-modal" id="gameSessionModal">
-        <div class="game-session-container">
-            <div class="game-session-header">
-                <div class="game-session-players">
-                    <div class="friend-avatar" id="player1Avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <span>vs</span>
-                    <div class="friend-avatar" id="player2Avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                </div>
-                <button class="add-friend-close" id="closeGameSessionModal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="game-session-content">
-                <div class="game-info">
-                    <div class="game-turn" id="gameTurn">Your Turn (X)</div>
-                    <div class="game-status" id="gameStatus">Make your move</div>
-                </div>
-                
-                <div class="game-board" id="gameBoard">
-                    <!-- Game cells will be added dynamically -->
-                </div>
-                
-                <div class="game-controls">
-                    <button class="game-control-btn game-control-secondary" id="rematchBtn">
-                        <i class="fas fa-redo"></i> Rematch
-                    </button>
-                    <button class="game-control-btn game-control-primary" id="inviteFriendBtn">
-                        <i class="fas fa-user-plus"></i> Invite Another Friend
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <!-- Notification -->
     <div class="notification" id="notification">
         <i class="fas fa-check-circle"></i>
@@ -1269,74 +1032,41 @@
         let friendsList = [];
         let friendRequests = [];
         let pendingRequests = [];
+        let blockedUsers = [];
         let userFriendsMap = new Map();
         let selectedFriend = null;
-        let currentGame = null;
-        let gameState = null;
-        let currentPlayer = 'X';
-        let gameWithFriendId = null;
-        let userTheme = null;
-        let userMood = null;
         let friendTags = new Map();
         let searchMethod = 'username';
+        let unsubscribes = [];
         
         // DOM Elements
         const addFriendModal = document.getElementById('addFriendModal');
         const friendProfileModal = document.getElementById('friendProfileModal');
-        const miniGameModal = document.getElementById('miniGameModal');
-        const gameSessionModal = document.getElementById('gameSessionModal');
         const notification = document.getElementById('notification');
         
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            loadUserThemeAndMood();
             initializeApp();
             setupEventListeners();
-            initializeGameBoard();
         });
         
-        function loadUserThemeAndMood() {
-            try {
-                const savedTheme = localStorage.getItem('selectedTheme');
-                const savedMood = localStorage.getItem('selectedMood');
-                
-                userTheme = savedTheme || 'light';
-                userMood = savedMood || 'happy';
-                
-                applyTheme(userTheme);
-                
-            } catch (error) {
-                console.error('Error loading user theme/mood:', error);
-                userTheme = 'light';
-                userMood = 'happy';
-            }
-        }
-        
-        function applyTheme(theme) {
-            if (theme === 'dark') {
-                document.documentElement.style.setProperty('--bg-color', '#1a1a1a');
-                document.documentElement.style.setProperty('--text-primary', '#ffffff');
-                document.documentElement.style.setProperty('--text-secondary', '#b0b3b8');
-                document.documentElement.style.setProperty('--secondary-color', '#2d2d2d');
-                document.documentElement.style.setProperty('--border-color', '#3e3e3e');
-            } else {
-                document.documentElement.style.setProperty('--bg-color', '#ffffff');
-                document.documentElement.style.setProperty('--text-primary', '#050505');
-                document.documentElement.style.setProperty('--text-secondary', '#65676b');
-                document.documentElement.style.setProperty('--secondary-color', '#f0f2f5');
-                document.documentElement.style.setProperty('--border-color', '#dddfe2');
-            }
-        }
-        
         function initializeApp() {
-            auth.onAuthStateChanged(user => {
+            auth.onAuthStateChanged(async user => {
                 if (user) {
                     currentUser = user;
                     console.log('User authenticated:', user.uid);
-                    loadFriendsData();
-                    loadFriendRequests();
-                    loadFriendTags();
+                    
+                    // Load initial data
+                    await Promise.all([
+                        loadFriendsData(),
+                        loadFriendRequests(),
+                        loadBlockedUsers(),
+                        loadFriendTags()
+                    ]);
+                    
                     setupPresenceTracking();
+                    setupRealTimeListeners();
+                    
                 } else {
                     console.log('No user, redirecting to index');
                     window.location.href = 'index.html';
@@ -1345,16 +1075,7 @@
         }
         
         function setupPresenceTracking() {
-            // Using Firestore for presence tracking instead of Realtime Database
             const userStatusRef = db.collection('users').doc(currentUser.uid);
-            
-            // Create a Firestore collection for online status
-            const isOfflineForFirestore = {
-                status: 'offline',
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-                userId: currentUser.uid,
-                displayName: currentUser.displayName || 'User'
-            };
             
             const isOnlineForFirestore = {
                 status: 'online',
@@ -1363,10 +1084,18 @@
                 displayName: currentUser.displayName || 'User'
             };
             
-            // Update status to online
-            userStatusRef.update(isOnlineForFirestore).catch(error => {
-                console.log('Error updating online status:', error);
-                // Create document if it doesn't exist
+            const isAwayForFirestore = {
+                status: 'away',
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            const isOfflineForFirestore = {
+                status: 'offline',
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            // Set online status
+            userStatusRef.update(isOnlineForFirestore).catch(() => {
                 userStatusRef.set(isOnlineForFirestore, { merge: true });
             });
             
@@ -1375,16 +1104,68 @@
                 if (document.visibilityState === 'visible') {
                     userStatusRef.update(isOnlineForFirestore);
                 } else {
-                    userStatusRef.update({
-                        status: 'away',
-                        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                    userStatusRef.update(isAwayForFirestore);
                 }
             });
             
             // Update status on page unload
             window.addEventListener('beforeunload', () => {
                 userStatusRef.update(isOfflineForFirestore);
+            });
+        }
+        
+        function setupRealTimeListeners() {
+            // Clean up previous listeners
+            unsubscribes.forEach(unsubscribe => unsubscribe());
+            unsubscribes = [];
+            
+            // Listen for friend requests
+            const requestsUnsubscribe = db.collection('friend_requests')
+                .where('toUserId', '==', currentUser.uid)
+                .where('status', '==', 'pending')
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === 'added') {
+                            loadFriendRequests();
+                            showNotification('New friend request received!', 'success');
+                        }
+                    });
+                });
+            
+            unsubscribes.push(requestsUnsubscribe);
+            
+            // Listen for friendship changes
+            const friendsUnsubscribe = db.collection('friendships')
+                .where('participants', 'array-contains', currentUser.uid)
+                .where('status', '==', 'accepted')
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === 'added' || change.type === 'removed') {
+                            loadFriendsData();
+                        }
+                    });
+                });
+            
+            unsubscribes.push(friendsUnsubscribe);
+            
+            // Listen for user status updates
+            friendsList.forEach(friend => {
+                const statusUnsubscribe = db.collection('users')
+                    .doc(friend.id)
+                    .onSnapshot(doc => {
+                        if (doc.exists) {
+                            const userData = doc.data();
+                            friend.status = userData.status || 'offline';
+                            friend.lastSeen = userData.lastSeen?.toDate() || null;
+                            
+                            if (selectedFriend && selectedFriend.id === friend.id) {
+                                openFriendProfile(selectedFriend);
+                            }
+                            updateFriendsList();
+                        }
+                    });
+                
+                unsubscribes.push(statusUnsubscribe);
             });
         }
         
@@ -1408,6 +1189,10 @@
                     const friendId = friendship.participants.find(id => id !== currentUser.uid);
                     
                     if (friendId) {
+                        // Check if user is blocked
+                        const isBlocked = blockedUsers.some(blocked => blocked.id === friendId);
+                        if (isBlocked) continue;
+                        
                         const userDoc = await db.collection('users').doc(friendId).get();
                         if (userDoc.exists) {
                             const userData = userDoc.data();
@@ -1417,9 +1202,10 @@
                                 name: userData.displayName || 'User',
                                 email: userData.email || '',
                                 username: userData.username || '',
+                                phone: userData.phone || '',
                                 photoURL: userData.photoURL || '',
                                 status: userData.status || 'offline',
-                                lastSeen: userData.lastSeen || null,
+                                lastSeen: userData.lastSeen?.toDate() || null,
                                 createdAt: friendship.createdAt?.toDate() || new Date(),
                                 mood: userData.mood || 'neutral'
                             };
@@ -1430,91 +1216,17 @@
                     }
                 }
                 
-                // Load online status for all friends
-                await updateFriendsOnlineStatus();
-                
                 // Update UI
                 updateFriendsList();
                 
             } catch (error) {
                 console.error('Error loading friends data:', error);
                 showNotification('Failed to load friends. Please check your connection.', 'error');
-                
-                // Show dummy data for testing if no friends
-                if (friendsList.length === 0) {
-                    showDemoFriends();
-                }
-            }
-        }
-        
-        function showDemoFriends() {
-            // Add some demo friends for testing
-            const demoFriends = [
-                {
-                    id: 'demo1',
-                    friendshipId: 'demo-friendship-1',
-                    name: 'John Smith',
-                    email: 'john@example.com',
-                    username: 'johnsmith',
-                    photoURL: '',
-                    status: 'online',
-                    lastSeen: new Date(),
-                    createdAt: new Date(),
-                    mood: 'happy'
-                },
-                {
-                    id: 'demo2',
-                    friendshipId: 'demo-friendship-2',
-                    name: 'Emma Wilson',
-                    email: 'emma@example.com',
-                    username: 'emmaw',
-                    photoURL: '',
-                    status: 'away',
-                    lastSeen: new Date(Date.now() - 30 * 60 * 1000),
-                    createdAt: new Date(),
-                    mood: 'neutral'
-                },
-                {
-                    id: 'demo3',
-                    friendshipId: 'demo-friendship-3',
-                    name: 'Alex Johnson',
-                    email: 'alex@example.com',
-                    username: 'alexj',
-                    photoURL: '',
-                    status: 'offline',
-                    lastSeen: new Date(Date.now() - 2 * 60 * 60 * 1000),
-                    createdAt: new Date(),
-                    mood: 'busy'
-                }
-            ];
-            
-            friendsList = demoFriends;
-            demoFriends.forEach(friend => {
-                userFriendsMap.set(friend.id, friend);
-            });
-            
-            updateFriendsList();
-        }
-        
-        async function updateFriendsOnlineStatus() {
-            try {
-                for (const friend of friendsList) {
-                    const userDoc = await db.collection('users').doc(friend.id).get();
-                    if (userDoc.exists) {
-                        const userData = userDoc.data();
-                        friend.status = userData.status || 'offline';
-                        friend.lastSeen = userData.lastSeen?.toDate() || null;
-                    }
-                }
-            } catch (error) {
-                console.error('Error updating online status:', error);
             }
         }
         
         async function loadFriendRequests() {
             try {
-                console.log('Loading friend requests for user:', currentUser.uid);
-                
                 // Load received friend requests
                 const receivedRequestsSnapshot = await db.collection('friend_requests')
                     .where('toUserId', '==', currentUser.uid)
@@ -1544,6 +1256,7 @@
                             fromUserName: userData.displayName || 'User',
                             fromUserPhoto: userData.photoURL || '',
                             fromUserEmail: userData.email || '',
+                            fromUserUsername: userData.username || '',
                             createdAt: request.createdAt?.toDate() || new Date(),
                             message: request.message || ''
                         };
@@ -1566,6 +1279,7 @@
                             toUserId: request.toUserId,
                             toUserName: userData.displayName || 'User',
                             toUserPhoto: userData.photoURL || '',
+                            toUserUsername: userData.username || '',
                             createdAt: request.createdAt?.toDate() || new Date(),
                             message: request.message || ''
                         };
@@ -1586,45 +1300,42 @@
                 
             } catch (error) {
                 console.error('Error loading friend requests:', error);
-                
-                // Show demo requests for testing
-                if (friendRequests.length === 0) {
-                    showDemoFriendRequests();
-                }
+                showNotification('Failed to load friend requests', 'error');
             }
         }
         
-        function showDemoFriendRequests() {
-            // Add demo friend requests for testing
-            const demoRequests = [
-                {
-                    id: 'demo-req-1',
-                    type: 'received',
-                    fromUserId: 'demo-sender-1',
-                    fromUserName: 'Sarah Johnson',
-                    fromUserPhoto: '',
-                    fromUserEmail: 'sarah@example.com',
-                    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-                    message: 'Hi! Would like to connect'
-                },
-                {
-                    id: 'demo-req-2',
-                    type: 'sent',
-                    toUserId: 'demo-receiver-1',
-                    toUserName: 'Mike Brown',
-                    toUserPhoto: '',
-                    createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-                    message: 'Want to be friends?'
+        async function loadBlockedUsers() {
+            try {
+                const blockedSnapshot = await db.collection('blocked_users')
+                    .where('blockerId', '==', currentUser.uid)
+                    .get();
+                
+                blockedUsers = [];
+                
+                for (const doc of blockedSnapshot.docs) {
+                    const blockData = doc.data();
+                    const userDoc = await db.collection('users').doc(blockData.blockedId).get();
+                    
+                    if (userDoc.exists) {
+                        const userData = userDoc.data();
+                        blockedUsers.push({
+                            id: blockData.blockedId,
+                            blockedId: doc.id,
+                            name: userData.displayName || 'User',
+                            username: userData.username || '',
+                            photoURL: userData.photoURL || '',
+                            blockedAt: blockData.blockedAt?.toDate() || new Date()
+                        });
+                    }
                 }
-            ];
-            
-            friendRequests = demoRequests;
-            pendingRequests = demoRequests.filter(req => req.type === 'received');
-            
-            updatePendingCountBadge();
-            
-            if (document.getElementById('pendingTab').classList.contains('active')) {
-                updateFriendRequestsList();
+                
+                // Update UI if on blocked tab
+                if (document.getElementById('blockedTab').classList.contains('active')) {
+                    updateBlockedFriendsList();
+                }
+                
+            } catch (error) {
+                console.error('Error loading blocked users:', error);
             }
         }
         
@@ -1655,12 +1366,12 @@
             const searchTerm = document.getElementById('friendsSearch').value.toLowerCase();
             
             // Filter friends based on current tab and search
-            let filteredFriends = friendsList;
+            let filteredFriends = [...friendsList];
             
             // Apply tab filter
             const activeTab = document.querySelector('.friend-tab.active').id;
             if (activeTab === 'onlineFriendsTab') {
-                filteredFriends = friendsList.filter(friend => friend.status === 'online');
+                filteredFriends = filteredFriends.filter(friend => friend.status === 'online');
             }
             
             // Apply search filter
@@ -1668,14 +1379,18 @@
                 filteredFriends = filteredFriends.filter(friend => 
                     friend.name.toLowerCase().includes(searchTerm) ||
                     (friend.username && friend.username.toLowerCase().includes(searchTerm)) ||
-                    (friend.email && friend.email.toLowerCase().includes(searchTerm))
+                    (friend.email && friend.email.toLowerCase().includes(searchTerm)) ||
+                    (friend.phone && friend.phone.includes(searchTerm))
                 );
             }
             
             // Sort: online first, then by name
             filteredFriends.sort((a, b) => {
-                if (a.status === 'online' && b.status !== 'online') return -1;
-                if (a.status !== 'online' && b.status === 'online') return 1;
+                const statusOrder = { 'online': 0, 'away': 1, 'offline': 2 };
+                const aStatus = statusOrder[a.status] || 2;
+                const bStatus = statusOrder[b.status] || 2;
+                
+                if (aStatus !== bStatus) return aStatus - bStatus;
                 return a.name.localeCompare(b.name);
             });
             
@@ -1776,6 +1491,9 @@
                     <button class="friend-action-btn" title="Message" data-action="message">
                         <i class="fas fa-comment"></i>
                     </button>
+                    <button class="friend-action-btn" title="Call" data-action="call">
+                        <i class="fas fa-phone"></i>
+                    </button>
                     <button class="friend-action-btn" title="More options" data-action="more">
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
@@ -1792,6 +1510,11 @@
             friendItem.querySelector('[data-action="message"]').addEventListener('click', (e) => {
                 e.stopPropagation();
                 messageFriend(friend.id);
+            });
+            
+            friendItem.querySelector('[data-action="call"]').addEventListener('click', (e) => {
+                e.stopPropagation();
+                startCall(friend.id, 'audio');
             });
             
             friendItem.querySelector('[data-action="more"]').addEventListener('click', (e) => {
@@ -1873,7 +1596,7 @@
                     </div>
                     <div class="friend-request-info">
                         <div class="friend-request-name">${request.fromUserName}</div>
-                        <div class="friend-request-meta">${request.message || 'Wants to be your friend'}</div>
+                        <div class="friend-request-meta">@${request.fromUserUsername || 'user'} • ${request.message || 'Wants to be your friend'}</div>
                         <div class="friend-request-actions">
                             <button class="request-action-btn request-accept" data-action="accept">
                                 <i class="fas fa-check"></i> Accept
@@ -1907,7 +1630,7 @@
                     </div>
                     <div class="friend-request-info">
                         <div class="friend-request-name">${request.toUserName}</div>
-                        <div class="friend-request-meta">Request sent ${getTimeAgo(request.createdAt)}</div>
+                        <div class="friend-request-meta">@${request.toUserUsername || 'user'} • Request sent ${getTimeAgo(request.createdAt)}</div>
                         <div class="friend-request-actions">
                             <button class="request-action-btn request-decline" data-action="cancel">
                                 <i class="fas fa-times"></i> Cancel Request
@@ -1923,6 +1646,73 @@
             }
             
             return requestItem;
+        }
+        
+        function updateBlockedFriendsList() {
+            const blockedSection = document.getElementById('blockedFriendsSection');
+            blockedSection.style.display = 'block';
+            
+            // Clear current list
+            blockedSection.innerHTML = '';
+            
+            if (blockedUsers.length > 0) {
+                const blockedTitle = document.createElement('div');
+                blockedTitle.className = 'section-title';
+                blockedTitle.innerHTML = `
+                    <span>Blocked Users</span>
+                    <span class="section-count">${blockedUsers.length}</span>
+                `;
+                blockedSection.appendChild(blockedTitle);
+                
+                blockedUsers.forEach(blockedUser => {
+                    const blockedItem = createBlockedFriendItem(blockedUser);
+                    blockedSection.appendChild(blockedItem);
+                });
+            } else {
+                blockedSection.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-ban empty-state-icon"></i>
+                        <p>No blocked users</p>
+                        <p style="font-size: 14px; margin-top: 10px;">You haven't blocked anyone yet</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function createBlockedFriendItem(blockedUser) {
+            const blockedItem = document.createElement('div');
+            blockedItem.className = 'blocked-friend-item';
+            blockedItem.dataset.blockedId = blockedUser.id;
+            
+            // Get initials for avatar
+            let initials = 'U';
+            if (blockedUser.name) {
+                initials = blockedUser.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            }
+            
+            blockedItem.innerHTML = `
+                <div class="friend-avatar" ${blockedUser.photoURL ? `style="background-image: url('${blockedUser.photoURL}')"` : ''}>
+                    ${blockedUser.photoURL ? '' : `<span>${initials}</span>`}
+                </div>
+                <div class="friend-info">
+                    <div class="friend-name">${blockedUser.name}</div>
+                    <div class="friend-status-text">
+                        @${blockedUser.username || 'user'}
+                    </div>
+                </div>
+                <div class="friend-actions">
+                    <button class="friend-action-btn" title="Unblock" data-action="unblock">
+                        <i class="fas fa-unlock"></i>
+                    </button>
+                </div>
+            `;
+            
+            // Add event listener
+            blockedItem.querySelector('[data-action="unblock"]').addEventListener('click', () => {
+                unblockUser(blockedUser.id, blockedUser.blockedId);
+            });
+            
+            return blockedItem;
         }
         
         function updatePendingCountBadge() {
@@ -1956,44 +1746,50 @@
         async function searchUsers(searchTerm) {
             const searchResults = document.getElementById('searchResults');
             const noResults = document.getElementById('noResults');
+            const searchLoading = document.getElementById('searchLoading');
             
             if (!searchTerm.trim()) {
                 searchResults.innerHTML = '';
                 noResults.style.display = 'none';
+                searchLoading.style.display = 'none';
                 return;
             }
             
+            searchResults.innerHTML = '';
+            noResults.style.display = 'none';
+            searchLoading.style.display = 'block';
+            
             try {
-                // For demo purposes, show some results even if Firestore query fails
                 let querySnapshot;
                 
                 if (searchMethod === 'username') {
+                    // Search by username
                     querySnapshot = await db.collection('users')
-                        .where('username', '>=', searchTerm)
-                        .where('username', '<=', searchTerm + '\uf8ff')
+                        .where('username', '>=', searchTerm.toLowerCase())
+                        .where('username', '<=', searchTerm.toLowerCase() + '\uf8ff')
                         .limit(10)
                         .get();
                 } else if (searchMethod === 'email') {
+                    // Search by exact email
                     querySnapshot = await db.collection('users')
-                        .where('email', '==', searchTerm)
+                        .where('email', '==', searchTerm.toLowerCase())
                         .limit(10)
                         .get();
                 } else { // phone
+                    // Search by phone number (exact or partial)
                     querySnapshot = await db.collection('users')
-                        .where('phone', '==', searchTerm)
+                        .where('phone', '>=', searchTerm)
+                        .where('phone', '<=', searchTerm + '\uf8ff')
                         .limit(10)
                         .get();
                 }
                 
-                searchResults.innerHTML = '';
+                searchLoading.style.display = 'none';
                 
-                // If no results from database, show demo users
                 if (querySnapshot.empty) {
-                    showDemoSearchResults(searchTerm, searchResults, noResults);
+                    noResults.style.display = 'block';
                     return;
                 }
-                
-                noResults.style.display = 'none';
                 
                 for (const doc of querySnapshot.docs) {
                     const userData = doc.data();
@@ -2003,6 +1799,9 @@
                     
                     // Check if already friends
                     const isFriend = friendsList.some(friend => friend.id === doc.id);
+                    
+                    // Check if already blocked
+                    const isBlocked = blockedUsers.some(blocked => blocked.id === doc.id);
                     
                     // Check if request already sent
                     const requestSent = friendRequests.some(req => 
@@ -2018,7 +1817,11 @@
                     let buttonClass = 'add-friend-btn-result';
                     let disabled = false;
                     
-                    if (isFriend) {
+                    if (isBlocked) {
+                        buttonText = 'Blocked';
+                        buttonClass += ' pending';
+                        disabled = true;
+                    } else if (isFriend) {
                         buttonText = 'Friends';
                         buttonClass += ' friends';
                         disabled = true;
@@ -2043,6 +1846,7 @@
                             <div class="search-result-meta">
                                 ${userData.username ? `@${userData.username}` : ''}
                                 ${userData.email ? ` • ${userData.email}` : ''}
+                                ${userData.phone ? ` • ${userData.phone}` : ''}
                             </div>
                         </div>
                         <button class="${buttonClass}" ${disabled ? 'disabled' : ''}>
@@ -2063,135 +1867,15 @@
                 
             } catch (error) {
                 console.error('Error searching users:', error);
-                // Show demo results for testing
-                showDemoSearchResults(searchTerm, searchResults, noResults);
-            }
-        }
-        
-        function showDemoSearchResults(searchTerm, searchResults, noResults) {
-            // Demo users for testing
-            const demoUsers = [
-                {
-                    id: 'demo-search-1',
-                    displayName: 'John Smith',
-                    username: 'johnsmith',
-                    email: 'john@example.com',
-                    photoURL: ''
-                },
-                {
-                    id: 'demo-search-2',
-                    displayName: 'Emma Wilson',
-                    username: 'emmaw',
-                    email: 'emma@example.com',
-                    photoURL: ''
-                },
-                {
-                    id: 'demo-search-3',
-                    displayName: 'Alex Johnson',
-                    username: 'alexj',
-                    email: 'alex@example.com',
-                    photoURL: ''
-                }
-            ];
-            
-            // Filter demo users by search term
-            const filteredDemoUsers = demoUsers.filter(user => 
-                user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.email.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            
-            if (filteredDemoUsers.length > 0) {
-                noResults.style.display = 'none';
-                
-                filteredDemoUsers.forEach(userData => {
-                    const resultItem = document.createElement('div');
-                    resultItem.className = 'search-result-item';
-                    resultItem.dataset.userId = userData.id;
-                    
-                    // Check if already friends (demo check)
-                    const isFriend = friendsList.some(friend => friend.id === userData.id);
-                    
-                    let buttonText = 'Add Friend';
-                    let buttonClass = 'add-friend-btn-result';
-                    let disabled = false;
-                    
-                    if (isFriend) {
-                        buttonText = 'Friends';
-                        buttonClass += ' friends';
-                        disabled = true;
-                    }
-                    
-                    // Get initials for avatar
-                    let initials = 'U';
-                    if (userData.displayName) {
-                        initials = userData.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-                    }
-                    
-                    resultItem.innerHTML = `
-                        <div class="friend-avatar" ${userData.photoURL ? `style="background-image: url('${userData.photoURL}')"` : ''}>
-                            ${userData.photoURL ? '' : `<span>${initials}</span>`}
-                        </div>
-                        <div class="search-result-info">
-                            <div class="search-result-name">${userData.displayName}</div>
-                            <div class="search-result-meta">
-                                @${userData.username} • ${userData.email}
-                            </div>
-                        </div>
-                        <button class="${buttonClass}" ${disabled ? 'disabled' : ''}>
-                            ${buttonText}
-                        </button>
-                    `;
-                    
-                    // Add event listener to button
-                    const button = resultItem.querySelector('button');
-                    if (!disabled) {
-                        button.addEventListener('click', () => {
-                            sendFriendRequest(userData.id, userData);
-                        });
-                    }
-                    
-                    searchResults.appendChild(resultItem);
-                });
-            } else {
+                searchLoading.style.display = 'none';
                 noResults.style.display = 'block';
+                showNotification('Error searching users', 'error');
             }
         }
         
         async function sendFriendRequest(toUserId, userData) {
             try {
-                console.log('Sending friend request to:', toUserId);
-                
-                // For demo purposes, simulate sending friend request
-                if (toUserId.startsWith('demo-')) {
-                    // Create demo request
-                    const demoRequest = {
-                        id: 'demo-req-' + Date.now(),
-                        type: 'sent',
-                        toUserId: toUserId,
-                        toUserName: userData.displayName,
-                        toUserPhoto: userData.photoURL || '',
-                        createdAt: new Date(),
-                        message: 'Hi, I want to be your friend!'
-                    };
-                    
-                    friendRequests.push(demoRequest);
-                    
-                    // Update UI
-                    updateFriendRequestsList();
-                    updatePendingCountBadge();
-                    
-                    showNotification('Friend request sent!', 'success');
-                    
-                    // Close modal if on mobile
-                    if (window.innerWidth < 768) {
-                        addFriendModal.classList.remove('active');
-                    }
-                    
-                    return;
-                }
-                
-                // Check if request already exists (real implementation)
+                // Check if request already exists
                 const existingRequest = await db.collection('friend_requests')
                     .where('fromUserId', '==', currentUser.uid)
                     .where('toUserId', '==', toUserId)
@@ -2203,13 +1887,27 @@
                     return;
                 }
                 
+                // Check if already friends
+                const existingFriendship = await db.collection('friendships')
+                    .where('participants', 'array-contains', currentUser.uid)
+                    .where('participants', 'array-contains', toUserId)
+                    .where('status', '==', 'accepted')
+                    .get();
+                
+                if (!existingFriendship.empty) {
+                    showNotification('Already friends with this user', 'warning');
+                    return;
+                }
+                
                 // Create friend request
                 await db.collection('friend_requests').add({
                     fromUserId: currentUser.uid,
                     fromUserName: currentUser.displayName || 'User',
                     fromUserPhoto: currentUser.photoURL || '',
+                    fromUserUsername: currentUser.username || '',
                     toUserId: toUserId,
                     toUserName: userData.displayName || 'User',
+                    toUserUsername: userData.username || '',
                     status: 'pending',
                     message: 'Wants to be your friend',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2220,78 +1918,26 @@
                 // Update UI
                 loadFriendRequests();
                 
-                // Close modal if on mobile
-                if (window.innerWidth < 768) {
-                    addFriendModal.classList.remove('active');
+                // Update search results
+                const searchTerm = document.getElementById('searchInput').value.trim();
+                if (searchTerm) {
+                    searchUsers(searchTerm);
                 }
+                
+                // Send notification
+                await sendNotification(toUserId, 'friend_request', {
+                    message: `${currentUser.displayName || 'Someone'} sent you a friend request`,
+                    type: 'friend_request'
+                });
                 
             } catch (error) {
                 console.error('Error sending friend request:', error);
-                
-                // For demo, still show success
-                showNotification('Friend request sent!', 'success');
-                
-                // Create demo request
-                const demoRequest = {
-                    id: 'demo-req-' + Date.now(),
-                    type: 'sent',
-                    toUserId: toUserId,
-                    toUserName: userData.displayName,
-                    toUserPhoto: userData.photoURL || '',
-                    createdAt: new Date(),
-                    message: 'Hi, I want to be your friend!'
-                };
-                
-                friendRequests.push(demoRequest);
-                updateFriendRequestsList();
-                updatePendingCountBadge();
-                
-                // Close modal if on mobile
-                if (window.innerWidth < 768) {
-                    addFriendModal.classList.remove('active');
-                }
+                showNotification('Failed to send friend request', 'error');
             }
         }
         
         async function acceptFriendRequest(requestId, fromUserId) {
             try {
-                console.log('Accepting friend request:', requestId);
-                
-                // For demo purposes
-                if (requestId.startsWith('demo-')) {
-                    // Create demo friendship
-                    const userDoc = await db.collection('users').doc(fromUserId).get().catch(() => null);
-                    const userData = userDoc?.exists ? userDoc.data() : { displayName: 'Demo User' };
-                    
-                    const newFriend = {
-                        id: fromUserId,
-                        friendshipId: 'demo-friendship-' + Date.now(),
-                        name: userData.displayName || 'Demo User',
-                        email: userData.email || '',
-                        username: userData.username || '',
-                        photoURL: userData.photoURL || '',
-                        status: 'online',
-                        createdAt: new Date()
-                    };
-                    
-                    // Add to friends list
-                    friendsList.push(newFriend);
-                    userFriendsMap.set(fromUserId, newFriend);
-                    
-                    // Remove from requests
-                    friendRequests = friendRequests.filter(req => req.id !== requestId);
-                    pendingRequests = pendingRequests.filter(req => req.id !== requestId);
-                    
-                    // Update UI
-                    updateFriendsList();
-                    updateFriendRequestsList();
-                    updatePendingCountBadge();
-                    
-                    showNotification('Friend request accepted!', 'success');
-                    return;
-                }
-                
-                // Real implementation
                 // Update request status
                 await db.collection('friend_requests').doc(requestId).update({
                     status: 'accepted',
@@ -2316,6 +1962,7 @@
                     name: userData.displayName || 'User',
                     email: userData.email || '',
                     username: userData.username || '',
+                    phone: userData.phone || '',
                     photoURL: userData.photoURL || '',
                     status: userData.status || 'offline',
                     createdAt: new Date()
@@ -2330,8 +1977,14 @@
                 
                 showNotification('Friend request accepted!', 'success');
                 
-                // Send notification to the other user
-                await sendFriendNotification(fromUserId, 'accepted');
+                // Send notification
+                await sendNotification(fromUserId, 'friend_request_accepted', {
+                    message: `${currentUser.displayName || 'Someone'} accepted your friend request`,
+                    type: 'friend_request_accepted'
+                });
+                
+                // Update real-time listeners
+                setupRealTimeListeners();
                 
             } catch (error) {
                 console.error('Error accepting friend request:', error);
@@ -2341,23 +1994,6 @@
         
         async function declineFriendRequest(requestId) {
             try {
-                console.log('Declining friend request:', requestId);
-                
-                // For demo purposes
-                if (requestId.startsWith('demo-')) {
-                    // Remove from requests
-                    friendRequests = friendRequests.filter(req => req.id !== requestId);
-                    pendingRequests = pendingRequests.filter(req => req.id !== requestId);
-                    
-                    // Update UI
-                    updateFriendRequestsList();
-                    updatePendingCountBadge();
-                    
-                    showNotification('Friend request declined', 'success');
-                    return;
-                }
-                
-                // Real implementation
                 await db.collection('friend_requests').doc(requestId).update({
                     status: 'declined',
                     respondedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2374,22 +2010,6 @@
         
         async function cancelFriendRequest(requestId) {
             try {
-                console.log('Cancelling friend request:', requestId);
-                
-                // For demo purposes
-                if (requestId.startsWith('demo-')) {
-                    // Remove from requests
-                    friendRequests = friendRequests.filter(req => req.id !== requestId);
-                    
-                    // Update UI
-                    updateFriendRequestsList();
-                    updatePendingCountBadge();
-                    
-                    showNotification('Friend request cancelled', 'success');
-                    return;
-                }
-                
-                // Real implementation
                 await db.collection('friend_requests').doc(requestId).delete();
                 
                 loadFriendRequests();
@@ -2410,23 +2030,6 @@
                 const friend = userFriendsMap.get(friendId);
                 if (!friend) return;
                 
-                // For demo purposes
-                if (friendId.startsWith('demo')) {
-                    // Remove from local lists
-                    friendsList = friendsList.filter(f => f.id !== friendId);
-                    userFriendsMap.delete(friendId);
-                    
-                    // Update UI
-                    updateFriendsList();
-                    
-                    // Close profile modal if open
-                    friendProfileModal.classList.remove('active');
-                    
-                    showNotification('Friend removed', 'success');
-                    return;
-                }
-                
-                // Real implementation
                 // Delete friendship
                 await db.collection('friendships').doc(friend.friendshipId).delete();
                 
@@ -2442,6 +2045,9 @@
                 
                 showNotification('Friend removed', 'success');
                 
+                // Update real-time listeners
+                setupRealTimeListeners();
+                
             } catch (error) {
                 console.error('Error removing friend:', error);
                 showNotification('Failed to remove friend', 'error');
@@ -2450,20 +2056,12 @@
         
         async function blockFriend(friendId) {
             try {
-                if (!confirm('Are you sure you want to block this user?')) {
+                if (!confirm('Are you sure you want to block this user? They will no longer be able to contact you.')) {
                     return;
                 }
                 
-                // For demo purposes
-                if (friendId.startsWith('demo')) {
-                    // Also remove as friend
-                    await removeFriend(friendId);
-                    
-                    showNotification('User blocked successfully', 'success');
-                    return;
-                }
+                const friend = userFriendsMap.get(friendId);
                 
-                // Real implementation
                 // Add to blocked users list
                 await db.collection('blocked_users').add({
                     blockerId: currentUser.uid,
@@ -2471,14 +2069,52 @@
                     blockedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
-                // Also remove as friend
-                await removeFriend(friendId);
+                // If they were friends, remove the friendship
+                if (friend) {
+                    await db.collection('friendships').doc(friend.friendshipId).delete();
+                    
+                    // Remove from local lists
+                    friendsList = friendsList.filter(f => f.id !== friendId);
+                    userFriendsMap.delete(friendId);
+                }
+                
+                // Reload data
+                await Promise.all([
+                    loadFriendsData(),
+                    loadBlockedUsers()
+                ]);
+                
+                // Close profile modal if open
+                friendProfileModal.classList.remove('active');
                 
                 showNotification('User blocked successfully', 'success');
+                
+                // Update real-time listeners
+                setupRealTimeListeners();
                 
             } catch (error) {
                 console.error('Error blocking user:', error);
                 showNotification('Failed to block user', 'error');
+            }
+        }
+        
+        async function unblockUser(userId, blockedId) {
+            try {
+                if (!confirm('Are you sure you want to unblock this user?')) {
+                    return;
+                }
+                
+                // Remove from blocked users
+                await db.collection('blocked_users').doc(blockedId).delete();
+                
+                // Reload data
+                await loadBlockedUsers();
+                
+                showNotification('User unblocked successfully', 'success');
+                
+            } catch (error) {
+                console.error('Error unblocking user:', error);
+                showNotification('Failed to unblock user', 'error');
             }
         }
         
@@ -2501,7 +2137,7 @@
             document.getElementById('friendProfileUsername').textContent = 
                 friend.username ? `@${friend.username}` : 'Not set';
             document.getElementById('friendProfileEmail').textContent = friend.email || 'Not set';
-            document.getElementById('friendProfilePhone').textContent = 'Not set';
+            document.getElementById('friendProfilePhone').textContent = friend.phone || 'Not set';
             document.getElementById('friendProfileStatusText').textContent = friend.mood || 'Available';
             document.getElementById('friendProfileSince').textContent = 
                 friend.createdAt.toLocaleDateString('en-US', { 
@@ -2557,9 +2193,9 @@
                     <i class="fas fa-video"></i>
                     <span>Video</span>
                 </button>
-                <button class="friend-action-grid-btn" data-action="game">
-                    <i class="fas fa-gamepad"></i>
-                    <span>Play Game</span>
+                <button class="friend-action-grid-btn" data-action="profile">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
                 </button>
                 <button class="friend-action-grid-btn" data-action="tag">
                     <i class="fas fa-tag"></i>
@@ -2568,6 +2204,10 @@
                 <button class="friend-action-grid-btn danger-action" data-action="remove">
                     <i class="fas fa-user-minus"></i>
                     <span>Remove</span>
+                </button>
+                <button class="friend-action-grid-btn danger-action" data-action="block">
+                    <i class="fas fa-ban"></i>
+                    <span>Block</span>
                 </button>
             `;
             
@@ -2584,16 +2224,16 @@
                 startCall(friend.id, 'video');
             });
             
-            actionsGrid.querySelector('[data-action="game"]').addEventListener('click', () => {
-                startGameWithFriend(friend.id);
-            });
-            
             actionsGrid.querySelector('[data-action="tag"]').addEventListener('click', () => {
                 addFriendTag(friend.id);
             });
             
             actionsGrid.querySelector('[data-action="remove"]').addEventListener('click', () => {
                 removeFriend(friend.id);
+            });
+            
+            actionsGrid.querySelector('[data-action="block"]').addEventListener('click', () => {
+                blockFriend(friend.id);
             });
             
             // Show modal
@@ -2606,17 +2246,8 @@
         }
         
         function startCall(friendId, type) {
-            showNotification(`Starting ${type} call with friend...`, 'success');
-            
-            // For now, just show a notification
-            setTimeout(() => {
-                showNotification(`Call feature will be implemented soon!`, 'warning');
-            }, 1000);
-        }
-        
-        function startGameWithFriend(friendId) {
-            gameWithFriendId = friendId;
-            miniGameModal.classList.add('active');
+            // Navigate to call page with friend ID and call type
+            window.location.href = `call.html?friendId=${friendId}&type=${type}`;
         }
         
         function addFriendTag(friendId) {
@@ -2640,17 +2271,15 @@
         }
         
         function showFriendContextMenu(friend, event) {
+            // Remove existing context menu
+            const existingMenu = document.querySelector('.context-menu');
+            if (existingMenu) {
+                existingMenu.remove();
+            }
+            
             // Create context menu
             const menu = document.createElement('div');
             menu.className = 'context-menu';
-            menu.style.position = 'fixed';
-            menu.style.backgroundColor = 'var(--bg-color)';
-            menu.style.border = '1px solid var(--border-color)';
-            menu.style.borderRadius = '8px';
-            menu.style.boxShadow = 'var(--shadow-lg)';
-            menu.style.zIndex = '1000';
-            menu.style.minWidth = '200px';
-            menu.style.padding = '8px 0';
             menu.style.top = `${event.clientY}px`;
             menu.style.left = `${event.clientX}px`;
             
@@ -2668,9 +2297,6 @@
                 </div>
                 <div class="context-menu-item" data-action="video">
                     <i class="fas fa-video"></i> Video Call
-                </div>
-                <div class="context-menu-item" data-action="game">
-                    <i class="fas fa-gamepad"></i> Play Game
                 </div>
                 ${tags.length > 0 ? '<div class="context-divider"></div>' : ''}
                 ${tags.map(tag => `
@@ -2690,32 +2316,16 @@
                 </div>
             `;
             
-            // Style menu items
-            const style = document.createElement('style');
-            style.textContent = `
-                .context-menu-item {
-                    padding: 10px 16px;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    transition: background-color 0.2s;
-                }
-                .context-menu-item:hover {
-                    background-color: var(--secondary-color);
-                }
-                .context-divider {
-                    height: 1px;
-                    background-color: var(--border-color);
-                    margin: 4px 0;
-                }
-                .danger-action {
-                    color: var(--danger-color);
-                }
-            `;
-            document.head.appendChild(style);
-            
             document.body.appendChild(menu);
+            
+            // Position menu to stay within viewport
+            const rect = menu.getBoundingClientRect();
+            if (rect.right > window.innerWidth) {
+                menu.style.left = `${window.innerWidth - rect.width - 10}px`;
+            }
+            if (rect.bottom > window.innerHeight) {
+                menu.style.top = `${window.innerHeight - rect.height - 10}px`;
+            }
             
             // Add event listeners
             menu.querySelectorAll('.context-menu-item').forEach(item => {
@@ -2735,14 +2345,10 @@
                         case 'video':
                             startCall(friend.id, 'video');
                             break;
-                        case 'game':
-                            startGameWithFriend(friend.id);
-                            break;
                         case 'addtag':
                             addFriendTag(friend.id);
                             break;
                         case 'tag':
-                            // Tag clicked - could be used for filtering
                             const tag = item.dataset.tag;
                             document.getElementById('friendsSearch').value = tag;
                             document.getElementById('friendsSearch').dispatchEvent(new Event('input'));
@@ -2755,20 +2361,14 @@
                             break;
                     }
                     
-                    document.body.removeChild(menu);
-                    document.head.removeChild(style);
+                    menu.remove();
                 });
             });
             
             // Close menu when clicking outside
             const closeMenu = (e) => {
                 if (!menu.contains(e.target)) {
-                    if (document.body.contains(menu)) {
-                        document.body.removeChild(menu);
-                    }
-                    if (document.head.contains(style)) {
-                        document.head.removeChild(style);
-                    }
+                    menu.remove();
                     document.removeEventListener('click', closeMenu);
                 }
             };
@@ -2778,91 +2378,16 @@
             }, 100);
         }
         
-        function initializeGameBoard() {
-            // Initialize Tic Tac Toe board
-            const gameBoard = document.getElementById('gameBoard');
-            gameBoard.innerHTML = '';
-            
-            for (let i = 0; i < 9; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'game-cell';
-                cell.dataset.index = i;
-                cell.addEventListener('click', () => makeMove(i));
-                gameBoard.appendChild(cell);
-            }
-            
-            // Reset game state
-            gameState = Array(9).fill(null);
-            currentPlayer = 'X';
-            
-            // Update game info
-            document.getElementById('gameTurn').textContent = `Your Turn (${currentPlayer})`;
-            document.getElementById('gameStatus').textContent = 'Make your move';
-        }
-        
-        function makeMove(index) {
-            if (gameState[index] || !gameWithFriendId) return;
-            
-            // Make move
-            gameState[index] = currentPlayer;
-            
-            // Update UI
-            const cells = document.querySelectorAll('.game-cell');
-            cells[index].textContent = currentPlayer;
-            cells[index].style.color = currentPlayer === 'X' ? '#0084ff' : '#ff3b30';
-            
-            // Check for win or draw
-            const winner = checkWinner();
-            
-            if (winner) {
-                document.getElementById('gameStatus').textContent = 
-                    winner === 'draw' ? "It's a draw!" : `${winner} wins!`;
-                document.getElementById('gameTurn').textContent = 'Game Over';
-                
-                // Disable further moves
-                cells.forEach(cell => cell.style.pointerEvents = 'none');
-                
-            } else {
-                // Switch player
-                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-                document.getElementById('gameTurn').textContent = `Your Turn (${currentPlayer})`;
-            }
-        }
-        
-        function checkWinner() {
-            const winPatterns = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-                [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
-                [0, 4, 8], [2, 4, 6] // diagonals
-            ];
-            
-            for (const pattern of winPatterns) {
-                const [a, b, c] = pattern;
-                if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
-                    return gameState[a];
-                }
-            }
-            
-            // Check for draw
-            if (gameState.every(cell => cell !== null)) {
-                return 'draw';
-            }
-            
-            return null;
-        }
-        
-        async function sendFriendNotification(friendId, type) {
+        async function sendNotification(toUserId, type, data) {
             try {
                 await db.collection('notifications').add({
-                    type: type === 'accepted' ? 'friend_request_accepted' : 'friend_request',
+                    toUserId: toUserId,
                     fromUserId: currentUser.uid,
                     fromUserName: currentUser.displayName || 'User',
-                    toUserId: friendId,
-                    message: type === 'accepted' ? 
-                        `${currentUser.displayName || 'Someone'} accepted your friend request` :
-                        `${currentUser.displayName || 'Someone'} sent you a friend request`,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    read: false
+                    type: type,
+                    data: data,
+                    read: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             } catch (error) {
                 console.error('Error sending notification:', error);
@@ -2895,6 +2420,7 @@
                 document.getElementById('searchInput').value = '';
                 document.getElementById('searchResults').innerHTML = '';
                 document.getElementById('noResults').style.display = 'none';
+                document.getElementById('searchLoading').style.display = 'none';
             });
             
             addFriendModal.addEventListener('click', function(e) {
@@ -2936,6 +2462,7 @@
                     // Clear previous results
                     document.getElementById('searchResults').innerHTML = '';
                     document.getElementById('noResults').style.display = 'none';
+                    document.getElementById('searchLoading').style.display = 'none';
                 });
             });
             
@@ -2962,6 +2489,7 @@
                 
                 document.getElementById('friendsSection').style.display = 'block';
                 document.getElementById('friendsRequestsSection').style.display = 'none';
+                document.getElementById('blockedFriendsSection').style.display = 'none';
                 
                 updateFriendsList();
             });
@@ -2974,6 +2502,7 @@
                 
                 document.getElementById('friendsSection').style.display = 'block';
                 document.getElementById('friendsRequestsSection').style.display = 'none';
+                document.getElementById('blockedFriendsSection').style.display = 'none';
                 
                 updateFriendsList();
             });
@@ -2986,8 +2515,22 @@
                 
                 document.getElementById('friendsSection').style.display = 'none';
                 document.getElementById('friendsRequestsSection').style.display = 'block';
+                document.getElementById('blockedFriendsSection').style.display = 'none';
                 
                 updateFriendRequestsList();
+            });
+            
+            document.getElementById('blockedTab').addEventListener('click', function() {
+                document.querySelectorAll('.friend-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                document.getElementById('friendsSection').style.display = 'none';
+                document.getElementById('friendsRequestsSection').style.display = 'none';
+                document.getElementById('blockedFriendsSection').style.display = 'block';
+                
+                updateBlockedFriendsList();
             });
             
             // Close friend profile modal
@@ -2997,113 +2540,34 @@
                 }
             });
             
-            // Mini games
-            document.querySelectorAll('.game-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const game = this.dataset.game;
-                    
-                    // For now, only implement Tic Tac Toe
-                    if (game === 'tictactoe') {
-                        startGameSession('tictactoe');
-                    } else {
-                        showNotification(`${game.charAt(0).toUpperCase() + game.slice(1)} coming soon!`, 'warning');
-                    }
-                });
-            });
-            
-            // Close mini game modal
-            document.getElementById('closeMiniGameModal').addEventListener('click', () => {
-                miniGameModal.classList.remove('active');
-            });
-            
-            miniGameModal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.remove('active');
+            // Close modals with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    addFriendModal.classList.remove('active');
+                    friendProfileModal.classList.remove('active');
                 }
             });
             
-            // Game session
-            document.getElementById('closeGameSessionModal').addEventListener('click', () => {
-                gameSessionModal.classList.remove('active');
-            });
-            
-            document.getElementById('rematchBtn').addEventListener('click', () => {
-                initializeGameBoard();
-            });
-            
-            document.getElementById('inviteFriendBtn').addEventListener('click', () => {
-                showNotification('Invite feature coming soon!', 'warning');
-            });
-            
-            // Refresh friends list every 30 seconds to update online status
+            // Refresh friends list every minute to update online status
             setInterval(() => {
                 if (currentUser && friendsList.length > 0) {
-                    updateFriendsOnlineStatus().then(() => {
-                        updateFriendsList();
+                    // Update online status for all friends
+                    friendsList.forEach(async friend => {
+                        try {
+                            const userDoc = await db.collection('users').doc(friend.id).get();
+                            if (userDoc.exists) {
+                                const userData = userDoc.data();
+                                friend.status = userData.status || 'offline';
+                                friend.lastSeen = userData.lastSeen?.toDate() || null;
+                            }
+                        } catch (error) {
+                            console.error('Error updating friend status:', error);
+                        }
                     });
+                    
+                    updateFriendsList();
                 }
-            }, 30000);
-            
-            // Listen for new friend requests in real-time
-            if (currentUser) {
-                try {
-                    db.collection('friend_requests')
-                        .where('toUserId', '==', currentUser.uid)
-                        .where('status', '==', 'pending')
-                        .onSnapshot((snapshot) => {
-                            snapshot.docChanges().forEach((change) => {
-                                if (change.type === 'added') {
-                                    // New friend request received
-                                    loadFriendRequests();
-                                    
-                                    // Show notification
-                                    showNotification('New friend request received!', 'success');
-                                }
-                            });
-                        });
-                } catch (error) {
-                    console.log('Error setting up friend request listener:', error);
-                }
-            }
-        }
-        
-        function startGameSession(gameType) {
-            currentGame = gameType;
-            
-            // Set up player avatars
-            const player1Avatar = document.getElementById('player1Avatar');
-            const player2Avatar = document.getElementById('player2Avatar');
-            
-            // Current user avatar
-            if (currentUser.photoURL) {
-                player1Avatar.style.backgroundImage = `url('${currentUser.photoURL}')`;
-                player1Avatar.innerHTML = '';
-            } else {
-                const initials = currentUser.displayName ? 
-                    currentUser.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 
-                    'ME';
-                player1Avatar.innerHTML = `<span>${initials}</span>`;
-            }
-            
-            // Friend avatar
-            if (selectedFriend) {
-                if (selectedFriend.photoURL) {
-                    player2Avatar.style.backgroundImage = `url('${selectedFriend.photoURL}')`;
-                    player2Avatar.innerHTML = '';
-                } else {
-                    const initials = selectedFriend.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-                    player2Avatar.innerHTML = `<span>${initials}</span>`;
-                }
-            }
-            
-            // Initialize game
-            if (gameType === 'tictactoe') {
-                initializeGameBoard();
-            }
-            
-            // Close other modals and open game session
-            miniGameModal.classList.remove('active');
-            gameSessionModal.classList.add('active');
+            }, 60000);
         }
     </script>
 </body>
