@@ -2675,11 +2675,61 @@
     </div>
     
     <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
-            authDomain: "uniconnect-ee95c.firebaseapp.com",
-            projectId: "uniconnect-ee95c",
+
+        // group.html - Settings integration
+let groupPageSettings = null;
+
+function initializeGroupSettings() {
+  if (window.KYNECTA_SETTINGS) {
+    window.KYNECTA_SETTINGS.registerPageCallback('group-page', applyGroupSettings);
+    groupPageSettings = window.KYNECTA_SETTINGS.getSetting('', {});
+    applyGroupSettings(groupPageSettings);
+  }
+}
+
+function applyGroupSettings(settings) {
+  console.log('Group page applying settings:', settings);
+  groupPageSettings = settings;
+  
+  // Apply group-specific settings
+  if (settings.groups) {
+    // Auto-join setting
+    const autoJoinToggle = document.getElementById('autoJoinToggle');
+    if (autoJoinToggle) {
+      autoJoinToggle.checked = settings.groups.autoJoin;
+    }
+    
+    // Group notifications
+    const notificationSetting = document.querySelector('.group-notification-setting');
+    if (notificationSetting) {
+      notificationSetting.value = settings.groups.notifications || 'all';
+    }
+  }
+  
+  // Apply general settings
+  document.body.className = document.body.className.replace(/theme-\S+/g, '');
+  if (settings.theme) {
+    document.body.classList.add(`theme-${settings.theme}`);
+  }
+}
+
+window.addEventListener('beforeunload', () => {
+  if (window.KYNECTA_SETTINGS) {
+    window.KYNECTA_SETTINGS.unregisterPageCallback('group-page');
+  }
+});
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeGroupSettings);
+} else {
+  setTimeout(initializeGroupSettings, 100);
+}
+
+// Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
+    authDomain: "uniconnect-ee95c.firebaseapp.com",
+    projectId: "uniconnect-ee95c",
             storageBucket: "uniconnect-ee95c.firebasestorage.app",
             messagingSenderId: "1003264444309",
             appId: "1:1003264444309:web:9f0307516e44d21e97d89c"

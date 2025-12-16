@@ -7,7 +7,7 @@
     <link rel="icon" href="../icons/moodchat-512.png">
     <meta name="theme-color" content="#000000">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Friends | Knecta Chat</title>
     
     <!-- Firebase SDK -->
@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- QR Code Library -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
         * {
@@ -1084,6 +1084,16 @@
             padding: 20px;
             border-radius: 12px;
             box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .qr-code canvas {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 200px;
+            max-height: 200px;
         }
         
         .qr-instructions {
@@ -1288,6 +1298,59 @@
             margin-left: 8px;
         }
         
+        /* Mobile Styles */
+        .mobile-header {
+            display: none;
+            padding: 15px 20px;
+            background: var(--friends-gradient);
+            color: white;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .mobile-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid var(--border-color);
+            z-index: 100;
+            padding: 10px 0;
+        }
+        
+        .mobile-nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        
+        .mobile-nav-item.active {
+            color: var(--primary-color);
+        }
+        
+        .mobile-nav-item i {
+            font-size: 20px;
+        }
+        
         /* Responsive */
         @media (max-width: 1024px) {
             .sidebar {
@@ -1296,14 +1359,40 @@
         }
         
         @media (max-width: 768px) {
+            body {
+                overflow: auto;
+            }
+            
             .app-container {
                 flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                overflow: hidden;
             }
             
             .sidebar {
                 width: 100%;
-                height: auto;
-                max-height: 50vh;
+                height: 100vh;
+                max-height: 100vh;
+                border-right: none;
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 50;
+                background: var(--bg-color);
+            }
+            
+            .sidebar.active {
+                display: flex;
+            }
+            
+            .mobile-header {
+                display: flex;
+            }
+            
+            .mobile-nav {
+                display: flex;
             }
             
             .friend-details-panel {
@@ -1315,35 +1404,21 @@
                 z-index: 100;
             }
             
-            .offline-indicator {
-                top: 10px;
-                right: 10px;
-                font-size: 12px;
-                padding: 6px 12px;
-            }
-            
-            .quick-actions {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-            }
-            
-            .stats-container {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .sidebar-header h2 {
-                font-size: 20px;
-            }
-            
             .friend-categories {
                 padding: 0 10px;
+                overflow-x: auto;
             }
             
             .category-btn {
                 padding: 12px 15px;
                 font-size: 14px;
+                min-width: 120px;
+            }
+            
+            .quick-actions {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
             }
             
             .quick-action-btn {
@@ -1352,6 +1427,10 @@
             
             .quick-action-text {
                 font-size: 12px;
+            }
+            
+            .stats-container {
+                grid-template-columns: repeat(3, 1fr);
             }
             
             .friend-item {
@@ -1370,6 +1449,106 @@
             
             .friend-details {
                 font-size: 13px;
+            }
+            
+            .friend-action-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+            
+            .offline-indicator {
+                top: 10px;
+                right: 10px;
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+            
+            .qr-code {
+                width: 180px;
+                height: 180px;
+            }
+            
+            .add-friend-container {
+                width: 95%;
+                max-height: 85vh;
+            }
+            
+            .friend-list-content {
+                padding-bottom: 80px; /* Space for mobile nav */
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .sidebar-header h2 {
+                font-size: 20px;
+            }
+            
+            .friend-categories {
+                padding: 0 5px;
+            }
+            
+            .category-btn {
+                padding: 10px 12px;
+                font-size: 13px;
+                min-width: 100px;
+            }
+            
+            .quick-action-btn {
+                padding: 12px 8px;
+            }
+            
+            .quick-action-icon {
+                font-size: 20px;
+            }
+            
+            .stat-item {
+                padding: 10px;
+            }
+            
+            .stat-number {
+                font-size: 20px;
+            }
+            
+            .stat-label {
+                font-size: 11px;
+            }
+            
+            .friend-item {
+                padding: 10px;
+            }
+            
+            .friend-avatar {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
+            }
+            
+            .friend-name {
+                font-size: 14px;
+            }
+            
+            .friend-details {
+                font-size: 12px;
+                gap: 5px;
+            }
+            
+            .qr-code {
+                width: 160px;
+                height: 160px;
+            }
+            
+            .mobile-nav-item {
+                font-size: 10px;
+                padding: 8px 5px;
+            }
+            
+            .mobile-nav-item i {
+                font-size: 18px;
+            }
+            
+            .add-friend-container {
+                max-height: 90vh;
             }
         }
         
@@ -1442,6 +1621,22 @@
         .local-storage-indicator.active {
             display: flex;
         }
+        
+        /* Mobile overlay for sidebar */
+        .mobile-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 49;
+            display: none;
+        }
+        
+        .mobile-overlay.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -1469,9 +1664,23 @@
         <span>Loaded from Local Storage</span>
     </div>
     
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <button class="back-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h2>Friends</h2>
+        <button class="add-friend-btn" id="mobileAddFriendBtn" title="Add new friend">
+            <i class="fas fa-user-plus"></i>
+        </button>
+    </div>
+    
+    <!-- Mobile Overlay for Sidebar -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+    
     <div class="app-container">
         <!-- Sidebar with friend list -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h2>Friends</h2>
                 <button class="add-friend-btn" id="addFriendBtn" title="Add new friend">
@@ -1614,6 +1823,30 @@
                 <!-- Friend details will be loaded here -->
             </div>
         </div>
+    </div>
+    
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav">
+        <button class="mobile-nav-item active" data-section="all">
+            <i class="fas fa-user-friends"></i>
+            <span>All</span>
+        </button>
+        <button class="mobile-nav-item" data-section="contacts">
+            <i class="fas fa-address-book"></i>
+            <span>Contacts</span>
+        </button>
+        <button class="mobile-nav-item" data-section="friends">
+            <i class="fas fa-user-check"></i>
+            <span>Friends</span>
+        </button>
+        <button class="mobile-nav-item" data-section="requests">
+            <i class="fas fa-user-plus"></i>
+            <span>Requests</span>
+        </button>
+        <button class="mobile-nav-item" data-section="temporary">
+            <i class="fas fa-clock"></i>
+            <span>Temporary</span>
+        </button>
     </div>
     
     <!-- Add Friend Modal -->
@@ -1807,6 +2040,66 @@
     </div>
 
     <script>
+
+// friend.html - Settings integration
+let friendPageSettings = null;
+
+function initializeFriendSettings() {
+  if (window.KYNECTA_SETTINGS) {
+    window.KYNECTA_SETTINGS.registerPageCallback('friend-page', applyFriendSettings);
+    friendPageSettings = window.KYNECTA_SETTINGS.getSetting('', {});
+    applyFriendSettings(friendPageSettings);
+  }
+}
+
+function applyFriendSettings(settings) {
+  console.log('Friend page applying settings:', settings);
+  friendPageSettings = settings;
+  
+  // Apply theme
+  const container = document.getElementById('friendsList') || document.body;
+  container.className = container.className.replace(/theme-\S+/g, '');
+  if (settings.theme) {
+    container.classList.add(`theme-${settings.theme}`);
+  }
+  
+  // Apply font size
+  document.querySelectorAll('.friend-item, .friend-name').forEach(el => {
+    switch(settings.fontSize) {
+      case 'small': el.style.fontSize = '0.875rem'; break;
+      case 'large': el.style.fontSize = '1.125rem'; break;
+      case 'xlarge': el.style.fontSize = '1.25rem'; break;
+      default: el.style.fontSize = '1rem';
+    }
+  });
+  
+  // Apply privacy settings for friend list
+  if (settings.privacy) {
+    const lastSeenElements = document.querySelectorAll('.last-seen');
+    lastSeenElements.forEach(el => {
+      if (settings.privacy.lastSeen === 'nobody') {
+        el.textContent = 'Last seen hidden';
+      } else if (settings.privacy.lastSeen === 'contacts') {
+        // Show only for contacts logic
+      }
+    });
+  }
+}
+
+// Cleanup
+window.addEventListener('beforeunload', () => {
+  if (window.KYNECTA_SETTINGS) {
+    window.KYNECTA_SETTINGS.unregisterPageCallback('friend-page');
+  }
+});
+
+// Initialize
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeFriendSettings);
+} else {
+  setTimeout(initializeFriendSettings, 100);
+}
+
         // Firebase Configuration (same as calls.html)
         const firebaseConfig = {
             apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
@@ -1837,6 +2130,8 @@
         let isOnline = navigator.onLine;
         let offlineCheckInterval = null;
         let isLoadedFromLocalStorage = false;
+        let isMobile = window.innerWidth <= 768;
+        let pendingFriendRequests = []; // Store offline friend requests
         
         // Friend categories with colors and icons
         const friendCategories = {
@@ -1887,6 +2182,10 @@
         const offlineOverlay = document.getElementById('offlineOverlay');
         const offlineIndicator = document.getElementById('offlineIndicator');
         const localStorageIndicator = document.getElementById('localStorageIndicator');
+        const sidebar = document.getElementById('sidebar');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileAddFriendBtn = document.getElementById('mobileAddFriendBtn');
         
         // Friend sections
         const allFriendsSection = document.getElementById('allFriendsSection');
@@ -1909,7 +2208,8 @@
             REQUESTS: 'knecta_friend_requests',
             SENT_REQUESTS: 'knecta_sent_requests',
             TEMPORARY_FRIENDS: 'knecta_temporary_friends',
-            LAST_SYNC: 'knecta_friends_last_sync'
+            LAST_SYNC: 'knecta_friends_last_sync',
+            PENDING_REQUESTS: 'knecta_pending_requests' // For offline friend requests
         };
         
         // Initialize the application
@@ -1921,6 +2221,10 @@
             // Initialize offline detection
             initializeOfflineDetection();
             
+            // Check if mobile
+            checkMobile();
+            window.addEventListener('resize', checkMobile);
+            
             // Get logged-in user from app.js global state
             if (window.appState && window.appState.currentUser) {
                 currentUser = window.appState.currentUser;
@@ -1931,6 +2235,7 @@
                 setupFriendRequestsListener();
                 setupPresenceTracking();
                 generateQRCode();
+                setupMobileNavigation();
                 
                 // Show notification
                 showNotification('Friends system ready', 'success');
@@ -1946,6 +2251,7 @@
                         setupFriendRequestsListener();
                         setupPresenceTracking();
                         generateQRCode();
+                        setupMobileNavigation();
                         
                         // Show notification
                         showNotification('Friends system ready', 'success');
@@ -1955,6 +2261,83 @@
                     }
                 });
             }
+        }
+        
+        function checkMobile() {
+            isMobile = window.innerWidth <= 768;
+            if (isMobile) {
+                document.body.classList.add('mobile');
+                // Hide sidebar by default on mobile
+                sidebar.classList.remove('active');
+                mobileOverlay.classList.remove('active');
+                // Show all friends section
+                showMobileSection('all');
+            } else {
+                document.body.classList.remove('mobile');
+                // Show sidebar on desktop
+                sidebar.classList.add('active');
+            }
+        }
+        
+        function setupMobileNavigation() {
+            const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
+            mobileNavItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const section = this.dataset.section;
+                    
+                    // Update active state
+                    mobileNavItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show the selected section
+                    showMobileSection(section);
+                    
+                    // Hide sidebar on mobile
+                    if (isMobile) {
+                        sidebar.classList.remove('active');
+                        mobileOverlay.classList.remove('active');
+                    }
+                });
+            });
+        }
+        
+        function showMobileSection(section) {
+            // Hide all sections first
+            document.querySelectorAll('.friends-section').forEach(s => {
+                s.classList.remove('active');
+            });
+            
+            // Deactivate all category buttons
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show the selected section
+            switch(section) {
+                case 'all':
+                    allFriendsSection.classList.add('active');
+                    document.getElementById('allTab').classList.add('active');
+                    break;
+                case 'contacts':
+                    contactsSection.classList.add('active');
+                    document.getElementById('contactsTab').classList.add('active');
+                    break;
+                case 'friends':
+                    friendsSection.classList.add('active');
+                    document.getElementById('friendsTab').classList.add('active');
+                    break;
+                case 'requests':
+                    requestsSection.classList.add('active');
+                    document.getElementById('requestsTab').classList.add('active');
+                    break;
+                case 'temporary':
+                    temporarySection.classList.add('active');
+                    document.getElementById('temporaryTab').classList.add('active');
+                    break;
+            }
+            
+            // Update the current section view
+            updateCurrentSection();
         }
         
         function initializeOfflineDetection() {
@@ -1990,12 +2373,35 @@
             // Sync friends data from server
             syncFriendsFromServer();
             
+            // Send any pending offline friend requests
+            sendPendingOfflineRequests();
+            
             // Hide local storage indicator
             localStorageIndicator.classList.remove('active');
             isLoadedFromLocalStorage = false;
             
             // Show notification
             showNotification('You are back online. Syncing friends...', 'success');
+        }
+        
+        async function sendPendingOfflineRequests() {
+            try {
+                const pendingRequests = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEYS.PENDING_REQUESTS) || '[]');
+                
+                if (pendingRequests.length > 0) {
+                    showNotification(`Sending ${pendingRequests.length} pending friend requests...`, 'info');
+                    
+                    for (const request of pendingRequests) {
+                        await sendFriendRequest(request.friendId, request.category, request.note, request.isTemporary, request.duration, request.isBusiness);
+                    }
+                    
+                    // Clear pending requests
+                    localStorage.removeItem(LOCAL_STORAGE_KEYS.PENDING_REQUESTS);
+                    showNotification('All pending friend requests sent successfully', 'success');
+                }
+            } catch (error) {
+                console.error('Error sending pending requests:', error);
+            }
         }
         
         function handleOffline() {
@@ -2048,9 +2454,9 @@
                 // Disable buttons that require internet
                 const internetButtons = [
                     'addFriendBtn',
+                    'mobileAddFriendBtn',
                     'syncContactsBtn',
                     'discoverBtn',
-                    'sendFriendRequestBtn',
                     'startNearbyBtn',
                     'acceptRequestBtn',
                     'declineRequestBtn'
@@ -2095,6 +2501,7 @@
                 // Enable buttons
                 const internetButtons = [
                     'addFriendBtn',
+                    'mobileAddFriendBtn',
                     'syncContactsBtn',
                     'discoverBtn',
                     'sendFriendRequestBtn',
@@ -2380,6 +2787,12 @@
                     temporaryFriends = JSON.parse(tempFriendsData);
                 }
                 
+                // Load pending offline requests
+                const pendingRequestsData = localStorage.getItem(LOCAL_STORAGE_KEYS.PENDING_REQUESTS);
+                if (pendingRequestsData) {
+                    pendingFriendRequests = JSON.parse(pendingRequestsData);
+                }
+                
                 console.log(`Loaded from local storage: ${friends.length} friends, ${contacts.length} contacts, ${friendRequests.length} requests`);
                 
                 // Show local storage indicator if offline
@@ -2397,6 +2810,7 @@
                 friendRequests = [];
                 sentRequests = [];
                 temporaryFriends = [];
+                pendingFriendRequests = [];
             }
         }
         
@@ -2407,6 +2821,7 @@
                 localStorage.setItem(LOCAL_STORAGE_KEYS.REQUESTS, JSON.stringify(friendRequests));
                 localStorage.setItem(LOCAL_STORAGE_KEYS.SENT_REQUESTS, JSON.stringify(sentRequests));
                 localStorage.setItem(LOCAL_STORAGE_KEYS.TEMPORARY_FRIENDS, JSON.stringify(temporaryFriends));
+                localStorage.setItem(LOCAL_STORAGE_KEYS.PENDING_REQUESTS, JSON.stringify(pendingFriendRequests));
                 console.log('Friends saved to local storage');
             } catch (error) {
                 console.error('Error saving friends to local storage:', error);
@@ -2766,7 +3181,7 @@
                             <i class="fas fa-paper-plane"></i>
                             <p>No sent requests</p>
                             <p class="subtext">Your sent friend requests will appear here</p>
-                        </div>
+                    </div>
                     `;
                 } else {
                     // Load sent request data
@@ -3067,6 +3482,11 @@
         
         function handleFriendAction(action, friendData, type, button) {
             if (!isOnline && action !== 'message' && action !== 'call') {
+                // Allow sending friend requests offline (they'll be sent when online)
+                if (action === 'add') {
+                    sendFriendRequestOffline(friendData.uid);
+                    return;
+                }
                 showNotification('This action requires internet connection', 'error');
                 return;
             }
@@ -3077,8 +3497,8 @@
                     break;
                     
                 case 'message':
-                    // Open chat with friend
-                    window.open(`chat.html?user=${friendData.uid}`, '_blank');
+                    // Open chat with friend - FIXED LINK TO CHAT.HTML
+                    openChatWithFriend(friendData.uid);
                     break;
                     
                 case 'call':
@@ -3115,6 +3535,31 @@
             }
         }
         
+        function openChatWithFriend(friendId) {
+            // Store friend data for chat
+            const friend = friends.find(f => f.uid === friendId) || 
+                          contacts.find(c => c.uid === friendId);
+            
+            if (friend) {
+                // Create a session for the chat
+                const chatSession = {
+                    friendId: friendId,
+                    friendName: friend.displayName || 'Unknown',
+                    friendUsername: friend.username || '',
+                    friendAvatar: friend.photoURL || '',
+                    timestamp: Date.now()
+                };
+                
+                // Store in localStorage for chat.html to access
+                localStorage.setItem('knecta_current_chat', JSON.stringify(chatSession));
+                
+                // Open chat.html
+                window.open(`chat.html?friend=${friendId}`, isMobile ? '_self' : '_blank');
+            } else {
+                showNotification('Friend not found', 'error');
+            }
+        }
+        
         function handleRequestAction(action, requestData, button) {
             if (!isOnline) {
                 showNotification('This action requires internet connection', 'error');
@@ -3142,7 +3587,8 @@
         async function sendFriendRequest(friendId, category = 'friend', note = '', isTemporary = false, duration = null, isBusiness = false) {
             try {
                 if (!isOnline) {
-                    showNotification('Cannot send friend request while offline', 'error');
+                    // Store request for later when online
+                    sendFriendRequestOffline(friendId, category, note, isTemporary, duration, isBusiness);
                     return;
                 }
                 
@@ -3203,6 +3649,46 @@
                 console.error('Error sending friend request:', error);
                 showNotification('Failed to send friend request', 'error');
             }
+        }
+        
+        function sendFriendRequestOffline(friendId, category = 'friend', note = '', isTemporary = false, duration = null, isBusiness = false) {
+            // Store friend request locally when offline
+            const pendingRequest = {
+                friendId: friendId,
+                category: category,
+                note: note,
+                isTemporary: isTemporary,
+                duration: duration,
+                isBusiness: isBusiness,
+                timestamp: Date.now()
+            };
+            
+            // Add to pending requests
+            pendingFriendRequests.push(pendingRequest);
+            localStorage.setItem(LOCAL_STORAGE_KEYS.PENDING_REQUESTS, JSON.stringify(pendingFriendRequests));
+            
+            // Update UI immediately for better UX
+            // Add to sent requests locally
+            const friend = contacts.find(c => c.uid === friendId) || { uid: friendId, displayName: 'Unknown User' };
+            const sentRequest = {
+                id: 'offline_' + Date.now(),
+                from: currentUser.uid,
+                to: friendId,
+                status: 'pending',
+                userData: friend,
+                type: 'sent_request',
+                createdAt: new Date(),
+                note: note
+            };
+            
+            sentRequests.push(sentRequest);
+            renderSentRequests();
+            saveFriendsToLocalStorage();
+            
+            showNotification('Friend request saved offline. It will be sent when you\'re back online.', 'success');
+            
+            // Close modal if open
+            addFriendModal.classList.remove('active');
         }
         
         async function acceptFriendRequest(requestData) {
@@ -3552,6 +4038,12 @@
             // Show panel
             friendDetailsPanel.classList.add('active');
             
+            // On mobile, hide the sidebar
+            if (isMobile) {
+                sidebar.classList.remove('active');
+                mobileOverlay.classList.remove('active');
+            }
+            
             // Load friend details
             loadFriendDetails(friendData, type);
         }
@@ -3761,7 +4253,7 @@
                 // Add event listeners for action buttons
                 if (type === 'friend') {
                     document.getElementById('messageFriendBtn').addEventListener('click', () => {
-                        window.open(`chat.html?user=${friendData.uid}`, '_blank');
+                        openChatWithFriend(friendData.uid);
                     });
                     
                     document.getElementById('callFriendBtn').addEventListener('click', () => {
@@ -3786,7 +4278,11 @@
                 
                 if (type === 'contact') {
                     document.getElementById('addContactBtn').addEventListener('click', () => {
-                        sendFriendRequest(friendData.uid);
+                        if (!isOnline) {
+                            sendFriendRequestOffline(friendData.uid);
+                        } else {
+                            sendFriendRequest(friendData.uid);
+                        }
                     });
                 }
                 
@@ -4235,40 +4731,68 @@
         }
         
         function generateQRCode() {
-            try {
-                const qrContainer = document.getElementById('qrCodeContainer');
-                if (!qrContainer || !currentUser) return;
-                
-                // Create QR code data
-                const qrData = JSON.stringify({
-                    type: 'knecta_friend',
-                    userId: currentUser.uid,
-                    username: userData?.username || '',
-                    displayName: userData?.displayName || '',
-                    timestamp: Date.now()
-                });
-                
-                // Generate QR code
-                QRCode.toCanvas(qrContainer, qrData, {
-                    width: 160,
-                    height: 160,
-                    margin: 2,
-                    color: {
-                        dark: '#0084ff',
-                        light: '#ffffff'
-                    }
-                }, function(error) {
-                    if (error) {
-                        console.error('Error generating QR code:', error);
-                        qrContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-exclamation-triangle"></i><p>Failed to generate QR code</p></div>';
-                    }
-                });
-                
-            } catch (error) {
-                console.error('Error in generateQRCode:', error);
-            }
+    try {
+        const qrContainer = document.getElementById('qrCodeContainer');
+        if (!qrContainer || !currentUser) {
+            console.log('QR container or user not found');
+            return;
         }
         
+        // Clear existing QR code
+        qrContainer.innerHTML = '';
+        
+        // Check if QRCode library is loaded
+        if (typeof QRCode === 'undefined') {
+            console.error('QRCode library not loaded');
+            qrContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-exclamation-triangle"></i><p>QR code library not available</p><button onclick="retryQRCode()" style="margin-top: 10px; padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer;">Retry</button></div>';
+            return;
+        }
+        
+        // Create QR code data
+        const qrData = JSON.stringify({
+            type: 'knecta_friend',
+            userId: currentUser.uid,
+            username: userData?.username || '',
+            displayName: userData?.displayName || '',
+            timestamp: Date.now()
+        });
+        
+        // Generate QR code
+        new QRCode(qrContainer, {
+            text: qrData,
+            width: 160,
+            height: 160,
+            colorDark: '#0084ff',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        console.log('QR code generated successfully');
+        
+    } catch (error) {
+        console.error('Error in generateQRCode:', error);
+        const qrContainer = document.getElementById('qrCodeContainer');
+        if (qrContainer) {
+            qrContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-exclamation-triangle"></i><p>Failed to generate QR code</p><button onclick="generateQRCode()" style="margin-top: 10px; padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer;">Retry</button></div>';
+        }
+    }
+}
+
+// Add retry function
+function retryQRCode() {
+    // Try to reload the QR code library
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    script.onload = function() {
+        generateQRCode();
+    };
+    script.onerror = function() {
+        console.error('Failed to load QR code library');
+        showNotification('Failed to load QR code library', 'error');
+    };
+    document.head.appendChild(script);
+}
+
         function initiateCall(friendId) {
             // Send message to calls.html to initiate a call
             if (window.opener) {
@@ -4279,7 +4803,7 @@
                 }, '*');
             } else {
                 // Open calls.html with call parameter
-                window.open(`calls.html?call=${friendId}&type=video`, '_blank');
+                window.open(`calls.html?call=${friendId}&type=video`, isMobile ? '_self' : '_blank');
             }
         }
         
@@ -4337,6 +4861,29 @@
                 }
             });
             
+            // Mobile menu button
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+                mobileOverlay.classList.toggle('active');
+            });
+            
+            // Mobile overlay
+            mobileOverlay.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                mobileOverlay.classList.remove('active');
+            });
+            
+            // Mobile add friend button
+            mobileAddFriendBtn.addEventListener('click', () => {
+                if (!isOnline) {
+                    showNotification('Cannot add friends while offline', 'error');
+                    return;
+                }
+                
+                addFriendModal.classList.add('active');
+                document.querySelector('.add-friend-tab[data-tab="methods"]').click();
+            });
+            
             // Category tabs
             document.getElementById('allTab').addEventListener('click', function() {
                 document.querySelectorAll('.category-btn').forEach(btn => {
@@ -4351,6 +4898,12 @@
                 
                 // Load all friends view
                 updateCurrentSection();
+                
+                // On mobile, hide sidebar after selection
+                if (isMobile) {
+                    sidebar.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
+                }
             });
             
             document.getElementById('contactsTab').addEventListener('click', function() {
@@ -4363,6 +4916,12 @@
                     section.classList.remove('active');
                 });
                 contactsSection.classList.add('active');
+                
+                // On mobile, hide sidebar after selection
+                if (isMobile) {
+                    sidebar.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
+                }
             });
             
             document.getElementById('friendsTab').addEventListener('click', function() {
@@ -4375,6 +4934,12 @@
                     section.classList.remove('active');
                 });
                 friendsSection.classList.add('active');
+                
+                // On mobile, hide sidebar after selection
+                if (isMobile) {
+                    sidebar.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
+                }
             });
             
             document.getElementById('requestsTab').addEventListener('click', function() {
@@ -4387,6 +4952,12 @@
                     section.classList.remove('active');
                 });
                 requestsSection.classList.add('active');
+                
+                // On mobile, hide sidebar after selection
+                if (isMobile) {
+                    sidebar.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
+                }
             });
             
             document.getElementById('temporaryTab').addEventListener('click', function() {
@@ -4399,6 +4970,12 @@
                     section.classList.remove('active');
                 });
                 temporarySection.classList.add('active');
+                
+                // On mobile, hide sidebar after selection
+                if (isMobile) {
+                    sidebar.classList.remove('active');
+                    mobileOverlay.classList.remove('active');
+                }
             });
             
             // Category filter buttons
@@ -4518,11 +5095,6 @@
             
             // Send friend request button
             document.getElementById('sendFriendRequestBtn').addEventListener('click', async () => {
-                if (!isOnline) {
-                    showNotification('Cannot send friend request while offline', 'error');
-                    return;
-                }
-                
                 const activeTab = document.querySelector('.add-friend-tab.active');
                 if (!activeTab) return;
                 
@@ -4541,7 +5113,24 @@
                         return;
                     }
                     
-                    // Search for user by username
+                    // If offline, store request locally
+                    if (!isOnline) {
+                        const category = document.getElementById('friendCategorySelect').value || 'friend';
+                        const note = document.getElementById('friendNote').value.trim();
+                        
+                        // Create a mock friend object for offline storage
+                        const offlineFriend = {
+                            uid: 'offline_' + Date.now(),
+                            displayName: usernameInput,
+                            username: usernameInput,
+                            type: 'contact'
+                        };
+                        
+                        sendFriendRequestOffline(offlineFriend.uid, category, note);
+                        return;
+                    }
+                    
+                    // Search for user by username (online only)
                     try {
                         const userSnapshot = await db.collection('users')
                             .where('usernameLower', '==', usernameInput.toLowerCase())
@@ -4593,6 +5182,12 @@
             document.getElementById('backBtn').addEventListener('click', () => {
                 friendDetailsPanel.classList.remove('active');
                 selectedFriend = null;
+                
+                // On mobile, show the sidebar again
+                if (isMobile && !sidebar.classList.contains('active')) {
+                    sidebar.classList.add('active');
+                    mobileOverlay.classList.add('active');
+                }
             });
             
             // Friend request modal buttons
@@ -4635,7 +5230,7 @@
             
             // Window resize
             window.addEventListener('resize', () => {
-                // Handle any responsive adjustments
+                checkMobile();
             });
             
             // Before unload
@@ -4655,7 +5250,7 @@
             });
         }
         
-        console.log('Friends system initialized successfully with offline support');
+        console.log('Friends system initialized successfully with mobile and offline support');
     </script>
 </body>
 </html>

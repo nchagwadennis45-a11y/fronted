@@ -1579,10 +1579,11 @@
             color: var(--text-secondary);
         }
         
-        /* Loading States */
+        /* Loading States - HIDDEN */
         .loading {
             opacity: 0.7;
             pointer-events: none;
+            display: none !important;
         }
         
         .spinner {
@@ -1593,6 +1594,7 @@
             height: 24px;
             animation: spin 1s linear infinite;
             margin: 0 auto;
+            display: none !important;
         }
         
         @keyframes spin {
@@ -1718,6 +1720,8 @@
             border-radius: 12px;
             padding: 15px;
             z-index: 20;
+            display: flex;
+            flex-direction: column;
         }
         
         .answer-input {
@@ -1929,6 +1933,31 @@
         .offline-cache-info i {
             margin-right: 5px;
         }
+        
+        /* INSTANT LOADING STYLES */
+        .instant-load {
+            transition: opacity 0.3s ease;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .visible {
+            display: block !important;
+        }
+        
+        /* Smooth transitions */
+        .status-item-enter {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        
+        .status-item-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -1984,11 +2013,7 @@
                 <div class="contacts-status-list">
                     <div class="section-title" id="sectionTitle">Recent Updates</div>
                     <div id="recentStatusList">
-                        <!-- Statuses will be loaded here -->
-                        <div class="loading-placeholder" style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
-                            <div class="spinner"></div>
-                            <p style="margin-top: 10px;">Loading status updates...</p>
-                        </div>
+                        <!-- Statuses will be loaded instantly from cache -->
                     </div>
                 </div>
             </div>
@@ -2356,6 +2381,9 @@
         let cachedStatuses = [];
         let pendingUploads = [];
         let isSyncing = false;
+        let isInitialLoadComplete = false;
+        let backgroundSyncInterval = null;
+        let realTimeListener = null;
         
         // Color palettes
         const textColors = [
@@ -2412,12 +2440,24 @@
         const offlineIndicator = document.getElementById('offlineIndicator');
         const offlinePostingIndicator = document.getElementById('offlinePostingIndicator');
         
+        // ============================================
+        // CORE FUNCTIONS - Optimized for instant loading
+        // ============================================
+        
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
+            // INSTANT LOAD: Show cached data immediately
+            instantLoadFromCache();
+            
             // Load current user from app.js or localStorage
             loadCurrentUser();
             loadUserThemeAndMood();
-            initializeApp();
+            
+            // Initialize app in background
+            setTimeout(() => {
+                initializeApp();
+            }, 100);
+            
             setupEventListeners();
             initializeStatusTypeContainers();
             initializeColorPalettes();
@@ -2429,6 +2469,46 @@
             setupOfflineSupport();
         });
 
+        // INSTANT LOAD FUNCTION - Shows cached data immediately
+        function instantLoadFromCache() {
+            try {
+                // Try to load user from localStorage first
+                const userData = localStorage.getItem('currentUser');
+                if (userData) {
+                    const user = JSON.parse(userData);
+                    if (user && user.uid) {
+                        // Load cached statuses
+                        loadCachedStatuses();
+                        
+                        // Update UI with cached data immediately
+                        if (cachedStatuses.length > 0) {
+                            updateStatusListWithCache();
+                        }
+                        
+                        // Update my status avatar
+                        const myStatusAvatar = document.getElementById('myStatusAvatar');
+                        const userInitials = user.displayName ? 
+                            user.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 
+                            'ME';
+                        
+                        if (user.photoURL) {
+                            myStatusAvatar.style.backgroundImage = `url('${user.photoURL}')`;
+                            myStatusAvatar.innerHTML = '';
+                        } else {
+                            myStatusAvatar.innerHTML = `<span>${userInitials}<\/span>`;
+                        }
+                    }
+                }
+                
+                // Remove any loading placeholders
+                const loadingPlaceholders = document.querySelectorAll('.loading-placeholder');
+                loadingPlaceholders.forEach(el => el.style.display = 'none');
+                
+            } catch (error) {
+                console.error('Error in instant load:', error);
+            }
+        }
+        
         // Load current user from app.js data
         function loadCurrentUser() {
             try {
@@ -2454,6 +2534,10 @@
                                     email: user.email
                                 }));
                                 console.log('User loaded from Firebase auth:', user.uid);
+                                
+                                // Now that we have user, load cached data
+                                loadCachedStatuses();
+                                updateStatusListWithCache();
                             } else {
                                 console.log('No user found, redirecting to login');
                                 window.location.href = 'index.html';
@@ -2466,7 +2550,7 @@
             }
         }
         
-        // OFFLINE SUPPORT FUNCTIONS - Enhanced
+        // OFFLINE SUPPORT FUNCTIONS - Optimized
         function setupOfflineSupport() {
             // Listen for online/offline events
             window.addEventListener('online', handleOnlineStatusChange);
@@ -2475,16 +2559,21 @@
             // Initial check
             handleOnlineStatusChange();
             
-            // Load cached statuses
-            loadCachedStatuses();
+            // Load cached statuses if not already loaded
+            if (cachedStatuses.length === 0) {
+                loadCachedStatuses();
+            }
             
             // Load pending uploads
             loadPendingUploads();
             
-            // Check network status periodically
-            setInterval(() => {
-                handleOnlineStatusChange();
-            }, 5000);
+            // Start background sync interval
+            startBackgroundSync();
+            
+            // Setup real-time listener if online
+            if (isOnline && currentUser && currentUser.uid) {
+                setupRealTimeListener();
+            }
         }
         
         function handleOnlineStatusChange() {
@@ -2494,45 +2583,35 @@
             if (isOnline && !wasOnline) {
                 // Just came online
                 offlineIndicator.classList.remove('active');
-                showNotification('You are back online. Syncing...', 'success');
+                showNotification('You are back online. Syncing in background...', 'success');
                 
-                // Process pending uploads
-                processPendingUploads();
+                // Process pending uploads in background
+                setTimeout(() => {
+                    processPendingUploads();
+                }, 2000);
                 
-                // Sync any offline data
-                syncOfflineData();
+                // Start real-time listener
+                setupRealTimeListener();
                 
-                // Reload statuses
-                loadStatusUpdates();
+                // Load fresh data in background
+                setTimeout(() => {
+                    loadStatusUpdates();
+                }, 1000);
                 
-                // Update UI
-                updateOfflineIndicators();
             } else if (!isOnline && wasOnline) {
                 // Just went offline
                 offlineIndicator.classList.add('active');
-                showNotification('You are offline. Statuses will be queued for upload.', 'warning');
                 
-                // Update UI
-                updateOfflineIndicators();
+                // Stop real-time listener
+                stopRealTimeListener();
+                
+                // Show cached data
+                updateStatusListWithCache();
             }
             
             // Update create status modal indicator
             if (offlinePostingIndicator) {
                 offlinePostingIndicator.style.display = isOnline ? 'none' : 'block';
-            }
-        }
-        
-        function updateOfflineIndicators() {
-            // Update all offline indicators in the UI
-            const offlineTags = document.querySelectorAll('.offline-status-tag');
-            const pendingIndicators = document.querySelectorAll('.pending-upload-indicator');
-            
-            if (!isOnline) {
-                // Add offline indicator to section title
-                const sectionTitle = document.getElementById('sectionTitle');
-                if (sectionTitle && !sectionTitle.textContent.includes('(Offline)')) {
-                    sectionTitle.textContent += ' (Offline)';
-                }
             }
         }
         
@@ -2577,7 +2656,11 @@
                 }
                 
                 // Check if status already exists in cache
-                const existingIndex = cachedStatuses.findIndex(s => s.id === status.id || s.tempId === status.tempId);
+                const existingIndex = cachedStatuses.findIndex(s => 
+                    s.id === status.id || 
+                    s.tempId === status.tempId ||
+                    (s.content === status.content && s.userId === status.userId && s.type === status.type)
+                );
                 
                 if (existingIndex !== -1) {
                     // Update existing cache entry
@@ -2595,22 +2678,29 @@
                 // Save to localStorage
                 localStorage.setItem(`cachedStatuses_${currentUser.uid}`, JSON.stringify(cachedStatuses));
                 
-                console.log(`Saved status to cache. Total cached: ${cachedStatuses.length}`);
-                
-                // Update UI with cached status
+                // Update UI with cached status if offline
                 if (!isOnline) {
                     updateStatusListWithCache();
                 }
+                
             } catch (error) {
                 console.error('Error saving status to cache:', error);
             }
         }
         
         function updateStatusListWithCache() {
+            const recentStatusList = document.getElementById('recentStatusList');
+            const sectionTitle = document.getElementById('sectionTitle');
+            
+            if (!recentStatusList || !sectionTitle) return;
+            
+            // Clear current list
+            recentStatusList.innerHTML = '';
+            
             // Combine cached statuses with online statuses
             const allCombinedStatuses = [...allStatuses, ...cachedStatuses];
             
-            // Remove duplicates (by id or tempId)
+            // Remove duplicates
             const uniqueStatuses = [];
             const seenIds = new Set();
             
@@ -2629,88 +2719,11 @@
                 return dateB - dateA;
             });
             
-            // Update the status list
-            updateStatusList(uniqueStatuses);
-        }
-        
-        function updateStatusList(statuses) {
-            const recentStatusList = document.getElementById('recentStatusList');
-            const sectionTitle = document.getElementById('sectionTitle');
-            
-            if (!recentStatusList || !sectionTitle) return;
-            
-            // Update section title
-            switch(currentCategory) {
-                case 'recent':
-                    sectionTitle.textContent = 'Recent Updates' + (!isOnline ? ' (Offline)' : '');
-                    break;
-                case 'viewed':
-                    sectionTitle.textContent = 'Viewed Updates' + (!isOnline ? ' (Offline)' : '');
-                    break;
-                case 'muted':
-                    sectionTitle.textContent = 'Muted Users' + (!isOnline ? ' (Offline)' : '');
-                    break;
-                case 'archive':
-                    sectionTitle.textContent = 'Archived Statuses' + (!isOnline ? ' (Offline)' : '');
-                    break;
-                case 'highlights':
-                    sectionTitle.textContent = 'Highlights' + (!isOnline ? ' (Offline)' : '');
-                    break;
-            }
-            
             // Filter statuses based on current category
-            let filteredStatuses = [];
-            let showArchived = false;
-            
-            switch(currentCategory) {
-                case 'recent':
-                    filteredStatuses = statuses.filter(status => 
-                        !viewedStatuses.includes(status.id || status.tempId) && 
-                        !mutedUsers.includes(status.userId)
-                    );
-                    break;
-                    
-                case 'viewed':
-                    filteredStatuses = statuses.filter(status => 
-                        viewedStatuses.includes(status.id || status.tempId) &&
-                        !mutedUsers.includes(status.userId)
-                    );
-                    break;
-                    
-                case 'muted':
-                    filteredStatuses = statuses.filter(status => 
-                        mutedUsers.includes(status.userId)
-                    );
-                    break;
-                    
-                case 'archive':
-                    filteredStatuses = archivedStatuses;
-                    showArchived = true;
-                    break;
-                    
-                case 'highlights':
-                    filteredStatuses = highlightedStatuses;
-                    break;
-            }
+            let filteredStatuses = filterStatusesByCategory(uniqueStatuses);
             
             // Group by user (except for archive and highlights)
-            const statusesByUser = {};
-            if (!showArchived && currentCategory !== 'highlights') {
-                filteredStatuses.forEach(status => {
-                    if (!statusesByUser[status.userId]) {
-                        statusesByUser[status.userId] = [];
-                    }
-                    statusesByUser[status.userId].push(status);
-                });
-            } else {
-                // For archive and highlights, show individual statuses
-                filteredStatuses.forEach((status, index) => {
-                    statusesByUser[`status_${index}`] = [status];
-                });
-            }
-            
-            // Clear current list
-            recentStatusList.innerHTML = '';
+            const statusesByUser = groupStatusesByUser(filteredStatuses);
             
             // Add status items
             Object.keys(statusesByUser).forEach(userKey => {
@@ -2718,123 +2731,217 @@
                 const latestStatus = userStatuses[0];
                 const userStatusCount = userStatuses.length;
                 
-                const timeAgo = getTimeAgo(latestStatus.createdAt);
-                const initials = latestStatus.userName ? 
-                    latestStatus.userName.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2) : 
-                    'U';
-                
-                const statusItem = document.createElement('div');
-                statusItem.className = 'contact-status-item has-status';
-                if (showArchived) statusItem.classList.add('archived-status');
-                statusItem.dataset.statusId = latestStatus.id || latestStatus.tempId;
-                statusItem.dataset.userId = latestStatus.userId;
-                statusItem.dataset.userName = latestStatus.userName || 'User';
-                
-                // Check if viewed
-                const isViewed = viewedStatuses.includes(latestStatus.id || latestStatus.tempId) || latestStatus.userId === currentUser?.uid;
-                const ringColor = isViewed ? 'viewed' : '';
-                
-                // Check if this is a cached/pending status
-                const isCached = latestStatus.tempId || latestStatus.isCached;
-                const isPending = latestStatus.isPending;
-                
-                statusItem.innerHTML = `
-                    <div class="contact-status-avatar" ${latestStatus.userAvatar ? `style="background-image: url('${latestStatus.userAvatar}')"` : ''}>
-                        <div class="status-ring ${ringColor}"></div>
-                        ${latestStatus.userAvatar ? '' : `<span>${initials}</span>`}
-                        ${isPending ? '<div class="pending-upload-indicator" title="Pending upload"><i class="fas fa-clock"></i></div>' : ''}
-                    </div>
-                    <div class="contact-status-info">
-                        <div class="contact-status-name">${latestStatus.userName || 'User'} 
-                            ${isCached ? '<span class="offline-status-tag">Offline</span>' : ''}
-                            ${isPending ? '<span class="offline-status-tag">Pending</span>' : ''}
-                        </div>
-                        <div class="contact-status-time">${timeAgo}</div>
-                        ${latestStatus.type === 'poll' ? '<span style="color: var(--primary-color); font-size: 12px;">📊 Poll</span>' : ''}
-                        ${latestStatus.type === 'question' ? '<span style="color: var(--success-color); font-size: 12px;">❓ Question</span>' : ''}
-                        ${latestStatus.type === 'music' ? '<span style="color: var(--warning-color); font-size: 12px;">🎵 Music</span>' : ''}
-                    </div>
-                    ${showArchived ? '<button class="restore-btn">Restore</button>' : `<div class="contact-status-count">${userStatusCount}</div>`}
-                `;
-                
-                statusItem.addEventListener('click', (e) => {
-                    if (!e.target.classList.contains('restore-btn')) {
-                        if (showArchived) {
-                            // Show archived status in viewer
-                            openStatusViewer(latestStatus.userId, [latestStatus]);
-                        } else {
-                            openStatusViewer(latestStatus.userId, userStatuses);
-                        }
-                    }
-                });
-                
-                // Add retry button for pending uploads
-                if (isPending && isOnline) {
-                    const retryBtn = document.createElement('button');
-                    retryBtn.className = 'retry-upload-btn';
-                    retryBtn.textContent = 'Retry';
-                    retryBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        retryPendingUpload(latestStatus.tempId);
-                    });
-                    statusItem.querySelector('.contact-status-info').appendChild(retryBtn);
-                }
-                
-                // Add restore button functionality for archived statuses
-                if (showArchived) {
-                    const restoreBtn = statusItem.querySelector('.restore-btn');
-                    restoreBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        restoreStatusFromArchive(latestStatus.id || latestStatus.tempId);
-                    });
-                }
-                
+                const statusItem = createStatusItem(latestStatus, userStatusCount);
                 recentStatusList.appendChild(statusItem);
             });
             
-            // If no statuses, show empty state
+            // Show empty state if no statuses
             if (Object.keys(statusesByUser).length === 0) {
-                let emptyMessage = '';
-                switch(currentCategory) {
-                    case 'recent':
-                        emptyMessage = isOnline ? 'No recent status updates from your contacts' : 'No cached status updates available';
-                        break;
-                    case 'viewed':
-                        emptyMessage = 'No viewed status updates';
-                        break;
-                    case 'muted':
-                        emptyMessage = 'No muted users with status updates';
-                        break;
-                    case 'archive':
-                        emptyMessage = 'No archived statuses';
-                        break;
-                    case 'highlights':
-                        emptyMessage = 'No highlighted statuses';
-                        break;
-                }
-                
-                recentStatusList.innerHTML = `
-                    <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
-                        <i class="fas fa-comment" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
-                        <p>${emptyMessage}</p>
-                        ${!isOnline ? '<p style="font-size: 14px; margin-top: 10px;">Status updates will be queued for upload when you\'re back online</p>' : ''}
-                        ${currentCategory === 'muted' ? 
-                            '<p style="font-size: 14px; margin-top: 10px;">Mute users by clicking on their status and selecting "Mute User"</p>' : 
-                            ''}
-                        ${currentCategory === 'highlights' ? 
-                            '<p style="font-size: 14px; margin-top: 10px;">Add statuses to highlights by clicking the star icon while viewing them</p>' : 
-                            ''}
-                    </div>
-                `;
+                showEmptyState(recentStatusList);
             }
             
-            // Show cache info
+            // Show cache info if offline and have cached statuses
             if (!isOnline && cachedStatuses.length > 0) {
-                const cacheInfo = document.createElement('div');
-                cacheInfo.className = 'offline-cache-info';
-                cacheInfo.innerHTML = `<i class="fas fa-database"></i> Showing ${cachedStatuses.length} cached status updates`;
-                recentStatusList.insertBefore(cacheInfo, recentStatusList.firstChild);
+                showCacheInfo(recentStatusList);
             }
+        }
+        
+        function filterStatusesByCategory(statuses) {
+            let filteredStatuses = [];
+            const now = new Date();
+            
+            switch(currentCategory) {
+                case 'recent':
+                    filteredStatuses = statuses.filter(status => 
+                        !viewedStatuses.includes(status.id || status.tempId) && 
+                        !mutedUsers.includes(status.userId) &&
+                        (!status.expiresAt || new Date(status.expiresAt) > now)
+                    );
+                    break;
+                    
+                case 'viewed':
+                    filteredStatuses = statuses.filter(status => 
+                        viewedStatuses.includes(status.id || status.tempId) &&
+                        !mutedUsers.includes(status.userId) &&
+                        (!status.expiresAt || new Date(status.expiresAt) > now)
+                    );
+                    break;
+                    
+                case 'muted':
+                    filteredStatuses = statuses.filter(status => 
+                        mutedUsers.includes(status.userId) &&
+                        (!status.expiresAt || new Date(status.expiresAt) > now)
+                    );
+                    break;
+                    
+                case 'archive':
+                    filteredStatuses = archivedStatuses;
+                    break;
+                    
+                case 'highlights':
+                    filteredStatuses = highlightedStatuses.filter(status => 
+                        (!status.expiresAt || new Date(status.expiresAt) > now)
+                    );
+                    break;
+            }
+            
+            return filteredStatuses;
+        }
+        
+        function groupStatusesByUser(statuses) {
+            const statusesByUser = {};
+            const showArchived = currentCategory === 'archive';
+            const isHighlights = currentCategory === 'highlights';
+            
+            if (!showArchived && !isHighlights) {
+                // Group by user for normal categories
+                statuses.forEach(status => {
+                    if (!statusesByUser[status.userId]) {
+                        statusesByUser[status.userId] = [];
+                    }
+                    statusesByUser[status.userId].push(status);
+                });
+            } else {
+                // For archive and highlights, show individual statuses
+                statuses.forEach((status, index) => {
+                    statusesByUser[`status_${index}`] = [status];
+                });
+            }
+            
+            return statusesByUser;
+        }
+        
+        function createStatusItem(status, count) {
+            const timeAgo = getTimeAgo(status.createdAt);
+            const initials = status.userName ? 
+                status.userName.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2) : 
+                'U';
+            
+            const isViewed = viewedStatuses.includes(status.id || status.tempId) || status.userId === currentUser?.uid;
+            const ringColor = isViewed ? 'viewed' : '';
+            const isCached = status.tempId || status.isCached;
+            const isPending = status.isPending;
+            const isArchived = currentCategory === 'archive';
+            
+            const statusItem = document.createElement('div');
+            statusItem.className = 'contact-status-item has-status status-item-enter';
+            if (isArchived) statusItem.classList.add('archived-status');
+            statusItem.dataset.statusId = status.id || status.tempId;
+            statusItem.dataset.userId = status.userId;
+            statusItem.dataset.userName = status.userName || 'User';
+            
+            setTimeout(() => {
+                statusItem.classList.add('status-item-enter-active');
+            }, 10);
+            
+            statusItem.innerHTML = `
+                <div class="contact-status-avatar" ${status.userAvatar ? `style="background-image: url('${status.userAvatar}')"` : ''}>
+                    <div class="status-ring ${ringColor}"><\/div>
+                    ${status.userAvatar ? '' : `<span>${initials}<\/span>`}
+                    ${isPending ? '<div class="pending-upload-indicator" title="Pending upload"><i class="fas fa-clock"><\/i><\/div>' : ''}
+                <\/div>
+                <div class="contact-status-info">
+                    <div class="contact-status-name">${status.userName || 'User'} 
+                        ${isCached ? '<span class="offline-status-tag">Offline<\/span>' : ''}
+                        ${isPending ? '<span class="offline-status-tag">Pending<\/span>' : ''}
+                    <\/div>
+                    <div class="contact-status-time">${timeAgo}<\/div>
+                    ${status.type === 'poll' ? '<span style="color: var(--primary-color); font-size: 12px;">📊 Poll<\/span>' : ''}
+                    ${status.type === 'question' ? '<span style="color: var(--success-color); font-size: 12px;">❓ Question<\/span>' : ''}
+                    ${status.type === 'music' ? '<span style="color: var(--warning-color); font-size: 12px;">🎵 Music<\/span>' : ''}
+                    ${status.type === 'voice' ? '<span style="color: var(--danger-color); font-size: 12px;">🎤 Voice<\/span>' : ''}
+                <\/div>
+                ${isArchived ? '<button class="restore-btn">Restore<\/button>' : `<div class="contact-status-count">${count}<\/div>`}
+            `;
+            
+            // Add event listeners
+            addStatusItemEventListeners(statusItem, status, count);
+            
+            return statusItem;
+        }
+        
+        function addStatusItemEventListeners(statusItem, status, count) {
+            const isArchived = currentCategory === 'archive';
+            
+            statusItem.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('restore-btn') && !e.target.classList.contains('retry-upload-btn')) {
+                    if (isArchived) {
+                        openStatusViewer(status.userId, [status]);
+                    } else {
+                        // Get all statuses for this user
+                        const userStatuses = getAllStatusesForUser(status.userId);
+                        openStatusViewer(status.userId, userStatuses);
+                    }
+                }
+            });
+            
+            // Add retry button for pending uploads
+            if (status.isPending && isOnline) {
+                const retryBtn = document.createElement('button');
+                retryBtn.className = 'retry-upload-btn';
+                retryBtn.textContent = 'Retry';
+                retryBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    retryPendingUpload(status.tempId);
+                });
+                statusItem.querySelector('.contact-status-info').appendChild(retryBtn);
+            }
+            
+            // Add restore button functionality for archived statuses
+            if (isArchived) {
+                const restoreBtn = statusItem.querySelector('.restore-btn');
+                restoreBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    restoreStatusFromArchive(status.id || status.tempId);
+                });
+            }
+        }
+        
+        function getAllStatusesForUser(userId) {
+            return [...allStatuses, ...cachedStatuses].filter(status => 
+                status.userId === userId &&
+                (!status.expiresAt || new Date(status.expiresAt) > new Date())
+            ).sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt) : new Date();
+                const dateB = b.createdAt ? new Date(b.createdAt) : new Date();
+                return dateB - dateA;
+            });
+        }
+        
+        function showEmptyState(container) {
+            let emptyMessage = '';
+            switch(currentCategory) {
+                case 'recent':
+                    emptyMessage = isOnline ? 'No recent status updates' : 'No cached status updates';
+                    break;
+                case 'viewed':
+                    emptyMessage = 'No viewed status updates';
+                    break;
+                case 'muted':
+                    emptyMessage = 'No muted users';
+                    break;
+                case 'archive':
+                    emptyMessage = 'No archived statuses';
+                    break;
+                case 'highlights':
+                    emptyMessage = 'No highlighted statuses';
+                    break;
+            }
+            
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+                    <i class="fas fa-comment" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"><\/i>
+                    <p>${emptyMessage}<\/p>
+                    ${!isOnline ? '<p style="font-size: 14px; margin-top: 10px;">Connect to the internet to see new updates<\/p>' : ''}
+                <\/div>
+            `;
+        }
+        
+        function showCacheInfo(container) {
+            const cacheInfo = document.createElement('div');
+            cacheInfo.className = 'offline-cache-info';
+            cacheInfo.innerHTML = `<i class="fas fa-database"><\/i> Showing ${cachedStatuses.length} cached status updates`;
+            container.insertBefore(cacheInfo, container.firstChild);
         }
         
         function loadPendingUploads() {
@@ -2895,44 +3002,20 @@
             }
         }
         
-        function removePendingUpload(tempId) {
-            try {
-                if (!currentUser || !currentUser.uid) {
-                    console.log('No user ID available for removing pending upload');
-                    return;
-                }
-                
-                pendingUploads = pendingUploads.filter(upload => upload.tempId !== tempId);
-                localStorage.setItem(`pendingUploads_${currentUser.uid}`, JSON.stringify(pendingUploads));
-                
-                // Also remove from cache
-                cachedStatuses = cachedStatuses.filter(status => status.tempId !== tempId);
-                localStorage.setItem(`cachedStatuses_${currentUser.uid}`, JSON.stringify(cachedStatuses));
-                
-                console.log(`Removed pending upload: ${tempId}`);
-            } catch (error) {
-                console.error('Error removing pending upload:', error);
-            }
-        }
-        
         async function processPendingUploads() {
             if (isSyncing || pendingUploads.length === 0 || !isOnline) return;
             
             isSyncing = true;
-            showNotification(`Syncing ${pendingUploads.length} pending status updates...`, 'success');
             
             // Process each pending upload
             for (let i = 0; i < pendingUploads.length; i++) {
                 const pendingStatus = pendingUploads[i];
                 
                 try {
-                    showNotification(`Uploading pending status ${i + 1} of ${pendingUploads.length}...`, 'success');
-                    
                     // Upload media files if needed
                     let mediaUrl = pendingStatus.content;
                     
                     if (pendingStatus.type === 'photo' || pendingStatus.type === 'video' || pendingStatus.type === 'voice') {
-                        // Convert base64 to blob if needed
                         if (pendingStatus.content && pendingStatus.content.startsWith('data:')) {
                             const response = await fetch(pendingStatus.content);
                             const blob = await response.blob();
@@ -2972,24 +3055,17 @@
                     // Remove from pending uploads
                     removePendingUpload(pendingStatus.tempId);
                     
-                    console.log(`Uploaded pending status: ${pendingStatus.type}`);
-                    
                 } catch (error) {
                     console.error(`Error uploading pending status ${pendingStatus.tempId}:`, error);
-                    // Keep in pending uploads for retry
                 }
             }
             
             isSyncing = false;
             
-            // Reload statuses
-            if (isOnline) {
+            // Reload statuses in background
+            setTimeout(() => {
                 loadStatusUpdates();
-            } else {
-                updateStatusListWithCache();
-            }
-            
-            showNotification('Pending uploads synced!', 'success');
+            }, 1000);
         }
         
         function retryPendingUpload(tempId) {
@@ -3001,15 +3077,12 @@
             // Find the pending upload
             const pendingUpload = pendingUploads.find(upload => upload.tempId === tempId);
             if (pendingUpload) {
-                // Process this specific upload
                 processSinglePendingUpload(pendingUpload);
             }
         }
         
         async function processSinglePendingUpload(pendingStatus) {
             try {
-                showNotification('Retrying upload...', 'success');
-                
                 // Upload media files if needed
                 let mediaUrl = pendingStatus.content;
                 
@@ -3055,38 +3128,142 @@
                 
                 showNotification('Status uploaded successfully!', 'success');
                 
-                // Reload statuses
-                if (isOnline) {
+                // Reload statuses in background
+                setTimeout(() => {
                     loadStatusUpdates();
-                } else {
-                    updateStatusListWithCache();
-                }
+                }, 500);
                 
             } catch (error) {
                 console.error('Error retrying upload:', error);
-                showNotification('Failed to upload status. Will retry later.', 'error');
+                showNotification('Failed to upload. Will retry later.', 'error');
             }
         }
         
-        function syncOfflineData() {
+        function removePendingUpload(tempId) {
+            try {
+                if (!currentUser || !currentUser.uid) {
+                    console.log('No user ID available for removing pending upload');
+                    return;
+                }
+                
+                pendingUploads = pendingUploads.filter(upload => upload.tempId !== tempId);
+                localStorage.setItem(`pendingUploads_${currentUser.uid}`, JSON.stringify(pendingUploads));
+                
+                // Also remove from cache
+                cachedStatuses = cachedStatuses.filter(status => status.tempId !== tempId);
+                localStorage.setItem(`cachedStatuses_${currentUser.uid}`, JSON.stringify(cachedStatuses));
+                
+                // Update UI
+                updateStatusListWithCache();
+                
+            } catch (error) {
+                console.error('Error removing pending upload:', error);
+            }
+        }
+        
+        function startBackgroundSync() {
+            if (backgroundSyncInterval) {
+                clearInterval(backgroundSyncInterval);
+            }
+            
+            // Sync every 30 seconds when online
+            backgroundSyncInterval = setInterval(() => {
+                if (isOnline) {
+                    syncOfflineData();
+                }
+            }, 30000);
+        }
+        
+        function setupRealTimeListener() {
+            if (!isOnline || !currentUser || !currentUser.uid) return;
+            
+            // Stop any existing listener
+            stopRealTimeListener();
+            
+            const now = new Date();
+            
+            try {
+                realTimeListener = db.collection('statuses')
+                    .where('expiresAt', '>', now)
+                    .orderBy('expiresAt', 'desc')
+                    .limit(50)
+                    .onSnapshot(snapshot => {
+                        const changes = snapshot.docChanges();
+                        
+                        changes.forEach(change => {
+                            if (change.type === 'added' || change.type === 'modified') {
+                                const statusData = change.doc.data();
+                                const status = {
+                                    id: change.doc.id,
+                                    ...statusData,
+                                    createdAt: statusData.createdAt ? statusData.createdAt.toDate() : new Date(),
+                                    expiresAt: statusData.expiresAt ? statusData.expiresAt.toDate() : new Date(now.getTime() + 24 * 60 * 60 * 1000)
+                                };
+                                
+                                // Check if status is visible to user
+                                if (isStatusVisible(status)) {
+                                    // Update or add to allStatuses
+                                    const existingIndex = allStatuses.findIndex(s => s.id === status.id);
+                                    if (existingIndex !== -1) {
+                                        allStatuses[existingIndex] = status;
+                                    } else {
+                                        allStatuses.push(status);
+                                    }
+                                    
+                                    // Save to cache
+                                    saveStatusToCache(status);
+                                    
+                                    // Update UI if not viewing status
+                                    if (!statusViewer.classList.contains('active')) {
+                                        updateStatusListWithCache();
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // Sort allStatuses by date
+                        allStatuses.sort((a, b) => {
+                            const dateA = a.createdAt ? new Date(a.createdAt) : new Date();
+                            const dateB = b.createdAt ? new Date(b.createdAt) : new Date();
+                            return dateB - dateA;
+                        });
+                        
+                    }, error => {
+                        console.error('Real-time listener error:', error);
+                    });
+                    
+            } catch (error) {
+                console.error('Error setting up real-time listener:', error);
+            }
+        }
+        
+        function stopRealTimeListener() {
+            if (realTimeListener) {
+                realTimeListener();
+                realTimeListener = null;
+            }
+        }
+        
+        async function syncOfflineData() {
+            if (!isOnline) return;
+            
             // Sync viewed statuses
-            syncViewedStatuses();
+            await syncViewedStatuses();
             
             // Sync reactions
-            syncOfflineReactions();
+            await syncOfflineReactions();
             
             // Sync poll votes
-            syncOfflinePollVotes();
+            await syncOfflinePollVotes();
             
             // Sync answers
-            syncOfflineAnswers();
+            await syncOfflineAnswers();
         }
         
         async function syncViewedStatuses() {
             try {
                 if (!currentUser || !currentUser.uid) return;
                 
-                // Get offline viewed statuses
                 const offlineViewed = localStorage.getItem(`offlineViewed_${currentUser.uid}`);
                 if (!offlineViewed) return;
                 
@@ -3102,7 +3279,6 @@
                             .update({
                                 viewers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
                             });
-                        console.log(`Synced viewed status: ${statusId}`);
                     } catch (error) {
                         console.error(`Error syncing viewed status ${statusId}:`, error);
                     }
@@ -3110,14 +3286,13 @@
                 
                 // Clear offline viewed cache
                 localStorage.removeItem(`offlineViewed_${currentUser.uid}`);
-                console.log('Synced offline viewed statuses');
                 
             } catch (error) {
                 console.error('Error syncing viewed statuses:', error);
             }
         }
         
-        function syncOfflineReactions() {
+        async function syncOfflineReactions() {
             try {
                 if (!currentUser || !currentUser.uid) return;
                 
@@ -3126,27 +3301,26 @@
                 
                 const reactions = JSON.parse(offlineReactions);
                 
-                Object.keys(reactions).forEach(async (statusId) => {
+                for (const [statusId, emoji] of Object.entries(reactions)) {
                     try {
                         await db.collection('statuses')
                             .doc(statusId)
                             .update({
-                                [`reactions.${currentUser.uid}`]: reactions[statusId]
+                                [`reactions.${currentUser.uid}`]: emoji
                             });
                     } catch (error) {
                         console.error(`Error syncing reaction for status ${statusId}:`, error);
                     }
-                });
+                }
                 
                 localStorage.removeItem(`offlineReactions_${currentUser.uid}`);
-                console.log('Synced offline reactions');
                 
             } catch (error) {
                 console.error('Error syncing offline reactions:', error);
             }
         }
         
-        function syncOfflinePollVotes() {
+        async function syncOfflinePollVotes() {
             try {
                 if (!currentUser || !currentUser.uid) return;
                 
@@ -3155,27 +3329,26 @@
                 
                 const pollVotes = JSON.parse(offlinePollVotes);
                 
-                Object.keys(pollVotes).forEach(async (statusId) => {
+                for (const [statusId, optionIndex] of Object.entries(pollVotes)) {
                     try {
                         await db.collection('statuses')
                             .doc(statusId)
                             .update({
-                                [`pollVotes.${currentUser.uid}`]: pollVotes[statusId]
+                                [`pollVotes.${currentUser.uid}`]: optionIndex
                             });
                     } catch (error) {
                         console.error(`Error syncing poll vote for status ${statusId}:`, error);
                     }
-                });
+                }
                 
                 localStorage.removeItem(`offlinePollVotes_${currentUser.uid}`);
-                console.log('Synced offline poll votes');
                 
             } catch (error) {
                 console.error('Error syncing offline poll votes:', error);
             }
         }
         
-        function syncOfflineAnswers() {
+        async function syncOfflineAnswers() {
             try {
                 if (!currentUser || !currentUser.uid) return;
                 
@@ -3184,7 +3357,7 @@
                 
                 const answers = JSON.parse(offlineAnswers);
                 
-                Object.keys(answers).forEach(async (statusId) => {
+                for (const [statusId, answer] of Object.entries(answers)) {
                     try {
                         await db.collection('statuses')
                             .doc(statusId)
@@ -3192,30 +3365,36 @@
                                 answers: firebase.firestore.FieldValue.arrayUnion({
                                     userId: currentUser.uid,
                                     userName: currentUser.displayName || 'User',
-                                    answer: answers[statusId],
+                                    answer: answer,
                                     timestamp: new Date()
                                 })
                             });
                     } catch (error) {
                         console.error(`Error syncing answer for status ${statusId}:`, error);
                     }
-                });
+                }
                 
                 localStorage.removeItem(`offlineAnswers_${currentUser.uid}`);
-                console.log('Synced offline answers');
                 
             } catch (error) {
                 console.error('Error syncing offline answers:', error);
             }
         }
         
-        // Modified saveStatusToFirestore function to handle offline mode
+        // ============================================
+        // STATUS MANAGEMENT FUNCTIONS
+        // ============================================
+        
         async function saveStatusToFirestore(statusData) {
             try {
                 if (!isOnline) {
                     // Save to pending uploads for offline mode
                     const tempId = savePendingUpload(statusData);
                     showNotification('Status saved offline. Will upload when you\'re back online.', 'success');
+                    
+                    // Update UI immediately with cached version
+                    updateStatusListWithCache();
+                    
                     return tempId;
                 }
                 
@@ -3269,7 +3448,6 @@
             }
         }
         
-        // Modified markStatusAsViewed function to handle offline mode
         async function markStatusAsViewed(statusId) {
             try {
                 if (!currentUser || !currentUser.uid) return;
@@ -3301,18 +3479,13 @@
                     }
                     
                     // Update the status list
-                    if (isOnline) {
-                        loadStatusUpdates();
-                    } else {
-                        updateStatusListWithCache();
-                    }
+                    updateStatusListWithCache();
                 }
             } catch (error) {
                 console.error('Error marking status as viewed:', error);
             }
         }
         
-        // Modified loadStatusUpdates function to use cache when offline
         async function loadStatusUpdates() {
             try {
                 if (!currentUser || !currentUser.uid) {
@@ -3323,18 +3496,18 @@
                 
                 if (!isOnline) {
                     // Load from cache when offline
-                    console.log('Offline mode: Loading cached status updates');
+                    console.log('Offline mode: Using cached status updates');
                     updateStatusListWithCache();
                     return;
                 }
                 
                 const now = new Date();
                 
-                // Load statuses from Firestore with proper permissions
+                // Load statuses from Firestore
                 const statusesSnapshot = await db.collection('statuses')
                     .where('expiresAt', '>', now)
                     .orderBy('expiresAt', 'desc')
-                    .limit(100)
+                    .limit(50)
                     .get();
                 
                 // Get user's viewed statuses from localStorage
@@ -3344,7 +3517,6 @@
                 
                 // Process statuses
                 allStatuses = [];
-                const userStatusMap = new Map();
                 
                 statusesSnapshot.forEach(doc => {
                     const statusData = doc.data();
@@ -3359,13 +3531,8 @@
                     if (isStatusVisible(status)) {
                         // Don't show user's own statuses in the contacts list
                         if (status.userId !== currentUser.uid) {
-                            if (!userStatusMap.has(status.userId)) {
-                                userStatusMap.set(status.userId, []);
-                            }
-                            userStatusMap.get(status.userId).push(status);
+                            allStatuses.push(status);
                         }
-                        
-                        allStatuses.push(status);
                         
                         // Cache the status
                         saveStatusToCache(status);
@@ -3380,26 +3547,17 @@
                 // Update the status list
                 updateStatusListWithCache();
                 
+                // Mark initial load as complete
+                isInitialLoadComplete = true;
+                
             } catch (error) {
                 console.error('Error loading status updates:', error);
                 
                 // Fallback to cache on error
-                if (!isOnline || error.code === 'unavailable') {
-                    console.log('Falling back to cached status updates');
-                    showNotification('Using cached status updates', 'warning');
-                    updateStatusListWithCache();
-                } else {
-                    showNotification('Failed to load status updates', 'error');
-                    updateStatusListWithCache();
-                }
+                console.log('Falling back to cached status updates');
+                updateStatusListWithCache();
             }
         }
-        
-        // The rest of the existing code remains unchanged...
-        // All other functions (loadUserThemeAndMood, initializeApp, loadMutedUsers, etc.)
-        // should remain exactly as they were in the original code
-        
-        // ... [All other existing functions remain unchanged] ...
         
         function loadUserThemeAndMood() {
             try {
@@ -3450,12 +3608,12 @@
                 loadArchivedStatuses();
                 loadHighlightedStatuses();
                 loadUserGroups();
-                loadStatusUpdates();
                 
-                // Initialize offline support after user is loaded
+                // Load status updates in background
                 setTimeout(() => {
-                    setupOfflineSupport();
-                }, 1000);
+                    loadStatusUpdates();
+                }, 500);
+                
             } else {
                 // Wait for auth state
                 auth.onAuthStateChanged(user => {
@@ -3472,8 +3630,11 @@
                         loadArchivedStatuses();
                         loadHighlightedStatuses();
                         loadUserGroups();
-                        loadStatusUpdates();
-                        setupOfflineSupport();
+                        
+                        // Load status updates in background
+                        setTimeout(() => {
+                            loadStatusUpdates();
+                        }, 500);
                     } else {
                         // Redirect to login page if not authenticated
                         window.location.href = 'index.html';
@@ -3576,14 +3737,14 @@
                 myStatusAvatar.style.backgroundImage = `url('${currentUser.photoURL}')`;
                 myStatusAvatar.innerHTML = '';
             } else {
-                myStatusAvatar.innerHTML = `<span>${userInitials}</span>`;
+                myStatusAvatar.innerHTML = `<span>${userInitials}<\/span>`;
             }
         }
         
         function isStatusVisible(status) {
             // Check if status has expired
             const now = new Date();
-            if (status.expiresAt < now) return false;
+            if (status.expiresAt && new Date(status.expiresAt) < now) return false;
             
             // Check if user is muted
             if (mutedUsers.includes(status.userId)) return false;
@@ -3666,9 +3827,23 @@
             }
         }
         
+        // ============================================
+        // STATUS VIEWER FUNCTIONS
+        // ============================================
+        
         function openStatusViewer(userId, statuses) {
+            if (!statuses || statuses.length === 0) return;
+            
             currentStatusUser = userId;
-            userStatuses = statuses;
+            userStatuses = statuses.filter(status => 
+                !status.expiresAt || new Date(status.expiresAt) > new Date()
+            );
+            
+            if (userStatuses.length === 0) {
+                showNotification('No active statuses to view', 'warning');
+                return;
+            }
+            
             currentStatusIndex = 0;
             
             // Show status viewer
@@ -3690,11 +3865,11 @@
             highlightBtn.style.display = userId === currentUser.uid ? 'flex' : 'none';
             
             // Check if already highlighted
-            if (userId === currentUser.uid) {
-                const isHighlighted = highlightedStatuses.some(s => s.id === statuses[0].id);
+            if (userId === currentUser.uid && userStatuses[0].id) {
+                const isHighlighted = highlightedStatuses.some(s => s.id === userStatuses[0].id);
                 highlightBtn.innerHTML = isHighlighted ? 
-                    '<i class="fas fa-star"></i> Unhighlight' : 
-                    '<i class="fas fa-star"></i> Highlight';
+                    '<i class="fas fa-star"><\/i> Unhighlight' : 
+                    '<i class="fas fa-star"><\/i> Highlight';
             }
         }
         
@@ -3722,7 +3897,7 @@
                 statusUserAvatar.innerHTML = '';
             } else {
                 statusUserAvatar.style.backgroundImage = '';
-                statusUserAvatar.innerHTML = `<span>${initials}</span>`;
+                statusUserAvatar.innerHTML = `<span>${initials}<\/span>`;
             }
             
             // Clear previous content
@@ -3743,7 +3918,7 @@
                 case 'emoji':
                     loadTextStatus(status);
                     break;
-                case 'image':
+                case 'photo':
                 case 'gif':
                     loadImageStatus(status);
                     break;
@@ -3767,8 +3942,8 @@
             }
             
             // Mark as viewed (only if not the owner and not a pending status)
-            if (status.userId !== currentUser.uid && !status.isPending) {
-                markStatusAsViewed(status.id || status.tempId);
+            if (status.userId !== currentUser.uid && !status.isPending && status.id) {
+                markStatusAsViewed(status.id);
             }
         }
         
@@ -3887,11 +4062,11 @@
             voiceContainer.style.padding = '40px';
             
             const voiceIcon = document.createElement('div');
-            voiceIcon.innerHTML = '<i class="fas fa-microphone" style="font-size: 80px; color: white; margin-bottom: 30px;"></i>';
+            voiceIcon.innerHTML = '<i class="fas fa-microphone" style="font-size: 80px; color: white; margin-bottom: 30px;"><\/i>';
             
             const playButton = document.createElement('button');
             playButton.className = 'play-btn';
-            playButton.innerHTML = '<i class="fas fa-play"></i>';
+            playButton.innerHTML = '<i class="fas fa-play"><\/i>';
             playButton.onclick = function() {
                 playVoiceStatus(status.content);
             };
@@ -4008,7 +4183,7 @@
             questionBackground.style.padding = '40px';
             
             const questionIcon = document.createElement('div');
-            questionIcon.innerHTML = '<i class="fas fa-question-circle" style="font-size: 80px; color: white; margin-bottom: 30px;"></i>';
+            questionIcon.innerHTML = '<i class="fas fa-question-circle" style="font-size: 80px; color: white; margin-bottom: 30px;"><\/i>';
             
             const questionText = document.createElement('div');
             questionText.textContent = status.question || 'Ask me anything!';
@@ -4026,9 +4201,9 @@
             const questionDisplay = document.getElementById('questionDisplay');
             questionDisplay.style.display = 'block';
             questionDisplay.innerHTML = `
-                <div style="font-weight: bold; margin-bottom: 10px;">Answer the question:</div>
+                <div style="font-weight: bold; margin-bottom: 10px;">Answer the question:<\/div>
                 <input type="text" class="answer-input" id="answerInput" placeholder="Type your answer...">
-                <button class="text-tool-btn" id="submitAnswerBtn" style="margin-top: 10px; width: 100%; background-color: var(--primary-color); color: white;">Submit Answer</button>
+                <button class="text-tool-btn" id="submitAnswerBtn" style="margin-top: 10px; width: 100%; background-color: var(--primary-color); color: white;">Submit Answer<\/button>
             `;
             
             document.getElementById('submitAnswerBtn').onclick = function() {
@@ -4055,7 +4230,7 @@
             musicBackground.style.padding = '40px';
             
             const musicIcon = document.createElement('div');
-            musicIcon.innerHTML = '<i class="fas fa-music" style="font-size: 80px; color: white; margin-bottom: 30px;"></i>';
+            musicIcon.innerHTML = '<i class="fas fa-music" style="font-size: 80px; color: white; margin-bottom: 30px;"><\/i>';
             
             const musicTitle = document.createElement('div');
             musicTitle.textContent = status.musicTitle || 'Now Playing';
@@ -4081,20 +4256,20 @@
             musicDisplay.style.display = 'flex';
             musicDisplay.innerHTML = `
                 <div style="width: 50px; height: 50px; background: #0084ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-music" style="color: white; font-size: 24px;"></i>
-                </div>
+                    <i class="fas fa-music" style="color: white; font-size: 24px;"><\/i>
+                <\/div>
                 <div class="music-info">
-                    <div style="font-weight: bold;">${status.musicTitle || 'Track'}</div>
-                    <div style="font-size: 14px; color: #65676b;">${status.musicArtist || 'Artist'}</div>
-                </div>
+                    <div style="font-weight: bold;">${status.musicTitle || 'Track'}<\/div>
+                    <div style="font-size: 14px; color: #65676b;">${status.musicArtist || 'Artist'}<\/div>
+                <\/div>
                 <div class="music-controls">
                     <button class="status-action-btn" id="playMusicBtn">
-                        <i class="fas fa-play"></i>
-                    </button>
+                        <i class="fas fa-play"><\/i>
+                    <\/button>
                     <button class="status-action-btn" id="pauseMusicBtn" style="display: none;">
-                        <i class="fas fa-pause"></i>
-                    </button>
-                </div>
+                        <i class="fas fa-pause"><\/i>
+                    <\/button>
+                <\/div>
             `;
             
             // Music control functionality
@@ -4119,10 +4294,10 @@
         
         function formatText(text) {
             return (text || '')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/~~(.*?)~~/g, '<s>$1</s>')
-                .replace(/`(.*?)`/g, '<code>$1</code>');
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1<\/strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1<\/em>')
+                .replace(/~~(.*?)~~/g, '<s>$1<\/s>')
+                .replace(/`(.*?)`/g, '<code>$1<\/code>');
         }
         
         function updateProgressBars() {
@@ -4182,6 +4357,10 @@
             pauseOverlay.classList.remove('active');
         }
         
+        // ============================================
+        // UI INITIALIZATION FUNCTIONS
+        // ============================================
+        
         function initializeStatusTypeContainers() {
             const containers = document.getElementById('statusTypeContainers');
             containers.innerHTML = '';
@@ -4192,38 +4371,38 @@
             textContainer.id = 'textStatusContainer';
             textContainer.innerHTML = `
                 <div class="text-editor-container" id="textEditorContainer">
-                    <textarea class="text-editor" id="textEditor" placeholder="Type your status here..."></textarea>
-                </div>
+                    <textarea class="text-editor" id="textEditor" placeholder="Type your status here..."><\/textarea>
+                <\/div>
                 
                 <div class="text-toolbar">
                     <button class="text-tool-btn" data-format="bold">
-                        <i class="fas fa-bold"></i> Bold
-                    </button>
+                        <i class="fas fa-bold"><\/i> Bold
+                    <\/button>
                     <button class="text-tool-btn" data-format="italic">
-                        <i class="fas fa-italic"></i> Italic
-                    </button>
+                        <i class="fas fa-italic"><\/i> Italic
+                    <\/button>
                     <button class="text-tool-btn" data-format="strikethrough">
-                        <i class="fas fa-strikethrough"></i> Strikethrough
-                    </button>
+                        <i class="fas fa-strikethrough"><\/i> Strikethrough
+                    <\/button>
                     <button class="text-tool-btn" data-format="monospace">
-                        <i class="fas fa-code"></i> Monospace
-                    </button>
-                </div>
+                        <i class="fas fa-code"><\/i> Monospace
+                    <\/button>
+                <\/div>
                 
                 <div>
-                    <div style="font-weight: 500; margin-bottom: 10px;">Text Color</div>
-                    <div class="color-palette" id="textColorPalette"></div>
-                </div>
+                    <div style="font-weight: 500; margin-bottom: 10px;">Text Color<\/div>
+                    <div class="color-palette" id="textColorPalette"><\/div>
+                <\/div>
                 
                 <div style="margin-top: 20px;">
-                    <div style="font-weight: 500; margin-bottom: 10px;">Background Color</div>
-                    <div class="color-palette" id="backgroundColorPalette"></div>
-                </div>
+                    <div style="font-weight: 500; margin-bottom: 10px;">Background Color<\/div>
+                    <div class="color-palette" id="backgroundColorPalette"><\/div>
+                <\/div>
                 
                 <div style="margin-top: 20px;">
-                    <div style="font-weight: 500; margin-bottom: 10px;">Font Style</div>
-                    <div class="font-options" id="fontOptions"></div>
-                </div>
+                    <div style="font-weight: 500; margin-bottom: 10px;">Font Style<\/div>
+                    <div class="font-options" id="fontOptions"><\/div>
+                <\/div>
             `;
             containers.appendChild(textContainer);
             
@@ -4233,17 +4412,17 @@
             emojiContainer.id = 'emojiStatusContainer';
             emojiContainer.innerHTML = `
                 <div class="emoji-only-container" id="emojiOnlyContainer">
-                    <div class="emoji-only-display" id="emojiOnlyDisplay">😊</div>
+                    <div class="emoji-only-display" id="emojiOnlyDisplay">😊<\/div>
                     <button class="text-tool-btn" id="openEmojiPickerBtn">
-                        <i class="fas fa-smile"></i> Choose Emoji
-                    </button>
-                    <div class="emoji-picker-container" id="emojiPickerContainer"></div>
-                </div>
+                        <i class="fas fa-smile"><\/i> Choose Emoji
+                    <\/button>
+                    <div class="emoji-picker-container" id="emojiPickerContainer"><\/div>
+                <\/div>
                 
                 <div>
-                    <div style="font-weight: 500; margin-bottom: 10px;">Background Color</div>
-                    <div class="color-palette" id="emojiBackgroundPalette"></div>
-                </div>
+                    <div style="font-weight: 500; margin-bottom: 10px;">Background Color<\/div>
+                    <div class="color-palette" id="emojiBackgroundPalette"><\/div>
+                <\/div>
             `;
             containers.appendChild(emojiContainer);
             
@@ -4254,35 +4433,35 @@
             photoContainer.innerHTML = `
                 <div class="media-upload-area" id="photoUploadArea">
                     <div class="media-upload-icon">
-                        <i class="fas fa-camera"></i>
-                    </div>
-                    <div class="media-upload-text">Tap to upload photo</div>
-                    <div class="media-upload-subtext">or drag and drop</div>
+                        <i class="fas fa-camera"><\/i>
+                    <\/div>
+                    <div class="media-upload-text">Tap to upload photo<\/div>
+                    <div class="media-upload-subtext">or drag and drop<\/div>
                     <input type="file" id="photoUploadInput" accept="image/*" style="display: none;">
-                </div>
+                <\/div>
                 
                 <div class="media-preview" id="photoPreview">
                     <img src="" alt="" class="media-preview-img" id="photoPreviewImg">
-                </div>
+                <\/div>
                 
                 <div class="media-edit-tools" id="photoEditTools" style="display: none;">
                     <button class="media-edit-btn" id="addTextToPhotoBtn">
-                        <i class="fas fa-font"></i> Add Text
-                    </button>
+                        <i class="fas fa-font"><\/i> Add Text
+                    <\/button>
                     <button class="media-edit-btn" id="drawOnPhotoBtn">
-                        <i class="fas fa-paint-brush"></i> Draw
-                    </button>
+                        <i class="fas fa-paint-brush"><\/i> Draw
+                    <\/button>
                     <button class="media-edit-btn" id="addFilterToPhotoBtn">
-                        <i class="fas fa-sliders-h"></i> Filters
-                    </button>
+                        <i class="fas fa-sliders-h"><\/i> Filters
+                    <\/button>
                     <button class="media-edit-btn" id="addStickerToPhotoBtn">
-                        <i class="fas fa-sticky-note"></i> Add Sticker
-                    </button>
-                </div>
+                        <i class="fas fa-sticky-note"><\/i> Add Sticker
+                    <\/button>
+                <\/div>
                 
                 <div style="margin-top: 20px;">
                     <input type="text" class="poll-question-input" id="photoCaptionInput" placeholder="Add a caption (optional)">
-                </div>
+                <\/div>
             `;
             containers.appendChild(photoContainer);
             
@@ -4293,32 +4472,32 @@
             videoContainer.innerHTML = `
                 <div class="media-upload-area" id="videoUploadArea">
                     <div class="media-upload-icon">
-                        <i class="fas fa-video"></i>
-                    </div>
-                    <div class="media-upload-text">Tap to upload video</div>
-                    <div class="media-upload-subtext">Max 30 seconds</div>
+                        <i class="fas fa-video"><\/i>
+                    <\/div>
+                    <div class="media-upload-text">Tap to upload video<\/div>
+                    <div class="media-upload-subtext">Max 30 seconds<\/div>
                     <div class="video-duration-warning" id="videoDurationWarning" style="display: none;">
-                        <i class="fas fa-exclamation-triangle"></i> Video must be 30 seconds or less
-                    </div>
+                        <i class="fas fa-exclamation-triangle"><\/i> Video must be 30 seconds or less
+                    <\/div>
                     <input type="file" id="videoUploadInput" accept="video/*" style="display: none;">
-                </div>
+                <\/div>
                 
                 <div class="media-preview" id="videoPreview">
-                    <video class="media-preview-video" id="videoPreviewVideo" controls></video>
-                </div>
+                    <video class="media-preview-video" id="videoPreviewVideo" controls><\/video>
+                <\/div>
                 
                 <div class="media-edit-tools" id="videoEditTools" style="display: none;">
                     <button class="media-edit-btn" id="trimVideoBtn">
-                        <i class="fas fa-cut"></i> Trim Video
-                    </button>
+                        <i class="fas fa-cut"><\/i> Trim Video
+                    <\/button>
                     <button class="media-edit-btn" id="addCaptionToVideoBtn">
-                        <i class="fas fa-font"></i> Add Caption
-                    </button>
-                </div>
+                        <i class="fas fa-font"><\/i> Add Caption
+                    <\/button>
+                <\/div>
                 
                 <div style="margin-top: 20px;">
                     <input type="text" class="poll-question-input" id="videoCaptionInput" placeholder="Add a caption (optional)">
-                </div>
+                <\/div>
             `;
             containers.appendChild(videoContainer);
             
@@ -4328,28 +4507,28 @@
             voiceContainer.id = 'voiceStatusContainer';
             voiceContainer.innerHTML = `
                 <div class="voice-recorder-container">
-                    <div class="waveform-container" id="waveformContainer"></div>
+                    <div class="waveform-container" id="waveformContainer"><\/div>
                     
                     <div class="recording-controls">
                         <button class="record-btn" id="recordBtn">
-                            <i class="fas fa-microphone"></i>
-                        </button>
-                        <div class="recording-timer" id="recordingTimer">00:00</div>
-                    </div>
+                            <i class="fas fa-microphone"><\/i>
+                        <\/button>
+                        <div class="recording-timer" id="recordingTimer">00:00<\/div>
+                    <\/div>
                     
                     <div class="voice-playback" id="voicePlayback" style="display: none;">
                         <button class="play-btn" id="playRecordedBtn">
-                            <i class="fas fa-play"></i>
-                        </button>
+                            <i class="fas fa-play"><\/i>
+                        <\/button>
                         <div style="flex: 1;">
-                            <div id="recordingDuration">Recording: 0s</div>
-                            <div style="font-size: 12px; color: var(--text-secondary);">Click play to preview</div>
-                        </div>
+                            <div id="recordingDuration">Recording: 0s<\/div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">Click play to preview<\/div>
+                        <\/div>
                         <button class="text-tool-btn" id="rerecordBtn">
-                            <i class="fas fa-redo"></i> Re-record
-                        </button>
-                    </div>
-                </div>
+                            <i class="fas fa-redo"><\/i> Re-record
+                        <\/button>
+                    <\/div>
+                <\/div>
             `;
             containers.appendChild(voiceContainer);
             
@@ -4364,21 +4543,21 @@
                     <div id="pollOptionsContainer">
                         <div class="poll-option">
                             <input type="text" class="poll-option-input" placeholder="Option 1" data-index="0">
-                        </div>
+                        <\/div>
                         <div class="poll-option">
                             <input type="text" class="poll-option-input" placeholder="Option 2" data-index="1">
-                        </div>
-                    </div>
+                        <\/div>
+                    <\/div>
                     
                     <button class="add-option-btn" id="addPollOptionBtn">
-                        <i class="fas fa-plus"></i> Add Option
-                    </button>
-                </div>
+                        <i class="fas fa-plus"><\/i> Add Option
+                    <\/button>
+                <\/div>
                 
                 <div style="margin-top: 20px;">
-                    <div style="font-weight: 500; margin-bottom: 10px;">Poll Background Color</div>
-                    <div class="color-palette" id="pollBackgroundPalette"></div>
-                </div>
+                    <div style="font-weight: 500; margin-bottom: 10px;">Poll Background Color<\/div>
+                    <div class="color-palette" id="pollBackgroundPalette"><\/div>
+                <\/div>
             `;
             containers.appendChild(pollContainer);
             
@@ -4389,12 +4568,12 @@
             questionContainer.innerHTML = `
                 <div class="question-container">
                     <input type="text" class="question-input" id="questionInput" placeholder="Ask me anything...">
-                </div>
+                <\/div>
                 
                 <div style="margin-top: 20px;">
-                    <div style="font-weight: 500; margin-bottom: 10px;">Question Background Color</div>
-                    <div class="color-palette" id="questionBackgroundPalette"></div>
-                </div>
+                    <div style="font-weight: 500; margin-bottom: 10px;">Question Background Color<\/div>
+                    <div class="color-palette" id="questionBackgroundPalette"><\/div>
+                <\/div>
             `;
             containers.appendChild(questionContainer);
             
@@ -4409,17 +4588,17 @@
                     <div class="music-results" id="musicResults">
                         ${musicTracks.map(track => `
                             <div class="music-result" data-id="${track.id}" data-title="${track.title}" data-artist="${track.artist}">
-                                <div style="font-weight: 500;">${track.title}</div>
-                                <div style="font-size: 12px; color: var(--text-secondary);">${track.artist} • ${track.duration}</div>
-                            </div>
+                                <div style="font-weight: 500;">${track.title}<\/div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">${track.artist} • ${track.duration}<\/div>
+                            <\/div>
                         `).join('')}
-                    </div>
-                </div>
+                    <\/div>
+                <\/div>
                 
                 <div style="margin-top: 20px;">
-                    <div style="font-weight: 500; margin-bottom: 10px;">Music Background Color</div>
-                    <div class="color-palette" id="musicBackgroundPalette"></div>
-                </div>
+                    <div style="font-weight: 500; margin-bottom: 10px;">Music Background Color<\/div>
+                    <div class="color-palette" id="musicBackgroundPalette"><\/div>
+                <\/div>
             `;
             containers.appendChild(musicContainer);
             
@@ -4429,24 +4608,24 @@
             groupContainer.id = 'groupStatusContainer';
             groupContainer.innerHTML = `
                 <div class="group-status-selector">
-                    <div style="font-weight: 500; margin-bottom: 10px;">Select a group:</div>
+                    <div style="font-weight: 500; margin-bottom: 10px;">Select a group:<\/div>
                     <div id="groupOptionsContainer">
                         ${userGroups.length > 0 ? userGroups.map(group => `
                             <div class="group-option" data-group-id="${group.id}">
-                                <i class="fas fa-users"></i>
-                                <span>${group.name}</span>
-                                <span style="font-size: 12px; color: var(--text-secondary); margin-left: auto;">${group.members.length} members</span>
-                            </div>
-                        `).join('') : '<p style="text-align: center; color: var(--text-secondary); padding: 20px;">No groups found</p>'}
-                    </div>
+                                <i class="fas fa-users"><\/i>
+                                <span>${group.name}<\/span>
+                                <span style="font-size: 12px; color: var(--text-secondary); margin-left: auto;">${group.members.length} members<\/span>
+                            <\/div>
+                        `).join('') : '<p style="text-align: center; color: var(--text-secondary); padding: 20px;">No groups found<\/p>'}
+                    <\/div>
                     <p style="font-size: 12px; color: var(--text-secondary); margin-top: 10px;">
                         Status will be shared with all group members
-                    </p>
-                </div>
+                    <\/p>
+                <\/div>
                 
                 <div id="groupStatusContent" style="display: none;">
                     <!-- Content from other status types will be shown here -->
-                </div>
+                <\/div>
             `;
             containers.appendChild(groupContainer);
         }
@@ -4783,8 +4962,6 @@
                 const statusDoc = await db.collection('statuses').doc(statusId).get();
                 if (!statusDoc.exists) return;
                 
-                const statusData = statusDoc.data();
-                
                 // Create notification in Firestore
                 await db.collection('notifications').add({
                     type: 'screenshot',
@@ -4796,11 +4973,14 @@
                     read: false
                 });
                 
-                console.log('Screenshot notification sent to status owner');
             } catch (error) {
                 console.error('Error notifying screenshot:', error);
             }
         }
+        
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
         
         function selectTextColor(color) {
             const palette = document.getElementById('textColorPalette');
@@ -4957,8 +5137,12 @@
                 statusInfoModal.classList.remove('active');
                 closeStatusViewer();
                 
+                // Remove from cache
+                cachedStatuses = cachedStatuses.filter(status => status.id !== statusId);
+                localStorage.setItem(`cachedStatuses_${currentUser.uid}`, JSON.stringify(cachedStatuses));
+                
                 // Reload statuses
-                loadStatusUpdates();
+                updateStatusListWithCache();
                 
             } catch (error) {
                 console.error('Error deleting status:', error);
@@ -4997,7 +5181,7 @@
                     archivedStatuses.splice(index, 1);
                     localStorage.setItem(`archivedStatuses_${currentUser.uid}`, JSON.stringify(archivedStatuses));
                     showNotification('Status restored', 'success');
-                    updateStatusListByCategory();
+                    updateStatusListWithCache();
                 }
             } catch (error) {
                 console.error('Error restoring status:', error);
@@ -5037,8 +5221,8 @@
                 const highlightBtn = document.getElementById('highlightStatusBtn');
                 if (highlightBtn) {
                     highlightBtn.innerHTML = isAlreadyHighlighted ? 
-                        '<i class="fas fa-star"></i> Unhighlight' : 
-                        '<i class="fas fa-star"></i> Highlight';
+                        '<i class="fas fa-star"><\/i> Unhighlight' : 
+                        '<i class="fas fa-star"><\/i> Highlight';
                 }
                 
             } catch (error) {
@@ -5106,12 +5290,12 @@
                     mutedUsers.push(userId);
                     saveMutedUsers();
                     showNotification('User muted', 'success');
-                    updateStatusListByCategory();
+                    updateStatusListWithCache();
                 } else {
                     mutedUsers = mutedUsers.filter(id => id !== userId);
                     saveMutedUsers();
                     showNotification('User unmuted', 'success');
-                    updateStatusListByCategory();
+                    updateStatusListWithCache();
                 }
             } catch (error) {
                 console.error('Error muting user:', error);
@@ -5250,13 +5434,9 @@
             return `${Math.floor(diffDays / 7)}w ago`;
         }
         
-        function updateStatusListByCategory() {
-            if (isOnline) {
-                loadStatusUpdates();
-            } else {
-                updateStatusListWithCache();
-            }
-        }
+        // ============================================
+        // EVENT LISTENERS SETUP
+        // ============================================
         
         function setupEventListeners() {
             // New status button
@@ -5299,7 +5479,7 @@
                                 await deleteStatus(status.id);
                             }
                             showNotification('All statuses deleted', 'success');
-                            loadStatusUpdates();
+                            updateStatusListWithCache();
                         }
                     }
                 });
@@ -5315,7 +5495,7 @@
                             await archiveStatus(status.id);
                         }
                         showNotification('All statuses archived', 'success');
-                        loadStatusUpdates();
+                        updateStatusListWithCache();
                     }
                 });
             }
@@ -6023,12 +6203,8 @@
                             showNotification('Status posted successfully!', 'success');
                         }
                         
-                        // Reload statuses
-                        if (isOnline) {
-                            loadStatusUpdates();
-                        } else {
-                            updateStatusListWithCache();
-                        }
+                        // Update UI
+                        updateStatusListWithCache();
                         
                     } catch (error) {
                         console.error('Error posting status:', error);
@@ -6049,7 +6225,6 @@
                             replyInput.value = '';
                             
                             // In a real app, this would send a message
-                            // For now, just log it
                             console.log('Status reply:', replyText);
                         }
                     }
@@ -6179,13 +6354,13 @@
                                                 
                                                 viewerItem.innerHTML = `
                                                     <div class="viewer-avatar" ${viewerData.photoURL ? `style="background-image: url('${viewerData.photoURL}')"` : ''}>
-                                                        ${viewerData.photoURL ? '' : `<span>${initials}</span>`}
-                                                        ${tookScreenshot ? '<span style="position: absolute; bottom: -5px; right: -5px; background: var(--danger-color); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px;"><i class="fas fa-camera"></i></span>' : ''}
-                                                    </div>
+                                                        ${viewerData.photoURL ? '' : `<span>${initials}<\/span>`}
+                                                        ${tookScreenshot ? '<span style="position: absolute; bottom: -5px; right: -5px; background: var(--danger-color); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px;"><i class="fas fa-camera"><\/i><\/span>' : ''}
+                                                    <\/div>
                                                     <div class="viewer-info">
-                                                        <div class="viewer-name">${viewerData.displayName || 'User'} ${tookScreenshot ? '<span style="color: var(--danger-color); font-size: 12px;">(took screenshot)</span>' : ''}</div>
-                                                        <div class="viewer-time">Viewed recently</div>
-                                                    </div>
+                                                        <div class="viewer-name">${viewerData.displayName || 'User'} ${tookScreenshot ? '<span style="color: var(--danger-color); font-size: 12px;">(took screenshot)<\/span>' : ''}<\/div>
+                                                        <div class="viewer-time">Viewed recently<\/div>
+                                                    <\/div>
                                                 `;
                                                 viewersList.appendChild(viewerItem);
                                             }
@@ -6196,21 +6371,21 @@
                                             currentUserItem.className = 'viewer-item';
                                             currentUserItem.innerHTML = `
                                                 <div class="viewer-avatar" ${currentUser.photoURL ? `style="background-image: url('${currentUser.photoURL}')"` : ''}>
-                                                    ${currentUser.photoURL ? '' : '<span>ME</span>'}
-                                                </div>
+                                                    ${currentUser.photoURL ? '' : '<span>ME<\/span>'}
+                                                <\/div>
                                                 <div class="viewer-info">
-                                                    <div class="viewer-name">You</div>
-                                                    <div class="viewer-time">Viewed recently</div>
-                                                </div>
+                                                    <div class="viewer-name">You<\/div>
+                                                    <div class="viewer-time">Viewed recently<\/div>
+                                                <\/div>
                                             `;
                                             viewersList.appendChild(currentUserItem);
                                         }
                                     } else if (viewersList) {
                                         viewersList.innerHTML = `
                                             <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
-                                                <i class="fas fa-eye" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
-                                                <p>No viewers yet</p>
-                                            </div>
+                                                <i class="fas fa-eye" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"><\/i>
+                                                <p>No viewers yet<\/p>
+                                            <\/div>
                                         `;
                                     }
                                 }
@@ -6218,9 +6393,9 @@
                                 // For offline/pending statuses
                                 viewersList.innerHTML = `
                                     <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
-                                        <i class="fas fa-wifi-slash" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
-                                        <p>Viewer information unavailable offline</p>
-                                    </div>
+                                        <i class="fas fa-wifi-slash" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"><\/i>
+                                        <p>Viewer information unavailable offline<\/p>
+                                    <\/div>
                                 `;
                             }
                         } catch (error) {
@@ -6228,9 +6403,9 @@
                             if (viewersList) {
                                 viewersList.innerHTML = `
                                     <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
-                                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
-                                        <p>Failed to load viewers</p>
-                                    </div>
+                                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"><\/i>
+                                        <p>Failed to load viewers<\/p>
+                                    <\/div>
                                 `;
                             }
                         }
@@ -6297,129 +6472,168 @@
                 });
             });
             
-            // Category tabs
-            const categoryTabs = {
-                'recentTab': 'recent',
-                'viewedTab': 'viewed',
-                'mutedTab': 'muted',
-                'archiveTab': 'archive',
-                'highlightsTab': 'highlights'
-            };
-            
-            Object.keys(categoryTabs).forEach(tabId => {
-                const tab = document.getElementById(tabId);
-                if (tab) {
-                    tab.addEventListener('click', function() {
-                        document.querySelectorAll('.category-btn').forEach(btn => {
-                            btn.classList.remove('active');
-                        });
-                        this.classList.add('active');
-                        currentCategory = categoryTabs[tabId];
-                        updateStatusListByCategory();
-                    });
-                }
-            });
-            
-            // Handle window resize
-            window.addEventListener('resize', () => {
-                if (fabricCanvas) {
-                    fabricCanvas.setDimensions({
-                        width: window.innerWidth,
-                        height: window.innerHeight - 100
-                    });
-                }
-            });
-        }
-        
-        function resetCreateStatusForm() {
-            // Reset all form elements
-            const textEditor = document.getElementById('textEditor');
-            if (textEditor) textEditor.value = '';
-            
-            // Reset color selections
-            if (textColors.length > 0) selectTextColor(textColors[0]);
-            if (backgroundColors.length > 0) selectBackgroundColor(backgroundColors[0]);
-            if (fonts.length > 0) selectFont(fonts[0].value);
-            
-            // Reset media previews
-            document.querySelectorAll('.media-preview').forEach(preview => {
-                preview.classList.remove('active');
-            });
-            
-            document.querySelectorAll('.media-edit-tools').forEach(tools => {
-                tools.style.display = 'none';
-            });
-            
-            document.querySelectorAll('input[type="file"]').forEach(input => {
-                input.value = '';
-            });
-            
-            // Reset voice recording
-            if (isRecording) stopVoiceRecording();
-            const voicePlayback = document.getElementById('voicePlayback');
-            if (voicePlayback) voicePlayback.style.display = 'none';
-            currentMediaFile = null;
-            audioChunks = [];
-            
-            // Reset poll
-            const pollQuestionInput = document.getElementById('pollQuestionInput');
-            if (pollQuestionInput) pollQuestionInput.value = '';
-            
-            const pollOptionsContainer = document.getElementById('pollOptionsContainer');
-            if (pollOptionsContainer) {
-                pollOptionsContainer.innerHTML = `
-                    <div class="poll-option">
-                        <input type="text" class="poll-option-input" placeholder="Option 1" data-index="0">
-                    </div>
-                    <div class="poll-option">
-                        <input type="text" class="poll-option-input" placeholder="Option 2" data-index="1">
-                    </div>
-                `;
+            // Close screenshot overlay by clicking outside
+            if (screenshotOverlay) {
+                screenshotOverlay.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+                    }
+                });
             }
             
-            // Reset question
-            const questionInput = document.getElementById('questionInput');
-            if (questionInput) questionInput.value = '';
-            
-            // Reset music selection
-            window.selectedMusic = null;
-            document.querySelectorAll('.music-result').forEach(result => {
-                result.style.background = 'none';
+            // Category tabs
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const category = this.id.replace('Tab', '');
+                    currentCategory = category;
+                    
+                    // Update active tab
+                    document.querySelectorAll('.category-btn').forEach(b => {
+                        b.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // Update section title
+                    const sectionTitle = document.getElementById('sectionTitle');
+                    if (sectionTitle) {
+                        switch(category) {
+                            case 'recent':
+                                sectionTitle.textContent = 'Recent Updates';
+                                break;
+                            case 'viewed':
+                                sectionTitle.textContent = 'Viewed Updates';
+                                break;
+                            case 'muted':
+                                sectionTitle.textContent = 'Muted Users';
+                                break;
+                            case 'archive':
+                                sectionTitle.textContent = 'Archived Statuses';
+                                break;
+                            case 'highlights':
+                                sectionTitle.textContent = 'Highlighted Statuses';
+                                break;
+                        }
+                    }
+                    
+                    // Update status list
+                    updateStatusListWithCache();
+                });
             });
             
-            // Reset group selection
-            selectedGroup = null;
-            document.querySelectorAll('.group-option').forEach(option => {
-                option.classList.remove('active');
-            });
-            
-            // Reset schedule
-            scheduledTime = null;
-            const scheduleInput = document.getElementById('scheduleInput');
-            if (scheduleInput) scheduleInput.value = '';
-            
-            // Reset status type to text
-            selectedStatusType = 'text';
-            document.querySelectorAll('.create-status-tab').forEach(tab => {
-                tab.classList.remove('active');
-                if (tab.dataset.type === 'text') {
-                    tab.classList.add('active');
+            // Reset create status form
+            function resetCreateStatusForm() {
+                // Reset text editor
+                const textEditor = document.getElementById('textEditor');
+                if (textEditor) textEditor.value = '';
+                
+                // Reset emoji
+                selectedEmoji = '😊';
+                const emojiDisplay = document.getElementById('emojiOnlyDisplay');
+                if (emojiDisplay) emojiDisplay.textContent = selectedEmoji;
+                
+                // Reset media
+                currentMediaFile = null;
+                
+                // Reset photo preview
+                const photoPreview = document.getElementById('photoPreview');
+                if (photoPreview) photoPreview.classList.remove('active');
+                const photoPreviewImg = document.getElementById('photoPreviewImg');
+                if (photoPreviewImg) photoPreviewImg.src = '';
+                const photoEditTools = document.getElementById('photoEditTools');
+                if (photoEditTools) photoEditTools.style.display = 'none';
+                const photoCaptionInput = document.getElementById('photoCaptionInput');
+                if (photoCaptionInput) photoCaptionInput.value = '';
+                
+                // Reset video preview
+                const videoPreview = document.getElementById('videoPreview');
+                if (videoPreview) videoPreview.classList.remove('active');
+                const videoPreviewVideo = document.getElementById('videoPreviewVideo');
+                if (videoPreviewVideo) {
+                    videoPreviewVideo.src = '';
+                    videoPreviewVideo.load();
                 }
-            });
-            
-            document.querySelectorAll('.status-type-container').forEach(container => {
-                container.classList.remove('active');
-            });
-            const textContainer = document.getElementById('textStatusContainer');
-            if (textContainer) textContainer.classList.add('active');
-            
-            // Hide AI suggestions
-            const aiSuggestions = document.getElementById('aiSuggestions');
-            if (aiSuggestions) aiSuggestions.style.display = 'none';
-            
-            // Hide offline posting indicator
-            if (offlinePostingIndicator) {
-                offlinePostingIndicator.style.display = 'none';
+                const videoEditTools = document.getElementById('videoEditTools');
+                if (videoEditTools) videoEditTools.style.display = 'none';
+                const videoCaptionInput = document.getElementById('videoCaptionInput');
+                if (videoCaptionInput) videoCaptionInput.value = '';
+                const videoDurationWarning = document.getElementById('videoDurationWarning');
+                if (videoDurationWarning) videoDurationWarning.style.display = 'none';
+                
+                // Reset voice recording
+                isRecording = false;
+                recordingTime = 0;
+                const recordBtn = document.getElementById('recordBtn');
+                if (recordBtn) recordBtn.classList.remove('recording');
+                const recordingTimer = document.getElementById('recordingTimer');
+                if (recordingTimer) recordingTimer.textContent = '00:00';
+                const voicePlayback = document.getElementById('voicePlayback');
+                if (voicePlayback) voicePlayback.style.display = 'none';
+                audioChunks = [];
+                
+                // Reset poll
+                const pollQuestionInput = document.getElementById('pollQuestionInput');
+                if (pollQuestionInput) pollQuestionInput.value = '';
+                const pollOptionsContainer = document.getElementById('pollOptionsContainer');
+                if (pollOptionsContainer) {
+                    pollOptionsContainer.innerHTML = `
+                        <div class="poll-option">
+                            <input type="text" class="poll-option-input" placeholder="Option 1" data-index="0">
+                        <\/div>
+                        <div class="poll-option">
+                            <input type="text" class="poll-option-input" placeholder="Option 2" data-index="1">
+                        <\/div>
+                    `;
+                }
+                
+                // Reset question
+                const questionInput = document.getElementById('questionInput');
+                if (questionInput) questionInput.value = '';
+                
+                // Reset music selection
+                window.selectedMusic = null;
+                const musicResults = document.querySelectorAll('.music-result');
+                musicResults.forEach(result => {
+                    result.style.background = 'none';
+                });
+                
+                // Reset group selection
+                selectedGroup = null;
+                const groupOptions = document.querySelectorAll('.group-option');
+                groupOptions.forEach(option => {
+                    option.classList.remove('active');
+                });
+                
+                // Reset to text tab
+                selectedStatusType = 'text';
+                document.querySelectorAll('.create-status-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                const textTab = document.querySelector('.create-status-tab[data-type="text"]');
+                if (textTab) textTab.classList.add('active');
+                
+                document.querySelectorAll('.status-type-container').forEach(container => {
+                    container.classList.remove('active');
+                });
+                const textContainer = document.getElementById('textStatusContainer');
+                if (textContainer) textContainer.classList.add('active');
+                
+                // Reset schedule
+                scheduledTime = null;
+                const scheduleInput = document.getElementById('scheduleInput');
+                if (scheduleInput) scheduleInput.value = '';
+                
+                // Hide additional containers
+                const durationSelector = document.getElementById('durationSelector');
+                if (durationSelector) durationSelector.style.display = 'none';
+                const scheduleContainer = document.getElementById('scheduleContainer');
+                if (scheduleContainer) scheduleContainer.style.display = 'none';
+                const groupStatusContent = document.getElementById('groupStatusContent');
+                if (groupStatusContent) groupStatusContent.style.display = 'none';
+                
+                // Reset colors to default
+                if (textColors.length > 0) selectTextColor(textColors[0]);
+                if (backgroundColors.length > 0) selectBackgroundColor(backgroundColors[0]);
+                if (fonts.length > 0) selectFont(fonts[0].value);
             }
         }
     </script>

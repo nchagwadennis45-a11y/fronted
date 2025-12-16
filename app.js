@@ -1,6 +1,7 @@
+
 // app.js - Application Shell & Tab Controller for Kynecta
 // Manages the single-page application shell and tab visibility
-// Enhanced with Firebase auth, offline detection, and global state management
+// Enhanced with Firebase auth, offline detection, global state management, and centralized settings service
 
 // ============================================================================
 // CONFIGURATION
@@ -46,6 +47,530 @@ const TAB_CONFIG = {
 // External page configurations
 const EXTERNAL_TABS = {
   groups: 'group.html'
+};
+
+// ============================================================================
+// SETTINGS SERVICE
+// ============================================================================
+
+const SETTINGS_SERVICE = {
+  // Default settings structure
+  DEFAULTS: {
+    // Theme settings
+    theme: 'dark', // 'dark', 'light', 'auto'
+    fontSize: 'medium', // 'small', 'medium', 'large', 'xlarge'
+    chatWallpaper: 'default', // 'default', 'gradient1', 'gradient2', 'pattern1', 'custom'
+    customWallpaper: '', // URL for custom wallpaper
+    
+    // Notification settings
+    notifications: {
+      messages: true,
+      calls: true,
+      groups: true,
+      status: true,
+      sound: true,
+      vibration: true
+    },
+    
+    // Privacy settings
+    privacy: {
+      lastSeen: 'everyone', // 'everyone', 'contacts', 'nobody'
+      profilePhoto: 'everyone', // 'everyone', 'contacts', 'nobody'
+      status: 'everyone', // 'everyone', 'contacts', 'nobody'
+      readReceipts: true,
+      typingIndicators: true
+    },
+    
+    // Call settings
+    calls: {
+      defaultType: 'voice', // 'voice', 'video'
+      ringtone: 'default',
+      vibration: true,
+      noiseCancellation: true,
+      autoRecord: false
+    },
+    
+    // Group settings
+    groups: {
+      autoJoin: true,
+      defaultRole: 'member', // 'member', 'admin'
+      approvalRequired: false,
+      notifications: 'all' // 'all', 'mentions', 'none'
+    },
+    
+    // Status settings
+    status: {
+      visibility: 'everyone', // 'everyone', 'contacts', 'selected'
+      autoDelete: '24h', // '24h', '7d', '30d', 'never'
+      shareLocation: false
+    },
+    
+    // Offline settings
+    offline: {
+      queueEnabled: true,
+      autoSync: true,
+      storageLimit: 100, // MB
+      compressMedia: true
+    },
+    
+    // Accessibility
+    accessibility: {
+      highContrast: false,
+      reduceMotion: false,
+      screenReader: false
+    },
+    
+    // General
+    general: {
+      language: 'en',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      dateFormat: 'MM/DD/YYYY',
+      timeFormat: '12h' // '12h', '24h'
+    }
+  },
+  
+  // Current settings
+  current: {},
+  
+  // Page callbacks for settings updates
+  pageCallbacks: new Map(),
+  
+  // Initialize settings service
+  initialize: function() {
+    console.log('Initializing Settings Service...');
+    
+    // Load settings from localStorage
+    this.load();
+    
+    // Apply initial settings
+    this.applySettings();
+    
+    // Setup storage event listener for cross-tab communication
+    this.setupStorageListener();
+    
+    // Expose settings methods globally
+    this.exposeMethods();
+    
+    console.log('Settings Service initialized');
+  },
+  
+  // Load settings from localStorage
+  load: function() {
+    try {
+      const savedSettings = localStorage.getItem('kynecta-settings');
+      if (savedSettings) {
+        this.current = JSON.parse(savedSettings);
+        console.log('Settings loaded from localStorage');
+      } else {
+        this.current = JSON.parse(JSON.stringify(this.DEFAULTS));
+        this.save();
+        console.log('Default settings loaded and saved');
+      }
+      
+      // Ensure all default keys exist (for backward compatibility)
+      this.ensureDefaults();
+      
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      this.current = JSON.parse(JSON.stringify(this.DEFAULTS));
+    }
+  },
+  
+  // Save settings to localStorage
+  save: function() {
+    try {
+      localStorage.setItem('kynecta-settings', JSON.stringify(this.current));
+      
+      // Broadcast change to other tabs/pages
+      localStorage.setItem('kynecta-settings-timestamp', Date.now().toString());
+      
+      console.log('Settings saved to localStorage');
+      return true;
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      return false;
+    }
+  },
+  
+  // Update a specific setting
+  updateSetting: function(key, value) {
+    console.log(`Updating setting: ${key} =`, value);
+    
+    // Handle nested keys (e.g., 'notifications.messages')
+    const keys = key.split('.');
+    let target = this.current;
+    
+    // Navigate to the nested object
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!target[keys[i]] || typeof target[keys[i]] !== 'object') {
+        target[keys[i]] = {};
+      }
+      target = target[keys[i]];
+    }
+    
+    // Update the value
+    const lastKey = keys[keys.length - 1];
+    const oldValue = target[lastKey];
+    target[lastKey] = value;
+    
+    // Save to localStorage
+    const saved = this.save();
+    
+    if (saved) {
+      // Apply the updated setting immediately
+      this.applySetting(key, value, oldValue);
+      
+      // Notify all registered pages
+      this.notifyPages();
+      
+      return true;
+    }
+    
+    return false;
+  },
+  
+  // Get a specific setting
+  getSetting: function(key, defaultValue = undefined) {
+    const keys = key.split('.');
+    let target = this.current;
+    
+    // Navigate to the nested value
+    for (let i = 0; i < keys.length; i++) {
+      if (target && typeof target === 'object' && keys[i] in target) {
+        target = target[keys[i]];
+      } else {
+        return defaultValue !== undefined ? defaultValue : this.getDefaultValue(key);
+      }
+    }
+    
+    return target;
+  },
+  
+  // Get default value for a key
+  getDefaultValue: function(key) {
+    const keys = key.split('.');
+    let target = this.DEFAULTS;
+    
+    for (let i = 0; i < keys.length; i++) {
+      if (target && typeof target === 'object' && keys[i] in target) {
+        target = target[keys[i]];
+      } else {
+        return undefined;
+      }
+    }
+    
+    return target;
+  },
+  
+  // Apply all settings
+  applySettings: function() {
+    console.log('Applying all settings...');
+    
+    // Apply theme
+    this.applyTheme();
+    
+    // Apply font size
+    this.applyFontSize();
+    
+    // Apply chat wallpaper
+    this.applyChatWallpaper();
+    
+    // Apply accessibility settings
+    this.applyAccessibility();
+    
+    // Notify all registered pages
+    this.notifyPages();
+    
+    console.log('All settings applied');
+  },
+  
+  // Apply a specific setting
+  applySetting: function(key, value, oldValue = null) {
+    console.log(`Applying setting: ${key}`, { new: value, old: oldValue });
+    
+    switch(key) {
+      case 'theme':
+        this.applyTheme();
+        break;
+      case 'fontSize':
+        this.applyFontSize();
+        break;
+      case 'chatWallpaper':
+      case 'customWallpaper':
+        this.applyChatWallpaper();
+        break;
+      case 'accessibility.highContrast':
+      case 'accessibility.reduceMotion':
+        this.applyAccessibility();
+        break;
+      default:
+        // For other settings, just notify pages
+        break;
+    }
+    
+    // Always notify pages about the change
+    this.notifyPages();
+  },
+  
+  // Apply theme settings
+  applyTheme: function() {
+    const theme = this.getSetting('theme');
+    const html = document.documentElement;
+    
+    // Remove existing theme classes
+    html.classList.remove('theme-dark', 'theme-light', 'theme-auto');
+    
+    // Apply theme class
+    if (theme === 'auto') {
+      // Check system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      html.classList.add(prefersDark ? 'theme-dark' : 'theme-light');
+      html.classList.add('theme-auto');
+    } else {
+      html.classList.add(`theme-${theme}`);
+    }
+    
+    console.log(`Theme applied: ${theme}`);
+  },
+  
+  // Apply font size settings
+  applyFontSize: function() {
+    const fontSize = this.getSetting('fontSize');
+    const html = document.documentElement;
+    
+    // Remove existing font size classes
+    html.classList.remove('font-small', 'font-medium', 'font-large', 'font-xlarge');
+    
+    // Apply font size class
+    html.classList.add(`font-${fontSize}`);
+    
+    // Also set CSS variable for dynamic sizing
+    document.documentElement.style.setProperty('--font-size-multiplier', this.getFontSizeMultiplier(fontSize));
+    
+    console.log(`Font size applied: ${fontSize}`);
+  },
+  
+  // Get font size multiplier
+  getFontSizeMultiplier: function(size) {
+    const multipliers = {
+      small: 0.875,
+      medium: 1,
+      large: 1.125,
+      xlarge: 1.25
+    };
+    return multipliers[size] || 1;
+  },
+  
+  // Apply chat wallpaper settings
+  applyChatWallpaper: function() {
+    const wallpaper = this.getSetting('chatWallpaper');
+    const customWallpaper = this.getSetting('customWallpaper');
+    
+    // Get all chat areas
+    const chatAreas = document.querySelectorAll('.chat-area, .message-list, #chatArea');
+    
+    chatAreas.forEach(area => {
+      // Remove existing wallpaper classes
+      area.classList.remove(
+        'wallpaper-default',
+        'wallpaper-gradient1',
+        'wallpaper-gradient2',
+        'wallpaper-pattern1',
+        'wallpaper-custom'
+      );
+      
+      // Remove inline background styles
+      area.style.backgroundImage = '';
+      area.style.backgroundColor = '';
+      
+      if (wallpaper === 'custom' && customWallpaper) {
+        // Apply custom wallpaper
+        area.classList.add('wallpaper-custom');
+        area.style.backgroundImage = `url('${customWallpaper}')`;
+        area.style.backgroundSize = 'cover';
+        area.style.backgroundAttachment = 'fixed';
+      } else if (wallpaper !== 'default') {
+        // Apply predefined wallpaper
+        area.classList.add(`wallpaper-${wallpaper}`);
+      }
+      // 'default' uses CSS defaults, no class needed
+    });
+    
+    console.log(`Chat wallpaper applied: ${wallpaper}`);
+  },
+  
+  // Apply accessibility settings
+  applyAccessibility: function() {
+    const html = document.documentElement;
+    const highContrast = this.getSetting('accessibility.highContrast');
+    const reduceMotion = this.getSetting('accessibility.reduceMotion');
+    
+    // High contrast
+    if (highContrast) {
+      html.classList.add('high-contrast');
+    } else {
+      html.classList.remove('high-contrast');
+    }
+    
+    // Reduce motion
+    if (reduceMotion) {
+      html.classList.add('reduce-motion');
+    } else {
+      html.classList.remove('reduce-motion');
+    }
+    
+    console.log(`Accessibility applied: highContrast=${highContrast}, reduceMotion=${reduceMotion}`);
+  },
+  
+  // Ensure all default keys exist in current settings
+  ensureDefaults: function() {
+    let needsUpdate = false;
+    
+    const ensure = (source, target) => {
+      for (const key in source) {
+        if (!(key in target)) {
+          target[key] = JSON.parse(JSON.stringify(source[key]));
+          needsUpdate = true;
+        } else if (typeof source[key] === 'object' && source[key] !== null) {
+          ensure(source[key], target[key]);
+        }
+      }
+    };
+    
+    ensure(this.DEFAULTS, this.current);
+    
+    if (needsUpdate) {
+      this.save();
+    }
+  },
+  
+  // Setup localStorage event listener for cross-tab communication
+  setupStorageListener: function() {
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'kynecta-settings-timestamp') {
+        console.log('Settings changed in another tab, reloading...');
+        
+        // Reload settings from localStorage
+        const oldSettings = JSON.parse(JSON.stringify(this.current));
+        this.load();
+        
+        // Compare and apply changed settings
+        this.detectAndApplyChanges(oldSettings, this.current);
+        
+        // Notify pages
+        this.notifyPages();
+      }
+    });
+  },
+  
+  // Detect and apply changes between old and new settings
+  detectAndApplyChanges: function(oldSettings, newSettings) {
+    const changedKeys = this.findChangedKeys(oldSettings, newSettings);
+    
+    changedKeys.forEach(key => {
+      const newValue = this.getSetting(key);
+      const oldValue = this.getSettingFromObject(oldSettings, key);
+      this.applySetting(key, newValue, oldValue);
+    });
+  },
+  
+  // Find all changed keys between two settings objects
+  findChangedKeys: function(obj1, obj2, prefix = '') {
+    const keys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+    const changed = [];
+    
+    for (const key of keys) {
+      const fullKey = prefix ? `${prefix}.${key}` : key;
+      const val1 = obj1[key];
+      const val2 = obj2[key];
+      
+      if (typeof val1 === 'object' && typeof val2 === 'object' && val1 !== null && val2 !== null) {
+        // Recursively check nested objects
+        changed.push(...this.findChangedKeys(val1, val2, fullKey));
+      } else if (JSON.stringify(val1) !== JSON.stringify(val2)) {
+        // Values are different
+        changed.push(fullKey);
+      }
+    }
+    
+    return changed;
+  },
+  
+  // Get setting from a specific object
+  getSettingFromObject: function(obj, key) {
+    const keys = key.split('.');
+    let target = obj;
+    
+    for (let i = 0; i < keys.length; i++) {
+      if (target && typeof target === 'object' && keys[i] in target) {
+        target = target[keys[i]];
+      } else {
+        return undefined;
+      }
+    }
+    
+    return target;
+  },
+  
+  // Register a page callback for settings updates
+  registerPageCallback: function(pageId, callback) {
+    if (typeof callback === 'function') {
+      this.pageCallbacks.set(pageId, callback);
+      console.log(`Page callback registered: ${pageId}`);
+      
+      // Immediately notify this page with current settings
+      callback(this.current);
+    }
+  },
+  
+  // Unregister a page callback
+  unregisterPageCallback: function(pageId) {
+    this.pageCallbacks.delete(pageId);
+    console.log(`Page callback unregistered: ${pageId}`);
+  },
+  
+  // Notify all registered pages about settings changes
+  notifyPages: function() {
+    console.log(`Notifying ${this.pageCallbacks.size} pages about settings changes`);
+    
+    this.pageCallbacks.forEach((callback, pageId) => {
+      try {
+        callback(this.current);
+      } catch (error) {
+        console.error(`Error in page callback for ${pageId}:`, error);
+      }
+    });
+  },
+  
+  // Expose methods globally
+  exposeMethods: function() {
+    window.KYNECTA_SETTINGS = {
+      load: () => this.load(),
+      save: () => this.save(),
+      updateSetting: (key, value) => this.updateSetting(key, value),
+      getSetting: (key, defaultValue) => this.getSetting(key, defaultValue),
+      applySettings: () => this.applySettings(),
+      registerPageCallback: (pageId, callback) => this.registerPageCallback(pageId, callback),
+      unregisterPageCallback: (pageId) => this.unregisterPageCallback(pageId),
+      getDefaults: () => JSON.parse(JSON.stringify(this.DEFAULTS)),
+      resetToDefaults: () => this.resetToDefaults()
+    };
+    
+    // Also expose as global functions for convenience
+    window.updateSetting = (key, value) => this.updateSetting(key, value);
+    window.getSetting = (key, defaultValue) => this.getSetting(key, defaultValue);
+    window.applySettings = () => this.applySettings();
+  },
+  
+  // Reset all settings to defaults
+  resetToDefaults: function() {
+    console.log('Resetting all settings to defaults');
+    this.current = JSON.parse(JSON.stringify(this.DEFAULTS));
+    this.save();
+    this.applySettings();
+    this.notifyPages();
+    return true;
+  }
 };
 
 // ============================================================================
@@ -1018,6 +1543,9 @@ function exposeGlobalStateToIframes() {
     processQueuedMessages: processQueuedMessages,
     getQueuedItems: () => [...syncQueue]
   };
+  
+  // Expose settings service
+  window.KYNECTA_GLOBAL.settings = window.KYNECTA_SETTINGS;
 }
 
 // ============================================================================
@@ -1063,6 +1591,25 @@ function handleIframeMessage(event) {
           isOffline: !isOnline
         }
       }, event.origin);
+      break;
+      
+    case 'get-settings':
+      // Send settings back to iframe
+      event.source.postMessage({
+        type: 'settings',
+        data: SETTINGS_SERVICE.current
+      }, event.origin);
+      break;
+      
+    case 'update-setting':
+      // Update setting from iframe
+      if (data && data.key && data.value !== undefined) {
+        SETTINGS_SERVICE.updateSetting(data.key, data.value);
+        event.source.postMessage({
+          type: 'setting-updated',
+          data: { key: data.key, success: true }
+        }, event.origin);
+      }
       break;
       
     case 'queue-action':
@@ -1112,6 +1659,13 @@ function handleStorageEvent(event) {
       console.warn('Failed to parse network state from storage:', e);
     }
   }
+  
+  // Handle settings changes from other tabs
+  if (event.key === 'kynecta-settings-timestamp' && event.newValue) {
+    console.log('Settings updated from other tab, timestamp:', event.newValue);
+    
+    // Settings service will handle this via its own listener
+  }
 }
 
 function broadcastStateToIframes() {
@@ -1120,6 +1674,7 @@ function broadcastStateToIframes() {
   const iframes = document.querySelectorAll('iframe');
   iframes.forEach(iframe => {
     try {
+      // Send auth state
       iframe.contentWindow.postMessage({
         type: 'auth-state-update',
         data: {
@@ -1129,12 +1684,19 @@ function broadcastStateToIframes() {
         }
       }, window.location.origin);
       
+      // Send network state
       iframe.contentWindow.postMessage({
         type: 'network-state-update',
         data: {
           isOnline: isOnline,
           isOffline: !isOnline
         }
+      }, window.location.origin);
+      
+      // Send settings
+      iframe.contentWindow.postMessage({
+        type: 'settings-update',
+        data: SETTINGS_SERVICE.current
       }, window.location.origin);
     } catch (e) {
       // Silent fail - iframe might not be ready or from different origin
@@ -1703,19 +2265,22 @@ function runInitialization() {
     // STEP 1: Setup global auth access FIRST (before anything else)
     setupGlobalAuthAccess();
     
-    // STEP 2: Initialize Firebase ONCE (works offline/online)
+    // STEP 2: Initialize Settings Service
+    SETTINGS_SERVICE.initialize();
+    
+    // STEP 3: Initialize Firebase ONCE (works offline/online)
     initializeFirebase();
     
-    // STEP 3: Expose global state to all pages
+    // STEP 4: Expose global state to all pages
     exposeGlobalStateToIframes();
     
-    // STEP 4: Setup cross-page communication
+    // STEP 5: Setup cross-page communication
     setupCrossPageCommunication();
     
-    // STEP 5: Setup event listeners
+    // STEP 6: Setup event listeners
     setupEventListeners();
     
-    // STEP 6: Initialize network detection (separate from auth)
+    // STEP 7: Initialize network detection (separate from auth)
     initializeNetworkDetection();
     
     // Ensure sidebar is properly initialized
@@ -1782,6 +2347,7 @@ function runInitialization() {
     console.log('Kynecta Application Shell initialized successfully');
     console.log('Auth state:', currentUser ? `User ${currentUser.uid}` : 'No user');
     console.log('Network:', isOnline ? 'Online' : 'Offline');
+    console.log('Settings loaded:', Object.keys(SETTINGS_SERVICE.current).length, 'categories');
     
   } catch (error) {
     console.error('Error during app initialization:', error);
@@ -1874,6 +2440,58 @@ function injectStyles() {
       display: none !important;
     }
     
+    /* Theme classes */
+    .theme-dark {
+      color-scheme: dark;
+    }
+    
+    .theme-light {
+      color-scheme: light;
+    }
+    
+    /* Font size classes */
+    .font-small {
+      font-size: 0.875rem;
+    }
+    
+    .font-medium {
+      font-size: 1rem;
+    }
+    
+    .font-large {
+      font-size: 1.125rem;
+    }
+    
+    .font-xlarge {
+      font-size: 1.25rem;
+    }
+    
+    /* Wallpaper classes */
+    .wallpaper-gradient1 {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .wallpaper-gradient2 {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .wallpaper-pattern1 {
+      background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.1) 1px, transparent 0);
+      background-size: 20px 20px;
+    }
+    
+    /* Accessibility classes */
+    .high-contrast {
+      --contrast-multiplier: 1.5;
+      filter: contrast(var(--contrast-multiplier));
+    }
+    
+    .reduce-motion * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    
     @media (max-width: 767px) {
       #sidebar {
         position: fixed;
@@ -1937,6 +2555,8 @@ window.APP_CONNECTIVITY = {
   lastChange: null,
   syncQueueSize: 0
 };
+
+// SETTINGS SERVICE (already exposed via SETTINGS_SERVICE.exposeMethods())
 
 // API and sync functions
 window.safeApiCall = safeApiCall;
@@ -2021,4 +2641,4 @@ if (document.readyState === 'loading') {
   setTimeout(initializeApp, 0);
 }
 
-console.log('Kynecta app.js loaded - Application shell ready with enhanced auth and offline support');
+console.log('Kynecta app.js loaded - Application shell ready with enhanced auth, offline support, and centralized settings service');

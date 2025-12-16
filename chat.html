@@ -308,8 +308,7 @@
             
             /* Adjust content areas - REMOVED sidebar offset */
             #chatsContent,
-            #toolsContent,
-            #settingsContent {
+            #toolsContent {
                 margin-left: 0 !important;
                 width: 100% !important;
                 height: calc(100vh - 60px) !important; /* Account for mobile navbar */
@@ -335,17 +334,9 @@
                 font-size: 18px; /* Increased from 16px */
             }
             
-            /* Settings container height for mobile */
-            .settings-scroll-container {
-                height: 240px !important;
-            }
+            /* Settings container height for mobile - REMOVED */
             
-            .settings-item {
-                height: 80px !important;
-                min-height: 80px !important;
-            }
-            
-            /* Mobile Navigation Bar */
+            /* Mobile Navigation Bar - UPDATED: Added call icon and removed settings */
             .mobile-nav-bar {
                 position: fixed !important;
                 bottom: 0 !important;
@@ -358,6 +349,7 @@
                 align-items: center !important;
                 z-index: 1000 !important;
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 0 10px !important;
             }
             
             .mobile-nav-icon {
@@ -366,6 +358,9 @@
                 padding: 12px;
                 border-radius: 12px;
                 transition: all 0.2s ease;
+                flex: 1;
+                text-align: center;
+                min-width: 0;
             }
             
             .mobile-nav-icon.active {
@@ -400,6 +395,22 @@
                 overflow: auto !important;
                 -webkit-overflow-scrolling: touch !important;
             }
+            
+            /* Notification badges for mobile nav */
+            .mobile-nav-badge {
+                position: absolute;
+                top: 5px;
+                right: 15px;
+                background: #ef4444;
+                color: white;
+                border-radius: 50%;
+                width: 18px;
+                height: 18px;
+                font-size: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
         }
         
         /* Tablet optimizations */
@@ -430,16 +441,6 @@
             
             .desktop-header-buttons {
                 display: flex !important;
-            }
-            
-            /* Settings container height for tablet */
-            .settings-scroll-container {
-                height: 240px !important;
-            }
-            
-            .settings-item {
-                height: 80px !important;
-                min-height: 80px !important;
             }
         }
         
@@ -472,16 +473,6 @@
             .desktop-header-buttons {
                 display: flex !important;
             }
-            
-            /* Settings container height for desktop */
-            .settings-scroll-container {
-                height: 240px !important;
-            }
-            
-            .settings-item {
-                height: 80px !important;
-                min-height: 80px !important;
-            }
         }
         
         /* Ensure sidebar stays on top of everything */
@@ -497,8 +488,7 @@
         
         /* Adjust content areas for sidebar */
         #chatsContent,
-        #toolsContent,
-        #settingsContent {
+        #toolsContent {
             margin-left: 0;
             width: 100%;
         }
@@ -854,24 +844,6 @@
             font-style: italic;
         }
         
-        /* Settings items fixed height */
-        .settings-item {
-            height: 80px;
-            min-height: 80px;
-        }
-        
-        /* Settings scroll container */
-        .settings-scroll-container {
-            height: 240px;
-            overflow-y: auto;
-        }
-        
-        /* Settings items in settings modal */
-        .settings-section-item .settings-item {
-            height: 80px;
-            min-height: 80px;
-        }
-        
         /* FIX: Ensure attach button works properly */
         #attachBtn {
             position: relative;
@@ -908,6 +880,65 @@
                 min-height: 100vh !important;
             }
         }
+        
+        /* Chat loading skeleton */
+        .chat-skeleton {
+            animation: pulse 2s infinite;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+        }
+        
+        /* Notification badge */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        /* Call notification */
+        .call-notification {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 9999;
+            padding: 15px;
+            max-width: 300px;
+            animation: slideInRight 0.3s ease;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* No messages state */
+        .no-filter-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+        }
+        
+        /* User loading skeleton */
+        .user-skeleton {
+            width: 100px;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            animation: pulse 2s infinite;
+        }
     </style>
 </head>
 <body class="h-full overflow-hidden bg-gray-50" data-theme="light">
@@ -917,7 +948,11 @@
         <span id="offlineMessageCount" class="ml-2 font-semibold"></span>
     </div>
 
-    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    <!-- Notification Container for cross-screen notifications -->
+    <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Call Notifications Container -->
+    <div id="callNotificationContainer" class="fixed top-4 left-4 z-50 space-y-2"></div>
 
     <div id="loadingScreen" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
         <div class="text-center">
@@ -940,18 +975,22 @@
             
             <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="status" title="Status">
                 <i class="fas fa-circle"></i>
+                <span id="sidebarStatusBadge" class="notification-badge hidden"></span>
             </button>
             
             <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="group" title="Groups">
                 <i class="fas fa-users"></i>
+                <span id="sidebarGroupBadge" class="notification-badge hidden"></span>
             </button>
             
             <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="friends" title="Friends">
                 <i class="fas fa-user-friends"></i>
+                <span id="sidebarFriendBadge" class="notification-badge hidden"></span>
             </button>
             
             <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="calls" title="Calls">
                 <i class="fas fa-phone"></i>
+                <span id="sidebarCallBadge" class="notification-badge hidden"></span>
             </button>
             
             <button class="nav-icon text-gray-400 hover:text-white text-2xl p-3 rounded-2xl hover:bg-gray-800 transition-all" data-page="tools" title="Tools">
@@ -964,26 +1003,31 @@
         </button>
     </div>
 
-    <!-- Mobile Navigation Bar -->
+    <!-- Mobile Navigation Bar - UPDATED: Added call icon, removed settings -->
     <div id="mobileNavBar" class="mobile-nav-bar hidden">
         <button class="mobile-nav-icon active" data-page="chats" title="Chats">
             <i class="fas fa-comments"></i>
+            <span id="mobileChatBadge" class="mobile-nav-badge hidden"></span>
         </button>
         
-        <button class="mobile-nav-icon" data-page="friends" title="Friends">
-            <i class="fas fa-user-friends"></i>
+        <button class="mobile-nav-icon" data-page="calls" title="Calls">
+            <i class="fas fa-phone"></i>
+            <span id="mobileCallBadge" class="mobile-nav-badge hidden"></span>
         </button>
         
         <button class="mobile-nav-icon" data-page="status" title="Status">
             <i class="fas fa-circle"></i>
+            <span id="mobileStatusBadge" class="mobile-nav-badge hidden"></span>
+        </button>
+        
+        <button class="mobile-nav-icon" data-page="friends" title="Friends">
+            <i class="fas fa-user-friends"></i>
+            <span id="mobileFriendBadge" class="mobile-nav-badge hidden"></span>
         </button>
         
         <button class="mobile-nav-icon" data-page="tools" title="Tools">
             <i class="fas fa-tools"></i>
-        </button>
-        
-        <button class="mobile-nav-icon" data-page="settings" title="Settings">
-            <i class="fas fa-cog"></i>
+            <span id="mobileToolsBadge" class="mobile-nav-badge hidden"></span>
         </button>
     </div>
 
@@ -1007,6 +1051,11 @@
         <iframe id="callsIframe" class="content-iframe" src="calls.html" title="Calls"></iframe>
     </div>
 
+    <!-- Settings Page Iframe -->
+    <div id="settingsContent" class="content-area iframe-container hidden">
+        <iframe id="settingsIframe" class="content-iframe" src="settings.html" title="Settings"></iframe>
+    </div>
+
     <!-- Main Chat Application -->
     <div id="chatApp" class="h-full hidden">
         <!-- Chats Page Content -->
@@ -1015,26 +1064,34 @@
                 <div id="chatListContainer" class="chat-list-container w-full md:w-1/3 lg:w-1/4 bg-white flex flex-col border-r border-gray-200">
                     <div class="kynecta-header p-4 flex justify-between items-center">
                         <div class="flex items-center">
-                            <!-- Profile icon button for mobile - UPDATED: Removed profile icon -->
+                            <!-- Profile icon with loading state -->
                             <div class="flex-1">
-                                <span id="userName" class="font-semibold text-white block"></span>
-                                <span id="userMood" class="text-white/80 text-sm"></span>
+                                <div id="userName" class="font-semibold text-white block">
+                                    <div class="user-skeleton"></div>
+                                </div>
+                                <div id="userMood" class="text-white/80 text-sm">
+                                    <div class="user-skeleton" style="width: 70px; height: 14px; margin-top: 2px;"></div>
+                                </div>
                             </div>
                         </div>
                         <div class="flex space-x-3 text-white desktop-header-buttons">
-                            <!-- Chat Filter Tabs in Header - UPDATED: Removed badge elements -->
+                            <!-- Chat Filter Tabs in Header -->
                             <div class="chat-filter-tabs-header">
                                 <div class="chat-filter-tab-header active" data-filter="all" title="All Chats">
                                     📥
+                                    <span id="filterAllBadge" class="notification-badge hidden"></span>
                                 </div>
                                 <div class="chat-filter-tab-header" data-filter="sent" title="Sent Chats">
                                     📤
+                                    <span id="filterSentBadge" class="notification-badge hidden"></span>
                                 </div>
                                 <div class="chat-filter-tab-header" data-filter="received" title="Received Chats">
                                     📨
+                                    <span id="filterReceivedBadge" class="notification-badge hidden"></span>
                                 </div>
                                 <div class="chat-filter-tab-header" data-filter="unread" title="Unread Chats">
                                     ●
+                                    <span id="filterUnreadBadge" class="notification-badge hidden"></span>
                                 </div>
                             </div>
                             
@@ -1045,21 +1102,25 @@
                                 <i class="fas fa-moon" id="themeIcon"></i>
                             </button>
                         </div>
-                        <!-- Mobile header buttons - UPDATED: Removed badge elements -->
+                        <!-- Mobile header buttons -->
                         <div class="mobile-header-buttons hidden">
-                            <!-- Chat Filter Tabs in Mobile Header - UPDATED: Removed badge elements -->
+                            <!-- Chat Filter Tabs in Mobile Header -->
                             <div class="chat-filter-tabs-header">
                                 <div class="chat-filter-tab-header active" data-filter="all" title="All Chats">
                                     📥
+                                    <span id="mobileFilterAllBadge" class="notification-badge hidden"></span>
                                 </div>
                                 <div class="chat-filter-tab-header" data-filter="sent" title="Sent Chats">
                                     📤
+                                    <span id="mobileFilterSentBadge" class="notification-badge hidden"></span>
                                 </div>
                                 <div class="chat-filter-tab-header" data-filter="received" title="Received Chats">
                                     📨
+                                    <span id="mobileFilterReceivedBadge" class="notification-badge hidden"></span>
                                 </div>
                                 <div class="chat-filter-tab-header" data-filter="unread" title="Unread Chats">
                                     ●
+                                    <span id="mobileFilterUnreadBadge" class="notification-badge hidden"></span>
                                 </div>
                             </div>
                             
@@ -1071,8 +1132,6 @@
                             </button>
                         </div>
                     </div>
-
-                    <!-- Old Chat Filter Tabs - REMOVED -->
 
                     <div class="personalization-info bg-purple-800/30 p-3 border-b border-purple-700/30">
                         <div class="flex items-center text-sm text-gray-300">
@@ -1129,6 +1188,13 @@
                                         Start New Chat
                                     </button>
                                 </div>
+                                
+                                <!-- Filter-specific empty states -->
+                                <div id="noFilteredChatsMessage" class="no-filter-results hidden">
+                                    <i class="fas fa-inbox text-4xl mb-3 text-gray-300 block"></i>
+                                    <p>No <span id="filterTypeText">chats</span> found</p>
+                                    <p class="text-sm mt-1">Try a different filter or start a new chat</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1142,10 +1208,10 @@
                             </div>
                             <img id="chatAvatar" class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-white font-semibold mr-3 object-cover border-2 border-white/30" src="" alt="Chat">
                             <div>
-                                <h3 id="chatTitle" class="font-semibold text-white"></h3>
+                                <h3 id="chatTitle" class="font-semibold text-white">Select a chat</h3>
                                 <p id="chatStatus" class="text-white/80 text-sm flex items-center">
-                                    <span id="moodIndicator" class="mood-indicator mood-happy-indicator"></span>
-                                    <span id="statusText"></span>
+                                    <span id="moodIndicator" class="mood-indicator mood-happy-indicator hidden"></span>
+                                    <span id="statusText">Tap on a chat to start messaging</span>
                                     <span id="typingIndicator" class="typing-indicator hidden ml-2">
                                         typing
                                         <div class="typing-dots">
@@ -1159,9 +1225,9 @@
                         </div>
                         <div class="flex space-x-3 text-white">
                             <i class="fas fa-microphone text-xl cursor-pointer hover:scale-110 transition-transform" id="voiceToTextBtnHeader" title="Voice to Text"></i>
-                            <i class="fas fa-phone text-xl cursor-pointer hover:scale-110 transition-transform friend-call-btn" data-id="" data-name=""></i>
-                            <i class="fas fa-video text-xl cursor-pointer hover:scale-110 transition-transform friend-video-call-btn" data-id="" data-name=""></i>
-                            <i class="fas fa-ellipsis-v text-xl cursor-pointer hover:scale-110 transition-transform" id="chatMenuBtn"></i>
+                            <i class="fas fa-phone text-xl cursor-pointer hover:scale-110 transition-transform friend-call-btn" data-id="" data-name="" title="Voice Call"></i>
+                            <i class="fas fa-video text-xl cursor-pointer hover:scale-110 transition-transform friend-video-call-btn" data-id="" data-name="" title="Video Call"></i>
+                            <i class="fas fa-ellipsis-v text-xl cursor-pointer hover:scale-110 transition-transform" id="chatMenuBtn" title="More Options"></i>
                         </div>
                     </div>
 
@@ -1291,13 +1357,13 @@
                         <div class="flex items-center">
                             <div class="flex space-x-2 mr-3">
                                 <!-- FIXED: Attach button with hidden file input -->
-                                <button class="w-12 h-12 rounded-2xl flex items-center justify-center text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-all relative" id="attachBtn">
+                                <button class="w-12 h-12 rounded-2xl flex items-center justify-center text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-all relative" id="attachBtn" title="Attach File">
                                     <i class="fas fa-plus"></i>
                                     <input type="file" id="fileUploadInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" multiple>
                                 </button>
                             </div>
                             <div class="flex-1 relative">
-                                <textarea id="messageInput" class="w-full bg-gray-100 py-4 px-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all resize-none" placeholder="Type a message..." rows="3" style="min-height: 80px; max-height: 150px; font-size: 16px; line-height: 1.5;"></textarea>
+                                <textarea id="messageInput" class="w-full bg-gray-100 py-4 px-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all resize-none" placeholder="Type a message..." rows="3" style="min-height: 80px; max-height: 150px; font-size: 16px; line-height: 1.5;" disabled></textarea>
                                 <div id="emojiPicker" class="emoji-picker hidden absolute bottom-full mb-2 bg-white border border-gray-300 rounded-lg shadow-lg p-2 grid grid-cols-8 gap-1 max-h-48 overflow-y-auto">
                                 </div>
                                 <div id="isTyping" class="absolute -top-6 left-0 text-xs text-gray-500 hidden">
@@ -1305,7 +1371,7 @@
                                 </div>
                             </div>
                             <div class="ml-3">
-                                <button id="sendBtn" class="w-10 h-10 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-2xl flex items-center justify-center hover:opacity-90 transition-all shadow-lg">
+                                <button id="sendBtn" class="w-10 h-10 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-2xl flex items-center justify-center hover:opacity-90 transition-all shadow-lg" disabled>
                                     <i class="fas fa-paper-plane"></i>
                                 </button>
                             </div>
@@ -1364,7 +1430,7 @@
                 <div class="chat-list-container w-full md:w-1/3 lg:w-1/4 bg-white flex flex-col border-r border-gray-200">
                     <div class="kynecta-header p-4 flex justify-between items-center">
                         <div class="flex items-center">
-                            <!-- Profile icon button for mobile - UPDATED: Removed profile icon -->
+                            <!-- Profile icon button for mobile -->
                             <div>
                                 <span id="userNameTools" class="font-semibold text-white block"></span>
                                 <span id="userMoodTools" class="text-white/80 text-sm"></span>
@@ -1388,19 +1454,19 @@
                             <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
                                 <h3 class="font-semibold mb-3">Quick Actions</h3>
                                 <div class="grid grid-cols-2 gap-3">
-                                    <button class="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl text-center hover:shadow-md transition-all" onclick="showSettingsSection('privacy')">
+                                    <button class="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl text-center hover:shadow-md transition-all" onclick="switchPage('settings')">
                                         <i class="fas fa-shield-alt text-2xl mb-2 block text-purple-600"></i>
                                         <p class="text-sm font-medium">Privacy</p>
                                     </button>
-                                    <button class="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl text-center hover:shadow-md transition-all" onclick="openSettingsModal()">
+                                    <button class="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl text-center hover:shadow-md transition-all" onclick="switchPage('settings')">
                                         <i class="fas fa-cog text-2xl mb-2 block text-blue-600"></i>
                                         <p class="text-sm font-medium">Settings</p>
                                     </button>
-                                    <button class="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl text-center hover:shadow-md transition-all" onclick="showSettingsSection('storage')">
+                                    <button class="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl text-center hover:shadow-md transition-all" onclick="switchPage('settings')">
                                         <i class="fas fa-database text-2xl mb-2 block text-gray-600"></i>
                                         <p class="text-sm font-medium">Storage</p>
                                     </button>
-                                    <button class="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl text-center hover:shadow-md transition-all" onclick="closeModal('settingsModal'); document.getElementById('inviteFriendsModal').classList.remove('hidden')">
+                                    <button class="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl text-center hover:shadow-md transition-all" onclick="document.getElementById('inviteFriendsModal').classList.remove('hidden')">
                                         <i class="fas fa-user-plus text-2xl mb-2 block text-orange-600"></i>
                                         <p class="text-sm font-medium">Invite</p>
                                     </button>
@@ -1453,180 +1519,6 @@
                                 <p class="font-medium">AI Summary</p>
                             </button>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Settings Page Content -->
-        <div id="settingsContent" class="content-area hidden h-full">
-            <div class="flex h-full pb-0">
-                <div class="chat-list-container w-full md:w-1/3 lg:w-1/4 bg-white flex flex-col border-r border-gray-200">
-                    <div class="kynecta-header p-4 flex justify-between items-center">
-                        <div class="flex items-center">
-                            <!-- Profile icon button for mobile - UPDATED: Removed profile icon -->
-                            <div>
-                                <span id="userNameSettings" class="font-semibold text-white block"></span>
-                                <span id="userMoodSettings" class="text-white/80 text-sm"></span>
-                            </div>
-                        </div>
-                        <div class="flex space-x-3 text-white desktop-header-buttons">
-                            <button id="themeToggleSettings" class="text-xl cursor-pointer hover:scale-110 transition-transform">
-                                <i class="fas fa-moon" id="themeIconSettings"></i>
-                            </button>
-                        </div>
-                        <!-- Mobile header buttons -->
-                        <div class="mobile-header-buttons hidden">
-                            <button id="mobileThemeToggleSettings" class="text-xl cursor-pointer hover:scale-110 transition-transform text-white">
-                                <i class="fas fa-moon" id="mobileThemeIconSettings"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="overflow-y-auto custom-scrollbar p-0">
-                        <div class="settings-scroll-container">
-                            <div class="settings-full-list">
-                                <div class="space-y-0">
-                                    <div class="settings-section-item" data-section="profile">
-                                        <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('profile')">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-user text-purple-500 mr-3 text-xl"></i>
-                                                <div>
-                                                    <p class="font-medium">Profile</p>
-                                                    <p class="text-sm text-gray-500">Edit your profile information</p>
-                                                </div>
-                                            </div>
-                                            <i class="fas fa-chevron-right text-gray-400"></i>
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="settings-section-item" data-section="privacy">
-                                        <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('privacy')">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-lock text-blue-500 mr-3 text-xl"></i>
-                                                <div>
-                                                    <p class="font-medium">Privacy</p>
-                                                    <p class="text-sm text-gray-500">Manage your privacy settings</p>
-                                                </div>
-                                            </div>
-                                            <i class="fas fa-chevron-right text-gray-400"></i>
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="settings-section-item" data-section="notifications">
-                                        <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('notifications')">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-bell text-green-500 mr-3 text-xl"></i>
-                                                <div>
-                                                    <p class="font-medium">Notifications</p>
-                                                    <p class="text-sm text-gray-500">Configure notification preferences</p>
-                                                </div>
-                                            </div>
-                                            <i class="fas fa-chevron-right text-gray-400"></i>
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="settings-section-item" data-section="account">
-                                        <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('account')">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-key text-red-500 mr-3 text-xl"></i>
-                                                <div>
-                                                    <p class="font-medium">Account</p>
-                                                    <p class="text-sm text-gray-500">Account security and settings</p>
-                                                </div>
-                                            </div>
-                                            <i class="fas fa-chevron-right text-gray-400"></i>
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="settings-section-item" data-section="chat">
-                                        <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('chat')">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-comments text-indigo-500 mr-3 text-xl"></i>
-                                                <div>
-                                                    <p class="font-medium">Chat Settings</p>
-                                                    <p class="text-sm text-gray-500">Configure chat preferences</p>
-                                                </div>
-                                            </div>
-                                            <i class="fas fa-chevron-right text-gray-400"></i>
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="settings-section-item" data-section="storage">
-                                        <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('storage')">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-database text-gray-500 mr-3 text-xl"></i>
-                                                <div>
-                                                    <p class="font-medium">Storage & Data</p>
-                                                    <p class="text-sm text-gray-500">Manage storage and data usage</p>
-                                                </div>
-                                            </div>
-                                            <i class="fas fa-chevron-right text-gray-400"></i>
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="settings-section-item" data-section="accessibility">
-                                        <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('accessibility')">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-universal-access text-orange-500 mr-3 text-xl"></i>
-                                                <div>
-                                                    <p class="font-medium">Accessibility</p>
-                                                    <p class="text-sm text-gray-500">Accessibility and display settings</p>
-                                                </div>
-                                            </div>
-                                            <i class="fas fa-chevron-right text-gray-400"></i>
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="settings-section-item" data-section="language">
-                                        <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('language')">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-language text-teal-500 mr-3 text-xl"></i>
-                                                <div>
-                                                    <p class="font-medium">Language</p>
-                                                    <p class="text-sm text-gray-500">App language and region settings</p>
-                                                </div>
-                                            </div>
-                                            <i class="fas fa-chevron-right text-gray-400"></i>
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="settings-section-item" data-section="help">
-                                        <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('help')">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-question-circle text-yellow-500 mr-3 text-xl"></i>
-                                                <div>
-                                                    <p class="font-medium">Help Center</p>
-                                                    <p class="text-sm text-gray-500">Help, support and FAQs</p>
-                                                </div>
-                                            </div>
-                                            <i class="fas fa-chevron-right text-gray-400"></i>
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="settings-section-item" data-section="about">
-                                        <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('about')">
-                                            <div class="flex items-center">
-                                                <i class="fas fa-info-circle text-blue-500 mr-3 text-xl"></i>
-                                                <div>
-                                                    <p class="font-medium">About</p>
-                                                    <p class="text-sm text-gray-500">App information and version</p>
-                                                </div>
-                                            </div>
-                                            <i class="fas fa-chevron-right text-gray-400"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="chat-area flex-1 flex flex-col bg-gray-50 w-full h-full hidden md:flex items-center justify-center">
-                    <div class="text-center p-8 max-w-md">
-                        <i class="fas fa-cog text-6xl text-purple-400 mb-4 animate-spin"></i>
-                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Settings & Preferences</h3>
-                        <p class="text-gray-500">Customize your Kynecta experience by adjusting settings to match your preferences and needs.</p>
                     </div>
                 </div>
             </div>
@@ -1751,158 +1643,6 @@
                     <button id="cancelGoal" class="flex-1 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
                         Cancel
                     </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[70vh] overflow-hidden">
-            <div class="kynecta-header p-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">Settings</h3>
-                    <button id="closeSettings" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('settingsModal')">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[50vh] custom-scrollbar p-0">
-                <div class="settings-scroll-container">
-                    <div class="settings-full-list">
-                        <div class="space-y-0">
-                            <div class="settings-section-item" data-section="profile">
-                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('profile')">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-user text-purple-500 mr-3 text-xl"></i>
-                                        <div>
-                                            <p class="font-medium">Profile</p>
-                                            <p class="text-sm text-gray-500">Edit your profile information</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-gray-400"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="settings-section-item" data-section="privacy">
-                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('privacy')">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-lock text-blue-500 mr-3 text-xl"></i>
-                                        <div>
-                                            <p class="font-medium">Privacy</p>
-                                            <p class="text-sm text-gray-500">Manage your privacy settings</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-gray-400"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="settings-section-item" data-section="notifications">
-                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('notifications')">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-bell text-green-500 mr-3 text-xl"></i>
-                                        <div>
-                                            <p class="font-medium">Notifications</p>
-                                            <p class="text-sm text-gray-500">Configure notification preferences</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-gray-400"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="settings-section-item" data-section="account">
-                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('account')">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-key text-red-500 mr-3 text-xl"></i>
-                                        <div>
-                                            <p class="font-medium">Account</p>
-                                            <p class="text-sm text-gray-500">Account security and settings</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-gray-400"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="settings-section-item" data-section="chat">
-                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('chat')">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-comments text-indigo-500 mr-3 text-xl"></i>
-                                        <div>
-                                            <p class="font-medium">Chat Settings</p>
-                                            <p class="text-sm text-gray-500">Configure chat preferences</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-gray-400"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="settings-section-item" data-section="storage">
-                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('storage')">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-database text-gray-500 mr-3 text-xl"></i>
-                                        <div>
-                                            <p class="font-medium">Storage & Data</p>
-                                            <p class="text-sm text-gray-500">Manage storage and data usage</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-gray-400"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="settings-section-item" data-section="accessibility">
-                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('accessibility')">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-universal-access text-orange-500 mr-3 text-xl"></i>
-                                        <div>
-                                            <p class="font-medium">Accessibility</p>
-                                            <p class="text-sm text-gray-500">Accessibility and display settings</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-gray-400"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="settings-section-item" data-section="language">
-                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('language')">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-language text-teal-500 mr-3 text-xl"></i>
-                                        <div>
-                                            <p class="font-medium">Language</p>
-                                            <p class="text-sm text-gray-500">App language and region settings</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-gray-400"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="settings-section-item" data-section="help">
-                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('help')">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-question-circle text-yellow-500 mr-3 text-xl"></i>
-                                        <div>
-                                            <p class="font-medium">Help Center</p>
-                                            <p class="text-sm text-gray-500">Help, support and FAQs</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-gray-400"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="settings-section-item" data-section="about">
-                                <button class="settings-item w-full text-left p-4 bg-white hover:bg-gray-50 transition-colors flex items-center justify-between border-b border-gray-100" onclick="showSettingsSection('about')">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-info-circle text-blue-500 mr-3 text-xl"></i>
-                                        <div>
-                                            <p class="font-medium">About</p>
-                                            <p class="text-sm text-gray-500">App information and version</p>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-gray-400"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -2055,851 +1795,6 @@
                     <button id="cancelProfile" class="flex-1 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity" onclick="closeModal('profileSettingsModal')">
                         Cancel
                     </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Privacy Settings Modal -->
-    <div id="privacySettingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-            <div class="kynecta-header p-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">Privacy Settings</h3>
-                    <button id="closePrivacySettings" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('privacySettingsModal')">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
-                <div class="mb-6">
-                    <h4 class="font-semibold mb-4 text-lg text-gray-800">Who can see my personal info</h4>
-                    
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Last seen & online</p>
-                            </div>
-                            <select id="lastSeenPrivacy" class="p-2 border border-gray-300 rounded-lg">
-                                <option value="everyone">Everyone</option>
-                                <option value="contacts">My contacts</option>
-                                <option value="nobody">Nobody</option>
-                            </select>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Profile photo</p>
-                            </div>
-                            <select id="profilePhotoPrivacy" class="p-2 border border-gray-300 rounded-lg">
-                                <option value="everyone">Everyone</option>
-                                <option value="contacts">My contacts</option>
-                                <option value="nobody">Nobody</option>
-                            </select>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">About</p>
-                            </div>
-                            <select id="aboutPrivacy" class="p-2 border border-gray-300 rounded-lg">
-                                <option value="everyone">Everyone</option>
-                                <option value="contacts">My contacts</option>
-                                <option value="nobody">Nobody</option>
-                            </select>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Status</p>
-                            </div>
-                            <select id="statusPrivacy" class="p-2 border border-gray-300 rounded-lg">
-                                <option value="everyone">Everyone</option>
-                                <option value="contacts">My contacts</option>
-                                <option value="nobody">Nobody</option>
-                            </select>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Read receipts</p>
-                            </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="readReceiptsPrivacy" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Disappearing messages</p>
-                            </div>
-                            <select id="disappearingMessagesPrivacy" class="p-2 border border-gray-300 rounded-lg">
-                                <option value="off">Off</option>
-                                <option value="24h">24 hours</option>
-                                <option value="7d">7 days</option>
-                                <option value="90d">90 days</option>
-                            </select>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Groups</p>
-                            </div>
-                            <select id="groupsPrivacy" class="p-2 border border-gray-300 rounded-lg">
-                                <option value="everyone">Everyone</option>
-                                <option value="contacts">My contacts</option>
-                                <option value="nobody">Nobody</option>
-                            </select>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Calls</p>
-                            </div>
-                            <select id="callsPrivacy" class="p-2 border border-gray-300 rounded-lg">
-                                <option value="everyone">Everyone</option>
-                                <option value="contacts">My contacts</option>
-                                <option value="nobody">Nobody</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex space-x-3">
-                    <button id="savePrivacy" class="flex-1 py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
-                        Save Privacy Settings
-                    </button>
-                    <button id="cancelPrivacy" class="flex-1 py-3 bg-gray-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity" onclick="closeModal('privacySettingsModal')">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Account Settings Modal -->
-    <div id="accountSettingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-            <div class="kynecta-header p-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">Account Settings</h3>
-                    <button id="closeAccountSettings" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('accountSettingsModal')">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
-                <div class="space-y-4">
-                    <div class="settings-item" id="securityNotificationsBtn">
-                        <div class="settings-item-content">
-                            <div class="settings-item-title">Security notifications</div>
-                            <div class="settings-item-description">Get alerts about unusual activity</div>
-                        </div>
-                        <div class="settings-item-action">
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-item" id="passkeysBtn">
-                        <div class="settings-item-content">
-                            <div class="settings-item-title">Passkeys</div>
-                            <div class="settings-item-description">Set up passkeys for secure login</div>
-                        </div>
-                        <div class="settings-item-action">
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-item" id="emailAddressBtn">
-                        <div class="settings-item-content">
-                            <div class="settings-item-title">Email address</div>
-                            <div class="settings-item-description">Change your email address</div>
-                        </div>
-                        <div class="settings-item-action">
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-item" id="twoStepVerificationBtn">
-                        <div class="settings-item-content">
-                            <div class="settings-item-title">Two-step verification</div>
-                            <div class="settings-item-description">Add an extra layer of security</div>
-                        </div>
-                        <div class="settings-item-action">
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-item" id="businessPlatformBtn">
-                        <div class="settings-item-content">
-                            <div class="settings-item-title">Business platform</div>
-                            <div class="settings-item-description">Manage your business account</div>
-                        </div>
-                        <div class="settings-item-action">
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-item" id="changeNumberBtn">
-                        <div class="settings-item-content">
-                            <div class="settings-item-title">Change number</div>
-                            <div class="settings-item-description">Transfer your account to a new number</div>
-                        </div>
-                        <div class="settings-item-action">
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-item" id="requestAccountInfoBtn">
-                        <div class="settings-item-content">
-                            <div class="settings-item-title">Request account info</div>
-                            <div class="settings-item-description">Download a report of your account</div>
-                        </div>
-                        <div class="settings-item-action">
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-item" id="deleteAccountBtn">
-                        <div class="settings-item-content">
-                            <div class="settings-item-title">Delete account</div>
-                            <div class="settings-item-description">Permanently delete your account</div>
-                        </div>
-                        <div class="settings-item-action">
-                            <i class="fas fa-chevron-right text-gray-400"></i>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-6">
-                    <button id="cancelAccount" class="w-full py-3 bg-gray-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity" onclick="closeModal('accountSettingsModal')">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Accessibility Settings Modal -->
-    <div id="accessibilitySettingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-            <div class="kynecta-header p-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">Accessibility Settings</h3>
-                    <button id="closeAccessibilitySettings" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('accessibilitySettingsModal')">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Dark Mode</p>
-                            <p class="text-sm text-gray-500">Use dark theme</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="darkModeToggle">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Font Size</p>
-                            <p class="text-sm text-gray-500">Adjust text size</p>
-                        </div>
-                        <select id="fontSizeSelect" class="p-2 border border-gray-300 rounded-lg">
-                            <option value="small">Small</option>
-                            <option value="medium" selected>Medium</option>
-                            <option value="large">Large</option>
-                            <option value="x-large">Extra Large</option>
-                        </select>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">High Contrast</p>
-                            <p class="text-sm text-gray-500">Increase color contrast</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="highContrastToggle">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Screen Reader</p>
-                            <p class="text-sm text-gray-500">Enable screen reader support</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="screenReaderToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Reduce Animations</p>
-                            <p class="text-sm text-gray-500">Minimize motion effects</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="reduceAnimationsToggle">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Text-to-Speech</p>
-                            <p class="text-sm text-gray-500">Read messages aloud</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="textToSpeechToggle">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="mt-6">
-                    <button id="saveAccessibility" class="w-full py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
-                        Save Accessibility Settings
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Notifications Settings Modal -->
-    <div id="notificationsSettingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-            <div class="kynecta-header p-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">Notification Settings</h3>
-                    <button id="closeNotificationsSettings" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('notificationsSettingsModal')">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Push Notifications</p>
-                            <p class="text-sm text-gray-500">Receive push notifications</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="pushNotificationsToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Message Notifications</p>
-                            <p class="text-sm text-gray-500">Notify on new messages</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="messageNotificationsToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Group Notifications</p>
-                            <p class="text-sm text-gray-500">Notify on group activities</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="groupNotificationsToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Call Notifications</p>
-                            <p class="text-sm text-gray-500">Notify on incoming calls</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="callNotificationsToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Sound</p>
-                            <p class="text-sm text-gray-500">Play notification sounds</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="soundToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Vibration</p>
-                            <p class="text-sm text-gray-500">Vibrate on notifications</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="vibrationToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Do Not Disturb</p>
-                            <p class="text-sm text-gray-500">Silence notifications during set hours</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="doNotDisturbToggle">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div id="doNotDisturbSchedule" class="hidden space-y-2">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">Start Time</p>
-                            </div>
-                            <input type="time" id="dndStartTime" class="p-2 border border-gray-300 rounded-lg" value="22:00">
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-medium">End Time</p>
-                            </div>
-                            <input type="time" id="dndEndTime" class="p-2 border border-gray-300 rounded-lg" value="07:00">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-6">
-                    <button id="saveNotifications" class="w-full py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
-                        Save Notification Settings
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Storage Settings Modal -->
-    <div id="storageSettingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-            <div class="kynecta-header p-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">Storage & Data Settings</h3>
-                    <button id="closeStorageSettings" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('storageSettingsModal')">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Auto-download Media</p>
-                            <p class="text-sm text-gray-500">Download media automatically</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="autoDownloadToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Wi-Fi Only</p>
-                            <p class="text-sm text-gray-500">Download media only on Wi-Fi</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="wifiOnlyToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Media Upload Quality</p>
-                            <p class="text-sm text-gray-500">Quality for uploaded media</p>
-                        </div>
-                        <select id="mediaUploadQuality" class="p-2 border border-gray-300 rounded-lg">
-                            <option value="auto">Auto</option>
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <div class="flex justify-between items-center mb-2">
-                            <p class="font-medium">Storage Usage</p>
-                            <p id="storageUsage" class="text-sm text-gray-500">Calculating...</p>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div id="storageProgress" class="bg-purple-600 h-2.5 rounded-full" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-2">
-                        <button id="clearCache" class="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors">
-                            Clear Cache
-                        </button>
-                        <button id="manageMedia" class="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors">
-                            Manage Downloaded Media
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="mt-6">
-                    <button id="saveStorage" class="w-full py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
-                        Save Storage Settings
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Language Settings Modal -->
-    <div id="languageSettingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-            <div class="kynecta-header p-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">Language Settings</h3>
-                    <button id="closeLanguageSettings" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('languageSettingsModal')">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">App Language</p>
-                            <p class="text-sm text-gray-500">Choose your preferred language</p>
-                        </div>
-                        <select id="appLanguageSelect" class="p-2 border border-gray-300 rounded-lg">
-                            <option value="en">English</option>
-                            <option value="sw">Swahili</option>
-                            <option value="fr">French</option>
-                            <option value="es">Spanish</option>
-                            <option value="de">German</option>
-                            <option value="zh">Chinese</option>
-                            <option value="ja">Japanese</option>
-                            <option value="ru">Russian</option>
-                            <option value="ar">Arabic</option>
-                        </select>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Auto-detect Language</p>
-                            <p class="text-sm text-gray-500">Use device language settings</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="autoDetectLanguageToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="mt-6">
-                    <button id="saveLanguage" class="w-full py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
-                        Save Language Settings
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Chat Settings Modal -->
-    <div id="chatSettingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-            <div class="kynecta-header p-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">Chat Settings</h3>
-                    <button id="closeChatSettings" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('chatSettingsModal')">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Enter Key Sends</p>
-                            <p class="text-sm text-gray-500">Press Enter to send messages</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="enterKeySendsToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Read Receipts</p>
-                            <p class="text-sm text-gray-500">Show when messages are read</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="readReceiptsToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Show Last Seen</p>
-                            <p class="text-sm text-gray-500">Display when contacts were last online</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="lastSeenToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Media Visibility</p>
-                            <p class="text-sm text-gray-500">Show media in gallery</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="mediaVisibilityToggle" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-medium">Chat Backup</p>
-                            <p class="text-sm text-gray-500">Automatically backup chats</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="chatBackupToggle">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="space-y-2">
-                        <button id="changeWallpaper" class="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors">
-                            Change Chat Wallpaper
-                        </button>
-                        <button id="exportChat" class="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors">
-                            Export Chat History
-                        </button>
-                        <button id="clearChatHistory" class="w-full py-3 bg-red-100 text-red-700 rounded-xl font-semibold hover:bg-red-200 transition-colors">
-                            Clear All Chats
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="mt-6">
-                    <button id="saveChatSettings" class="w-full py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
-                        Save Chat Settings
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Favorites Settings Modal -->
-    <div id="favoritesSettingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-            <div class="kynecta-header p-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">Favorites</h3>
-                    <button id="closeFavoritesSettings" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('favoritesSettingsModal')">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
-                <div id="favoritesListContent" class="space-y-3">
-                    <div class="text-center text-gray-500 py-8">
-                        <i class="fas fa-star text-4xl mb-3 text-gray-300 block"></i>
-                        <p>No favorites yet</p>
-                        <p class="text-sm mt-1">Add contacts or chats to favorites for quick access</p>
-                    </div>
-                </div>
-                
-                <div class="mt-6">
-                    <button id="addToFavorites" class="w-full py-3 bg-gradient-to-r from-purple-500 to-green-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity">
-                        Add to Favorites
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Help Center Modal -->
-    <div id="helpCenterModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-            <div class="kynecta-header p-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">Help Center</h3>
-                    <button id="closeHelpCenter" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('helpCenterModal')">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
-                <div class="space-y-4">
-                    <div class="bg-gray-50 p-4 rounded-xl cursor-pointer help-section" data-section="getting-started">
-                        <h4 class="font-semibold mb-2">Getting Started</h4>
-                        <p class="text-sm text-gray-600">Learn how to use Kynecta's basic features</p>
-                    </div>
-                    
-                    <div class="bg-gray-50 p-4 rounded-xl cursor-pointer help-section" data-section="privacy-security">
-                        <h4 class="font-semibold mb-2">Privacy & Security</h4>
-                        <p class="text-sm text-gray-600">Understand how we protect your data</p>
-                    </div>
-                    
-                    <div class="bg-gray-50 p-4 rounded-xl cursor-pointer help-section" data-section="troubleshooting">
-                        <h4 class="font-semibold mb-2">Troubleshooting</h4>
-                        <p class="text-sm text-gray-600">Common issues and solutions</p>
-                    </div>
-                    
-                    <div class="bg-gray-50 p-4 rounded-xl cursor-pointer help-section" data-section="faqs">
-                        <h4 class="font-semibold mb-2">FAQs</h4>
-                        <p class="text-sm text-gray-600">Frequently asked questions</p>
-                    </div>
-                </div>
-                
-                <div class="mt-6 space-y-3">
-                    <button id="contactSupport" class="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors">
-                        Contact Support
-                    </button>
-                    <button id="sendFeedback" class="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors">
-                        Send Feedback
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- App Info Modal -->
-    <div id="appInfoModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-            <div class="kynecta-header p-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">App Information</h3>
-                    <button id="closeAppInfo" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('appInfoModal')">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
-                <div class="space-y-4">
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-green-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
-                            K
-                        </div>
-                        <h3 class="text-xl font-semibold">Kynecta</h3>
-                        <p class="text-gray-500">Advanced Mood-Based Chat</p>
-                    </div>
-                    
-                    <div class="space-y-3">
-                        <div class="flex justify-between">
-                            <span class="font-medium">Version</span>
-                            <span class="text-gray-500">1.0.0</span>
-                        </div>
-                        
-                        <div class="flex justify-between">
-                            <span class="font-medium">Build</span>
-                            <span class="text-gray-500">2025.08</span>
-                        </div>
-                        
-                        <div class="flex justify-between">
-                            <span class="font-medium">Developer</span>
-                            <span class="text-gray-500">Denis Chacha</span>
-                        </div>
-                        
-                        <div class="flex justify-between">
-                            <span class="font-medium">Release Date</span>
-                            <span class="text-gray-500">November 2025</span>
-                        </div>
-                    </div>
-                    
-                    <div class="pt-4 border-t border-gray-200">
-                        <h4 class="font-semibold mb-2">Legal</h4>
-                        <div class="space-y-2">
-                            <button class="w-full text-left text-blue-600 hover:text-blue-800 transition-colors" id="termsOfServiceBtn">
-                                Terms of Service
-                            </button>
-                            <button class="w-full text-left text-blue-600 hover:text-blue-800 transition-colors" id="privacyPolicyBtn">
-                                Privacy Policy
-                            </button>
-                            <button class="w-full text-left text-blue-600 hover:text-blue-800 transition-colors" id="openSourceBtn">
-                                Open Source Licenses
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Invite Friends Modal -->
-    <div id="inviteFriendsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
-            <div class="kynecta-header p-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold text-white">Invite Friends</h3>
-                    <button id="closeInviteFriends" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('inviteFriendsModal')">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
-                <div class="text-center mb-6">
-                    <div class="w-24 h-24 bg-gradient-to-r from-purple-500 to-green-500 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
-                        <i class="fas fa-share-alt"></i>
-                    </div>
-                    <h3 class="text-xl font-semibold mb-2">Share Kynecta</h3>
-                    <p class="text-gray-500">Invite your friends to join Kynecta</p>
-                </div>
-                
-                <div class="space-y-3">
-                    <button id="shareLink" class="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors flex items-center justify-center">
-                        <i class="fas fa-link mr-2"></i> Copy Invite Link
-                    </button>
-                    
-                    <button id="shareQR" class="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center">
-                        <i class="fas fa-qrcode mr-2"></i> Share QR Code
-                    </button>
-                    
-                    <button id="shareWhatsApp" class="w-full py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center">
-                        <i class="fab fa-whatsapp mr-2"></i> Share via WhatsApp
-                    </button>
-                    
-                    <button id="shareSMS" class="w-full py-3 bg-gray-600 text-white rounded-xl font-semibold hover:bg-gray-700 transition-colors flex items-center justify-center">
-                        <i class="fas fa-sms mr-2"></i> Share via SMS
-                    </button>
-                </div>
-                
-                <div class="mt-6 p-4 bg-gray-50 rounded-xl">
-                    <h4 class="font-semibold mb-2">Your Referral Code</h4>
-                    <div class="flex items-center justify-between">
-                        <code class="bg-white px-3 py-2 rounded-lg border border-gray-200 font-mono">KYNECTA2025</code>
-                        <button id="copyReferralCode" class="text-purple-600 hover:text-purple-800 transition-colors">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -3262,8 +2157,241 @@
             </div>
         </div>
     </div>
+
+    <!-- Invite Friends Modal -->
+    <div id="inviteFriendsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
+            <div class="kynecta-header p-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-semibold text-white">Invite Friends</h3>
+                    <button id="closeInviteFriends" class="text-white/80 hover:text-white transition-colors" onclick="closeModal('inviteFriendsModal')">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="overflow-y-auto max-h-[60vh] custom-scrollbar p-6">
+                <div class="text-center mb-6">
+                    <div class="w-24 h-24 bg-gradient-to-r from-purple-500 to-green-500 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
+                        <i class="fas fa-share-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Share Kynecta</h3>
+                    <p class="text-gray-500">Invite your friends to join Kynecta</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <button id="shareLink" class="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors flex items-center justify-center">
+                        <i class="fas fa-link mr-2"></i> Copy Invite Link
+                    </button>
+                    
+                    <button id="shareQR" class="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center">
+                        <i class="fas fa-qrcode mr-2"></i> Share QR Code
+                    </button>
+                    
+                    <button id="shareWhatsApp" class="w-full py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center">
+                        <i class="fab fa-whatsapp mr-2"></i> Share via WhatsApp
+                    </button>
+                    
+                    <button id="shareSMS" class="w-full py-3 bg-gray-600 text-white rounded-xl font-semibold hover:bg-gray-700 transition-colors flex items-center justify-center">
+                        <i class="fas fa-sms mr-2"></i> Share via SMS
+                    </button>
+                </div>
+                
+                <div class="mt-6 p-4 bg-gray-50 rounded-xl">
+                    <h4 class="font-semibold mb-2">Your Referral Code</h4>
+                    <div class="flex items-center justify-between">
+                        <code class="bg-white px-3 py-2 rounded-lg border border-gray-200 font-mono">KYNECTA2025</code>
+                        <button id="copyReferralCode" class="text-purple-600 hover:text-purple-800 transition-colors">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
    
+
    <script>
+
+    // chat.html - Settings integration
+let currentSettings = null;
+
+// Register this page with the settings service
+function initializeSettingsIntegration() {
+  if (window.KYNECTA_SETTINGS) {
+    window.KYNECTA_SETTINGS.registerPageCallback('chat-page', applyPageSettings);
+    
+    // Get initial settings
+    currentSettings = window.KYNECTA_SETTINGS.getSetting('', {});
+    
+    // Apply initial settings
+    applyPageSettings(currentSettings);
+  } else {
+    // If settings service isn't ready yet, wait for it
+    window.addEventListener('load', function() {
+      if (window.KYNECTA_SETTINGS) {
+        window.KYNECTA_SETTINGS.registerPageCallback('chat-page', applyPageSettings);
+        currentSettings = window.KYNECTA_SETTINGS.getSetting('', {});
+        applyPageSettings(currentSettings);
+      }
+    });
+  }
+}
+
+// Apply settings to the chat page
+function applyPageSettings(settings) {
+  console.log('Chat page applying settings:', settings);
+  currentSettings = settings;
+  
+  // 1. Apply theme to chat-specific elements
+  applyChatTheme(settings.theme);
+  
+  // 2. Apply font size to chat elements
+  applyChatFontSize(settings.fontSize);
+  
+  // 3. Apply notification settings
+  applyNotificationSettings(settings.notifications);
+  
+  // 4. Apply privacy settings
+  applyPrivacySettings(settings.privacy);
+  
+  // 5. Apply chat-specific settings
+  applyChatSpecificSettings(settings);
+}
+
+// Theme application for chat
+function applyChatTheme(theme) {
+  const chatContainer = document.getElementById('chatArea') || document.querySelector('.message-list');
+  if (!chatContainer) return;
+  
+  // Remove existing theme classes
+  chatContainer.classList.remove('chat-theme-dark', 'chat-theme-light', 'chat-theme-auto');
+  
+  // Apply theme class
+  if (theme === 'auto') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    chatContainer.classList.add(prefersDark ? 'chat-theme-dark' : 'chat-theme-light');
+  } else if (theme === 'dark' || theme === 'light') {
+    chatContainer.classList.add(`chat-theme-${theme}`);
+  }
+  
+  // Update chat bubble colors based on theme
+  document.querySelectorAll('.message-bubble').forEach(bubble => {
+    if (theme === 'dark') {
+      bubble.style.backgroundColor = '#374151';
+      bubble.style.color = '#ffffff';
+    } else if (theme === 'light') {
+      bubble.style.backgroundColor = '#f3f4f6';
+      bubble.style.color = '#111827';
+    }
+  });
+}
+
+// Font size application for chat
+function applyChatFontSize(fontSize) {
+  const chatContainer = document.getElementById('chatArea') || document.querySelector('.message-list');
+  if (!chatContainer) return;
+  
+  // Remove existing font size classes
+  chatContainer.classList.remove('chat-font-small', 'chat-font-medium', 'chat-font-large', 'chat-font-xlarge');
+  
+  // Apply font size class
+  if (fontSize) {
+    chatContainer.classList.add(`chat-font-${fontSize}`);
+  }
+  
+  // Adjust specific elements
+  document.querySelectorAll('.message-text').forEach(text => {
+    switch(fontSize) {
+      case 'small':
+        text.style.fontSize = '0.875rem';
+        break;
+      case 'large':
+        text.style.fontSize = '1.125rem';
+        break;
+      case 'xlarge':
+        text.style.fontSize = '1.25rem';
+        break;
+      default: // medium
+        text.style.fontSize = '1rem';
+    }
+  });
+}
+
+// Notification settings for chat
+function applyNotificationSettings(notifications) {
+  if (!notifications) return;
+  
+  // Disable notification sounds if turned off
+  if (!notifications.sound) {
+    window.chatNotificationSoundEnabled = false;
+  }
+  
+  // Update UI indicators
+  const notificationIcon = document.getElementById('notificationStatus');
+  if (notificationIcon) {
+    notificationIcon.textContent = notifications.messages ? '🔔' : '🔕';
+    notificationIcon.title = notifications.messages ? 
+      'Message notifications enabled' : 'Message notifications disabled';
+  }
+}
+
+// Privacy settings for chat
+function applyPrivacySettings(privacy) {
+  if (!privacy) return;
+  
+  // Show/hide read receipts
+  document.querySelectorAll('.read-receipt').forEach(receipt => {
+    receipt.style.display = privacy.readReceipts ? 'inline-block' : 'none';
+  });
+  
+  // Show/hide typing indicators
+  const typingIndicator = document.getElementById('typingIndicator');
+  if (typingIndicator) {
+    typingIndicator.style.display = privacy.typingIndicators ? 'block' : 'none';
+  }
+}
+
+// Chat-specific settings
+function applyChatSpecificSettings(settings) {
+  // Apply chat wallpaper
+  if (settings.chatWallpaper) {
+    const chatArea = document.getElementById('chatArea') || document.querySelector('.message-list');
+    if (chatArea) {
+      // Remove existing wallpaper classes
+      chatArea.classList.remove(
+        'chat-wallpaper-default',
+        'chat-wallpaper-gradient1',
+        'chat-wallpaper-gradient2',
+        'chat-wallpaper-pattern1'
+      );
+      
+      if (settings.chatWallpaper !== 'default') {
+        chatArea.classList.add(`chat-wallpaper-${settings.chatWallpaper}`);
+      }
+      
+      // Apply custom wallpaper if set
+      if (settings.chatWallpaper === 'custom' && settings.customWallpaper) {
+        chatArea.style.backgroundImage = `url('${settings.customWallpaper}')`;
+        chatArea.style.backgroundSize = 'cover';
+      }
+    }
+  }
+}
+
+// Clean up when page unloads
+window.addEventListener('beforeunload', () => {
+  if (window.KYNECTA_SETTINGS) {
+    window.KYNECTA_SETTINGS.unregisterPageCallback('chat-page');
+  }
+});
+
+// Initialize settings integration when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeSettingsIntegration);
+} else {
+  setTimeout(initializeSettingsIntegration, 100);
+}
         // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
@@ -3320,6 +2448,200 @@
         let sentChatsCount = 0;
         let receivedChatsCount = 0;
         let currentChatId = null; // Track current chat
+        let notificationCounts = {
+            chats: 0,
+            calls: 0,
+            status: 0,
+            friends: 0,
+            groups: 0
+        };
+        let crossScreenListeners = {};
+        
+        // Initialize cross-screen notification system
+        function initializeCrossScreenNotifications() {
+            // Listen for notifications from other screens
+            window.addEventListener('message', function(event) {
+                if (event.data && event.data.type === 'kynecta_notification') {
+                    handleCrossScreenNotification(event.data);
+                }
+            });
+            
+            // Setup real-time listeners for Firebase notifications
+            setupFirebaseNotificationListeners();
+        }
+        
+        // Handle notifications from other screens
+        function handleCrossScreenNotification(notification) {
+            switch(notification.event) {
+                case 'incoming_call':
+                    showCallNotification(notification.data);
+                    break;
+                case 'new_friend_request':
+                    showToast(`New friend request from ${notification.data.name}`, 'info');
+                    updateNotificationBadge('friends', notificationCounts.friends + 1);
+                    break;
+                case 'group_message':
+                    showToast(`New message in ${notification.data.groupName}`, 'info');
+                    updateNotificationBadge('groups', notificationCounts.groups + 1);
+                    break;
+                case 'status_update':
+                    showToast(`${notification.data.name} posted a new status`, 'info');
+                    updateNotificationBadge('status', notificationCounts.status + 1);
+                    break;
+            }
+        }
+        
+        // Setup Firebase notification listeners
+        function setupFirebaseNotificationListeners() {
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) return;
+            
+            const db = firebase.firestore();
+            
+            // Listen for incoming calls
+            db.collection('calls').where('receiverId', '==', currentUser.uid)
+                .where('status', '==', 'ringing')
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type === 'added') {
+                            const callData = change.doc.data();
+                            showIncomingCallPopup(callData);
+                        }
+                    });
+                });
+            
+            // Listen for friend requests
+            db.collection('friendRequests').where('receiverId', '==', currentUser.uid)
+                .where('status', '==', 'pending')
+                .onSnapshot(snapshot => {
+                    updateNotificationBadge('friends', snapshot.size);
+                });
+        }
+        
+        // Show incoming call popup
+        function showIncomingCallPopup(callData) {
+            const incomingCallPopup = document.getElementById('incomingCallPopup');
+            const incomingCallerName = document.getElementById('incomingCallerName');
+            const incomingCallType = document.getElementById('incomingCallType');
+            
+            if (incomingCallPopup && incomingCallerName && incomingCallType) {
+                incomingCallerName.textContent = callData.callerName || 'Unknown';
+                incomingCallType.textContent = callData.type === 'video' ? 'Video Call' : 'Voice Call';
+                incomingCallPopup.classList.remove('hidden');
+                
+                // Setup accept/reject buttons
+                document.getElementById('acceptCallBtn').onclick = () => acceptIncomingCall(callData);
+                document.getElementById('rejectCallBtn').onclick = () => rejectIncomingCall(callData.callId);
+            }
+        }
+        
+        // Show call notification
+        function showCallNotification(callData) {
+            const notificationContainer = document.getElementById('callNotificationContainer');
+            if (!notificationContainer) return;
+            
+            const notification = document.createElement('div');
+            notification.className = 'call-notification';
+            notification.innerHTML = `
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-phone text-green-500 mr-2"></i>
+                    <h4 class="font-semibold">Incoming Call</h4>
+                </div>
+                <p>From: <strong>${callData.callerName}</strong></p>
+                <p>Type: ${callData.type === 'video' ? 'Video Call' : 'Voice Call'}</p>
+                <div class="flex space-x-2 mt-3">
+                    <button class="flex-1 bg-green-500 text-white py-1 rounded text-sm accept-call-btn">Accept</button>
+                    <button class="flex-1 bg-red-500 text-white py-1 rounded text-sm reject-call-btn">Reject</button>
+                </div>
+            `;
+            
+            notificationContainer.appendChild(notification);
+            
+            // Setup buttons
+            notification.querySelector('.accept-call-btn').onclick = () => {
+                acceptIncomingCall(callData);
+                notification.remove();
+            };
+            
+            notification.querySelector('.reject-call-btn').onclick = () => {
+                rejectIncomingCall(callData.callId);
+                notification.remove();
+            };
+            
+            // Auto-remove after 30 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 30000);
+        }
+        
+        // Update notification badges
+        function updateNotificationBadge(type, count) {
+            notificationCounts[type] = count;
+            
+            // Update sidebar badges
+            const sidebarBadge = document.getElementById(`sidebar${type.charAt(0).toUpperCase() + type.slice(1)}Badge`);
+            if (sidebarBadge) {
+                if (count > 0) {
+                    sidebarBadge.textContent = count > 99 ? '99+' : count;
+                    sidebarBadge.classList.remove('hidden');
+                } else {
+                    sidebarBadge.classList.add('hidden');
+                }
+            }
+            
+            // Update mobile badges
+            const mobileBadge = document.getElementById(`mobile${type.charAt(0).toUpperCase() + type.slice(1)}Badge`);
+            if (mobileBadge) {
+                if (count > 0) {
+                    mobileBadge.textContent = count > 99 ? '99+' : count;
+                    mobileBadge.classList.remove('hidden');
+                } else {
+                    mobileBadge.classList.add('hidden');
+                }
+            }
+            
+            // Update filter badges
+            if (type === 'chats') {
+                updateFilterBadges();
+            }
+        }
+        
+        // Update filter badges
+        function updateFilterBadges() {
+            const filters = ['all', 'sent', 'received', 'unread'];
+            filters.forEach(filter => {
+                const badge = document.getElementById(`filter${filter.charAt(0).toUpperCase() + filter.slice(1)}Badge`);
+                const mobileBadge = document.getElementById(`mobileFilter${filter.charAt(0).toUpperCase() + filter.slice(1)}Badge`);
+                
+                let count = 0;
+                switch(filter) {
+                    case 'all': count = allChats.length; break;
+                    case 'sent': count = sentChatsCount; break;
+                    case 'received': count = receivedChatsCount; break;
+                    case 'unread': count = unreadChatsCount; break;
+                }
+                
+                if (badge) {
+                    if (count > 0) {
+                        badge.textContent = count > 99 ? '99+' : count;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+                
+                if (mobileBadge) {
+                    if (count > 0) {
+                        mobileBadge.textContent = count > 99 ? '99+' : count;
+                        mobileBadge.classList.remove('hidden');
+                    } else {
+                        mobileBadge.classList.add('hidden');
+                    }
+                }
+            });
+        }
         
         // FIXED: Attach button functionality
         function setupAttachButton() {
@@ -3520,7 +2842,7 @@
             if (sendBtn && messageInput) {
                 const hasText = messageInput.value.trim().length > 0;
                 
-                if (isOnline && currentChatId && hasText) {
+                if (currentChatId && hasText) {
                     sendBtn.disabled = false;
                     sendBtn.classList.remove('opacity-50');
                 } else {
@@ -3719,8 +3041,14 @@
             const userName = document.getElementById('userName');
             const userMood = document.getElementById('userMood');
             
-            if (userName) userName.textContent = userData.displayName || 'User';
-            if (userMood) userMood.textContent = userData.mood || 'No mood set';
+            if (userName) {
+                userName.innerHTML = '';
+                userName.textContent = userData.displayName || 'User';
+            }
+            if (userMood) {
+                userMood.innerHTML = '';
+                userMood.textContent = userData.mood || 'No mood set';
+            }
             
             // Update tools area
             const userNameTools = document.getElementById('userNameTools');
@@ -3728,13 +3056,6 @@
             
             if (userNameTools) userNameTools.textContent = userData.displayName || 'User';
             if (userMoodTools) userMoodTools.textContent = userData.mood || 'No mood set';
-            
-            // Update settings area
-            const userNameSettings = document.getElementById('userNameSettings');
-            const userMoodSettings = document.getElementById('userMoodSettings');
-            
-            if (userNameSettings) userNameSettings.textContent = userData.displayName || 'User';
-            if (userMoodSettings) userMoodSettings.textContent = userData.mood || 'No mood set';
             
             // Update mood and interests
             updateMoodAndInterests(userData);
@@ -3939,7 +3260,7 @@
         }
         
         // Open chat with friend - FIXED: Load real chat
-        function openChatWithFriend(friend) {
+        async function openChatWithFriend(friend) {
             currentChatId = friend.id;
             
             // Update chat header
@@ -3949,6 +3270,9 @@
             
             if (chatAvatar) {
                 chatAvatar.src = friend.profilePicture || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(friend.displayName || 'Friend') + '&background=667eea&color=fff';
+                chatAvatar.onerror = function() {
+                    this.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(friend.displayName || 'Friend') + '&background=667eea&color=fff';
+                };
             }
             if (chatTitle) {
                 chatTitle.textContent = friend.displayName || 'Friend';
@@ -3970,13 +3294,23 @@
             // Show chat area
             showChatArea();
             
-            // Load messages for this chat (from cache first, then Firebase)
-            loadChatMessages(friend.id);
+            // Clear previous messages and show loading
+            const messagesList = document.getElementById('messagesList');
+            const noMessagesMessage = document.getElementById('noMessagesMessage');
+            if (messagesList) {
+                messagesList.innerHTML = '';
+            }
+            if (noMessagesMessage) {
+                noMessagesMessage.classList.remove('hidden');
+            }
+            
+            // Load messages for this chat
+            await loadChatMessages(friend.id);
             
             // Mark messages as read
             markChatAsRead(friend.id);
             
-            // Enable message input (always enabled)
+            // Enable message input
             const messageInput = document.getElementById('messageInput');
             if (messageInput) {
                 messageInput.disabled = false;
@@ -3985,13 +3319,10 @@
             
             // Update send button state
             updateSendButtonState();
-            
-            // Show success message
-            showToast(`Chat opened with ${friend.displayName}`, 'success');
         }
         
         // Load chat messages from cache first, then Firebase - FIXED: Load real messages
-        function loadChatMessages(friendId) {
+        async function loadChatMessages(friendId) {
             const messagesList = document.getElementById('messagesList');
             const noMessagesMessage = document.getElementById('noMessagesMessage');
             
@@ -4000,40 +3331,73 @@
             // Clear current messages
             messagesList.innerHTML = '';
             
-            // Load cached messages first (for offline viewing)
-            const cachedMessages = localStorage.getItem(`kynecta_chat_${friendId}`);
-            if (cachedMessages) {
-                try {
-                    const messages = JSON.parse(cachedMessages);
-                    if (messages.length > 0) {
-                        displayMessages(messages, friendId);
-                        if (noMessagesMessage) {
-                            noMessagesMessage.classList.add('hidden');
-                        }
+            // Show loading state
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'text-center py-8 text-gray-500';
+            loadingDiv.innerHTML = `
+                <div class="chat-skeleton w-16 h-16 rounded-2xl mx-auto mb-4"></div>
+                <div class="chat-skeleton w-32 h-4 mx-auto mb-2"></div>
+                <div class="chat-skeleton w-48 h-3 mx-auto"></div>
+            `;
+            messagesList.appendChild(loadingDiv);
+            
+            try {
+                // Load cached messages first
+                const cachedMessages = localStorage.getItem(`kynecta_chat_${friendId}`);
+                let messages = [];
+                
+                if (cachedMessages) {
+                    try {
+                        messages = JSON.parse(cachedMessages);
+                    } catch (e) {
+                        console.error('Error parsing cached messages:', e);
                     }
-                } catch (e) {
-                    console.error('Error parsing cached messages:', e);
                 }
-            }
-            
-            // Load pending messages
-            const pendingMessages = loadPendingMessages(friendId);
-            if (pendingMessages.length > 0) {
-                pendingMessages.forEach(message => {
-                    displayOfflineMessage(message, friendId);
-                });
-            }
-            
-            // If no cached messages and no pending messages, show empty state
-            if ((!cachedMessages || JSON.parse(cachedMessages).length === 0) && pendingMessages.length === 0) {
+                
+                // Load pending messages
+                const pendingMessages = loadPendingMessages(friendId);
+                
+                // Remove loading
+                loadingDiv.remove();
+                
+                if (messages.length === 0 && pendingMessages.length === 0) {
+                    // No messages at all
+                    if (noMessagesMessage) {
+                        noMessagesMessage.classList.remove('hidden');
+                    }
+                    return;
+                }
+                
+                // Display cached messages
+                if (messages.length > 0) {
+                    displayMessages(messages, friendId);
+                    if (noMessagesMessage) {
+                        noMessagesMessage.classList.add('hidden');
+                    }
+                }
+                
+                // Display pending messages
+                if (pendingMessages.length > 0) {
+                    pendingMessages.forEach(message => {
+                        displayOfflineMessage(message, friendId);
+                    });
+                    if (noMessagesMessage) {
+                        noMessagesMessage.classList.add('hidden');
+                    }
+                }
+                
+                // Load from Firebase if online
+                if (isOnline) {
+                    await loadMessagesFromFirebase(friendId);
+                }
+                
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                loadingDiv.remove();
                 if (noMessagesMessage) {
                     noMessagesMessage.classList.remove('hidden');
                 }
-            }
-            
-            // Load from Firebase if online (this will update the cache)
-            if (isOnline) {
-                loadMessagesFromFirebase(friendId);
+                showToast('Failed to load messages', 'error');
             }
         }
         
@@ -4061,7 +3425,7 @@
                 // Cache messages for offline viewing
                 localStorage.setItem(`kynecta_chat_${friendId}`, JSON.stringify(messages));
                 
-                // Update UI with new messages (avoid duplicates)
+                // Update UI with new messages
                 updateMessagesUI(messages, friendId);
                 
                 // Hide no messages message if there are messages
@@ -4071,10 +3435,10 @@
                 }
                 
             } catch (error) {
-                console.error('Error loading messages:', error);
-                // If offline, this is expected - don't show error
+                console.error('Error loading messages from Firebase:', error);
+                // Don't show error for offline users
                 if (isOnline) {
-                    showToast('Failed to load messages. Please check your connection.', 'error');
+                    showToast('Failed to load latest messages', 'error');
                 }
             }
         }
@@ -4093,7 +3457,7 @@
                     return;
                 }
                 
-                // Skip if message already exists in DOM (by checking message ID)
+                // Skip if message already exists in DOM
                 const existingMessage = document.querySelector(`[data-message-id="${message.id}"]`);
                 if (existingMessage) {
                     return;
@@ -4279,10 +3643,10 @@
             }
         }
         
-        // Show toast notification - FIXED: Remove demo toasts
+        // Show toast notification
         function showToast(message, type = 'info') {
-            const toastContainer = document.getElementById('toastContainer');
-            if (!toastContainer) return;
+            const notificationContainer = document.getElementById('notificationContainer');
+            if (!notificationContainer) return;
             
             const toast = document.createElement('div');
             toast.className = `p-3 rounded-lg shadow-lg text-white ${
@@ -4297,7 +3661,7 @@
                 </div>
             `;
             
-            toastContainer.appendChild(toast);
+            notificationContainer.appendChild(toast);
             
             // Auto-remove after 3 seconds
             setTimeout(() => {
@@ -4335,7 +3699,8 @@
                 { id: 'statusIframe', src: 'status.html' },
                 { id: 'groupIframe', src: 'group.html' },
                 { id: 'callsIframe', src: 'calls.html' },
-                { id: 'friendsIframe', src: 'friend.html' }
+                { id: 'friendsIframe', src: 'friend.html' },
+                { id: 'settingsIframe', src: 'settings.html' }
             ];
             
             iframes.forEach(iframe => {
@@ -4356,7 +3721,7 @@
             currentPage = pageName;
             
             // Show loading screen only for iframe pages
-            if (pageName === 'status' || pageName === 'group' || pageName === 'calls' || pageName === 'friends') {
+            if (pageName === 'status' || pageName === 'group' || pageName === 'calls' || pageName === 'friends' || pageName === 'settings') {
                 showLoading();
             }
             
@@ -4383,8 +3748,8 @@
             // Update active navigation icon
             updateActiveNavIcon(pageName);
             
-            // Handle iframe pages (Status, Group, Calls, Friends)
-            if (pageName === 'status' || pageName === 'group' || pageName === 'calls' || pageName === 'friends') {
+            // Handle iframe pages (Status, Group, Calls, Friends, Settings)
+            if (pageName === 'status' || pageName === 'group' || pageName === 'calls' || pageName === 'friends' || pageName === 'settings') {
                 // Hide the main chat app interface
                 document.getElementById('chatApp').classList.add('hidden');
                 
@@ -4411,7 +3776,7 @@
                     }
                 }
             } else {
-                // Show chat app interface for other pages (chats, tools, settings)
+                // Show chat app interface for other pages (chats, tools)
                 document.getElementById('chatApp').classList.remove('hidden');
                 
                 // Show selected content area
@@ -4441,18 +3806,8 @@
                 }
                 
                 // Call existing switchTab function for compatibility
-                if (pageName === 'chats' || pageName === 'tools' || pageName === 'settings') {
-                    // FIX: Handle settings tab correctly
-                    if (pageName === 'settings') {
-                        // Settings doesn't have a tab panel, handle differently
-                        const tabPanels = document.querySelectorAll('.tab-panel');
-                        tabPanels.forEach(panel => {
-                            panel.classList.add('hidden');
-                            panel.classList.remove('active');
-                        });
-                    } else {
-                        switchTab(pageName);
-                    }
+                if (pageName === 'chats' || pageName === 'tools') {
+                    switchTab(pageName);
                 }
                 
                 // Hide loading screen
@@ -4485,7 +3840,7 @@
             }
         }
         
-        // Chat Filter Functions - FIXED: Now working properly with real data
+        // FIXED: Chat Filter Functions - Now working properly with real data
         function setupChatFilters() {
             // Setup desktop filter tabs
             const filterTabsDesktop = document.querySelectorAll('.chat-filter-tab-header');
@@ -4502,24 +3857,65 @@
                     
                     // Apply filter
                     applyChatFilter();
+                    
+                    // Also update mobile filter tabs
+                    const mobileTabs = document.querySelectorAll('.chat-filter-tab-header');
+                    mobileTabs.forEach(mobileTab => {
+                        if (mobileTab.dataset.filter === currentFilter) {
+                            mobileTab.classList.add('active');
+                        } else {
+                            mobileTab.classList.remove('active');
+                        }
+                    });
+                });
+            });
+            
+            // Setup mobile filter tabs
+            const mobileFilterTabs = document.querySelectorAll('.chat-filter-tab-header');
+            mobileFilterTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all mobile tabs
+                    mobileFilterTabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Set current filter
+                    currentFilter = this.dataset.filter;
+                    
+                    // Apply filter
+                    applyChatFilter();
+                    
+                    // Also update desktop filter tabs
+                    const desktopTabs = document.querySelectorAll('.chat-filter-tab-header');
+                    desktopTabs.forEach(desktopTab => {
+                        if (desktopTab.dataset.filter === currentFilter) {
+                            desktopTab.classList.add('active');
+                        } else {
+                            desktopTab.classList.remove('active');
+                        }
+                    });
                 });
             });
         }
         
+        // FIXED: Apply chat filter function
         function applyChatFilter() {
             const chatList = document.getElementById('chatList');
+            const noChatsMessage = document.getElementById('noChatsMessage');
+            const noFilteredChatsMessage = document.getElementById('noFilteredChatsMessage');
+            const filterTypeText = document.getElementById('filterTypeText');
+            
             if (!chatList) return;
             
-            // Get all chat items (excluding the noChatsMessage)
+            // Get all chat items (excluding the noChatsMessage and noFilteredChatsMessage)
             const chatItems = Array.from(chatList.querySelectorAll('.chat-item'));
-            const noChatsMessage = document.getElementById('noChatsMessage');
             
-            // If there are no chat items, load real chats
-            if (chatItems.length === 0) {
-                loadRealChats();
-                return;
-            }
+            // Hide both empty state messages initially
+            if (noChatsMessage) noChatsMessage.classList.add('hidden');
+            if (noFilteredChatsMessage) noFilteredChatsMessage.classList.add('hidden');
             
+            // If there are no chat items at all, show noChatsMessage
             if (chatItems.length === 0) {
                 if (noChatsMessage) noChatsMessage.classList.remove('hidden');
                 return;
@@ -4528,9 +3924,10 @@
             let visibleCount = 0;
             
             chatItems.forEach(item => {
-                const isSent = item.classList.contains('sent');
-                const isReceived = item.classList.contains('received');
-                const isUnread = item.classList.contains('unread');
+                // Get data from the chat item
+                const isSent = item.classList.contains('sent') || item.dataset.messageType === 'sent';
+                const isReceived = item.classList.contains('received') || item.dataset.messageType === 'received';
+                const isUnread = item.classList.contains('unread') || item.dataset.unread === 'true';
                 
                 let shouldShow = false;
                 
@@ -4557,17 +3954,24 @@
                 }
             });
             
-            // Show/hide no chats message
-            if (noChatsMessage) {
-                if (visibleCount === 0) {
-                    noChatsMessage.classList.remove('hidden');
-                } else {
-                    noChatsMessage.classList.add('hidden');
+            // Show appropriate empty state message
+            if (visibleCount === 0) {
+                if (noFilteredChatsMessage) {
+                    // Update filter type text
+                    let filterText = '';
+                    switch(currentFilter) {
+                        case 'all': filterText = 'chats'; break;
+                        case 'sent': filterText = 'sent chats'; break;
+                        case 'received': filterText = 'received chats'; break;
+                        case 'unread': filterText = 'unread chats'; break;
+                    }
+                    filterTypeText.textContent = filterText;
+                    noFilteredChatsMessage.classList.remove('hidden');
                 }
             }
         }
         
-        // FIXED: Load real chats from Firebase instead of demo
+        // FIXED: Load real chats from Firebase with proper filtering support
         async function loadRealChats() {
             const chatList = document.getElementById('chatList');
             if (!chatList) return;
@@ -4575,30 +3979,16 @@
             // Clear any existing content
             chatList.innerHTML = '';
             
+            // Hide loading skeletons if any
+            document.querySelectorAll('.chat-skeleton').forEach(skeleton => {
+                skeleton.remove();
+            });
+            
             try {
                 const currentUser = firebase.auth().currentUser;
                 if (!currentUser) {
-                    showToast('Please log in to view chats', 'error');
-                    return;
-                }
-                
-                const db = firebase.firestore();
-                const chatsRef = db.collection('chats');
-                const snapshot = await chatsRef.get();
-                
-                const chats = [];
-                snapshot.forEach(doc => {
-                    const chatData = doc.data();
-                    chatData.id = doc.id;
-                    
-                    // Check if current user is a participant
-                    if (chatData.participants && chatData.participants.includes(currentUser.uid)) {
-                        chats.push(chatData);
-                    }
-                });
-                
-                if (chats.length === 0) {
-                    // No real chats yet
+                    console.log('No user logged in, showing login state');
+                    // Show no chats message
                     const noChatsMessage = document.getElementById('noChatsMessage');
                     if (noChatsMessage) {
                         noChatsMessage.classList.remove('hidden');
@@ -4606,66 +3996,193 @@
                     return;
                 }
                 
-                // Display real chats
-                chats.forEach(chat => {
-                    // Get other participant
-                    const otherParticipantId = chat.participants.find(p => p !== currentUser.uid);
+                const db = firebase.firestore();
+                
+                // First, let's check if we have any friends to chat with
+                if (friendsList.length === 0) {
+                    console.log('No friends found, showing empty state');
+                    // Show no chats message
+                    const noChatsMessage = document.getElementById('noChatsMessage');
+                    if (noChatsMessage) {
+                        noChatsMessage.classList.remove('hidden');
+                    }
+                    
+                    // Also show the "Start First Chat" button
+                    const startFirstChatBtn = document.getElementById('startFirstChatBtn');
+                    if (startFirstChatBtn) {
+                        startFirstChatBtn.addEventListener('click', function() {
+                            const startNewChatSection = document.getElementById('startNewChatSection');
+                            if (startNewChatSection) {
+                                startNewChatSection.classList.remove('hidden');
+                            }
+                        });
+                    }
+                    
+                    updateFilterBadges();
+                    return;
+                }
+                
+                // Reset counters
+                sentChatsCount = 0;
+                receivedChatsCount = 0;
+                unreadChatsCount = 0;
+                allChats = [];
+                
+                // For each friend, check if there are actual messages
+                for (const friend of friendsList) {
+                    // Skip system accounts unless they have actual conversations
+                    if (friend.isSystem && friend.id !== 'kynecta_system') continue;
+                    
+                    // Check if there are messages with this friend
+                    const chatId = [currentUser.uid, friend.id].sort().join('_');
+                    const messagesRef = db.collection('chats').doc(chatId).collection('messages')
+                        .orderBy('timestamp', 'desc')
+                        .limit(1);
+                    
+                    let lastMessage = '';
+                    let lastMessageTime = new Date();
+                    let hasUnread = false;
+                    let isSentMessage = false;
+                    let isReceivedMessage = false;
+                    
+                    try {
+                        const snapshot = await messagesRef.get();
+                        if (!snapshot.empty) {
+                            const messageData = snapshot.docs[0].data();
+                            lastMessage = messageData.text || '📎 Attachment';
+                            lastMessageTime = messageData.timestamp ? messageData.timestamp.toDate() : new Date();
+                            
+                            // Check if message is sent or received
+                            isSentMessage = messageData.senderId === currentUser.uid;
+                            isReceivedMessage = !isSentMessage;
+                            
+                            // For demo, mark some as unread
+                            hasUnread = Math.random() > 0.5;
+                        }
+                    } catch (error) {
+                        console.error('Error checking messages for friend:', friend.id, error);
+                    }
                     
                     // Create chat item
                     const chatItem = document.createElement('div');
-                    chatItem.className = `chat-item p-3 rounded-lg mb-2 flex items-center cursor-pointer`;
-                    chatItem.dataset.chatId = chat.id;
-                    chatItem.dataset.friendId = otherParticipantId;
+                    chatItem.className = `chat-item p-3 rounded-lg mb-2 flex items-center cursor-pointer hover:bg-gray-50 transition-colors`;
+                    chatItem.dataset.chatId = friend.id;
+                    chatItem.dataset.friendId = friend.id;
                     
-                    // Get friend info from friends list
-                    const friend = friendsList.find(f => f.id === otherParticipantId);
+                    // Set message type classes for filtering
+                    if (isSentMessage) {
+                        chatItem.classList.add('sent');
+                        chatItem.dataset.messageType = 'sent';
+                        sentChatsCount++;
+                    } else if (isReceivedMessage) {
+                        chatItem.classList.add('received');
+                        chatItem.dataset.messageType = 'received';
+                        receivedChatsCount++;
+                    } else {
+                        // Default to received if no messages yet
+                        chatItem.classList.add('received');
+                        chatItem.dataset.messageType = 'received';
+                        receivedChatsCount++;
+                    }
+                    
+                    // Mark as unread if needed
+                    if (hasUnread) {
+                        chatItem.classList.add('unread');
+                        chatItem.dataset.unread = 'true';
+                        unreadChatsCount++;
+                    }
+                    
+                    // Format time
+                    const timeAgo = getTimeAgo(lastMessageTime);
                     
                     chatItem.innerHTML = `
                         <div class="flex items-center flex-1">
                             <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-green-500 flex items-center justify-center text-white font-semibold mr-3 overflow-hidden relative">
-                                ${friend?.profilePicture ? 
+                                ${friend.profilePicture ? 
                                     `<img src="${friend.profilePicture}" alt="${friend.displayName}" class="w-full h-full object-cover">` :
-                                    `<span>${friend?.displayName?.charAt(0) || 'C'}</span>`
+                                    `<span>${friend.displayName?.charAt(0) || 'F'}</span>`
                                 }
-                                ${chat.unread ? '<div class="unread-indicator"></div>' : ''}
+                                ${hasUnread ? '<div class="unread-indicator"></div>' : ''}
                             </div>
                             <div class="flex-1">
                                 <div class="font-medium flex justify-between">
-                                    <span>${friend?.displayName || 'Chat'}</span>
-                                    <span class="text-xs text-gray-500">${formatTime(chat.lastMessageTime)}</span>
+                                    <span>${friend.displayName || 'Friend'}</span>
+                                    <span class="text-xs text-gray-500">${timeAgo}</span>
                                 </div>
                                 <div class="text-sm text-gray-500 truncate">
-                                    ${chat.lastMessage || 'No messages yet'}
+                                    ${lastMessage || 'Start a conversation...'}
                                 </div>
                             </div>
                         </div>
                     `;
                     
                     chatItem.addEventListener('click', function() {
-                        if (friend) {
-                            openChatWithFriend(friend);
-                        } else {
-                            // Load friend details if not in friends list
-                            loadFriendDetails(otherParticipantId).then(friendData => {
-                                if (friendData) {
-                                    openChatWithFriend(friendData);
-                                } else {
-                                    showToast('Could not load chat', 'error');
-                                }
-                            });
-                        }
+                        openChatWithFriend(friend);
                     });
                     
                     chatList.appendChild(chatItem);
-                });
+                    allChats.push({
+                        id: friend.id,
+                        friend: friend,
+                        lastMessage: lastMessage,
+                        lastMessageTime: lastMessageTime,
+                        isUnread: hasUnread,
+                        isSent: isSentMessage,
+                        isReceived: isReceivedMessage
+                    });
+                }
+                
+                // If no chat items were created, show empty state
+                if (allChats.length === 0) {
+                    const noChatsMessage = document.getElementById('noChatsMessage');
+                    if (noChatsMessage) {
+                        noChatsMessage.classList.remove('hidden');
+                    }
+                }
+                
+                // Update notification badge for chats
+                updateNotificationBadge('chats', unreadChatsCount);
+                
+                // Update filter badges
+                updateFilterBadges();
                 
                 // Apply current filter
-                applyChatFilter();
+                setTimeout(() => {
+                    applyChatFilter();
+                }, 100);
                 
             } catch (error) {
                 console.error('Error loading chats:', error);
-                showToast('Failed to load chats', 'error');
+                
+                // Show error state
+                const noChatsMessage = document.getElementById('noChatsMessage');
+                if (noChatsMessage) {
+                    noChatsMessage.innerHTML = `
+                        <i class="fas fa-exclamation-circle text-4xl mb-3 text-red-300 block"></i>
+                        <p>Error loading chats</p>
+                        <p class="text-sm mt-1">Try refreshing the page</p>
+                    `;
+                    noChatsMessage.classList.remove('hidden');
+                }
             }
+        }
+        
+        // Helper function to get time ago
+        function getTimeAgo(date) {
+            if (!date) return '';
+            
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            
+            return date.toLocaleDateString();
         }
         
         // Load friend details
@@ -4690,226 +4207,25 @@
             loadRealChats();
         }
         
-        function updateChatList() {
-            // This function is now handled by loadRealChats
-            loadRealChats();
-        }
-        
-        function markChatAsRead(chatId) {
-            // Mark chat as read in local storage
-            const chatIndex = allChats.findIndex(c => c.id === chatId);
-            if (chatIndex !== -1 && allChats[chatIndex].unread) {
-                allChats[chatIndex].unread = false;
-                localStorage.setItem('kynecta_all_chats', JSON.stringify(allChats));
-                
-                // Update UI
-                updateChatList();
-            }
-        }
-        
-        // Mobile navigation functions - FIXED: Ensure proper mobile display
-        function setupMobileNavigation() {
-            const mobileNavIcons = document.querySelectorAll('.mobile-nav-icon');
-            mobileNavIcons.forEach(icon => {
-                icon.addEventListener('click', function() {
-                    // Remove active class from all mobile icons
-                    mobileNavIcons.forEach(i => i.classList.remove('active'));
-                    
-                    // Add active class to clicked icon
-                    this.classList.add('active');
-                    
-                    // Switch to the corresponding page
-                    const pageName = this.dataset.page;
-                    switchPage(pageName);
-                    
-                    // FIX: Ensure iframe content is properly displayed on mobile
-                    if (pageName === 'status' || pageName === 'group' || pageName === 'calls' || pageName === 'friends') {
-                        // Force iframe to take full screen on mobile
-                        const iframeContainer = document.getElementById(`${pageName}Content`);
-                        if (iframeContainer && window.innerWidth < 768) {
-                            iframeContainer.style.position = 'fixed';
-                            iframeContainer.style.top = '0';
-                            iframeContainer.style.left = '0';
-                            iframeContainer.style.right = '0';
-                            iframeContainer.style.bottom = '60px'; // Account for mobile navbar
-                            iframeContainer.style.zIndex = '40';
-                        }
-                    }
-                });
-            });
-        }
-        
-        // Show/hide mobile navigation based on screen size
-        function updateMobileNavigation() {
-            const mobileNavBar = document.getElementById('mobileNavBar');
-            const isMobile = window.innerWidth < 768;
-            
-            if (mobileNavBar) {
-                if (isMobile) {
-                    mobileNavBar.classList.remove('hidden');
-                } else {
-                    mobileNavBar.classList.add('hidden');
-                }
-            }
-        }
-        
-        // Theme toggle functionality - FIXED: Now working properly
-        function setupThemeToggle() {
-            // Load saved theme
-            const savedTheme = localStorage.getItem('kynecta_theme') || 'light';
-            setTheme(savedTheme);
-            
-            // Setup desktop theme toggle
-            const themeToggle = document.getElementById('themeToggle');
-            const themeIcon = document.getElementById('themeIcon');
-            const themeToggleTools = document.getElementById('themeToggleTools');
-            const themeIconTools = document.getElementById('themeIconTools');
-            const themeToggleSettings = document.getElementById('themeToggleSettings');
-            const themeIconSettings = document.getElementById('themeIconSettings');
-            
-            // Setup mobile theme toggle
-            const mobileThemeToggle = document.getElementById('mobileThemeToggle');
-            const mobileThemeIcon = document.getElementById('mobileThemeIcon');
-            const mobileThemeToggleTools = document.getElementById('mobileThemeToggleTools');
-            const mobileThemeIconTools = document.getElementById('mobileThemeIconTools');
-            const mobileThemeToggleSettings = document.getElementById('mobileThemeToggleSettings');
-            const mobileThemeIconSettings = document.getElementById('mobileThemeIconSettings');
-            
-            const toggleHandlers = [
-                { toggle: themeToggle, icon: themeIcon },
-                { toggle: themeToggleTools, icon: themeIconTools },
-                { toggle: themeToggleSettings, icon: themeIconSettings },
-                { toggle: mobileThemeToggle, icon: mobileThemeIcon },
-                { toggle: mobileThemeToggleTools, icon: mobileThemeIconTools },
-                { toggle: mobileThemeToggleSettings, icon: mobileThemeIconSettings }
-            ];
-            
-            toggleHandlers.forEach(({ toggle, icon }) => {
-                if (toggle && icon) {
-                    toggle.addEventListener('click', () => {
-                        const currentTheme = document.body.getAttribute('data-theme');
-                        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-                        setTheme(newTheme);
-                        localStorage.setItem('kynecta_theme', newTheme);
-                        showToast(`${newTheme === 'dark' ? 'Dark' : 'Light'} theme activated`, 'success');
-                    });
-                }
-            });
-        }
-        
-        // Set theme - FIXED: Now working properly
-        function setTheme(theme) {
-            document.body.setAttribute('data-theme', theme);
-            
-            // Update body classes
-            document.body.classList.toggle('bg-gray-50', theme === 'light');
-            document.body.classList.toggle('bg-gray-900', theme === 'dark');
-            document.body.classList.toggle('text-gray-900', theme === 'light');
-            document.body.classList.toggle('text-white', theme === 'dark');
-            
-            // Update all theme icons
-            const themeIcons = [
-                'themeIcon', 'themeIconTools', 'themeIconSettings',
-                'mobileThemeIcon', 'mobileThemeIconTools', 'mobileThemeIconSettings'
-            ];
-            
-            themeIcons.forEach(iconId => {
-                const icon = document.getElementById(iconId);
-                if (icon) {
-                    if (theme === 'light') {
-                        icon.className = 'fas fa-moon';
-                    } else {
-                        icon.className = 'fas fa-sun';
-                    }
-                }
-            });
-            
-            // Update header and sidebar colors for dark mode
-            const headers = document.querySelectorAll('.kynecta-header');
-            headers.forEach(header => {
-                if (theme === 'dark') {
-                    header.style.background = 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)';
-                } else {
-                    header.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                }
-            });
-            
-            // Update sidebar for dark mode
-            const sidebar = document.getElementById('permanentSidebar');
-            if (sidebar) {
-                if (theme === 'dark') {
-                    sidebar.classList.remove('bg-gray-900');
-                    sidebar.classList.add('bg-gray-800');
-                } else {
-                    sidebar.classList.remove('bg-gray-800');
-                    sidebar.classList.add('bg-gray-900');
-                }
-            }
-            
-            // Update mobile navbar for dark mode
-            const mobileNavBar = document.getElementById('mobileNavBar');
-            if (mobileNavBar) {
-                if (theme === 'dark') {
-                    mobileNavBar.style.background = 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)';
-                } else {
-                    mobileNavBar.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                }
-            }
-        }
-        
-        // Existing functions
-        function showSettingsSection(sectionName) {
-            console.log('Opening settings section:', sectionName);
-            const settingsModal = document.getElementById('settingsModal');
-            if (settingsModal) {
-                settingsModal.classList.add('hidden');
-            }
-            const modalId = sectionName + 'SettingsModal';
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.remove('hidden');
-            } else {
-                console.error('Modal not found:', modalId);
-                alert('Opening ' + sectionName + ' settings...');
-            }
-        }
-        
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.add('hidden');
-            }
-        }
-        
-        function openSettingsModal() {
-            const modal = document.getElementById('settingsModal');
-            if (modal) {
-                modal.classList.remove('hidden');
-            }
-        }
-        
-        function triggerFileInput(inputId) {
-            const fileInput = document.getElementById(inputId);
-            if (fileInput) {
-                fileInput.click();
-            }
-        }
-        
+        // Helper functions for chat UI
         function showChatArea() {
             const chatListContainer = document.getElementById('chatListContainer');
             const chatArea = document.getElementById('chatArea');
             const chatHeader = document.getElementById('chatHeader');
             
-            if (chatListContainer && chatArea) {
-                chatListContainer.classList.add('hidden');
-                chatArea.classList.remove('hidden');
-            }
-            
-            if (chatHeader) {
+            if (chatListContainer && chatArea && chatHeader) {
+                // On mobile, hide chat list and show chat area
+                if (window.innerWidth < 768) {
+                    chatListContainer.classList.add('hidden');
+                    chatArea.classList.remove('hidden');
+                } else {
+                    // On desktop, just ensure chat area is visible
+                    chatArea.classList.remove('hidden');
+                }
+                
+                // Show chat header
                 chatHeader.classList.remove('hidden');
             }
-            
-            // INPUT AREA IS ALWAYS VISIBLE - Never hide it
         }
         
         function showChatList() {
@@ -4917,261 +4233,354 @@
             const chatArea = document.getElementById('chatArea');
             const chatHeader = document.getElementById('chatHeader');
             
-            if (chatListContainer && chatArea) {
-                chatListContainer.classList.remove('hidden');
-                chatArea.classList.add('hidden');
-            }
-            
-            if (chatHeader) {
+            if (chatListContainer && chatArea && chatHeader) {
+                // On mobile, show chat list and hide chat area
+                if (window.innerWidth < 768) {
+                    chatListContainer.classList.remove('hidden');
+                    chatArea.classList.add('hidden');
+                }
+                
+                // Hide chat header
                 chatHeader.classList.add('hidden');
-            }
-            
-            // INPUT AREA IS ALWAYS VISIBLE - Never hide it
-            
-            // Hide new chat section if visible
-            const startNewChatSection = document.getElementById('startNewChatSection');
-            if (startNewChatSection) {
-                startNewChatSection.classList.add('hidden');
             }
         }
         
-        // Start new chat
-        function startNewChatFlow() {
-            const startNewChatSection = document.getElementById('startNewChatSection');
-            if (startNewChatSection) {
-                startNewChatSection.classList.remove('hidden');
-                // Load friends immediately and display cached version first
-                displayFriendsList(); // Show cached friends first
-                loadFriends(); // Then load from Firebase in background
+        function markChatAsRead(friendId) {
+            // Mark chat as read in UI
+            const chatItem = document.querySelector(`[data-friend-id="${friendId}"]`);
+            if (chatItem) {
+                chatItem.classList.remove('unread');
+                chatItem.dataset.unread = 'false';
+                
+                // Remove unread indicator
+                const unreadIndicator = chatItem.querySelector('.unread-indicator');
+                if (unreadIndicator) {
+                    unreadIndicator.remove();
+                }
+            }
+            
+            // Update unread count
+            unreadChatsCount = Math.max(0, unreadChatsCount - 1);
+            updateNotificationBadge('chats', unreadChatsCount);
+            updateFilterBadges();
+        }
+        
+        // Modal helper functions
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
             }
         }
         
         function switchTab(tabName) {
-            console.log('Switching to tab:', tabName);
+            // Hide all tab panels
             const tabPanels = document.querySelectorAll('.tab-panel');
             tabPanels.forEach(panel => {
                 panel.classList.add('hidden');
                 panel.classList.remove('active');
             });
             
-            // Handle 'groups' tab error - redirect to group page
-            if (tabName === 'groups') {
-                switchPage('group');
-                return;
-            }
-            
-            const selectedTab = document.getElementById(tabName + 'Tab');
+            // Show selected tab panel
+            const selectedTab = document.getElementById(`${tabName}Tab`);
             if (selectedTab) {
                 selectedTab.classList.remove('hidden');
                 selectedTab.classList.add('active');
-            } else {
-                console.error('Tab panel not found for:', tabName);
             }
-            
-            const navIcons = document.querySelectorAll('.nav-icon');
-            navIcons.forEach(icon => {
-                icon.classList.remove('text-white', 'bg-purple-700');
-                icon.classList.add('text-gray-400', 'hover:text-white', 'hover:bg-gray-800');
-            });
-            
-            const activeIcon = document.querySelector(`[data-tab="${tabName}"]`);
-            if (activeIcon) {
-                activeIcon.classList.remove('text-gray-400', 'hover:text-white', 'hover:bg-gray-800');
-                activeIcon.classList.add('text-white', 'bg-purple-700');
-            }
-            
-            const chatArea = document.getElementById('chatArea');
-            const chatListContainer = document.getElementById('chatListContainer');
-            if (tabName !== 'chats') {
-                if (chatArea) chatArea.classList.add('hidden');
-                if (chatListContainer) chatListContainer.classList.remove('hidden');
-                const chatHeader = document.getElementById('chatHeader');
-                if (chatHeader) {
-                    chatHeader.classList.add('hidden');
-                }
-            } else {
-                const chatHeader = document.getElementById('chatHeader');
-                const isMobile = window.innerWidth < 768;
-                if (chatHeader && !chatHeader.classList.contains('hidden')) {
-                    if (isMobile) {
-                        if (chatArea) chatArea.classList.remove('hidden');
-                        if (chatListContainer) chatListContainer.classList.add('hidden');
-                    }
-                } else {
-                    if (chatArea) chatArea.classList.add('hidden');
-                    if (chatListContainer) chatListContainer.classList.remove('hidden');
-                }
-            }
-            
-            // INPUT AREA IS ALWAYS VISIBLE - Never hide it
         }
         
+        // Call functions
+        function acceptIncomingCall(callData) {
+            // Hide incoming call popup
+            const incomingCallPopup = document.getElementById('incomingCallPopup');
+            if (incomingCallPopup) {
+                incomingCallPopup.classList.add('hidden');
+            }
+            
+            // Start the call
+            startCall(callData.callerId, callData.callerName, callData.type);
+        }
+        
+        function rejectIncomingCall(callId) {
+            // Hide incoming call popup
+            const incomingCallPopup = document.getElementById('incomingCallPopup');
+            if (incomingCallPopup) {
+                incomingCallPopup.classList.add('hidden');
+            }
+            
+            // Update call status in Firebase
+            const db = firebase.firestore();
+            db.collection('calls').doc(callId).update({
+                status: 'rejected',
+                endedAt: new Date()
+            });
+        }
+        
+        function startCall(friendId, friendName, type = 'audio') {
+            // Show call container
+            const callContainer = document.getElementById('callContainer');
+            const videoCallContainer = document.getElementById('videoCallContainer');
+            
+            if (type === 'video' && videoCallContainer) {
+                videoCallContainer.classList.remove('hidden');
+            } else if (callContainer) {
+                callContainer.classList.remove('hidden');
+            }
+            
+            // Start call timer
+            let callStartTime = new Date();
+            const callTimer = document.getElementById('callTimer');
+            const timerInterval = setInterval(() => {
+                const now = new Date();
+                const diff = Math.floor((now - callStartTime) / 1000);
+                const minutes = Math.floor(diff / 60);
+                const seconds = diff % 60;
+                
+                if (callTimer) {
+                    callTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
+            
+            // Update call status
+            const callStatus = document.getElementById('callStatus');
+            if (callStatus) {
+                callStatus.textContent = `In call with ${friendName}`;
+            }
+            
+            // Setup end call button
+            const endCallBtn = document.getElementById('endCallBtn');
+            if (endCallBtn) {
+                endCallBtn.onclick = function() {
+                    clearInterval(timerInterval);
+                    
+                    if (type === 'video' && videoCallContainer) {
+                        videoCallContainer.classList.add('hidden');
+                    } else if (callContainer) {
+                        callContainer.classList.add('hidden');
+                    }
+                    
+                    showToast('Call ended', 'info');
+                };
+            }
+        }
+        
+        // Theme toggle functionality
+        function setupThemeToggle() {
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+            const mobileThemeIcon = document.getElementById('mobileThemeIcon');
+            const themeToggleTools = document.getElementById('themeToggleTools');
+            const themeIconTools = document.getElementById('themeIconTools');
+            const mobileThemeToggleTools = document.getElementById('mobileThemeToggleTools');
+            const mobileThemeIconTools = document.getElementById('mobileThemeIconTools');
+            
+            function toggleTheme() {
+                const body = document.body;
+                const currentTheme = body.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                
+                body.setAttribute('data-theme', newTheme);
+                localStorage.setItem('kynecta_theme', newTheme);
+                
+                // Update all theme icons
+                const icons = [themeIcon, mobileThemeIcon, themeIconTools, mobileThemeIconTools];
+                icons.forEach(icon => {
+                    if (icon) {
+                        icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                    }
+                });
+            }
+            
+            // Add event listeners to all theme toggles
+            if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+            if (mobileThemeToggle) mobileThemeToggle.addEventListener('click', toggleTheme);
+            if (themeToggleTools) themeToggleTools.addEventListener('click', toggleTheme);
+            if (mobileThemeToggleTools) mobileThemeToggleTools.addEventListener('click', toggleTheme);
+            
+            // Load saved theme
+            const savedTheme = localStorage.getItem('kynecta_theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+            
+            // Update icons based on saved theme
+            const icons = [themeIcon, mobileThemeIcon, themeIconTools, mobileThemeIconTools];
+            icons.forEach(icon => {
+                if (icon) {
+                    icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                }
+            });
+        }
+        
+        // Initialize the app when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Firebase
-            console.log('Initializing Firebase...');
+            console.log('DOM loaded, initializing app...');
             
-            // Initialize online status monitoring
-            updateOnlineStatus();
-            window.addEventListener('online', updateOnlineStatus);
-            window.addEventListener('offline', updateOnlineStatus);
-            
-            // Load cached user data immediately
-            loadCachedUserData();
-            
-            // Setup attach button functionality
-            setupAttachButton();
-            
-            // Setup mobile navigation
-            setupMobileNavigation();
-            updateMobileNavigation();
-            window.addEventListener('resize', updateMobileNavigation);
-            
-            // Setup chat filters in header
-            setupChatFilters();
+            // Show loading screen initially
+            showLoading();
             
             // Setup theme toggle
             setupThemeToggle();
             
-            // Setup message input and send button
-            const messageInput = document.getElementById('messageInput');
-            const sendBtn = document.getElementById('sendBtn');
+            // Setup attach button
+            setupAttachButton();
             
+            // Setup chat filters
+            setupChatFilters();
+            
+            // Setup cross-screen notifications
+            initializeCrossScreenNotifications();
+            
+            // Setup online/offline event listeners
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOnlineStatus);
+            
+            // Pre-load iframes
+            preloadIframes();
+            
+            // Load cached user data immediately
+            loadCachedUserData();
+            
+            // Load friends list
+            loadFriends().then(() => {
+                // Load chats for filtering
+                loadChatsForFiltering();
+            });
+            
+            // Setup navigation
+            document.querySelectorAll('.nav-icon, .mobile-nav-icon').forEach(icon => {
+                icon.addEventListener('click', function() {
+                    const page = this.dataset.page;
+                    if (page) {
+                        switchPage(page);
+                    }
+                });
+            });
+            
+            // Setup new chat buttons
+            const startNewChatBtn = document.getElementById('startNewChatBtn');
+            const mobileNewChatBtn = document.getElementById('mobileNewChatBtn');
+            const startFirstChatBtn = document.getElementById('startFirstChatBtn');
+            
+            if (startNewChatBtn) {
+                startNewChatBtn.addEventListener('click', function() {
+                    const startNewChatSection = document.getElementById('startNewChatSection');
+                    if (startNewChatSection) {
+                        startNewChatSection.classList.remove('hidden');
+                    }
+                });
+            }
+            
+            if (mobileNewChatBtn) {
+                mobileNewChatBtn.addEventListener('click', function() {
+                    const startNewChatSection = document.getElementById('startNewChatSection');
+                    if (startNewChatSection) {
+                        startNewChatSection.classList.remove('hidden');
+                    }
+                });
+            }
+            
+            if (startFirstChatBtn) {
+                startFirstChatBtn.addEventListener('click', function() {
+                    const startNewChatSection = document.getElementById('startNewChatSection');
+                    if (startNewChatSection) {
+                        startNewChatSection.classList.remove('hidden');
+                    }
+                });
+            }
+            
+            // Setup cancel new chat button
+            const cancelNewChat = document.getElementById('cancelNewChat');
+            if (cancelNewChat) {
+                cancelNewChat.addEventListener('click', function() {
+                    const startNewChatSection = document.getElementById('startNewChatSection');
+                    if (startNewChatSection) {
+                        startNewChatSection.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // Setup confirm start chat button
+            const confirmStartChatBtn = document.getElementById('confirmStartChat');
+            if (confirmStartChatBtn) {
+                confirmStartChatBtn.addEventListener('click', startNewChat);
+            }
+            
+            // Setup message input
+            const messageInput = document.getElementById('messageInput');
             if (messageInput) {
                 // Auto-resize textarea
                 messageInput.addEventListener('input', function() {
                     this.style.height = 'auto';
                     this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+                    
+                    // Update send button state
                     updateSendButtonState();
                 });
                 
-                // Send on Enter (without Shift)
+                // Send message on Enter (but allow Shift+Enter for new line)
                 messageInput.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        if (currentChatId && this.value.trim()) {
+                        if (!this.disabled && this.value.trim()) {
                             sendMessage();
                         }
                     }
                 });
-                
-                // Enable input immediately (always enabled)
-                messageInput.disabled = false;
             }
             
+            // Setup send button
+            const sendBtn = document.getElementById('sendBtn');
             if (sendBtn) {
                 sendBtn.addEventListener('click', sendMessage);
-                // Initialize send button state
-                updateSendButtonState();
             }
             
-            const isMobile = window.innerWidth < 768;
-            if (isMobile) {
-                const chatArea = document.getElementById('chatArea');
-                if (chatArea) {
-                    chatArea.classList.add('hidden');
-                }
-                const chatListContainer = document.getElementById('chatListContainer');
-                if (chatListContainer) {
-                    chatListContainer.classList.remove('hidden');
-                }
-                const backToChats = document.getElementById('backToChats');
-                if (backToChats) {
-                    backToChats.addEventListener('click', showChatList);
-                }
-                document.addEventListener('click', function(e) {
-                    if (e.target.closest('.chat-item')) {
-                        showChatArea();
+            // Setup call buttons
+            document.querySelectorAll('.friend-call-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const friendId = this.dataset.id;
+                    const friendName = this.dataset.name;
+                    if (friendId && friendName) {
+                        startCall(friendId, friendName, 'audio');
                     }
-                });
-            }
-            
-            // Pre-load iframes for faster navigation
-            preloadIframes();
-            
-            // Initialize navigation
-            document.querySelectorAll('.nav-icon[data-page]').forEach(icon => {
-                icon.addEventListener('click', function() {
-                    const pageName = this.getAttribute('data-page');
-                    switchPage(pageName);
                 });
             });
             
-            // Setup start new chat button
-            const startNewChatBtn = document.getElementById('startNewChatBtn');
-            const startFirstChatBtn = document.getElementById('startFirstChatBtn');
-            const cancelNewChatBtn = document.getElementById('cancelNewChat');
-            const confirmStartChatBtn = document.getElementById('confirmStartChat');
-            const mobileNewChatBtn = document.getElementById('mobileNewChatBtn');
-            
-            if (startNewChatBtn) {
-                startNewChatBtn.addEventListener('click', startNewChatFlow);
-            }
-            
-            if (mobileNewChatBtn) {
-                mobileNewChatBtn.addEventListener('click', startNewChatFlow);
-            }
-            
-            if (startFirstChatBtn) {
-                startFirstChatBtn.addEventListener('click', startNewChatFlow);
-            }
-            
-            if (cancelNewChatBtn) {
-                cancelNewChatBtn.addEventListener('click', () => {
-                    const startNewChatSection = document.getElementById('startNewChatSection');
-                    if (startNewChatSection) {
-                        startNewChatSection.classList.add('hidden');
+            document.querySelectorAll('.friend-video-call-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const friendId = this.dataset.id;
+                    const friendName = this.dataset.name;
+                    if (friendId && friendName) {
+                        startCall(friendId, friendName, 'video');
                     }
-                    
-                    // Reset selection
-                    selectedFriendForChat = null;
-                    updateStartChatButton();
-                    
-                    // Uncheck all checkboxes
-                    document.querySelectorAll('.friend-checkbox').forEach(cb => {
-                        cb.checked = false;
-                    });
-                    
-                    // Remove selected class
-                    document.querySelectorAll('.friend-item').forEach(item => {
-                        item.classList.remove('selected');
-                    });
                 });
+            });
+            
+            // Setup back to chats button for mobile
+            const backToChats = document.getElementById('backToChats');
+            if (backToChats) {
+                backToChats.addEventListener('click', showChatList);
             }
             
-            if (confirmStartChatBtn) {
-                confirmStartChatBtn.addEventListener('click', startNewChat);
-            }
-            
-            // Initialize with chats page
-            setTimeout(() => {
-                switchPage('chats');
-                hideLoading();
-                
-                // Load friends in background
-                loadFriends();
-                
-                // Load chats for filtering
-                loadChatsForFiltering();
-                
-                // Check if we need to send pending messages
-                if (isOnline && pendingMessages.length > 0) {
-                    sendPendingMessages();
-                }
-            }, 300);
-        });
-        
-        // Handle back button for mobile
-        window.addEventListener('popstate', function(event) {
+            // Show mobile nav bar on mobile devices
             if (window.innerWidth < 768) {
-                const chatArea = document.getElementById('chatArea');
-                if (chatArea && !chatArea.classList.contains('hidden')) {
-                    showChatList();
-                    event.preventDefault();
+                const mobileNavBar = document.getElementById('mobileNavBar');
+                if (mobileNavBar) {
+                    mobileNavBar.classList.remove('hidden');
                 }
             }
+            
+            // Initial online status check
+            updateOnlineStatus();
+            
+            // Hide loading screen after a short delay
+            setTimeout(() => {
+                hideLoading();
+                // Default to chats page
+                switchPage('chats');
+            }, 1500);
+            
+            console.log('App initialization complete');
         });
     </script>
-    <script src="app.js" type="text/javascript"></script>
-    <script src="settings.js" type="text/javascript"></script>
 </body>
 </html>
