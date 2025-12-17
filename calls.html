@@ -5202,5 +5202,80 @@
         console.log('Video call system initialized successfully');
         showNotification('Video call system ready', 'success');
     </script>
+    <script>
+    // Settings integration for [Page Name]
+    let pageSettings = null;
+    
+    function initializePageSettings() {
+        if (window.KYNECTA_SETTINGS) {
+            window.KYNECTA_SETTINGS.registerPageCallback('[page-name]-page', applyPageSettings);
+            pageSettings = window.KYNECTA_SETTINGS.currentSettings;
+            applyPageSettings(pageSettings);
+        }
+    }
+    
+    function applyPageSettings(settings) {
+        console.log('[Page] applying settings:', settings);
+        pageSettings = settings;
+        
+        // Apply theme
+        const container = document.getElementById('mainContainer') || document.body;
+        container.className = container.className.replace(/theme-\S+/g, '');
+        if (settings.appearance.theme) {
+            container.classList.add(`theme-${settings.appearance.theme}`);
+        }
+        
+        // Apply font size
+        container.className = container.className.replace(/font-\S+/g, '');
+        if (settings.appearance.fontSize) {
+            container.classList.add(`font-${settings.appearance.fontSize}`);
+        }
+        
+        // Apply privacy settings
+        if (settings.privacy) {
+            // Example: Hide last seen based on privacy settings
+            const lastSeenElements = document.querySelectorAll('.last-seen');
+            lastSeenElements.forEach(el => {
+                if (settings.privacy.lastSeenVisibility === 'nobody') {
+                    el.textContent = 'Last seen hidden';
+                }
+            });
+        }
+        
+        // Apply notification settings
+        if (settings.notifications) {
+            // Enable/disable notification sounds
+            window.notificationSoundsEnabled = settings.notifications.sound;
+        }
+        
+        // Apply chat settings
+        if (settings.chat && document.getElementById('messageInput')) {
+            // Set enter to send behavior
+            const messageInput = document.getElementById('messageInput');
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    if (settings.chat.enterToSend && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                }
+            });
+        }
+    }
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        if (window.KYNECTA_SETTINGS) {
+            window.KYNECTA_SETTINGS.unregisterPageCallback('[page-name]-page');
+        }
+    });
+    
+    // Initialize
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePageSettings);
+    } else {
+        setTimeout(initializePageSettings, 100);
+    }
+</script>
 </body>
 </html>

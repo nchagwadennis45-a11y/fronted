@@ -11,8 +11,10 @@
     "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
     "@fortawesome/fontawesome-free": "^7.1.0",
-    "cloudinary": "^1.41.0",
+    "cloudinary": "^2.8.0",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",

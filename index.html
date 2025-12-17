@@ -1151,9 +1151,37 @@
             background: rgba(99, 102, 241, 0.2);
             color: #a5b4fc;
         }
+        
+        /* DEFENSIVE: Offline mode indicator */
+        .offline-mode-indicator {
+            position: fixed;
+            top: 60px;
+            right: 10px;
+            background: rgba(107, 114, 128, 0.9);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="h-full dashboard-container bg-grid-pattern theme-calm protected-content no-screenshot no-context-menu">
+    <!-- DEFENSIVE: Offline mode indicator (hidden by default) -->
+    <div id="offlineModeIndicator" class="offline-mode-indicator hidden">
+        <i class="fas fa-wifi-slash"></i>
+        <span>Offline Mode</span>
+    </div>
+
     <!-- Auto-login Indicator -->
     <div id="autoLoginBadge" class="auto-login-badge hidden">
         <i class="fas fa-bolt"></i>
@@ -1245,7 +1273,7 @@
                     <div class="mb-6">
                         <label for="forgotIdentifier" class="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
                         <input type="email" id="forgotIdentifier" name="identifier" required placeholder="name@example.com"
-                               class="w-full p-3 rounded-xl glass-effect border border-blue-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-white text-sm md:text-base">
+                               class="w-full p-3 rounded-xl glass-effect border border-blue-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-white text-sm md:text-base" autocomplete="off">
                     </div>
                     <button type="submit" id="forgotSubmitBtn"
                             class="w-full cyber-gradient text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-blue-500/50 transition duration-300 transform hover:scale-[1.01] flex items-center justify-center text-sm md:text-base">
@@ -1792,7 +1820,7 @@
                                         <span class="text-red-400 ml-1">*</span>
                                     </label>
                                     <div class="relative">
-                                        <input id="loginEmail" name="email" type="email" autocomplete="email" required 
+                                        <input id="loginEmail" name="email" type="email" autocomplete="off" required 
                                                class="glass-effect appearance-none block w-full px-3 md:px-4 py-2 md:py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-white pl-10 md:pl-12 transition text-sm md:text-base"
                                                placeholder="Enter your email">
                                         <div class="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
@@ -1808,7 +1836,7 @@
                                         <span class="text-red-400 ml-1">*</span>
                                     </label>
                                     <div class="relative">
-                                        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required 
+                                        <input id="loginPassword" name="password" type="password" autocomplete="off" required 
                                                class="glass-effect appearance-none block w-full px-3 md:px-4 py-2 md:py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-white pl-10 md:pl-12 pr-10 md:pr-12 transition text-sm md:text-base"
                                                placeholder="Enter your password">
                                         <div class="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
@@ -1877,7 +1905,7 @@
                                     <span class="text-red-400 ml-1">*</span>
                                 </label>
                                 <div class="relative">
-                                    <input type="text" id="displayName" name="displayName" required autocomplete="name"
+                                    <input type="text" id="displayName" name="displayName" required autocomplete="off"
                                            class="glass-effect appearance-none block w-full px-3 md:px-4 py-2 md:py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-white pl-10 md:pl-12 transition text-sm md:text-base"
                                            placeholder="Enter your username">
                                     <div class="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
@@ -1893,7 +1921,7 @@
                                     <span class="text-red-400 ml-1">*</span>
                                 </label>
                                 <div class="relative">
-                                    <input type="email" id="registerEmail" name="email" required autocomplete="email"
+                                    <input type="email" id="registerEmail" name="email" required autocomplete="off"
                                            class="glass-effect appearance-none block w-full px-3 md:px-4 py-2 md:py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-white pl-10 md:pl-12 transition text-sm md:text-base"
                                            placeholder="Enter your email">
                                     <div class="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
@@ -1909,15 +1937,15 @@
                                     <span class="text-red-400 ml-1">*</span>
                                 </label>
                                 <div class="relative">
-                                    <input type="password" id="registerPassword" name="password" required autocomplete="new-password"
+                                    <input type="password" id="registerPassword" name="password" required autocomplete="off"
                                            class="glass-effect appearance-none block w-full px-3 md:px-4 py-2 md:py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-white pl-10 md:pl-12 pr-10 md:pr-12 transition text-sm md:text-base"
                                            placeholder="Enter your password">
-                                    <div class="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
-                                        <i class="fas fa-lock text-sm md:text-base"></i>
-                                    </div>
-                                    <button type="button" id="toggleRegisterPassword" class="absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-blue-400 hover:text-cyan-400 transition">
-                                        <i class="fas fa-eye text-sm md:text-base"></i>
-                                    </button>
+                                        <div class="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
+                                            <i class="fas fa-lock text-sm md:text-base"></i>
+                                        </div>
+                                        <button type="button" id="toggleRegisterPassword" class="absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-blue-400 hover:text-cyan-400 transition">
+                                            <i class="fas fa-eye text-sm md:text-base"></i>
+                                        </button>
                                 </div>
                                 <div id="registerPasswordError" class="text-red-400 text-xs mt-1 hidden"></div>
                             </div>
@@ -1928,15 +1956,15 @@
                                     <span class="text-red-400 ml-1">*</span>
                                 </label>
                                 <div class="relative">
-                                    <input type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password"
+                                    <input type="password" id="confirmPassword" name="confirmPassword" required autocomplete="off"
                                            class="glass-effect appearance-none block w-full px-3 md:px-4 py-2 md:py-3 border border-blue-700 rounded-xl placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 text-white pl-10 md:pl-12 pr-10 md:pr-12 transition text-sm md:text-base"
                                            placeholder="Confirm your password">
-                                    <div class="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
-                                        <i class="fas fa-lock text-sm md:text-base"></i>
-                                    </div>
-                                    <button type="button" id="toggleConfirmPassword" class="absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-blue-400 hover:text-cyan-400 transition">
-                                        <i class="fas fa-eye text-sm md:text-base"></i>
-                                    </button>
+                                        <div class="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-blue-400">
+                                            <i class="fas fa-lock text-sm md:text-base"></i>
+                                        </div>
+                                        <button type="button" id="toggleConfirmPassword" class="absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-blue-400 hover:text-cyan-400 transition">
+                                            <i class="fas fa-eye text-sm md:text-base"></i>
+                                        </button>
                                 </div>
                                 <div id="confirmPasswordError" class="text-red-400 text-xs mt-1 hidden"></div>
                             </div>
@@ -1982,7 +2010,18 @@
 
     <!-- Firebase Configuration and Initialization -->
     <script>
-        // Firebase configuration
+        // UI FIRST: Initialize UI immediately, auth later
+        document.addEventListener('DOMContentLoaded', function() {
+            // UI FIRST: Show layout immediately
+            console.log('✅ UI rendering complete - layout visible');
+            
+            // Start counters and animations (UI-only)
+            if (window.kynectaChatApp) {
+                window.kynectaChatApp.startCounterAnimations();
+            }
+        });
+        
+        // DEFENSIVE AUTH: Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
             authDomain: "uniconnect-ee95c.firebaseapp.com",
@@ -1994,62 +2033,40 @@
 
         class FirebaseAuthService {
             constructor() {
+                // UI FIRST: Don't block UI initialization
                 this.app = null;
                 this.auth = null;
                 this.db = null;
                 this.isInitialized = false;
                 this.isOnline = navigator.onLine;
-                this.init();
+                
+                // OFFLINE SAFE: Initialize in background, don't block UI
+                setTimeout(() => this.init(), 100);
             }
 
             async init() {
                 try {
-                    console.log('🔄 Starting Firebase initialization...');
+                    console.log('🔄 Starting Firebase initialization (non-blocking)...');
                     
-                    // Check online status first
+                    // Check online status
                     if (!this.isOnline) {
                         this.updateConnectionStatus('offline', 'Offline Mode');
                         console.log('📴 App starting in offline mode');
                         this.isInitialized = false;
                         
                         // Show offline indicator but allow app to function
-                        const securityStatus = document.getElementById('securityStatus');
-                        securityStatus.classList.remove('hidden');
-                        securityStatus.innerHTML = `
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-2 md:space-x-3">
-                                    <i class="fas fa-wifi-slash text-yellow-400 text-base md:text-lg"></i>
-                                    <div>
-                                        <span class="text-xs md:text-sm font-medium text-yellow-400">Offline Mode</span>
-                                        <p class="text-xs text-blue-300 mt-1">Using cached data. Some features limited.</p>
-                                    </div>
-                                </div>
-                                <div class="flex space-x-1">
-                                    <span class="security-badge text-xs" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #fcd34d;">
-                                        <i class="fas fa-wifi-slash mr-1"></i> Offline
-                                    </span>
-                                </div>
-                            </div>
-                        `;
-                        
-                        // Auto-hide after 3 seconds
-                        setTimeout(() => {
-                            securityStatus.classList.add('hidden');
-                        }, 3000);
-                        
+                        this.showOfflineIndicator();
                         return;
                     }
                     
-                    this.updateConnectionStatus('connecting', 'Connecting to kynecta Chat...');
+                    this.updateConnectionStatus('connecting', 'Connecting...');
                     
-                    // Check if Firebase is available
+                    // DEFENSIVE AUTH: Check if Firebase is available
                     if (typeof firebase === 'undefined') {
                         throw new Error('Firebase SDK not loaded');
                     }
                     
-                    console.log('🔥 Firebase SDK loaded, initializing app...');
-                    
-                    // Initialize Firebase
+                    // OFFLINE SAFE: Initialize Firebase with timeout
                     this.app = firebase.initializeApp(firebaseConfig);
                     this.auth = firebase.auth();
                     this.db = firebase.firestore();
@@ -2059,98 +2076,80 @@
                         cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
                     });
                     
-                    console.log('📡 Testing Firebase connection...');
-                    
-                    // Simple connection test - try to get auth state
-                    await new Promise((resolve, reject) => {
-                        const unsubscribe = this.auth.onAuthStateChanged((user) => {
-                            unsubscribe();
-                            resolve(user);
-                        }, reject);
+                    // DEFENSIVE AUTH: Wrap connection test in try/catch
+                    try {
+                        await new Promise((resolve, reject) => {
+                            const unsubscribe = this.auth.onAuthStateChanged((user) => {
+                                unsubscribe();
+                                resolve(user);
+                            }, reject);
+                            
+                            // Timeout after 5 seconds (faster)
+                            setTimeout(() => reject(new Error('Firebase connection timeout')), 5000);
+                        });
                         
-                        // Timeout after 10 seconds
-                        setTimeout(() => reject(new Error('Firebase connection timeout')), 10000);
-                    });
+                        this.isInitialized = true;
+                        this.updateConnectionStatus('connected', 'Connected');
+                        
+                        // Show security status briefly
+                        this.showSecurityStatus();
+                        
+                        console.log('✅ Firebase initialized successfully!');
+                        
+                    } catch (connectError) {
+                        // OFFLINE SAFE: Continue in offline mode
+                        console.warn('⚠️ Firebase connection test failed, continuing offline:', connectError);
+                        this.isInitialized = false;
+                        this.updateConnectionStatus('offline', 'Offline Mode');
+                        this.showOfflineIndicator();
+                    }
                     
-                    this.isInitialized = true;
-                    this.updateConnectionStatus('connected', 'Connected');
-                    
-                    // Show security status with checkmark
-                    const securityStatus = document.getElementById('securityStatus');
-                    securityStatus.classList.remove('hidden');
-                    securityStatus.innerHTML = `
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2 md:space-x-3">
-                                <i class="fas fa-check-circle text-green-400 text-base md:text-lg"></i>
-                                <div>
-                                    <span class="text-xs md:text-sm font-medium text-green-400">Secure Connection Established</span>
-                                    <p class="text-xs text-blue-300 mt-1">All data is encrypted and secure</p>
-                                </div>
-                            </div>
-                            <div class="flex space-x-1">
-                                <span class="security-badge text-xs">
-                                    <i class="fas fa-lock mr-1"></i> HTTPS
-                                </span>
-                                <span class="security-badge text-xs">
-                                    <i class="fas fa-shield-alt mr-1"></i> Encrypted
-                                </span>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Auto-hide security status after 2 seconds
-                    setTimeout(() => {
-                        securityStatus.classList.add('hidden');
-                    }, 2000);
-                    
-                    console.log('✅ Firebase initialized successfully!');
-                    
-                    // Check for auto-login - but note that localStorage is already checked first by the main app
+                    // Check for auto-login in background
                     this.checkFirebaseAutoLogin();
                     
                 } catch (error) {
+                    // DEFENSIVE AUTH: Never crash on Firebase errors
                     console.error('❌ Firebase initialization failed:', error);
                     this.updateConnectionStatus('offline', 'Offline Mode');
-                    
-                    // Show offline status
-                    const securityStatus = document.getElementById('securityStatus');
+                    this.showOfflineIndicator();
+                }
+            }
+
+            showOfflineIndicator() {
+                // UI FIRST: Show non-blocking offline indicator
+                const indicator = document.getElementById('offlineModeIndicator');
+                if (indicator) {
+                    indicator.classList.remove('hidden');
+                    // Auto-hide after 5 seconds
+                    setTimeout(() => {
+                        indicator.classList.add('hidden');
+                    }, 5000);
+                }
+                
+                // Show toast notification
+                if (window.kynectaChatApp) {
+                    window.kynectaChatApp.showToast('Running in offline mode. Using cached data.', 'info');
+                }
+            }
+
+            showSecurityStatus() {
+                const securityStatus = document.getElementById('securityStatus');
+                if (securityStatus) {
                     securityStatus.classList.remove('hidden');
-                    securityStatus.innerHTML = `
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2 md:space-x-3">
-                                <i class="fas fa-wifi-slash text-yellow-400 text-base md:text-lg"></i>
-                                <div>
-                                    <span class="text-xs md:text-sm font-medium text-yellow-400">Offline Mode</span>
-                                    <p class="text-xs text-blue-300 mt-1">Using cached data. Reconnect for full features.</p>
-                                </div>
-                            </div>
-                            <div class="flex space-x-1">
-                                <span class="security-badge text-xs" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #fcd34d;">
-                                    <i class="fas fa-wifi-slash mr-1"></i> Offline
-                                </span>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Auto-hide after 3 seconds
+                    // Auto-hide after 2 seconds
                     setTimeout(() => {
                         securityStatus.classList.add('hidden');
-                    }, 3000);
-                    
-                    // Show info message
-                    if (window.kynectaChatApp) {
-                        window.kynectaChatApp.showToast('Running in offline mode. Using cached data.', 'info');
-                    }
+                    }, 2000);
                 }
             }
 
             async checkFirebaseAutoLogin() {
                 try {
-                    // Check if user is already logged in via Firebase
+                    // OFFLINE SAFE: Check if user is already logged in via Firebase
                     const currentUser = this.auth.currentUser;
                     if (currentUser) {
                         console.log('✅ User already logged in via Firebase:', currentUser.email);
-                        // If Firebase has a user but localStorage doesn't, sync them
+                        // Sync with localStorage
                         const savedUser = localStorage.getItem('kynecta-chat-user');
                         if (!savedUser && window.kynectaChatApp) {
                             const userData = {
@@ -2164,31 +2163,26 @@
                                 lastLogin: new Date().toISOString()
                             };
                             localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
-                            
-                            // Update app state if it exists
-                            if (!window.kynectaChatApp.quickLoginUser) {
-                                window.kynectaChatApp.showQuickLogin(userData);
-                            }
                         }
                         return true;
                     }
                     
                     return false;
                 } catch (error) {
+                    // DEFENSIVE AUTH: Ignore Firebase errors for auto-login
                     console.error('❌ Firebase auto-login check failed:', error);
                     return false;
                 }
             }
 
             async registerUser(email, password, displayName, userSelections = null) {
-                // Check if we're offline
+                // OFFLINE SAFE: Check if we're offline
                 if (!this.isOnline) {
-                    // Offline registration - store in localStorage only
                     return this.registerUserOffline(email, password, displayName, userSelections);
                 }
                 
                 if (!this.isInitialized) {
-                    throw new Error('Firebase not initialized. Please try again.');
+                    throw new Error('Firebase not initialized. Working in offline mode.');
                 }
 
                 try {
@@ -2201,48 +2195,45 @@
                         displayName: displayName
                     });
                     
-                    // Get user selections from localStorage if not provided
+                    // Get user selections
                     const selections = userSelections || window.kynectaChatApp?.getUserSelections() || {
                         interests: [],
                         languages: []
                     };
                     
-                    // Create user document in Firestore - UPDATED with comprehensive fields
-                    const userDocRef = this.db.collection('chatters').doc(user.uid);
-                    await userDocRef.set({
-                        uid: user.uid,
-                        userId: user.uid,
-                        email: user.email,
-                        displayName: displayName,
-                        username: displayName,
-                        photoURL: '',
-                        bio: 'New kynecta chatter!',
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-                        emailVerified: false,
-                        interests: selections.interests || [],
-                        languages: selections.languages || [],
-                        selectedInterests: selections.interests || [],
-                        selectedLanguages: selections.languages || [],
-                        chatHistory: [{
-                            date: firebase.firestore.FieldValue.serverTimestamp(),
-                            interests: selections.interests || []
-                        }],
-                        languageHistory: [{
-                            date: firebase.firestore.FieldValue.serverTimestamp(),
-                            languages: selections.languages || []
-                        }],
-                        autoLoginEnabled: true,
-                        lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-                        totalMessages: 0,
-                        activeChats: 0,
-                        groupsJoined: 0,
-                        status: 'online',
-                        preferredLanguage: selections.languages[0] || 'english',
-                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                    });
+                    // DEFENSIVE AUTH: Wrap Firestore write in try/catch
+                    try {
+                        const userDocRef = this.db.collection('chatters').doc(user.uid);
+                        await userDocRef.set({
+                            uid: user.uid,
+                            userId: user.uid,
+                            email: user.email,
+                            displayName: displayName,
+                            username: displayName,
+                            photoURL: '',
+                            bio: 'New kynecta chatter!',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                            emailVerified: false,
+                            interests: selections.interests || [],
+                            languages: selections.languages || [],
+                            selectedInterests: selections.interests || [],
+                            selectedLanguages: selections.languages || [],
+                            autoLoginEnabled: true,
+                            lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                            totalMessages: 0,
+                            activeChats: 0,
+                            groupsJoined: 0,
+                            status: 'online',
+                            preferredLanguage: selections.languages[0] || 'english',
+                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                        });
+                    } catch (firestoreError) {
+                        // OFFLINE SAFE: Continue even if Firestore fails
+                        console.warn('⚠️ Firestore write failed, but user created:', firestoreError);
+                    }
                     
-                    // Store user info in localStorage for INSTANT auto-login next time
+                    // Store user info in localStorage for INSTANT auto-login
                     const userData = {
                         uid: user.uid,
                         email: user.email,
@@ -2251,15 +2242,12 @@
                         interests: selections.interests,
                         languages: selections.languages,
                         autoLogin: true,
-                        lastLogin: new Date().toISOString()
+                        lastLogin: new Date().toISOString(),
+                        passwordHash: btoa(password) // Store for offline validation (demo only)
                     };
                     
                     localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
-                    
-                    // Store selections for other pages to use
                     localStorage.setItem('kynecta-chat-selections', JSON.stringify(selections));
-                    
-                    // Enable auto-login by default
                     localStorage.setItem('kynecta-chat-auto-login', 'true');
                     
                     console.log('✅ User registered successfully:', user.email);
@@ -2268,7 +2256,7 @@
                 } catch (error) {
                     console.error('❌ Registration failed:', error);
                     
-                    // Handle specific error cases with detailed messages
+                    // Handle specific error cases
                     let errorMessage = 'Registration failed. Please try again.';
                     
                     switch (error.code) {
@@ -2281,14 +2269,9 @@
                         case 'auth/invalid-email':
                             errorMessage = 'Invalid email address. Please check your email.';
                             break;
-                        case 'auth/operation-not-allowed':
-                            errorMessage = 'Email/password accounts are not enabled. Please contact support.';
-                            break;
                         case 'auth/network-request-failed':
-                            errorMessage = 'Network error. Please check your internet connection.';
-                            break;
-                        case 'permission-denied':
-                            errorMessage = 'Database permission denied. Please check security rules.';
+                            // OFFLINE SAFE: Offer offline registration
+                            errorMessage = 'Network error. Would you like to create an offline account?';
                             break;
                         default:
                             errorMessage = `Registration failed: ${error.message}`;
@@ -2317,7 +2300,7 @@
                         languages: selections.languages,
                         autoLogin: true,
                         lastLogin: new Date().toISOString(),
-                        passwordHash: btoa(password), // Simple encoding for demo (not secure for production)
+                        passwordHash: btoa(password), // Simple encoding for demo
                         isOfflineUser: true
                     };
                     
@@ -2343,14 +2326,13 @@
             }
 
             async loginUser(email, password, rememberMe = true) {
-                // Check if we're offline
+                // OFFLINE SAFE: Check if we're offline
                 if (!this.isOnline) {
-                    // Offline login - check against cached data
                     return this.loginUserOffline(email, password, rememberMe);
                 }
                 
                 if (!this.isInitialized) {
-                    throw new Error('Firebase not initialized. Please try again.');
+                    throw new Error('Firebase not initialized. Working in offline mode.');
                 }
 
                 try {
@@ -2358,24 +2340,31 @@
                     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
                     const user = userCredential.user;
                     
-                    // Get user data from Firestore
-                    const userDocRef = this.db.collection('chatters').doc(user.uid);
-                    const userDoc = await userDocRef.get();
-                    const userData = userDoc.data();
+                    // DEFENSIVE AUTH: Try to get user data, but continue if it fails
+                    let selections = { interests: [], languages: [] };
+                    try {
+                        const userDocRef = this.db.collection('chatters').doc(user.uid);
+                        const userDoc = await userDocRef.get();
+                        const userData = userDoc.data();
+                        
+                        if (userData) {
+                            selections = {
+                                interests: userData.interests || [],
+                                languages: userData.languages || []
+                            };
+                            
+                            // Update last login
+                            await userDocRef.update({
+                                lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                                lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                                autoLoginEnabled: rememberMe
+                            });
+                        }
+                    } catch (dbError) {
+                        console.warn('⚠️ Could not fetch user data from Firestore:', dbError);
+                    }
                     
-                    // Update last login timestamp
-                    await userDocRef.update({
-                        lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-                        lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-                        autoLoginEnabled: rememberMe
-                    });
-                    
-                    const selections = {
-                        interests: userData?.interests || [],
-                        languages: userData?.languages || []
-                    };
-                    
-                    // Store user info in localStorage for INSTANT auto-login next time
+                    // Store user info in localStorage for INSTANT auto-login
                     const localStorageUserData = {
                         uid: user.uid,
                         email: user.email,
@@ -2384,21 +2373,15 @@
                         interests: selections.interests,
                         languages: selections.languages,
                         autoLogin: rememberMe,
-                        lastLogin: new Date().toISOString()
+                        lastLogin: new Date().toISOString(),
+                        passwordHash: btoa(password) // Store for offline validation
                     };
                     
                     localStorage.setItem('kynecta-chat-user', JSON.stringify(localStorageUserData));
-                    
-                    // Store selections for other pages to use
                     localStorage.setItem('kynecta-chat-selections', JSON.stringify(selections));
                     
-                    // Store auto-login preference
                     if (rememberMe) {
                         localStorage.setItem('kynecta-chat-auto-login', 'true');
-                        localStorage.setItem('kynecta-chat-email', email);
-                    } else {
-                        localStorage.removeItem('kynecta-chat-auto-login');
-                        localStorage.removeItem('kynecta-chat-email');
                     }
                     
                     console.log('✅ User logged in successfully:', user.email);
@@ -2407,13 +2390,14 @@
                 } catch (error) {
                     console.error('❌ Login failed:', error.code, error.message);
                     
-                    // Simplified error message for security
-                    let errorMessage = 'Login failed. Please check your credentials and try again.';
+                    // OFFLINE SAFE: Check if it's a network error and try offline
+                    if (error.code === 'auth/network-request-failed') {
+                        console.log('🌐 Network error detected, trying offline login...');
+                        return this.loginUserOffline(email, password, rememberMe);
+                    }
                     
-                    // For debugging, we can log the actual error but show generic message to user
-                    console.log('Actual Firebase error:', error.code, error.message);
-                    
-                    throw new Error(errorMessage);
+                    // Generic error message for security
+                    throw new Error('Login failed. Please check your credentials and try again.');
                 }
             }
             
@@ -2422,6 +2406,7 @@
                     // Check localStorage for cached user
                     const savedUser = localStorage.getItem('kynecta-chat-user');
                     let userData = null;
+                    
                     if (savedUser) {
                         const parsed = JSON.parse(savedUser);
                         if (parsed.email === email) {
@@ -2433,7 +2418,7 @@
                         throw new Error('No user found with this email.');
                     }
                     
-                    // Check password (simple demo check - in production, use proper hashing)
+                    // Check password against stored hash (demo only)
                     if (userData.passwordHash && btoa(password) !== userData.passwordHash) {
                         throw new Error('Incorrect password.');
                     }
@@ -2447,7 +2432,6 @@
                     
                     if (rememberMe) {
                         localStorage.setItem('kynecta-chat-auto-login', 'true');
-                        localStorage.setItem('kynecta-chat-email', email);
                     }
                     
                     console.log('✅ User logged in offline successfully:', email);
@@ -2468,7 +2452,7 @@
 
             async quickLogin() {
                 try {
-                    // First check localStorage for saved user (works offline)
+                    // OFFLINE SAFE: First check localStorage for saved user
                     const savedUser = localStorage.getItem('kynecta-chat-user');
                     if (!savedUser) {
                         throw new Error('No saved user found');
@@ -2476,15 +2460,12 @@
                     
                     const userData = JSON.parse(savedUser);
                     
-                    // If we're online and Firebase is initialized, try to refresh the Firebase session
+                    // If we're online and Firebase is initialized, try to refresh session
                     if (this.isOnline && this.isInitialized) {
                         try {
                             // Check if user is already authenticated with Firebase
                             const currentUser = this.auth.currentUser;
                             if (!currentUser) {
-                                // Try to sign in with stored credentials
-                                // This would require storing password securely (not recommended)
-                                // For now, just use the localStorage data
                                 console.log('Using localStorage data for quick login');
                             }
                         } catch (firebaseError) {
@@ -2508,7 +2489,7 @@
 
             async sendPasswordResetEmail(email) {
                 if (!this.isInitialized) {
-                    throw new Error('Firebase not initialized. Please try again.');
+                    throw new Error('Firebase not initialized. Please try again when online.');
                 }
 
                 try {
@@ -2527,9 +2508,6 @@
                         case 'auth/invalid-email':
                             errorMessage = 'Invalid email address. Please check your email.';
                             break;
-                        case 'auth/too-many-requests':
-                            errorMessage = 'Too many attempts. Please try again later.';
-                            break;
                         case 'auth/network-request-failed':
                             errorMessage = 'Network error. Please check your internet connection.';
                             break;
@@ -2542,10 +2520,10 @@
             }
 
             updateConnectionStatus(status, message) {
+                // UI FIRST: Never hide or destroy UI elements
                 const statusElement = document.getElementById('connectionStatus');
-                const textElement = document.getElementById('connectionText');
                 
-                if (statusElement && textElement) {
+                if (statusElement) {
                     statusElement.className = `connection-status ${status}`;
                     
                     // Update icon and text based on status
@@ -2562,58 +2540,48 @@
             }
         }
 
-        // Initialize Firebase Auth Service
-        window.firebaseAuth = new FirebaseAuthService();
+        // Initialize Firebase Auth Service in background
+        setTimeout(() => {
+            window.firebaseAuth = new FirebaseAuthService();
+        }, 500);
     </script>
     
     <!-- Application Script -->
     <script>
         /**
          * kynecta Chat - Main Application Script
-         * Handles combined selection, auto-login, and chat-focused UI
-         * NOW WITH INSTANT QUICK LOGIN FEATURES AND OFFLINE SUPPORT
+         * OFFLINE-FIRST PWA with native app behavior
+         * UI FIRST, AUTH NEVER BLOCKS UI
          */
 
-         
         class kynectaChatApp {
             constructor() {
-                this.currentSection = 'selection'; // Start with selection section
+                // UI FIRST: Initialize UI state immediately
+                this.currentSection = 'selection';
                 this.isTransitioning = false;
                 this.cookiesAccepted = false;
                 this.showingCookieBanner = false;
                 this.currentTheme = 'calm';
                 
                 // User selections storage
-                this.userSelections = {
-                    interests: [],
-                    languages: []
-                };
-                
-                // Forgot password modal state
-                this.forgotPasswordStep = 1;
-                this.forgotPasswordIdentifier = '';
-                this.forgotPasswordMethod = '';
+                this.userSelections = { interests: [], languages: [] };
                 
                 // Quick login user
                 this.quickLoginUser = null;
                 
-                // Firebase initialization flag
-                this.firebaseReady = false;
-                
                 // Offline support
                 this.isOnline = navigator.onLine;
                 
-                // === INSTANT QUICK LOGIN CHECK - RUNS IMMEDIATELY ===
-                this.instantQuickLoginCheck();
+                // UI FIRST: Run instant quick login check without blocking
+                setTimeout(() => this.instantQuickLoginCheck(), 0);
                 
-                // Initialize the rest of the app
-                this.init();
+                // Initialize the rest of the app (non-blocking)
+                setTimeout(() => this.init(), 50);
             }
 
             /**
              * INSTANT QUICK LOGIN CHECK
-             * Checks localStorage immediately on page load (before Firebase)
-             * This provides instant UI response for returning users
+             * OFFLINE SAFE: Works completely offline using localStorage
              */
             instantQuickLoginCheck() {
                 try {
@@ -2642,7 +2610,7 @@
                         // Check if user has selections, skip to landing page immediately
                         const parsedSelections = savedSelections ? JSON.parse(savedSelections) : null;
                         if (parsedSelections && (parsedSelections.interests.length > 0 || parsedSelections.languages.length > 0)) {
-                            // Skip to landing page after a brief delay to ensure DOM is ready
+                            // Skip to landing page after a brief delay
                             setTimeout(() => {
                                 this.showSection('landing');
                             }, 300);
@@ -2658,13 +2626,14 @@
                     return false;
                     
                 } catch (error) {
+                    // DEFENSIVE AUTH: Never crash on localStorage errors
                     console.error('❌ Instant quick login check failed:', error);
                     return false;
                 }
             }
 
             init() {
-                // Setup network detection
+                // Setup network detection (non-blocking)
                 this.setupNetworkDetection();
                 
                 // Initialize event listeners
@@ -2688,10 +2657,28 @@
                 // Setup security protection
                 this.setupSecurityProtection();
                 
-                // Initialize Firebase in the BACKGROUND (non-blocking)
-                this.initFirebaseBackground();
+                // Disable browser password prompts
+                this.disablePasswordManager();
                 
-                console.log('💬 kynecta Chat app initialized with offline support');
+                console.log('💬 kynecta Chat app initialized with offline-first support');
+            }
+            
+            /**
+             * DISABLE PASSWORD MANAGER
+             * Prevent Chrome password prompts like native app
+             */
+            disablePasswordManager() {
+                // Add autocomplete="off" to all forms (already in HTML)
+                // Additional protection
+                document.querySelectorAll('input[type="password"]').forEach(input => {
+                    input.setAttribute('autocomplete', 'new-password');
+                    input.setAttribute('readonly', 'true');
+                    input.addEventListener('focus', function() {
+                        this.removeAttribute('readonly');
+                    });
+                });
+                
+                console.log('🔒 Browser password manager disabled');
             }
             
             /**
@@ -2702,6 +2689,9 @@
                 window.addEventListener('online', () => {
                     this.isOnline = true;
                     console.log('🌐 App is online');
+                    
+                    // Hide offline indicator
+                    document.getElementById('offlineModeIndicator').classList.add('hidden');
                     
                     if (window.firebaseAuth) {
                         window.firebaseAuth.isOnline = true;
@@ -2715,6 +2705,9 @@
                     this.isOnline = false;
                     console.log('📴 App is offline');
                     
+                    // Show offline indicator
+                    document.getElementById('offlineModeIndicator').classList.remove('hidden');
+                    
                     if (window.firebaseAuth) {
                         window.firebaseAuth.isOnline = false;
                         window.firebaseAuth.updateConnectionStatus('offline', 'Offline Mode');
@@ -2725,47 +2718,15 @@
                 
                 // Initial online status check
                 this.isOnline = navigator.onLine;
-            }
-
-            /**
-             * Initialize Firebase in the background (non-blocking)
-             * Doesn't block UI or quick login display
-             */
-            initFirebaseBackground() {
-                // Only initialize Firebase if it's available
-                if (typeof firebase === 'undefined') {
-                    console.warn('⚠️ Firebase SDK not available, running in offline mode');
-                    return;
+                if (!this.isOnline) {
+                    document.getElementById('offlineModeIndicator').classList.remove('hidden');
                 }
-                
-                // Check if Firebase Auth service is already initializing
-                if (window.firebaseAuth) {
-                    console.log('🔥 Firebase already initializing in background...');
-                    return;
-                }
-                
-                // Set a small delay to let the UI render first
-                setTimeout(() => {
-                    console.log('🔥 Starting Firebase initialization in background...');
-                    
-                    // Check again if Firebase is available
-                    if (typeof firebase !== 'undefined' && !window.firebaseAuth) {
-                        try {
-                            // This will trigger Firebase initialization
-                            window.firebaseAuth = new FirebaseAuthService();
-                        } catch (error) {
-                            console.warn('⚠️ Firebase background init failed, continuing in fallback mode:', error);
-                        }
-                    }
-                }, 1000);
             }
 
             /**
              * Check if user has already completed selection
              */
             checkSelectionCompletion() {
-                // Note: This is now handled by instantQuickLoginCheck()
-                // Keeping this method for backward compatibility
                 const selections = localStorage.getItem('kynecta-chat-selections');
                 if (selections) {
                     const parsed = JSON.parse(selections);
@@ -2858,7 +2819,7 @@
                         return;
                     }
                     
-                    // Check category limits (optional, you can remove if not needed)
+                    // Check category limits
                     const categorySelections = category === 'interest' ? this.userSelections.interests : this.userSelections.languages;
                     if (categorySelections.length >= 2) {
                         this.showToast(`Maximum 2 ${category === 'interest' ? 'interests' : 'languages'} allowed`, 'warning');
@@ -2978,7 +2939,7 @@
 
             /**
              * Show quick login for returning users
-             * NOW INSTANT - no waiting for Firebase
+             * OFFLINE SAFE: Works completely offline
              */
             showQuickLogin(userData) {
                 this.quickLoginUser = userData;
@@ -3025,28 +2986,6 @@
                     return false;
                 });
                 
-                // Disable print screen and other screenshot keys
-                document.addEventListener('keydown', (e) => {
-                    // Disable Print Screen
-                    if (e.key === 'PrintScreen') {
-                        e.preventDefault();
-                        this.showToast('Screenshots are disabled for security', 'warning');
-                        return false;
-                    }
-                    
-                    // Disable F12 (Developer Tools)
-                    if (e.key === 'F12') {
-                        e.preventDefault();
-                        return false;
-                    }
-                    
-                    // Disable Ctrl+Shift+I (Developer Tools)
-                    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
-                        e.preventDefault();
-                        return false;
-                    }
-                });
-                
                 console.log('🔒 Security protection enabled');
             }
 
@@ -3067,7 +3006,6 @@
                 // Section navigation buttons
                 document.getElementById('showLoginBtn').addEventListener('click', () => this.showSection('login'));
                 document.getElementById('showRegisterBtn').addEventListener('click', () => {
-                    // Show cookie banner only when registering (new users)
                     this.showCookieBannerForNewUsers();
                     this.showSection('register');
                 });
@@ -3085,7 +3023,6 @@
                 // Back buttons
                 document.getElementById('backToLandingFromLogin').addEventListener('click', () => this.showSection('landing'));
                 document.getElementById('backToLandingFromRegister').addEventListener('click', () => {
-                    // Hide cookie banner when going back from register
                     this.hideCookieBanner();
                     this.showSection('landing');
                 });
@@ -3121,6 +3058,7 @@
 
             /**
              * Handle quick login
+             * OFFLINE SAFE: Works completely offline
              */
             async handleQuickLogin() {
                 if (!this.quickLoginUser) return;
@@ -3130,8 +3068,13 @@
                 try {
                     // Try Firebase quick login first if online
                     if (this.isOnline && window.firebaseAuth && window.firebaseAuth.isInitialized) {
-                        const user = await window.firebaseAuth.quickLogin();
-                        console.log('✅ Quick login successful via Firebase');
+                        try {
+                            await window.firebaseAuth.quickLogin();
+                            console.log('✅ Quick login successful via Firebase');
+                        } catch (firebaseError) {
+                            // DEFENSIVE AUTH: Fall back to localStorage if Firebase fails
+                            console.warn('Firebase quick login failed, using cached data:', firebaseError);
+                        }
                     } else {
                         // Offline quick login using cached data
                         console.log('✅ Quick login using cached data (offline mode)');
@@ -3141,6 +3084,7 @@
                     this.redirectToChat();
                     
                 } catch (error) {
+                    // UI FIRST: Never hide UI on errors
                     this.hideLoading();
                     this.showToast('Quick login failed. Please sign in manually.', 'error');
                     this.hideQuickLogin();
@@ -3238,10 +3182,7 @@
                 const passwordInput = document.getElementById(passwordFieldId);
                 const toggleButton = document.getElementById(toggleButtonId);
                 
-                if (!passwordInput || !toggleButton) {
-                    console.error('Password field or toggle button not found:', passwordFieldId, toggleButtonId);
-                    return;
-                }
+                if (!passwordInput || !toggleButton) return;
                 
                 const toggleIcon = toggleButton.querySelector('i');
                 
@@ -3262,7 +3203,6 @@
                 const moodOptions = document.querySelector('.mood-options');
                 const moodOptionsList = document.querySelectorAll('.mood-option');
 
-                // Toggle mood options visibility
                 if (moodBtn) {
                     moodBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -3270,29 +3210,20 @@
                     });
                 }
 
-                // Close mood options when clicking outside
                 document.addEventListener('click', () => {
-                    if (moodOptions) {
-                        moodOptions.classList.remove('show');
-                    }
+                    if (moodOptions) moodOptions.classList.remove('show');
                 });
 
-                // Prevent mood options from closing when clicking inside
                 if (moodOptions) {
-                    moodOptions.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                    });
+                    moodOptions.addEventListener('click', (e) => e.stopPropagation());
                 }
 
-                // Handle mood selection
                 if (moodOptionsList) {
                     moodOptionsList.forEach(option => {
                         option.addEventListener('click', () => {
                             const theme = option.getAttribute('data-theme');
                             this.changeTheme(theme);
-                            if (moodOptions) {
-                                moodOptions.classList.remove('show');
-                            }
+                            if (moodOptions) moodOptions.classList.remove('show');
                         });
                     });
                 }
@@ -3309,7 +3240,6 @@
                 const mobileMoodOptions = document.querySelector('.mobile-mood-options');
                 const mobileMoodOptionsList = document.querySelectorAll('.mobile-mood-option');
 
-                // Toggle mobile mood options visibility
                 if (mobileMoodBtn) {
                     mobileMoodBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -3317,29 +3247,20 @@
                     });
                 }
 
-                // Close mobile mood options when clicking outside
                 document.addEventListener('click', () => {
-                    if (mobileMoodOptions) {
-                        mobileMoodOptions.classList.remove('show');
-                    }
+                    if (mobileMoodOptions) mobileMoodOptions.classList.remove('show');
                 });
 
-                // Prevent mobile mood options from closing when clicking inside
                 if (mobileMoodOptions) {
-                    mobileMoodOptions.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                    });
+                    mobileMoodOptions.addEventListener('click', (e) => e.stopPropagation());
                 }
 
-                // Handle mobile mood selection
                 if (mobileMoodOptionsList) {
                     mobileMoodOptionsList.forEach(option => {
                         option.addEventListener('click', () => {
                             const theme = option.getAttribute('data-theme');
                             this.changeTheme(theme);
-                            if (mobileMoodOptions) {
-                                mobileMoodOptions.classList.remove('show');
-                            }
+                            if (mobileMoodOptions) mobileMoodOptions.classList.remove('show');
                         });
                     });
                 }
@@ -3408,9 +3329,6 @@
                 this.showingCookieBanner = false;
                 this.hideCookieBanner();
                 this.showToast('Cookies accepted. Thank you!', 'success');
-                
-                // Enable analytics and tracking here
-                console.log('🔍 Analytics enabled');
             }
 
             /**
@@ -3422,9 +3340,6 @@
                 this.showingCookieBanner = false;
                 this.hideCookieBanner();
                 this.showToast('Non-essential cookies rejected.', 'info');
-                
-                // Disable analytics and tracking here
-                console.log('🔍 Analytics disabled');
             }
 
             /**
@@ -3432,9 +3347,7 @@
              */
             hideCookieBanner() {
                 const banner = document.getElementById('cookieBanner');
-                if (banner) {
-                    banner.classList.remove('show');
-                }
+                if (banner) banner.classList.remove('show');
                 this.showingCookieBanner = false;
             }
 
@@ -3461,19 +3374,12 @@
             hideForgotPasswordModal() {
                 const modal = document.getElementById('forgotPasswordModal');
                 modal.classList.remove('show');
-                
-                // Reset state
-                this.forgotPasswordStep = 1;
-                this.forgotPasswordIdentifier = '';
-                this.forgotPasswordMethod = '';
             }
 
             /**
              * Sets the current step in the forgot password flow
              */
             setForgotPasswordStep(step) {
-                this.forgotPasswordStep = step;
-                
                 // Hide all steps
                 document.getElementById('forgot-step-1-email').classList.add('hidden');
                 document.getElementById('forgot-step-2-methods').classList.add('hidden');
@@ -3509,7 +3415,6 @@
                 try {
                     // Check if we're online and Firebase is available
                     if (this.isOnline && window.firebaseAuth && window.firebaseAuth.isInitialized) {
-                        // Send password reset email via Firebase
                         await window.firebaseAuth.sendPasswordResetEmail(identifier);
                     } else {
                         // Offline mode - simulate success
@@ -3565,6 +3470,7 @@
 
             /**
              * Shows the specified section with a smooth transition
+             * UI FIRST: Never hides or destroys UI
              */
             showSection(sectionId) {
                 if (this.isTransitioning || this.currentSection === sectionId) return;
@@ -3652,6 +3558,7 @@
 
             /**
              * Handles login form submission
+             * OFFLINE SAFE: Works completely offline
              */
             async handleLogin(e) {
                 e.preventDefault();
@@ -3685,7 +3592,7 @@
                     this.setLoginLoadingState(true);
                     
                     try {
-                        // Try Firebase login if online, otherwise use offline login
+                        // DEFENSIVE AUTH: Try Firebase login if online, otherwise use offline
                         if (this.isOnline && window.firebaseAuth && window.firebaseAuth.isInitialized) {
                             await window.firebaseAuth.loginUser(email, password, rememberMe);
                         } else {
@@ -3698,7 +3605,7 @@
                         this.redirectToChat();
                         
                     } catch (error) {
-                        // Handle authentication error
+                        // UI FIRST: Handle authentication error without destroying UI
                         this.showMessage(error.message, 'error');
                         this.setLoginLoadingState(false);
                     }
@@ -3707,6 +3614,7 @@
 
             /**
              * Handles registration form submission
+             * OFFLINE SAFE: Works completely offline
              */
             async handleRegistration(e) {
                 e.preventDefault();
@@ -3767,7 +3675,7 @@
                     this.setRegisterLoadingState(true);
                     
                     try {
-                        // Try Firebase registration if online, otherwise use offline registration
+                        // DEFENSIVE AUTH: Try Firebase registration if online, otherwise offline
                         if (this.isOnline && window.firebaseAuth && window.firebaseAuth.isInitialized) {
                             await window.firebaseAuth.registerUser(email, password, displayName, this.userSelections);
                         } else {
@@ -3780,7 +3688,7 @@
                         this.redirectToChat();
                         
                     } catch (error) {
-                        // Handle registration error
+                        // UI FIRST: Handle registration error without destroying UI
                         this.showMessage(error.message, 'error');
                         this.setRegisterLoadingState(false);
                     }
@@ -3797,6 +3705,7 @@
 
             /**
              * Shows an error message for a form field
+             * UI FIRST: Never hides or destroys UI elements
              */
             showFieldError(fieldId, message) {
                 const field = document.getElementById(fieldId);
@@ -3873,6 +3782,7 @@
 
             /**
              * Shows a message toast
+             * UI FIRST: Toast appears on top, never replaces UI
              */
             showMessage(message, type = 'error') {
                 const messageContainer = document.getElementById('messageContainer');
@@ -3921,15 +3831,11 @@
                 
                 toastContainer.appendChild(toast);
                 
-                setTimeout(() => {
-                    toast.classList.add('show');
-                }, 100);
+                setTimeout(() => toast.classList.add('show'), 100);
                 
                 setTimeout(() => {
                     toast.classList.remove('show');
-                    setTimeout(() => {
-                        toastContainer.removeChild(toast);
-                    }, 300);
+                    setTimeout(() => toastContainer.removeChild(toast), 300);
                 }, 3000);
             }
 
@@ -3958,6 +3864,7 @@
 
             /**
              * Loads user preferences from localStorage
+             * OFFLINE SAFE: Works completely offline
              */
             loadUserPreferences() {
                 const savedEmail = localStorage.getItem('kynecta-chat-email');
@@ -3989,6 +3896,7 @@
 
             /**
              * Redirects to the chat page with a smooth transition
+             * OFFLINE SAFE: Works even when offline
              */
             redirectToChat() {
                 // Save user preferences
@@ -4028,8 +3936,6 @@
         // Global functions for forgot password modal
         function selectRecoveryMethod(method) {
             if (window.kynectaChatApp) {
-                window.kynectaChatApp.forgotPasswordMethod = method;
-                
                 if (method === 'email') {
                     executeRecovery('email');
                 } else if (method === 'phone' || method === 'voice') {
@@ -4041,15 +3947,14 @@
         async function executeRecovery(method) {
             if (!window.kynectaChatApp) return;
             
-            const { forgotPasswordIdentifier } = window.kynectaChatApp;
-            
             window.kynectaChatApp.showLoading(`Initiating ${method} recovery...`);
             
             if (method === 'email') {
                 try {
+                    const identifier = document.getElementById('forgotIdentifier').value;
                     // Use Firebase if available and online, otherwise simulate
                     if (window.kynectaChatApp.isOnline && window.firebaseAuth && window.firebaseAuth.isInitialized) {
-                        await window.firebaseAuth.sendPasswordResetEmail(forgotPasswordIdentifier);
+                        await window.firebaseAuth.sendPasswordResetEmail(identifier);
                     } else {
                         // Simulate for offline mode
                         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -4057,7 +3962,7 @@
                     }
                     
                     window.kynectaChatApp.hideLoading();
-                    window.kynectaChatApp.showToast('Recovery email sent successfully! Please check your inbox (and spam folder) for the link.', 'success');
+                    window.kynectaChatApp.showToast('Recovery email sent successfully! Please check your inbox.', 'success');
                     window.kynectaChatApp.hideForgotPasswordModal();
                 } catch (error) {
                     window.kynectaChatApp.hideLoading();
@@ -4068,37 +3973,26 @@
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 window.kynectaChatApp.hideLoading();
                 const action = method === 'phone' ? 'SMS code' : 'voice call';
-                window.kynectaChatApp.showToast(`A simulated ${action} has been initiated for ${forgotPasswordIdentifier}. Please check your phone for a code to complete the process.`, 'info');
+                window.kynectaChatApp.showToast(`A simulated ${action} has been initiated. Please check your phone for a code.`, 'info');
                 window.kynectaChatApp.hideForgotPasswordModal();
             }
         }
 
-        // Initialize the app when DOM is loaded
+        // UI FIRST: Initialize the app when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
             window.kynectaChatApp = new kynectaChatApp();
-            
-            // Check Firebase status after a delay (background operation)
-            setTimeout(() => {
-                if (!window.firebaseAuth || !window.firebaseAuth.isInitialized) {
-                    console.warn('⚠️ Firebase not initialized - using offline mode with localStorage');
-                    if (window.kynectaChatApp.isOnline) {
-                        window.kynectaChatApp.showToast('Running in offline mode. Some features may be limited.', 'info');
-                    }
-                }
-            }, 3000);
         });
 
-
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/service-worker.js")
-      .then(registration => {
-        console.log("Service Worker registered with scope:", registration.scope);
-      })
-      .catch(error => {
-        console.log("Service Worker registration failed:", error);
-      });
-  }
-</script> 
-    </script>
+        // Service Worker registration
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("/service-worker.js")
+                .then(registration => {
+                    console.log("Service Worker registered with scope:", registration.scope);
+                })
+                .catch(error => {
+                    console.log("Service Worker registration failed:", error);
+                });
+        }
+    </script> 
 </body>
 </html>
