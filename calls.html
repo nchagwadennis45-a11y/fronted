@@ -1677,6 +1677,66 @@
             pointer-events: auto !important;
             display: flex !important;
         }
+        
+        /* Offline call screen placeholder */
+        .offline-call-placeholder {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .offline-call-placeholder i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+        
+        .offline-call-placeholder h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .offline-call-placeholder p {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 30px;
+            max-width: 400px;
+            line-height: 1.5;
+        }
+        
+        /* Enhanced offline UI states */
+        .offline-ui-active .control-btn:not(#endCallBtn) {
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+        
+        .offline-ui-active .control-btn:not(#endCallBtn):hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        .offline-ui-active .call-controls {
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 100%);
+        }
+        
+        .offline-ui-active .call-header {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 100%);
+        }
+        
+        /* Offline video placeholder */
+        .offline-video-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -1849,8 +1909,8 @@
                         <i class="fas fa-video"></i>
                     </div>
                     <div class="call-info-text">
-                        <h4 id="callParticipants">Connecting...</h4>
-                        <p id="callStatus">Connecting...</p>
+                        <h4 id="callParticipants">Ready to call</h4>
+                        <p id="callStatus">Start a new call or wait for incoming calls</p>
                     </div>
                 </div>
                 <div class="call-duration" id="callDuration">00:00</div>
@@ -1858,6 +1918,12 @@
             
             <div class="video-grid" id="videoGrid">
                 <!-- Video streams will be added here -->
+                <div class="offline-call-placeholder" id="offlineCallPlaceholder" style="display: none;">
+                    <i class="fas fa-wifi-slash"></i>
+                    <h3>Offline Mode</h3>
+                    <p>You are currently offline. Call features require internet connection.</p>
+                    <p style="font-size: 14px; opacity: 0.6;">All call controls remain visible for exploration.</p>
+                </div>
             </div>
             
             <div class="reactions-container always-visible" id="reactionsContainer">
@@ -2228,6 +2294,7 @@
         const settingsToggle = document.getElementById('settingsToggle');
         const offlineOverlay = document.getElementById('offlineOverlay');
         const offlineIndicator = document.getElementById('offlineIndicator');
+        const offlineCallPlaceholder = document.getElementById('offlineCallPlaceholder');
         
         // Call sections
         const allCallsSection = document.getElementById('allCallsSection');
@@ -2268,6 +2335,10 @@
                     
                     // Listen for external calls from friends.html
                     listenForExternalCalls();
+                    
+                    // Update UI for offline/online state
+                    updateUIForConnectivity();
+                    
                 } catch (error) {
                     console.error('Error with cached user:', error);
                 }
@@ -2313,6 +2384,9 @@
                         
                         // Fix mobile layout on load
                         setTimeout(fixMobileLayout, 100);
+                        
+                        // Update UI for connectivity state
+                        updateUIForConnectivity();
                         
                     } else if (!currentUser) {
                         console.log('No user detected, redirecting to login');
@@ -2392,6 +2466,12 @@
                 section.classList.add('always-visible');
                 section.style.display = 'flex';
             });
+            
+            // Ensure call container UI elements are visible
+            const callUIElements = document.querySelectorAll('.call-controls, .call-header, .reactions-container, .video-grid');
+            callUIElements.forEach(element => {
+                element.classList.add('always-visible');
+            });
         }
         
         function updateOnlineStatus() {
@@ -2427,6 +2507,14 @@
             
             // Ensure buttons are visible
             ensureButtonsVisible();
+            
+            // Remove offline UI state
+            callContainer.classList.remove('offline-ui-active');
+            
+            // Hide offline placeholder if showing
+            if (offlineCallPlaceholder.style.display !== 'none') {
+                offlineCallPlaceholder.style.display = 'none';
+            }
         }
         
         function handleOffline() {
@@ -2437,7 +2525,7 @@
             // FEATURE 2: Show "Calls require internet" message
             showNotification('You are offline. Calls require internet connection.', 'warning');
             
-            // End any active calls
+            // End any active calls gracefully
             if (currentCall) {
                 endCall();
             }
@@ -2455,6 +2543,14 @@
             
             // Ensure buttons are visible
             ensureButtonsVisible();
+            
+            // Add offline UI state for visual indication
+            callContainer.classList.add('offline-ui-active');
+            
+            // Show offline placeholder in video grid if call container is active
+            if (callContainer.classList.contains('active')) {
+                offlineCallPlaceholder.style.display = 'flex';
+            }
         }
         
         function checkConnectivity() {
@@ -2561,6 +2657,13 @@
                 // Ensure all UI elements are visible
                 ensureButtonsVisible();
                 
+                // Update call status to show offline state
+                if (callContainer.classList.contains('active')) {
+                    document.getElementById('callParticipants').textContent = 'Offline Mode';
+                    document.getElementById('callStatus').textContent = 'Call features unavailable without internet';
+                    offlineCallPlaceholder.style.display = 'flex';
+                }
+                
             } else {
                 // Hide offline overlay
                 offlineOverlay.classList.remove('active');
@@ -2623,6 +2726,18 @@
                 
                 // Ensure all UI elements are visible
                 ensureButtonsVisible();
+                
+                // Remove offline UI state
+                callContainer.classList.remove('offline-ui-active');
+                
+                // Hide offline placeholder
+                offlineCallPlaceholder.style.display = 'none';
+                
+                // Update call status if in call
+                if (callContainer.classList.contains('active') && !currentCall) {
+                    document.getElementById('callParticipants').textContent = 'Ready to call';
+                    document.getElementById('callStatus').textContent = 'Start a new call or wait for incoming calls';
+                }
             }
         }
         
@@ -5214,7 +5329,7 @@
                 acceptCall('video');
             });
             
-            // Call control buttons
+            // Call control buttons - FEATURE 3: Always visible, even when offline
             document.getElementById('muteBtn').addEventListener('click', function() {
                 if (localStream) {
                     const audioTrack = localStream.getAudioTracks()[0];
@@ -5232,12 +5347,27 @@
                         
                         showNotification(isMuted ? 'Microphone muted' : 'Microphone unmuted', 'success');
                         
-                        broadcastDataMessage({
-                            type: 'call-control',
-                            action: 'mute-status',
-                            muted: isMuted,
-                            userId: currentUser.uid
-                        });
+                        // Only broadcast if online and in a call
+                        if (isOnline && currentCall) {
+                            broadcastDataMessage({
+                                type: 'call-control',
+                                action: 'mute-status',
+                                muted: isMuted,
+                                userId: currentUser.uid
+                            });
+                        }
+                    }
+                } else if (!isOnline) {
+                    // When offline, just toggle the UI state
+                    isMuted = !isMuted;
+                    this.classList.toggle('active', isMuted);
+                    const icon = this.querySelector('i');
+                    if (isMuted) {
+                        icon.className = 'fas fa-microphone-slash';
+                        showNotification('Microphone would be muted in a real call', 'info');
+                    } else {
+                        icon.className = 'fas fa-microphone';
+                        showNotification('Microphone would be unmuted in a real call', 'info');
                     }
                 }
             });
@@ -5259,12 +5389,27 @@
                         
                         showNotification(isVideoOff ? 'Video turned off' : 'Video turned on', 'success');
                         
-                        broadcastDataMessage({
-                            type: 'call-control',
-                            action: 'video-status',
-                            videoOff: isVideoOff,
-                            userId: currentUser.uid
-                        });
+                        // Only broadcast if online and in a call
+                        if (isOnline && currentCall) {
+                            broadcastDataMessage({
+                                type: 'call-control',
+                                action: 'video-status',
+                                videoOff: isVideoOff,
+                                userId: currentUser.uid
+                            });
+                        }
+                    }
+                } else if (!isOnline) {
+                    // When offline, just toggle the UI state
+                    isVideoOff = !isVideoOff;
+                    this.classList.toggle('active', isVideoOff);
+                    const icon = this.querySelector('i');
+                    if (isVideoOff) {
+                        icon.className = 'fas fa-video-slash';
+                        showNotification('Video would be turned off in a real call', 'info');
+                    } else {
+                        icon.className = 'fas fa-video';
+                        showNotification('Video would be turned on in a real call', 'info');
                     }
                 }
             });
@@ -5276,22 +5421,32 @@
                 const icon = this.querySelector('i');
                 if (isSpeakerOn) {
                     icon.className = 'fas fa-volume-mute';
-                    showNotification('Speaker muted', 'success');
+                    showNotification('Speaker would be muted in a real call', 'info');
                 } else {
                     icon.className = 'fas fa-volume-up';
-                    showNotification('Speaker unmuted', 'success');
+                    showNotification('Speaker would be unmuted in a real call', 'info');
                 }
             });
             
             document.getElementById('screenShareBtn').addEventListener('click', function() {
+                if (!isOnline) {
+                    showNotification('Screen sharing requires internet connection', 'error');
+                    return;
+                }
+                
                 if (isScreenSharing) {
                     this.classList.remove('active');
                 }
                 shareScreen();
             });
             
+            // More button - FEATURE 3: Always visible, opens side panel
             document.getElementById('moreBtn').addEventListener('click', function() {
                 callSidePanel.classList.toggle('collapsed');
+                // Show offline message if offline
+                if (!isOnline && callSidePanel.classList.contains('collapsed')) {
+                    showNotification('Call features panel opened (offline mode)', 'info');
+                }
             });
             
             document.getElementById('endCallBtn').addEventListener('click', function() {
@@ -5375,6 +5530,11 @@
                     return;
                 }
                 
+                if (!isOnline) {
+                    showNotification('Chat requires internet connection', 'error');
+                    return;
+                }
+                
                 const chatInput = document.getElementById('chatInput');
                 const message = chatInput.value.trim();
                 
@@ -5404,6 +5564,11 @@
                 toolBtn.addEventListener('click', function() {
                     if (!userSettings.whiteboard) {
                         showNotification('Whiteboard is disabled in your settings', 'warning');
+                        return;
+                    }
+                    
+                    if (!isOnline) {
+                        showNotification('Whiteboard requires internet connection', 'error');
                         return;
                     }
                     
@@ -5474,7 +5639,7 @@
                 document.getElementById('notesPreview').innerHTML = html;
             });
             
-            // Reactions
+            // Reactions - FEATURE 3: Work offline for UI exploration
             document.querySelectorAll('.reaction-btn').forEach(reactionBtn => {
                 reactionBtn.addEventListener('click', function() {
                     if (!userSettings.reactions) {
@@ -5485,12 +5650,17 @@
                     const reaction = this.dataset.reaction;
                     showFloatingReaction(reaction);
                     
-                    broadcastDataMessage({
-                        type: 'reaction',
-                        reaction: reaction,
-                        userId: currentUser.uid,
-                        timestamp: new Date().toISOString()
-                    });
+                    // Only broadcast if online and in a call
+                    if (isOnline && currentCall) {
+                        broadcastDataMessage({
+                            type: 'reaction',
+                            reaction: reaction,
+                            userId: currentUser.uid,
+                            timestamp: new Date().toISOString()
+                        });
+                    } else if (!isOnline) {
+                        showNotification('Reaction shown locally (offline mode)', 'info');
+                    }
                 });
             });
             
@@ -5600,6 +5770,16 @@
             });
             
             setupCallInvitationListener();
+            
+            // Initialize call container in view-only mode when offline
+            if (!isOnline) {
+                // Show call container with placeholder when offline
+                callContainer.classList.add('active');
+                document.getElementById('callParticipants').textContent = 'Offline Mode';
+                document.getElementById('callStatus').textContent = 'Call features require internet connection';
+                offlineCallPlaceholder.style.display = 'flex';
+                callContainer.classList.add('offline-ui-active');
+            }
         }
         
         function setupCallInvitationListener() {
