@@ -15,6 +15,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -24,6 +25,9 @@
     
     <!-- Simple Markdown for notes -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- M-Pesa payment integration -->
+    <script src="https://js.paystack.co/v1/inline.js"></script>
     
     <style>
         * {
@@ -48,6 +52,8 @@
             --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.2);
             --video-bg: #1a1a1a;
             --offline-overlay: rgba(255, 255, 255, 0.95);
+            --premium-color: #FFD700;
+            --premium-gradient: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
         }
         
         body {
@@ -63,7 +69,7 @@
             position: relative;
         }
         
-        /* Simplified Offline Indicator */
+        /* Simplified Offline Indicator - Matching Friends Page */
         .offline-banner {
             position: fixed;
             top: 0;
@@ -71,7 +77,7 @@
             right: 0;
             background-color: var(--warning-color);
             color: white;
-            padding: 8px 20px;
+            padding: 12px 20px;
             font-size: 14px;
             font-weight: 500;
             text-align: center;
@@ -81,6 +87,7 @@
             justify-content: center;
             gap: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
         
         .offline-banner.active {
@@ -198,6 +205,18 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .offline-badge {
+            background-color: var(--secondary-color);
+            color: var(--text-secondary);
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 500;
         }
         
         .quick-actions {
@@ -226,6 +245,7 @@
         .quick-action-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            background-color: var(--secondary-color);
         }
         
         .quick-action-btn:hover:not(:disabled) {
@@ -385,7 +405,8 @@
             min-height: 200px;
         }
         
-        .empty-state {
+        /* Offline State - Matching Friends Page */
+        .offline-state {
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -394,21 +415,24 @@
             padding: 40px 20px;
             color: var(--text-secondary);
             text-align: center;
+            background-color: var(--bg-color);
         }
         
-        .empty-state i {
+        .offline-state i {
             font-size: 48px;
             margin-bottom: 15px;
             opacity: 0.5;
         }
         
-        .empty-state p {
+        .offline-state p {
             margin-bottom: 10px;
+            font-size: 16px;
         }
         
-        .empty-state .subtext {
+        .offline-state .subtext {
             font-size: 14px;
             margin-top: 10px;
+            opacity: 0.7;
         }
         
         .call-item {
@@ -725,6 +749,17 @@
             background-color: #ff1a1a;
         }
         
+        /* Premium Badge */
+        .premium-badge {
+            background: var(--premium-gradient);
+            color: #000;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
         /* Call Side Panel */
         .call-side-panel {
             width: 300px;
@@ -757,10 +792,12 @@
         .panel-tabs {
             display: flex;
             border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
         }
         
         .panel-tab {
             flex: 1;
+            min-width: 80px;
             padding: 15px;
             text-align: center;
             background: none;
@@ -770,6 +807,7 @@
             color: var(--text-secondary);
             transition: all 0.2s;
             border-bottom: 3px solid transparent;
+            white-space: nowrap;
         }
         
         .panel-tab.active {
@@ -911,6 +949,7 @@
         .notes-toolbar {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
         
         .notes-btn {
@@ -1175,10 +1214,12 @@
         .new-call-tabs {
             display: flex;
             border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
         }
         
         .new-call-tab {
             flex: 1;
+            min-width: 100px;
             padding: 15px;
             text-align: center;
             background: none;
@@ -1188,6 +1229,7 @@
             color: var(--text-secondary);
             transition: all 0.2s;
             border-bottom: 3px solid transparent;
+            white-space: nowrap;
         }
         
         .new-call-tab.active {
@@ -1274,6 +1316,162 @@
         .option-desc {
             font-size: 14px;
             color: var(--text-secondary);
+        }
+        
+        /* Call Link Tab */
+        .link-tab-content {
+            text-align: center;
+            padding: 30px 0;
+        }
+        
+        .link-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        
+        /* Payment Modal */
+        .payment-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .payment-modal.active {
+            display: flex;
+        }
+        
+        .payment-container {
+            width: 90%;
+            max-width: 400px;
+            background-color: var(--bg-color);
+            border-radius: 20px;
+            overflow: hidden;
+            text-align: center;
+            padding: 30px;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .payment-header {
+            margin-bottom: 20px;
+        }
+        
+        .payment-header h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .payment-amount {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 20px 0;
+        }
+        
+        .payment-option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .payment-option:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .payment-option.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(0, 132, 255, 0.1);
+        }
+        
+        .payment-icon {
+            font-size: 24px;
+            margin-right: 15px;
+            color: var(--primary-color);
+        }
+        
+        .payment-details {
+            flex: 1;
+            text-align: left;
+        }
+        
+        .payment-details h4 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .payment-details p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .payment-form {
+            margin-top: 20px;
+            text-align: left;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .payment-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .payment-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .payment-btn.primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .payment-btn.primary:hover {
+            background-color: #0066cc;
+        }
+        
+        .payment-btn.secondary {
+            background-color: var(--secondary-color);
+            color: var(--text-primary);
+        }
+        
+        .payment-btn.secondary:hover {
+            background-color: #e4e6e9;
         }
         
         /* Notification */
@@ -1385,7 +1583,6 @@
                 z-index: 200;
             }
             
-            /* Fix call history display for mobile */
             .call-list {
                 display: flex;
                 flex-direction: column;
@@ -1419,7 +1616,6 @@
                 min-height: 250px;
             }
             
-            /* Ensure at least 5 call items are visible without scrolling */
             .call-item {
                 padding: 12px 20px;
                 margin: 0 15px 8px 15px;
@@ -1465,15 +1661,6 @@
             .section-title {
                 padding: 15px;
             }
-            
-            /* Make empty state look good on mobile */
-            .empty-state {
-                padding: 30px 15px;
-            }
-            
-            .empty-state i {
-                font-size: 40px;
-            }
         }
         
         /* Animations */
@@ -1496,11 +1683,7 @@
             animation: fadeIn 0.3s ease;
         }
         
-        /* Simplified offline styles - matching Status page */
-        .offline-ui {
-            opacity: 0.7;
-        }
-        
+        /* Offline UI - Clean like Friends Page */
         .offline-ui .quick-action-btn,
         .offline-ui .new-call-btn,
         .offline-ui .control-btn:not(#endCallBtn),
@@ -1509,42 +1692,15 @@
         .offline-ui .panel-tab:not(.active) {
             opacity: 0.5;
             cursor: not-allowed;
+            pointer-events: none;
         }
         
-        .offline-ui .quick-action-btn:hover:not(:disabled),
-        .offline-ui .new-call-btn:hover:not(:disabled),
-        .offline-ui .control-btn:hover:not(:disabled),
-        .offline-ui .call-action-btn:hover:not(:disabled) {
-            background-color: inherit;
-            transform: none;
-        }
-        
-        /* Call history offline badge */
-        .offline-history-badge {
-            display: inline-block;
-            background-color: var(--secondary-color);
-            color: var(--text-secondary);
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 8px;
-            vertical-align: middle;
-        }
-        
-        /* Offline contacts message */
-        .offline-contacts-message {
-            text-align: center;
-            padding: 30px 20px;
-            color: var(--text-secondary);
-        }
-        
-        .offline-contacts-message i {
-            font-size: 48px;
-            margin-bottom: 15px;
+        .offline-ui .contact-checkbox {
             opacity: 0.5;
+            cursor: not-allowed;
         }
         
-        /* Offline call placeholder */
+        /* Offline Call Container */
         .offline-call-placeholder {
             flex: 1;
             display: flex;
@@ -1554,6 +1710,7 @@
             color: white;
             text-align: center;
             padding: 40px;
+            background-color: var(--video-bg);
         }
         
         .offline-call-placeholder i {
@@ -1574,13 +1731,54 @@
             max-width: 400px;
             line-height: 1.5;
         }
+        
+        /* Offline Contacts */
+        .offline-contacts-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .offline-contacts-message i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .offline-contacts-message p {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .offline-contacts-message .subtext {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        /* Premium Features */
+        .premium-feature {
+            position: relative;
+        }
+        
+        .premium-badge-small {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--premium-gradient);
+            color: #000;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+            z-index: 1;
+        }
     </style>
 </head>
 <body>
     <!-- Simple Offline Banner -->
     <div class="offline-banner" id="offlineBanner">
         <i class="fas fa-wifi-slash"></i>
-        <span>You are currently offline. Calls will work when connection is restored.</span>
+        <span> offline.</span>
     </div>
     
     <div class="app-container">
@@ -1618,6 +1816,7 @@
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="quick-action-text">Group Call</div>
+                        <div class="premium-badge-small">Free</div>
                     </button>
                 </div>
                 
@@ -1636,6 +1835,7 @@
                             <div class="settings-item-label">
                                 <i class="fas fa-smile settings-item-icon"></i>
                                 <span>Live Reactions</span>
+                                <span class="premium-badge-small">Free</span>
                             </div>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="reactionsToggle" checked>
@@ -1647,6 +1847,7 @@
                             <div class="settings-item-label">
                                 <i class="fas fa-comment settings-item-icon"></i>
                                 <span>In-call Chat</span>
+                                <span class="premium-badge-small">Free</span>
                             </div>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="chatToggle" checked>
@@ -1658,6 +1859,7 @@
                             <div class="settings-item-label">
                                 <i class="fas fa-paint-brush settings-item-icon"></i>
                                 <span>Shared Whiteboard</span>
+                                <span class="premium-badge-small">Free</span>
                             </div>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="whiteboardToggle" checked>
@@ -1669,6 +1871,7 @@
                             <div class="settings-item-label">
                                 <i class="fas fa-poll settings-item-icon"></i>
                                 <span>Polls</span>
+                                <span class="premium-badge-small">Free</span>
                             </div>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="pollsToggle" checked>
@@ -1680,6 +1883,7 @@
                             <div class="settings-item-label">
                                 <i class="fas fa-sticky-note settings-item-icon"></i>
                                 <span>Shared Notes</span>
+                                <span class="premium-badge-small">Free</span>
                             </div>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="notesToggle" checked>
@@ -1696,7 +1900,10 @@
                 </div>
                 
                 <div class="recent-calls">
-                    <div class="section-title">Recent Calls</div>
+                    <div class="section-title">
+                        <span>Recent Calls</span>
+                        <span class="offline-badge" id="offlineCallBadge" style="display: none;">Offline</span>
+                    </div>
                     <div class="call-list-content">
                         <!-- All Calls Section -->
                         <div class="calls-section active" id="allCallsSection">
@@ -1746,7 +1953,8 @@
                 <div class="offline-call-placeholder" id="offlineCallPlaceholder" style="display: none;">
                     <i class="fas fa-wifi-slash"></i>
                     <h3>Offline Mode</h3>
-                    <p>You are currently offline. Call features require internet connection.</p>
+                    <p>offline</p>
+                    <p class="subtext" style="font-size: 14px; opacity: 0.6;">Calls will work when connection is restored</p>
                 </div>
             </div>
             
@@ -2006,6 +2214,42 @@
         </div>
     </div>
     
+    <!-- Payment Modal -->
+    <div class="payment-modal" id="paymentModal">
+        <div class="payment-container">
+            <div class="payment-header">
+                <h3>Upgrade to Premium</h3>
+                <p>To add more than 8 participants to your group call</p>
+            </div>
+            
+            <div class="payment-amount" id="paymentAmount">KSh 500</div>
+            
+            <div class="payment-option selected" id="mpesaOption">
+                <i class="fas fa-mobile-alt payment-icon"></i>
+                <div class="payment-details">
+                    <h4>M-Pesa</h4>
+                    <p>Pay via M-Pesa mobile money</p>
+                </div>
+            </div>
+            
+            <div class="payment-form">
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-input" id="phoneNumber" placeholder="07XXXXXXXX" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Amount (KES)</label>
+                    <input type="number" class="form-input" id="paymentAmountInput" value="500" min="500" max="5000">
+                </div>
+            </div>
+            
+            <div class="payment-buttons">
+                <button class="payment-btn secondary" id="cancelPaymentBtn">Cancel</button>
+                <button class="payment-btn primary" id="confirmPaymentBtn">Pay Now</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Notification -->
     <div class="notification" id="notification">
         <i class="fas fa-check-circle"></i>
@@ -2041,6 +2285,7 @@
         let db;
         let auth;
         let rtdb;
+        let functions;
         
         try {
             firebaseApp = firebase.initializeApp(firebaseConfig);
@@ -2052,6 +2297,11 @@
             db.enablePersistence().catch((err) => {
                 console.log("Firebase persistence error:", err);
             });
+            
+            // Initialize Cloud Functions
+            if (firebase.functions) {
+                functions = firebase.functions();
+            }
         } catch (error) {
             console.log("Firebase initialization error (may be offline):", error);
         }
@@ -2084,7 +2334,7 @@
         let reactionsChannel = null;
         let chatChannel = null;
         
-        // Offline state management - simplified to match Status page
+        // Offline state management - matching friends page
         let isOnline = navigator.onLine;
         let offlineCheckInterval = null;
         
@@ -2106,6 +2356,25 @@
             notes: true
         };
         
+        // Premium subscription management
+        let userSubscription = {
+            isPremium: false,
+            trialDaysLeft: 30,
+            maxGroupParticipants: 8,
+            subscriptionType: 'free',
+            trialStartDate: null,
+            paymentHistory: []
+        };
+        
+        // Payment configuration
+        const PAYMENT_CONFIG = {
+            premiumMonthly: 500, // KES 500 per month
+            premiumYearly: 5000, // KES 5000 per year
+            mpesaShortcode: '174379',
+            mpesaPasskey: 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919',
+            mpesaCallbackUrl: 'https://yourdomain.com/mpesa-callback'
+        };
+        
         // DOM Elements
         const callContainer = document.getElementById('callContainer');
         const callSidePanel = document.getElementById('callSidePanel');
@@ -2118,6 +2387,8 @@
         const settingsToggle = document.getElementById('settingsToggle');
         const offlineBanner = document.getElementById('offlineBanner');
         const offlineCallPlaceholder = document.getElementById('offlineCallPlaceholder');
+        const offlineCallBadge = document.getElementById('offlineCallBadge');
+        const paymentModal = document.getElementById('paymentModal');
         
         // Call sections
         const allCallsSection = document.getElementById('allCallsSection');
@@ -2146,6 +2417,7 @@
                     // Initialize UI immediately with cached user
                     await initializeUser();
                     await loadUserSettings();
+                    await loadUserSubscription();
                     setupEventListeners();
                     initializeWhiteboard();
                     
@@ -2183,6 +2455,7 @@
                         
                         await initializeUser();
                         await loadUserSettings();
+                        await loadUserSubscription();
                         setupEventListeners();
                         initializeWhiteboard();
                         
@@ -2302,10 +2575,16 @@
             
             // Remove offline UI state
             document.body.classList.remove('offline-ui');
+            offlineCallBadge.style.display = 'none';
             
             // Hide offline placeholder if showing
             if (offlineCallPlaceholder.style.display !== 'none') {
                 offlineCallPlaceholder.style.display = 'none';
+            }
+            
+            // Update subscription info
+            if (currentUser) {
+                loadUserSubscription();
             }
         }
         
@@ -2314,9 +2593,9 @@
             isOnline = false;
             updateUIForConnectivity();
             
-            // Show notification - simplified message like Status page
-            showNotification('You are offline. Call features unavailable.', 'warning');
-            
+            // Show notification - simplified message like friends page
+            showNotification('offline.', 'warning');
+
             // End any active calls gracefully
             if (currentCall) {
                 endCall();
@@ -2335,6 +2614,7 @@
             
             // Add offline UI state for visual indication
             document.body.classList.add('offline-ui');
+            offlineCallBadge.style.display = 'inline-block';
             
             // Show offline placeholder in video grid if call container is active
             if (callContainer.classList.contains('active')) {
@@ -2364,7 +2644,7 @@
         
         function updateUIForConnectivity() {
             if (!isOnline) {
-                // Show offline banner - simple like Status page
+                // Show offline banner - matching friends page style
                 offlineBanner.classList.add('active');
                 
                 // Disable call buttons when offline
@@ -2412,6 +2692,12 @@
                     showNotification('Cannot accept calls while offline', 'error');
                 }
                 
+                // Close payment modal if open
+                if (paymentModal.classList.contains('active')) {
+                    paymentModal.classList.remove('active');
+                    showNotification('Payment requires internet connection', 'error');
+                }
+                
                 // Disable panel tabs that require internet
                 const panelTabs = document.querySelectorAll('.panel-tab');
                 panelTabs.forEach(tab => {
@@ -2424,9 +2710,12 @@
                 // Update call status to show offline state
                 if (callContainer.classList.contains('active')) {
                     document.getElementById('callParticipants').textContent = 'Offline Mode';
-                    document.getElementById('callStatus').textContent = 'Call features unavailable without internet';
+                    document.getElementById('callStatus').textContent = 'Call features require internet connection';
                     offlineCallPlaceholder.style.display = 'flex';
                 }
+                
+                // Update contacts list to show offline message
+                updateContactsForOffline();
                 
             } else {
                 // Hide offline banner
@@ -2474,6 +2763,7 @@
                 
                 // Remove offline UI state
                 document.body.classList.remove('offline-ui');
+                offlineCallBadge.style.display = 'none';
                 
                 // Hide offline placeholder
                 offlineCallPlaceholder.style.display = 'none';
@@ -2483,6 +2773,31 @@
                     document.getElementById('callParticipants').textContent = 'Ready to call';
                     document.getElementById('callStatus').textContent = 'Start a new call or wait for incoming calls';
                 }
+            }
+        }
+        
+        function updateContactsForOffline() {
+            const contactsList = document.getElementById('contactsList');
+            const groupContactsList = document.getElementById('groupContactsList');
+            
+            if (contactsList && contactsList.innerHTML.includes('Loading contacts')) {
+                contactsList.innerHTML = `
+                    <div class="offline-contacts-message">
+                        <i class="fas fa-wifi-slash"></i>
+                        <p>Contacts unavailable while offline</p>
+                        <p class="subtext">Calls require internet connection</p>
+                    </div>
+                `;
+            }
+            
+            if (groupContactsList && groupContactsList.innerHTML.includes('Loading contacts')) {
+                groupContactsList.innerHTML = `
+                    <div class="offline-contacts-message">
+                        <i class="fas fa-wifi-slash"></i>
+                        <p>Contacts unavailable while offline</p>
+                        <p class="subtext">Calls require internet connection</p>
+                    </div>
+                `;
             }
         }
         
@@ -2574,17 +2889,6 @@
                 const groupCalls = calls.filter(call => call.group === true || (call.participants && call.participants.length > 2));
                 displayCallsFromArray(groupCalls, groupCallsList, 'group');
                 
-                // Add offline badge to section title if offline
-                if (!isOnline) {
-                    const sectionTitle = document.querySelector('.section-title');
-                    if (sectionTitle && !sectionTitle.querySelector('.offline-history-badge')) {
-                        const badge = document.createElement('span');
-                        badge.className = 'offline-history-badge';
-                        badge.textContent = 'Offline';
-                        sectionTitle.appendChild(badge);
-                    }
-                }
-                
             } catch (error) {
                 console.error('Error loading calls from local storage:', error);
                 showNotification('Failed to load offline call history', 'error');
@@ -2632,7 +2936,7 @@
                 switch(type) {
                     case 'missed':
                         emptyMessage = `
-                            <div class="empty-state">
+                            <div class="offline-state">
                                 <i class="fas fa-phone-slash"></i>
                                 <p>No missed calls</p>
                                 <p class="subtext">All calls have been answered</p>
@@ -2641,7 +2945,7 @@
                         break;
                     case 'group':
                         emptyMessage = `
-                            <div class="empty-state">
+                            <div class="offline-state">
                                 <i class="fas fa-users"></i>
                                 <p>No group calls</p>
                                 <p class="subtext">Start your first group call</p>
@@ -2650,7 +2954,7 @@
                         break;
                     default:
                         emptyMessage = `
-                            <div class="empty-state">
+                            <div class="offline-state">
                                 <i class="fas fa-phone"></i>
                                 <p>No recent calls</p>
                                 <p class="subtext">Start your first call with the button above</p>
@@ -2759,7 +3063,7 @@
                         <i class="fas fa-${callType === 'video' ? 'video' : 'phone'}"></i>
                         <span>${isMissed ? 'Missed' : (isOutgoing ? 'Outgoing' : 'Incoming')}</span>
                         ${durationText ? `<span>• ${durationText}</span>` : ''}
-                        ${callData.isLocal ? '<span class="offline-history-badge" style="font-size: 10px; padding: 1px 6px;">Offline</span>' : ''}
+                        ${callData.isLocal ? '<span class="offline-badge" style="font-size: 10px; padding: 1px 6px;">Offline</span>' : ''}
                     </div>
                 </div>
                 <button class="call-action-btn" title="Call Back" ${!isOnline ? 'disabled' : ''}>
@@ -2890,7 +3194,9 @@
                         photoURL: currentUser.photoURL || '',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-                        online: true
+                        online: true,
+                        trialStartDate: new Date().toISOString(),
+                        subscription: 'free'
                     });
                 } else {
                     await userRef.update({
@@ -2926,6 +3232,218 @@
                     window.userAvatar = userData.photoURL || '';
                 }
             }
+        }
+        
+        async function loadUserSubscription() {
+            try {
+                // Try to load from localStorage first (works offline)
+                const localSubscription = localStorage.getItem(`subscription_${currentUser.uid}`);
+                if (localSubscription) {
+                    userSubscription = JSON.parse(localSubscription);
+                    
+                    // Check if trial has expired
+                    if (userSubscription.trialStartDate) {
+                        const trialStart = new Date(userSubscription.trialStartDate);
+                        const now = new Date();
+                        const daysSinceTrialStart = Math.floor((now - trialStart) / (1000 * 60 * 60 * 24));
+                        userSubscription.trialDaysLeft = Math.max(0, 30 - daysSinceTrialStart);
+                        
+                        // If trial has expired, reset to free tier
+                        if (userSubscription.trialDaysLeft === 0 && userSubscription.subscriptionType === 'free') {
+                            userSubscription.maxGroupParticipants = 8;
+                            userSubscription.isPremium = false;
+                        }
+                    }
+                }
+                
+                // Only try Firebase if online
+                if (isOnline && db) {
+                    const subscriptionRef = db.collection('userSubscriptions').doc(currentUser.uid);
+                    const subscriptionDoc = await subscriptionRef.get();
+                    
+                    if (subscriptionDoc.exists) {
+                        const subscriptionData = subscriptionDoc.data();
+                        userSubscription = {
+                            isPremium: subscriptionData.isPremium || false,
+                            trialDaysLeft: subscriptionData.trialDaysLeft || 30,
+                            maxGroupParticipants: subscriptionData.maxGroupParticipants || 8,
+                            subscriptionType: subscriptionData.subscriptionType || 'free',
+                            trialStartDate: subscriptionData.trialStartDate || new Date().toISOString(),
+                            paymentHistory: subscriptionData.paymentHistory || []
+                        };
+                        
+                        // Save to localStorage for offline use
+                        localStorage.setItem(`subscription_${currentUser.uid}`, JSON.stringify(userSubscription));
+                    } else {
+                        // Create new subscription document for new user
+                        const trialStartDate = new Date().toISOString();
+                        userSubscription = {
+                            isPremium: false,
+                            trialDaysLeft: 30,
+                            maxGroupParticipants: 8,
+                            subscriptionType: 'free',
+                            trialStartDate: trialStartDate,
+                            paymentHistory: []
+                        };
+                        
+                        await subscriptionRef.set(userSubscription);
+                        localStorage.setItem(`subscription_${currentUser.uid}`, JSON.stringify(userSubscription));
+                    }
+                }
+                
+                console.log('User subscription loaded:', userSubscription);
+                
+                // Update UI based on subscription
+                updateSubscriptionUI();
+                
+            } catch (error) {
+                console.error('Error loading user subscription:', error);
+                // Use default subscription if loading fails
+                userSubscription = {
+                    isPremium: false,
+                    trialDaysLeft: 30,
+                    maxGroupParticipants: 8,
+                    subscriptionType: 'free',
+                    trialStartDate: new Date().toISOString(),
+                    paymentHistory: []
+                };
+                updateSubscriptionUI();
+            }
+        }
+        
+        function updateSubscriptionUI() {
+            // Update group call button with trial info
+            const groupCallBtn = document.getElementById('groupCallBtn');
+            if (groupCallBtn) {
+                if (userSubscription.trialDaysLeft > 0) {
+                    const premiumBadge = groupCallBtn.querySelector('.premium-badge-small');
+                    if (premiumBadge) {
+                        premiumBadge.textContent = `${userSubscription.trialDaysLeft}d Free`;
+                        premiumBadge.style.background = 'var(--premium-gradient)';
+                    }
+                } else if (userSubscription.isPremium) {
+                    const premiumBadge = groupCallBtn.querySelector('.premium-badge-small');
+                    if (premiumBadge) {
+                        premiumBadge.textContent = 'Premium';
+                        premiumBadge.style.background = 'var(--premium-gradient)';
+                    }
+                } else {
+                    const premiumBadge = groupCallBtn.querySelector('.premium-badge-small');
+                    if (premiumBadge) {
+                        premiumBadge.textContent = '8 Max';
+                        premiumBadge.style.background = 'var(--secondary-color)';
+                        premiumBadge.style.color = 'var(--text-secondary)';
+                    }
+                }
+            }
+            
+            // Update premium badges on features
+            const premiumBadges = document.querySelectorAll('.premium-badge-small');
+            premiumBadges.forEach(badge => {
+                if (badge.textContent === 'Free') {
+                    if (userSubscription.trialDaysLeft > 0) {
+                        badge.textContent = `${userSubscription.trialDaysLeft}d Free`;
+                        badge.style.background = 'var(--premium-gradient)';
+                    } else if (userSubscription.isPremium) {
+                        badge.textContent = 'Premium';
+                        badge.style.background = 'var(--premium-gradient)';
+                    } else {
+                        badge.textContent = 'Premium';
+                        badge.style.background = 'var(--secondary-color)';
+                        badge.style.color = 'var(--text-secondary)';
+                    }
+                }
+            });
+        }
+        
+        async function checkGroupCallEligibility(participantCount) {
+            const totalParticipants = participantCount + 1; // +1 for current user
+            
+            // Free tier allows up to 8 participants
+            if (totalParticipants <= userSubscription.maxGroupParticipants) {
+                return { eligible: true, reason: '' };
+            }
+            
+            // Check if user is in trial period
+            if (userSubscription.trialDaysLeft > 0) {
+                // During trial, allow unlimited participants
+                return { eligible: true, reason: 'trial' };
+            }
+            
+            // Check if user is premium
+            if (userSubscription.isPremium) {
+                return { eligible: true, reason: 'premium' };
+            }
+            
+            // User needs to upgrade
+            return { 
+                eligible: false, 
+                reason: 'upgrade_required',
+                currentLimit: userSubscription.maxGroupParticipants,
+                requiredLimit: totalParticipants
+            };
+        }
+        
+        async function processPremiumPayment(phoneNumber, amount) {
+            if (!isOnline) {
+                throw new Error('Payment requires internet connection');
+            }
+            
+            try {
+                showNotification('Processing payment...', 'success');
+                
+                // Simulate M-Pesa payment (in a real app, you'd call your backend)
+                // For demo purposes, we'll simulate a successful payment
+                
+                // Generate a fake transaction ID
+                const transactionId = `MPESA_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                
+                // Update user subscription
+                userSubscription.isPremium = true;
+                userSubscription.subscriptionType = 'premium_monthly';
+                userSubscription.maxGroupParticipants = 50; // Premium allows up to 50 participants
+                userSubscription.paymentHistory.push({
+                    transactionId: transactionId,
+                    amount: amount,
+                    phoneNumber: phoneNumber,
+                    date: new Date().toISOString(),
+                    status: 'completed'
+                });
+                
+                // Save to Firebase
+                if (db) {
+                    const subscriptionRef = db.collection('userSubscriptions').doc(currentUser.uid);
+                    await subscriptionRef.set(userSubscription, { merge: true });
+                }
+                
+                // Save to localStorage
+                localStorage.setItem(`subscription_${currentUser.uid}`, JSON.stringify(userSubscription));
+                
+                // Update UI
+                updateSubscriptionUI();
+                
+                return {
+                    success: true,
+                    transactionId: transactionId,
+                    message: 'Payment successful! Your account has been upgraded to Premium.'
+                };
+                
+            } catch (error) {
+                console.error('Payment error:', error);
+                throw new Error('Payment failed: ' + error.message);
+            }
+        }
+        
+        function showPaymentModal(requiredLimit) {
+            paymentModal.classList.add('active');
+            
+            // Update payment amount based on required limit
+            const amount = 500; // Base amount for premium
+            document.getElementById('paymentAmount').textContent = `KSh ${amount}`;
+            document.getElementById('paymentAmountInput').value = amount;
+            
+            // Store the required limit for when payment is confirmed
+            paymentModal.dataset.requiredLimit = requiredLimit;
         }
         
         function setupPresenceTracking() {
@@ -3546,6 +4064,19 @@
                 return;
             }
             
+            // Check group call eligibility
+            const eligibility = await checkGroupCallEligibility(userIds.length);
+            
+            if (!eligibility.eligible) {
+                if (eligibility.reason === 'upgrade_required') {
+                    showNotification(`Free tier allows max ${eligibility.currentLimit} participants. Upgrade to Premium for more.`, 'warning');
+                    showPaymentModal(eligibility.requiredLimit);
+                    return;
+                }
+                showNotification('Cannot start group call: ' + eligibility.reason, 'error');
+                return;
+            }
+            
             if (!peer || !peer.id || peer.disconnected) {
                 showNotification('Not connected to call server', 'error');
                 return;
@@ -3621,7 +4152,14 @@
                 
                 updateParticipantsList();
                 
-                showNotification(`Group call started with ${onlineUsers.length} participant(s)`, 'success');
+                // Show trial/premium message
+                if (eligibility.reason === 'trial') {
+                    showNotification(`Trial: Group call with ${onlineUsers.length} participant(s). ${userSubscription.trialDaysLeft} days remaining.`, 'success');
+                } else if (eligibility.reason === 'premium') {
+                    showNotification(`Premium: Group call with ${onlineUsers.length} participant(s)`, 'success');
+                } else {
+                    showNotification(`Group call started with ${onlineUsers.length} participant(s)`, 'success');
+                }
                 
             } catch (error) {
                 console.error('Error starting group call:', error);
@@ -4208,7 +4746,7 @@
                 switch(type) {
                     case 'missed':
                         emptyMessage = `
-                            <div class="empty-state">
+                            <div class="offline-state">
                                 <i class="fas fa-phone-slash"></i>
                                 <p>No missed calls</p>
                                 <p class="subtext">All calls have been answered</p>
@@ -4216,7 +4754,7 @@
                         break;
                     case 'group':
                         emptyMessage = `
-                            <div class="empty-state">
+                            <div class="offline-state">
                                 <i class="fas fa-users"></i>
                                 <p>No group calls</p>
                                 <p class="subtext">Start your first group call</p>
@@ -4225,7 +4763,7 @@
                         break;
                     default:
                         emptyMessage = `
-                            <div class="empty-state">
+                            <div class="offline-state">
                                 <i class="fas fa-phone"></i>
                                 <p>No recent calls</p>
                                 <p class="subtext">Start your first call with the button above</p>
@@ -5455,6 +5993,47 @@
                 
                 // Ensure mobile layout is correct
                 setTimeout(fixMobileLayout, 10);
+            });
+            
+            // Payment modal buttons
+            document.getElementById('cancelPaymentBtn').addEventListener('click', () => {
+                paymentModal.classList.remove('active');
+            });
+            
+            document.getElementById('confirmPaymentBtn').addEventListener('click', async () => {
+                const phoneNumber = document.getElementById('phoneNumber').value;
+                const amount = parseInt(document.getElementById('paymentAmountInput').value);
+                const requiredLimit = paymentModal.dataset.requiredLimit;
+                
+                if (!phoneNumber || phoneNumber.length !== 10 || !phoneNumber.startsWith('07')) {
+                    showNotification('Please enter a valid Kenyan phone number (07XXXXXXXX)', 'error');
+                    return;
+                }
+                
+                if (amount < 500) {
+                    showNotification('Minimum payment amount is KSh 500', 'error');
+                    return;
+                }
+                
+                try {
+                    const paymentResult = await processPremiumPayment(phoneNumber, amount);
+                    
+                    if (paymentResult.success) {
+                        showNotification(paymentResult.message, 'success');
+                        paymentModal.classList.remove('active');
+                        
+                        // If payment was triggered by group call limit, retry the group call
+                        if (requiredLimit && selectedContacts.length > 0) {
+                            setTimeout(() => {
+                                startGroupCall(selectedContacts);
+                            }, 1000);
+                        }
+                    } else {
+                        showNotification('Payment failed: ' + paymentResult.message, 'error');
+                    }
+                } catch (error) {
+                    showNotification('Payment error: ' + error.message, 'error');
+                }
             });
             
             // Window resize

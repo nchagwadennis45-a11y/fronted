@@ -1,13 +1,16 @@
-/* 
- * layout.css
- * Layout and UI styles for index.html (authentication page only)
- * DO NOT modify for other HTML files
- * Offline-first design: Never breaks when offline
- */
+/*
+layout.css
+
+Layout and UI styles for index.html (authentication page only)
+
+DO NOT modify for other HTML files
+
+Offline-first design: Never breaks when offline
+*/
 
 /* ============================================
-   BASE LAYOUT STYLES
-   ============================================ */
+BASE LAYOUT STYLES
+============================================ */
 
 /* Main page container */
 .kynecta-auth-page {
@@ -16,21 +19,22 @@
     flex-direction: column;
     position: relative;
     overflow-x: hidden;
+    background-color: #f5f7fa;
 }
 
 /* Dashboard container for background */
 .dashboard-container {
     min-height: 100vh;
-    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%);
     transition: all 0.5s ease-in-out;
     position: relative;
 }
 
 /* Background grid pattern */
 .bg-grid-pattern {
-    background-image: 
-        linear-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(99, 102, 241, 0.1) 1px, transparent 1px);
+    background-image:
+        linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
     background-size: 50px 50px;
 }
 
@@ -48,8 +52,8 @@
 }
 
 /* ============================================
-   ADVERTISEMENT SECTION (Left Side - Desktop)
-   ============================================ */
+ADVERTISEMENT SECTION (Left Side - Desktop)
+============================================ */
 
 /* Left advertisement container (Desktop only) */
 @media (min-width: 1024px) {
@@ -69,8 +73,8 @@
 }
 
 /* ============================================
-   AUTHENTICATION SECTION (Right Side)
-   ============================================ */
+AUTHENTICATION SECTION (Right Side)
+============================================ */
 
 /* Right authentication container */
 .auth-section {
@@ -131,8 +135,8 @@
 }
 
 /* ============================================
-   COMBINED SELECTION SECTION
-   ============================================ */
+COMBINED SELECTION SECTION
+============================================ */
 
 /* Selection container */
 #selectionSection {
@@ -142,6 +146,7 @@
     align-items: center;
     justify-content: center;
     padding: 1rem;
+    background-color: #ffffff;
 }
 
 @media (min-width: 768px) {
@@ -155,12 +160,12 @@
     position: fixed;
     bottom: 1.25rem;
     right: 1.25rem;
-    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    background: linear-gradient(135deg, #3B82F6, #2563eb);
     color: white;
     padding: 0.75rem 1.25rem;
     border-radius: 1.5rem;
     font-weight: bold;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
     z-index: 1000;
 }
 
@@ -174,7 +179,7 @@
 .selection-title {
     font-size: 1.75rem;
     font-weight: bold;
-    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    background: linear-gradient(135deg, #3B82F6, #2563eb);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -190,7 +195,7 @@
 
 /* Selection subtitle */
 .selection-subtitle {
-    color: #94a3b8;
+    color: #64748b;
     margin-bottom: 2rem;
     text-align: center;
 }
@@ -198,7 +203,7 @@
 /* Selection progress bar */
 .selection-progress {
     height: 4px;
-    background: rgba(255, 255, 255, 0.1);
+    background: #e2e8f0;
     border-radius: 2px;
     overflow: hidden;
     margin: 1.5rem 0;
@@ -206,7 +211,7 @@
 
 .selection-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+    background: linear-gradient(90deg, #3B82F6, #2563eb);
     transition: width 0.3s ease;
 }
 
@@ -233,8 +238,8 @@
 
 /* Selection card */
 .selection-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
     border-radius: 1rem;
     padding: 1rem;
     transition: all 0.3s ease;
@@ -246,6 +251,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 @media (max-width: 640px) {
@@ -257,14 +263,14 @@
 
 .selection-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+    border-color: #3B82F6;
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.1);
 }
 
 .selection-card.selected {
     border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.1);
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    background: #f0f7ff;
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
 }
 
 .selection-card.selected::after {
@@ -294,6 +300,8 @@
     justify-content: center;
     margin-bottom: 0.5rem;
     font-size: 1rem;
+    background: linear-gradient(135deg, #3B82F6, #2563eb);
+    color: white;
 }
 
 @media (max-width: 640px) {
@@ -312,14 +320,14 @@
     font-size: 0.6rem;
     padding: 2px 6px;
     border-radius: 10px;
-    background: rgba(0, 0, 0, 0.5);
+    background: #3b82f6;
     color: white;
 }
 
 /* Selection buttons */
 .selection-next-btn {
     width: 100%;
-    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    background: linear-gradient(135deg, #3B82F6, #2563eb);
     color: white;
     padding: 0.875rem;
     border-radius: 0.75rem;
@@ -329,11 +337,12 @@
     cursor: pointer;
     transition: all 0.3s ease;
     margin-top: 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .selection-next-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
 }
 
 .selection-next-btn:disabled {
@@ -342,20 +351,22 @@
 }
 
 .skip-selection-btn {
-    background: rgba(255, 255, 255, 0.05);
-    color: #94a3b8;
+    background: #ffffff;
+    color: #64748b;
     padding: 0.625rem 1.25rem;
     border-radius: 0.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid #e2e8f0;
     cursor: pointer;
     transition: all 0.3s ease;
     margin-top: 1rem;
     width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .skip-selection-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: #f8fafc;
+    color: #334155;
+    border-color: #cbd5e1;
 }
 
 @media (min-width: 640px) {
@@ -381,8 +392,8 @@
 }
 
 /* ============================================
-   LANDING SECTION
-   ============================================ */
+LANDING SECTION
+============================================ */
 
 /* Mobile header */
 .mobile-header {
@@ -420,7 +431,7 @@
 /* Primary action button */
 .primary-action-btn {
     width: 100%;
-    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    background: linear-gradient(135deg, #3B82F6, #2563eb);
     color: white;
     padding: 0.75rem 1rem;
     border-radius: 0.75rem;
@@ -433,36 +444,38 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .primary-action-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
 }
 
 /* Secondary action button */
 .secondary-action-btn {
     width: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    color: white;
+    background: #ffffff;
+    color: #3B82F6;
     padding: 0.75rem 1rem;
     border-radius: 0.75rem;
     font-size: 1rem;
     font-weight: 600;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    border: 1px solid #e2e8f0;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .secondary-action-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(59, 130, 246, 0.5);
+    background: #f8fafc;
+    border-color: #cbd5e1;
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 /* Quick login section */
@@ -471,11 +484,12 @@
 }
 
 .quick-login-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(34, 197, 94, 0.3);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 1rem;
     padding: 1rem;
     margin-bottom: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .quick-login-user-info {
@@ -489,7 +503,7 @@
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 50%;
-    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    background: linear-gradient(135deg, #3B82F6, #2563eb);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -504,21 +518,21 @@
 }
 
 .user-name {
-    color: white;
+    color: #1e293b;
     font-weight: 600;
     font-size: 0.875rem;
 }
 
 .user-email {
-    color: #94a3b8;
+    color: #64748b;
     font-size: 0.75rem;
 }
 
 .quick-login-btn {
     width: 100%;
-    background: rgba(34, 197, 94, 0.1);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    color: #86efac;
+    background: #10b981;
+    border: 1px solid #10b981;
+    color: white;
     padding: 0.625rem;
     border-radius: 0.5rem;
     cursor: pointer;
@@ -528,10 +542,11 @@
     justify-content: center;
     gap: 0.5rem;
     font-weight: 500;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .quick-login-btn:hover {
-    background: rgba(34, 197, 94, 0.2);
+    background: #0ea271;
     transform: scale(1.05);
 }
 
@@ -555,7 +570,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #94a3b8;
+    color: #64748b;
     font-size: 0.75rem;
 }
 
@@ -567,15 +582,16 @@
 
 /* Security features */
 .security-features {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 1rem;
     padding: 1rem;
     margin-top: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .security-title {
-    color: #22d3ee;
+    color: #3B82F6;
     font-size: 0.75rem;
     font-weight: 500;
     margin-bottom: 0.5rem;
@@ -600,7 +616,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #60a5fa;
+    color: #3B82F6;
     font-size: 0.75rem;
 }
 
@@ -611,12 +627,16 @@
 }
 
 /* ============================================
-   LOGIN SECTION
-   ============================================ */
+LOGIN SECTION
+============================================ */
 
 .login-container {
     max-width: 28rem;
     margin: 0 auto;
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .login-header {
@@ -651,7 +671,7 @@
 }
 
 .form-label {
-    color: #22d3ee;
+    color: #3B82F6;
     font-size: 0.75rem;
     font-weight: 500;
 }
@@ -663,7 +683,7 @@
 }
 
 .required-star {
-    color: #f87171;
+    color: #ef4444;
     margin-left: 0.125rem;
 }
 
@@ -675,14 +695,14 @@
 /* Form input */
 .form-input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    color: white;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
     padding: 0.625rem 2.5rem 0.625rem 2.5rem;
     border-radius: 0.75rem;
     font-size: 0.875rem;
     transition: all 0.3s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 @media (min-width: 768px) {
@@ -694,12 +714,12 @@
 
 .form-input:focus {
     outline: none;
-    border-color: #22d3ee;
-    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1);
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .form-input::placeholder {
-    color: #60a5fa;
+    color: #94a3b8;
     opacity: 0.7;
 }
 
@@ -709,7 +729,7 @@
     left: 0.75rem;
     top: 50%;
     transform: translateY(-50%);
-    color: #60a5fa;
+    color: #94a3b8;
     font-size: 0.875rem;
 }
 
@@ -726,7 +746,7 @@
     right: 0.75rem;
     top: 50%;
     transform: translateY(-50%);
-    color: #60a5fa;
+    color: #94a3b8;
     background: none;
     border: none;
     cursor: pointer;
@@ -738,7 +758,7 @@
 }
 
 .password-toggle:hover {
-    color: #22d3ee;
+    color: #3B82F6;
 }
 
 @media (min-width: 768px) {
@@ -750,12 +770,12 @@
 
 /* Error state */
 .input-error {
-    border-color: #f87171 !important;
-    box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.1) !important;
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
 }
 
 .error-message {
-    color: #f87171;
+    color: #ef4444;
     font-size: 0.75rem;
     margin-top: 0.125rem;
 }
@@ -777,41 +797,42 @@
 .remember-checkbox {
     width: 1rem;
     height: 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 0.25rem;
     cursor: pointer;
 }
 
 .remember-checkbox:checked {
-    background-color: #22d3ee;
-    border-color: #22d3ee;
+    background-color: #3B82F6;
+    border-color: #3B82F6;
 }
 
 .remember-label {
-    color: #94a3b8;
+    color: #64748b;
     font-size: 0.75rem;
     cursor: pointer;
 }
 
 .forgot-password {
-    color: #a78bfa;
+    color: #3B82F6;
     font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
     background: none;
     border: none;
     padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .forgot-password:hover {
-    color: #c4b5fd;
+    color: #2563eb;
 }
 
 /* Submit button */
 .submit-btn {
     width: 100%;
-    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    background: linear-gradient(135deg, #3B82F6, #2563eb);
     color: white;
     padding: 0.75rem;
     border-radius: 0.75rem;
@@ -825,11 +846,12 @@
     justify-content: center;
     gap: 0.5rem;
     margin-top: 0.5rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .submit-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
 }
 
 .submit-btn:disabled {
@@ -863,21 +885,22 @@
 }
 
 .switch-auth-link {
-    color: #a78bfa;
+    color: #3B82F6;
     font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
     background: none;
     border: none;
     padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .switch-auth-link:hover {
-    color: #c4b5fd;
+    color: #2563eb;
 }
 
 .back-button {
-    color: #60a5fa;
+    color: #64748b;
     font-size: 0.75rem;
     cursor: pointer;
     background: none;
@@ -886,19 +909,24 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .back-button:hover {
-    color: #22d3ee;
+    color: #3B82F6;
 }
 
 /* ============================================
-   REGISTER SECTION
-   ============================================ */
+REGISTER SECTION
+============================================ */
 
 .register-container {
     max-width: 28rem;
     margin: 0 auto;
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .register-header {
@@ -936,59 +964,59 @@
 .terms-checkbox {
     width: 1rem;
     height: 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 0.25rem;
     cursor: pointer;
     margin-top: 0.125rem;
 }
 
 .terms-checkbox:checked {
-    background-color: #22d3ee;
-    border-color: #22d3ee;
+    background-color: #3B82F6;
+    border-color: #3B82F6;
 }
 
 .terms-label {
-    color: #94a3b8;
+    color: #64748b;
     font-size: 0.75rem;
     cursor: pointer;
 }
 
 .terms-link {
-    color: #a78bfa;
+    color: #3B82F6;
     text-decoration: none;
 }
 
 .terms-link:hover {
-    color: #c4b5fd;
+    color: #2563eb;
     text-decoration: underline;
 }
 
 .terms-error {
-    color: #f87171;
+    color: #ef4444;
     font-size: 0.75rem;
     margin-top: 0.125rem;
 }
 
 /* ============================================
-   UI COMPONENTS
-   ============================================ */
+UI COMPONENTS
+============================================ */
 
 /* Glass effect */
 .glass-effect {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Cyber gradient */
 .cyber-gradient {
-    background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+    background: linear-gradient(135deg, #3B82F6 0%, #2563eb 100%);
 }
 
 /* Quantum glow */
 .quantum-glow {
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.15);
 }
 
 /* Success/Error messages */
@@ -1007,21 +1035,21 @@
 }
 
 .success-message {
-    background: rgba(34, 197, 94, 0.1);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    color: #86efac;
+    background: #d1fae5;
+    border: 1px solid #a7f3d0;
+    color: #047857;
 }
 
 .error-message {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #fca5a5;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
 }
 
 /* Security status */
 .security-status {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: #f0f7ff;
+    border: 1px solid #bfdbfe;
     border-radius: 1rem;
     padding: 1rem;
     margin-bottom: 1.5rem;
@@ -1045,7 +1073,7 @@
 }
 
 .security-icon {
-    color: #22d3ee;
+    color: #3B82F6;
     font-size: 1rem;
 }
 
@@ -1055,13 +1083,13 @@
 }
 
 .security-title {
-    color: #22d3ee;
+    color: #3B82F6;
     font-size: 0.75rem;
     font-weight: 500;
 }
 
 .security-subtitle {
-    color: #94a3b8;
+    color: #64748b;
     font-size: 0.625rem;
     margin-top: 0.125rem;
 }
@@ -1072,9 +1100,9 @@
 }
 
 .security-badge {
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #86efac;
+    background: #d1fae5;
+    border: 1px solid #a7f3d0;
+    color: #047857;
     padding: 0.25rem 0.5rem;
     border-radius: 1rem;
     font-size: 0.625rem;
@@ -1084,8 +1112,8 @@
 }
 
 /* ============================================
-   MOOD SELECTOR
-   ============================================ */
+MOOD SELECTOR
+============================================ */
 
 /* Desktop mood selector */
 .mood-selector {
@@ -1096,10 +1124,10 @@
 }
 
 .mood-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: #ffffff;
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
     padding: 0.5rem 0.75rem;
     border-radius: 1.25rem;
     cursor: pointer;
@@ -1107,10 +1135,11 @@
     display: flex;
     align-items: center;
     gap: 0.375rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .mood-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: #f8fafc;
     transform: scale(1.05);
 }
 
@@ -1118,15 +1147,16 @@
     position: absolute;
     top: 100%;
     left: 0;
-    background: rgba(0, 0, 0, 0.9);
+    background: #ffffff;
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid #e2e8f0;
     border-radius: 0.625rem;
     padding: 0.625rem;
     display: none;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.3125rem;
     min-width: 9.375rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .mood-options.show {
@@ -1144,28 +1174,28 @@
 
 .mood-option:hover {
     transform: scale(1.1);
-    border-color: white;
+    border-color: #3B82F6;
 }
 
 /* Mood color options */
 .mood-calm {
-    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    background: linear-gradient(135deg, #3B82F6, #2563eb);
 }
 
 .mood-energetic {
-    background: linear-gradient(135deg, #DC2626, #EA580C);
+    background: linear-gradient(135deg, #DC2626, #b91c1c);
 }
 
 .mood-creative {
-    background: linear-gradient(135deg, #7C3AED, #DB2777);
+    background: linear-gradient(135deg, #7C3AED, #6d28d9);
 }
 
 .mood-chill {
-    background: linear-gradient(135deg, #059669, #10B981);
+    background: linear-gradient(135deg, #059669, #047857);
 }
 
 .mood-romantic {
-    background: linear-gradient(135deg, #DB2777, #BE185D);
+    background: linear-gradient(135deg, #DB2777, #be185d);
 }
 
 .mood-default {
@@ -1184,20 +1214,20 @@
     width: 3.125rem;
     height: 3.125rem;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
+    background: #ffffff;
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .mobile-mood-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: #f8fafc;
     transform: scale(1.1);
 }
 
@@ -1205,16 +1235,16 @@
     position: absolute;
     bottom: 3.75rem;
     left: 0;
-    background: rgba(0, 0, 0, 0.95);
+    background: #ffffff;
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid #e2e8f0;
     border-radius: 1rem;
     padding: 0.75rem;
     display: none;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
     min-width: 10rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .mobile-mood-options.show {
@@ -1232,17 +1262,17 @@
 
 .mobile-mood-option:hover {
     transform: scale(1.1);
-    border-color: white;
+    border-color: #3B82F6;
 }
 
 .mobile-mood-option.active {
-    border-color: white;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    border-color: #3B82F6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
 }
 
 /* ============================================
-   CONNECTION STATUS
-   ============================================ */
+CONNECTION STATUS
+============================================ */
 
 .connection-status {
     position: fixed;
@@ -1256,26 +1286,23 @@
     display: flex;
     align-items: center;
     gap: 0.375rem;
+    color: white;
 }
 
 .connection-status.connected {
-    background: rgba(34, 197, 94, 0.8);
-    color: white;
+    background: #10b981;
 }
 
 .connection-status.connecting {
-    background: rgba(245, 158, 11, 0.8);
-    color: white;
+    background: #f59e0b;
 }
 
 .connection-status.disconnected {
-    background: rgba(239, 68, 68, 0.8);
-    color: white;
+    background: #ef4444;
 }
 
 .connection-status.offline {
-    background: rgba(107, 114, 128, 0.8);
-    color: white;
+    background: #6b7280;
 }
 
 /* Offline mode indicator */
@@ -1283,7 +1310,7 @@
     position: fixed;
     top: 3.75rem;
     right: 0.625rem;
-    background: rgba(107, 114, 128, 0.9);
+    background: #6b7280;
     color: white;
     padding: 0.375rem 0.75rem;
     border-radius: 0.9375rem;
@@ -1309,9 +1336,9 @@
     position: fixed;
     bottom: 1.25rem;
     left: 1.25rem;
-    background: rgba(34, 197, 94, 0.2);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    color: #86efac;
+    background: #d1fae5;
+    border: 1px solid #a7f3d0;
+    color: #047857;
     padding: 0.5rem 0.75rem;
     border-radius: 1.25rem;
     font-size: 0.75rem;
@@ -1326,8 +1353,8 @@
 }
 
 /* ============================================
-   TOAST NOTIFICATIONS
-   ============================================ */
+TOAST NOTIFICATIONS
+============================================ */
 
 #toastContainer {
     position: fixed;
@@ -1373,8 +1400,8 @@
 }
 
 /* ============================================
-   COOKIE BANNER
-   ============================================ */
+COOKIE BANNER
+============================================ */
 
 .cookie-banner {
     position: fixed;
@@ -1487,8 +1514,8 @@
 }
 
 /* ============================================
-   MODALS
-   ============================================ */
+MODALS
+============================================ */
 
 /* Forgot password modal */
 .forgot-password-modal {
@@ -1515,10 +1542,10 @@
 .forgot-password-content {
     width: 90%;
     max-width: 500px;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    background: #ffffff;
     border-radius: 20px;
     padding: 1.5rem;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     transform: translateY(20px);
     transition: transform 0.3s ease;
 }
@@ -1553,14 +1580,14 @@
 }
 
 .forgot-password-icon {
-    color: #60a5fa;
+    color: #3B82F6;
     font-size: 1.5rem;
 }
 
 .forgot-password-heading {
     font-size: 1.25rem;
     font-weight: bold;
-    color: white;
+    color: #1e293b;
 }
 
 @media (min-width: 768px) {
@@ -1570,7 +1597,7 @@
 }
 
 .close-forgot-password {
-    color: #94a3b8;
+    color: #64748b;
     background: none;
     border: none;
     cursor: pointer;
@@ -1579,7 +1606,7 @@
 }
 
 .close-forgot-password:hover {
-    color: white;
+    color: #1e293b;
 }
 
 /* Recovery option cards */
@@ -1590,8 +1617,8 @@
 }
 
 .recovery-option-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid transparent;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
     border-radius: 0.75rem;
     padding: 1rem;
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
@@ -1603,12 +1630,13 @@
 
 .recovery-option-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     border-color: #3b82f6;
 }
 
 .recovery-option-icon {
     font-size: 1.5rem;
+    color: #3B82F6;
 }
 
 @media (min-width: 768px) {
@@ -1624,7 +1652,7 @@
 .recovery-option-title {
     font-size: 1rem;
     font-weight: bold;
-    color: white;
+    color: #1e293b;
     margin-bottom: 0.25rem;
 }
 
@@ -1635,7 +1663,7 @@
 }
 
 .recovery-option-description {
-    color: #94a3b8;
+    color: #64748b;
     font-size: 0.75rem;
 }
 
@@ -1673,41 +1701,44 @@
     align-items: center;
     padding: 2rem;
     border-radius: 0.75rem;
-    background: rgba(255, 255, 255, 0.1);
+    background: #ffffff;
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid #e2e8f0;
     margin: 0 1rem;
 }
 
 .loading-icon {
-    color: #60a5fa;
+    color: #3B82F6;
     font-size: 3rem;
     margin-bottom: 1rem;
     animation: spin 1s linear infinite;
 }
 
 .loading-text {
-    color: #f1f5f9;
+    color: #1e293b;
     font-size: 1.125rem;
     font-weight: 500;
     text-align: center;
 }
 
 /* ============================================
-   RESPONSIVE UTILITIES
-   ============================================ */
+RESPONSIVE UTILITIES
+============================================ */
 
 /* Responsive text */
 .responsive-text {
     font-size: clamp(1rem, 4vw, 1.5rem);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .responsive-heading {
     font-size: clamp(1.5rem, 6vw, 2.5rem);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .responsive-subheading {
     font-size: clamp(1rem, 3vw, 1.25rem);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Mobile utilities */
@@ -1715,27 +1746,27 @@
     .mobile-padding {
         padding: 1rem;
     }
-    
+
     .mobile-margin {
         margin-bottom: 1.5rem;
     }
-    
+
     .mobile-text-center {
         text-align: center;
     }
-    
+
     .mobile-stack {
         flex-direction: column;
     }
-    
+
     .mobile-space-y > * + * {
         margin-top: 1rem;
     }
 }
 
 /* ============================================
-   SECURITY PROTECTION
-   ============================================ */
+SECURITY PROTECTION
+============================================ */
 
 /* Disable text selection and copying */
 .protected-content {
@@ -1769,55 +1800,58 @@ input[type="password"] {
 }
 
 /* ============================================
-   THEME VARIABLES AND CLASSES
-   ============================================ */
+THEME VARIABLES AND CLASSES
+============================================ */
 
 /* CSS Variables for dynamic colors */
 :root {
     --primary-color: #3B82F6;
-    --secondary-color: #8B5CF6;
+    --secondary-color: #2563eb;
     --accent-color: #60A5FA;
+    --background-color: #ffffff;
+    --text-color: #1e293b;
+    --border-color: #e2e8f0;
 }
 
 /* Theme classes */
 .theme-calm {
     --primary-color: #3B82F6;
-    --secondary-color: #8B5CF6;
+    --secondary-color: #2563eb;
     --accent-color: #60A5FA;
-    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 50%, #ffffff 100%) !important;
 }
 
 .theme-energetic {
     --primary-color: #DC2626;
-    --secondary-color: #EA580C;
+    --secondary-color: #b91c1c;
     --accent-color: #F97316;
-    background: linear-gradient(135deg, #431407 0%, #9a3412 50%, #431407 100%) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #fef2f2 50%, #ffffff 100%) !important;
 }
 
 .theme-creative {
     --primary-color: #7C3AED;
-    --secondary-color: #DB2777;
+    --secondary-color: #6d28d9;
     --accent-color: #A855F7;
-    background: linear-gradient(135deg, #1e1b4b 0%, #7e22ce 50%, #1e1b4b 100%) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #ffffff 100%) !important;
 }
 
 .theme-chill {
     --primary-color: #059669;
-    --secondary-color: #10B981;
+    --secondary-color: #047857;
     --accent-color: #34D399;
-    background: linear-gradient(135deg, #064e3b 0%, #059669 50%, #064e3b 100%) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 50%, #ffffff 100%) !important;
 }
 
 .theme-romantic {
     --primary-color: #DB2777;
-    --secondary-color: #BE185D;
+    --secondary-color: #be185d;
     --accent-color: #EC4899;
-    background: linear-gradient(135deg, #831843 0%, #db2777 50%, #831843 100%) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #fdf2f8 50%, #ffffff 100%) !important;
 }
 
 /* ============================================
-   VISIBILITY AND DISPLAY UTILITIES
-   ============================================ */
+VISIBILITY AND DISPLAY UTILITIES
+============================================ */
 
 /* Visibility utilities */
 .hidden {
@@ -1932,8 +1966,8 @@ input[type="password"] {
 }
 
 /* ============================================
-   ANIMATIONS
-   ============================================ */
+ANIMATIONS
+============================================ */
 
 /* Shake animation */
 @keyframes shake {
