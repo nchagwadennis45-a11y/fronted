@@ -284,11 +284,12 @@
         
         /* Main Content Area */
         .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;  /* Changed from overflow: hidden */
+    height: 100vh;     /* Add this to ensure it takes full height */
+}
         
         /* Top Header */
         .top-header {
@@ -444,12 +445,12 @@
         
         /* Tool Management */
         .tool-management {
-            padding: 0 20px;
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+    padding: 0 20px;
+    flex: 1;
+    overflow-y: auto;  /* Changed from overflow: hidden */
+    display: flex;
+    flex-direction: column;
+}
         
         .search-refresh-container {
             display: flex;
@@ -1484,6 +1485,49 @@
             font-weight: bold;
             font-size: 16px;
         }
+        /* ============================================= */
+/* FIX FOR TOOLS SCROLLING ISSUE */
+/* ============================================= */
+
+/* Make the main container properly scrollable */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Keep main container from scrolling */
+}
+
+/* Make the tool management area the scrollable section */
+.tool-management {
+    padding: 0 20px;
+    flex: 1;
+    overflow-y: auto; /* Enable scrolling here */
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 300px); /* Adjust based on your header height */
+}
+
+/* Tools grid should not scroll independently */
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    overflow: visible;
+    padding-right: 5px;
+    flex: 0 0 auto; /* Don't grow or shrink */
+    margin-bottom: 20px;
+}
+
+/* Why MoodChat stays at bottom */
+.why-moodchat {
+    margin-top: auto;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    border-top: 4px solid var(--primary-color);
+    flex-shrink: 0; /* Prevent shrinking */
+}
     </style>
 </head>
 <body>
