@@ -1418,7 +1418,10 @@
     let isOnline = navigator.onLine;
     
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM loaded, initializing navigation system...');
+        console.log('DOM loaded, initializing iframe controller...');
+        
+        // REMOVED: All authentication checks
+        // REMOVED: All redirects to index.html
         
         // Set up online/offline detection
         setupOnlineStatus();
@@ -1432,13 +1435,13 @@
         // Pre-load iframes with cache-busting
         preloadIframes();
         
-        // Hide loading screen after a short delay
+        // Hide loading screen and load messages page immediately
         setTimeout(() => {
             hideLoading();
-            // Default to messages page
+            // Load messages page immediately without authentication
             switchPage('messages');
-            console.log('Navigation system initialization complete');
-        }, 1000);
+            console.log('Iframe controller initialization complete - no auth required');
+        }, 500); // Reduced delay for faster loading
         
         // Listen for iframe messages
         window.addEventListener('message', handleIframeMessage);
@@ -1460,12 +1463,38 @@
             isOnline = true;
             console.log('App is online');
             document.getElementById('offlineIndicator').classList.remove('show');
+            
+            // Notify all iframes about online status
+            notifyIframesOnlineStatus();
         });
         
         window.addEventListener('offline', () => {
             isOnline = false;
-            console.log('App is offline');
+            console.log('App is offline - offline mode enabled');
             document.getElementById('offlineIndicator').classList.add('show');
+            
+            // Notify all iframes about offline status
+            notifyIframesOnlineStatus();
+        });
+    }
+    
+    function notifyIframesOnlineStatus() {
+        // Notify all loaded iframes about online/offline status
+        const iframeIds = ['messagesIframe', 'statusIframe', 'groupIframe', 'callsIframe', 
+                          'friendsIframe', 'settingsIframe', 'toolsIframe'];
+        
+        iframeIds.forEach(iframeId => {
+            const iframe = document.getElementById(iframeId);
+            if (iframe && iframesLoaded[iframeId]) {
+                try {
+                    iframe.contentWindow.postMessage({
+                        type: 'online_status',
+                        isOnline: isOnline
+                    }, '*');
+                } catch (e) {
+                    // Silently ignore cross-origin errors
+                }
+            }
         });
     }
     
@@ -1549,7 +1578,7 @@
                             version: appVersion
                         }, '*');
                     } catch (e) {
-                        console.log('Could not send message to iframe:', e);
+                        // Silently ignore cross-origin errors
                     }
                 };
                 
@@ -1566,6 +1595,7 @@
                                 <div class="p-4 text-center">
                                     <h3 class="text-lg font-semibold mb-2">Offline Mode</h3>
                                     <p class="text-gray-600">This page is not available offline.</p>
+                                    <p class="text-gray-500 text-sm mt-2">You can still use the chat feature in offline mode.</p>
                                 </div>
                             `;
                         } catch (e) {
@@ -1643,7 +1673,7 @@
                         isOnline: isOnline
                     }, '*');
                 } catch (e) {
-                    console.log('Could not send online status to iframe:', e);
+                    // Silently ignore cross-origin errors
                 }
             }
         }
@@ -1658,14 +1688,28 @@
                     break;
                     
                 case 'auth_required':
-                    // Forward auth requirement to parent if needed
-                    console.log('Auth required in iframe:', event.data.page);
+                    // REMOVED: Auth requirement handling - no auth needed
+                    console.log('Auth request ignored - no auth required');
                     break;
                     
                 case 'navigate_to':
                     // Navigate to a different page
                     if (event.data.page) {
                         switchPage(event.data.page);
+                    }
+                    break;
+                    
+                case 'offline_status':
+                    // Update offline message count
+                    if (event.data.messageCount !== undefined) {
+                        const offlineCount = document.getElementById('offlineMessageCount');
+                        if (offlineCount) {
+                            if (event.data.messageCount > 0) {
+                                offlineCount.textContent = `${event.data.messageCount} messages queued`;
+                            } else {
+                                offlineCount.textContent = '';
+                            }
+                        }
                     }
                     break;
             }
@@ -1740,7 +1784,7 @@
         }, 3000);
     }
     
-    console.log('Navigation system loaded successfully');
+    console.log('Iframe controller loaded successfully - no authentication required');
     </script>
 </body>
 </html>
