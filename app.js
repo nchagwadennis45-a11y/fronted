@@ -1,6 +1,7 @@
 // app.js - MoodChat Application Shell & Tab Controller
 // Enhanced with Firebase auth, offline detection, global state management
 // COMPLETE VERSION - All original features preserved plus new requirements
+// UPDATED: Network communication only when online with auto-resume
 
 // ============================================================================
 // CONFIGURATION
@@ -87,7 +88,8 @@ const CACHE_CONFIG = {
     MESSAGES_LIST: 'moodchat-cached-messages',
     USER_DATA: 'moodchat-cached-user-data',
     USER_PROFILE: 'moodchat-cached-user-profile',
-    SETTINGS: 'moodchat-settings'
+    SETTINGS: 'moodchat-settings',
+    NETWORK_STATUS: 'moodchat-network-status'
   }
 };
 
@@ -1199,8 +1201,152 @@ let isOnline = navigator.onLine;
 let syncQueue = []; // Queue for messages to sync when online
 let networkListeners = [];
 
+// NETWORK-DEPENDENT SERVICES STATE
+let networkDependentServices = {
+  firebase: false,
+  websocket: false,
+  api: false,
+  realtimeUpdates: false
+};
+
 // ============================================================================
-// ENHANCED FIREBASE INITIALIZATION WITH OFFLINE SUPPORT
+// ENHANCED NETWORK-DEPENDENT SERVICE MANAGER
+// ============================================================================
+
+const NETWORK_SERVICE_MANAGER = {
+  // List of services that require network connectivity
+  services: new Map(),
+  
+  // Service states
+  states: {
+    firebase: { running: false, initialized: false },
+    websocket: { running: false, connected: false },
+    api: { running: false },
+    realtimeUpdates: { running: false }
+  },
+  
+  // Register a network-dependent service
+  registerService: function(name, startFunction, stopFunction) {
+    this.services.set(name, {
+      start: startFunction,
+      stop: stopFunction,
+      running: false
+    });
+    console.log(`Registered network-dependent service: ${name}`);
+  },
+  
+  // Unregister a service
+  unregisterService: function(name) {
+    this.services.delete(name);
+    console.log(`Unregistered network-dependent service: ${name}`);
+  },
+  
+  // Start all services (call when online)
+  startAllServices: function() {
+    if (!isOnline) {
+      console.warn('Cannot start services: offline');
+      return;
+    }
+    
+    console.log('Starting all network-dependent services...');
+    
+    this.services.forEach((service, name) => {
+      if (!service.running) {
+        try {
+          service.start();
+          service.running = true;
+          this.states[name] = { ...this.states[name], running: true };
+          console.log(`Started service: ${name}`);
+        } catch (error) {
+          console.error(`Failed to start service ${name}:`, error);
+        }
+      }
+    });
+  },
+  
+  // Stop all services (call when going offline)
+  stopAllServices: function() {
+    console.log('Stopping all network-dependent services...');
+    
+    this.services.forEach((service, name) => {
+      if (service.running && service.stop) {
+        try {
+          service.stop();
+          service.running = false;
+          this.states[name] = { ...this.states[name], running: false };
+          console.log(`Stopped service: ${name}`);
+        } catch (error) {
+          console.error(`Failed to stop service ${name}:`, error);
+        }
+      } else {
+        service.running = false;
+        this.states[name] = { ...this.states[name], running: false };
+      }
+    });
+  },
+  
+  // Start a specific service
+  startService: function(name) {
+    if (!isOnline) {
+      console.warn(`Cannot start service ${name}: offline`);
+      return false;
+    }
+    
+    const service = this.services.get(name);
+    if (service && !service.running) {
+      try {
+        service.start();
+        service.running = true;
+        this.states[name] = { ...this.states[name], running: true };
+        console.log(`Started service: ${name}`);
+        return true;
+      } catch (error) {
+        console.error(`Failed to start service ${name}:`, error);
+        return false;
+      }
+    }
+    return false;
+  },
+  
+  // Stop a specific service
+  stopService: function(name) {
+    const service = this.services.get(name);
+    if (service && service.running && service.stop) {
+      try {
+        service.stop();
+        service.running = false;
+        this.states[name] = { ...this.states[name], running: false };
+        console.log(`Stopped service: ${name}`);
+        return true;
+      } catch (error) {
+        console.error(`Failed to stop service ${name}:`, error);
+        return false;
+      }
+    }
+    return false;
+  },
+  
+  // Check if a service is running
+  isServiceRunning: function(name) {
+    const service = this.services.get(name);
+    return service ? service.running : false;
+  },
+  
+  // Get service states
+  getServiceStates: function() {
+    const states = {};
+    this.services.forEach((service, name) => {
+      states[name] = {
+        running: service.running,
+        networkRequired: true
+      };
+    });
+    return states;
+  }
+};
+
+// ============================================================================
+// ENHANCED FIREBASE INITIALIZATION WITH NETWORK CHECK
 // ============================================================================
 
 function initializeFirebase() {
@@ -1209,7 +1355,19 @@ function initializeFirebase() {
     return;
   }
 
-  console.log('Initializing Firebase...');
+  console.log('Initializing Firebase with network check...');
+  
+  // Check network before proceeding
+  if (!isOnline) {
+    console.log('Skipping Firebase initialization: offline mode');
+    
+    // Mark auth as ready for offline mode
+    if (!authStateRestored) {
+      authStateRestored = true;
+      broadcastAuthReady();
+    }
+    return;
+  }
   
   try {
     // Check if Firebase is available
@@ -1226,12 +1384,14 @@ function initializeFirebase() {
       try {
         firebase.initializeApp(firebaseConfig);
         console.log('Firebase app initialized');
+        networkDependentServices.firebase = true;
       } catch (error) {
         console.warn('Firebase initialization error:', error);
         // Continue for offline functionality
       }
     } else {
       console.log('Firebase already initialized');
+      networkDependentServices.firebase = true;
     }
 
     // Get auth instance
@@ -1241,6 +1401,19 @@ function initializeFirebase() {
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
       .then(() => {
         console.log('Auth persistence set to LOCAL');
+        
+        // Register Firebase as a network-dependent service
+        NETWORK_SERVICE_MANAGER.registerService('firebase', () => {
+          console.log('Firebase service started');
+          // Firebase auth observer will be set up here
+        }, () => {
+          console.log('Firebase service stopped');
+          // Clean up Firebase listeners if needed
+          if (window._firebaseAuthUnsubscribe) {
+            window._firebaseAuthUnsubscribe();
+            window._firebaseAuthUnsubscribe = null;
+          }
+        });
         
         // Set up Firebase auth observer as the ONLY auth check
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -1272,6 +1445,13 @@ function initializeFirebase() {
         
         firebaseInitialized = true;
         console.log('Firebase auth initialized successfully');
+        
+        // Mark Firebase service as running
+        const firebaseService = NETWORK_SERVICE_MANAGER.services.get('firebase');
+        if (firebaseService) {
+          firebaseService.running = true;
+          NETWORK_SERVICE_MANAGER.states.firebase = { running: true, initialized: true };
+        }
       })
       .catch((error) => {
         console.error('Error setting auth persistence:', error);
@@ -1513,7 +1693,7 @@ function setupGlobalAuthAccess() {
     });
   };
   
-  // Login function with offline support
+  // Login function with network check
   window.login = function(email, password) {
     return new Promise((resolve, reject) => {
       if (!isOnline) {
@@ -1553,7 +1733,15 @@ function setupGlobalAuthAccess() {
         return;
       }
 
-      // Online login with Firebase
+      // Online login with Firebase - only if network is available
+      if (!firebaseInitialized || !window.firebase) {
+        reject({
+          success: false,
+          error: 'Firebase not available for online login'
+        });
+        return;
+      }
+
       firebase.auth().signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
           resolve({
@@ -1572,7 +1760,7 @@ function setupGlobalAuthAccess() {
     });
   };
   
-  // Logout function
+  // Logout function with network check
   window.logout = function() {
     return new Promise((resolve, reject) => {
       if (!isOnline || (currentUser && currentUser.isOffline)) {
@@ -1588,7 +1776,21 @@ function setupGlobalAuthAccess() {
         return;
       }
 
-      // Online logout
+      // Online logout - only if Firebase is available
+      if (!firebaseInitialized || !window.firebase) {
+        // Still clear local data
+        localStorage.removeItem('moodchat-auth');
+        localStorage.removeItem('moodchat-auth-state');
+        handleAuthStateChange(null);
+        resolve({
+          success: true,
+          offline: true,
+          message: 'Logged out (Firebase unavailable)'
+        });
+        return;
+      }
+
+      // Online logout with Firebase
       firebase.auth().signOut()
         .then(() => {
           localStorage.removeItem('moodchat-auth');
@@ -1623,11 +1825,11 @@ function setupGlobalAuthAccess() {
 }
 
 // ============================================================================
-// ENHANCED NETWORK DETECTION & BACKGROUND SYNC
+// ENHANCED NETWORK DETECTION & BACKGROUND SYNC WITH SERVICE CONTROL
 // ============================================================================
 
 function initializeNetworkDetection() {
-  console.log('Initializing network detection...');
+  console.log('Initializing network detection with service control...');
   
   // Set initial state
   updateNetworkStatus(navigator.onLine);
@@ -1644,15 +1846,36 @@ function initializeNetworkDetection() {
   
   // Start periodic sync check
   startSyncMonitor();
+  
+  // Register WebSocket service placeholder (to be implemented by chat.js)
+  NETWORK_SERVICE_MANAGER.registerService('websocket', 
+    () => startWebSocketService(),
+    () => stopWebSocketService()
+  );
+  
+  // Register API service
+  NETWORK_SERVICE_MANAGER.registerService('api',
+    () => startApiService(),
+    () => stopApiService()
+  );
+  
+  // Register realtime updates service
+  NETWORK_SERVICE_MANAGER.registerService('realtimeUpdates',
+    () => startRealtimeUpdates(),
+    () => stopRealtimeUpdates()
+  );
 }
 
 // Handle online event
 function handleOnline() {
-  console.log('Network: Online');
+  console.log('Network: Online - starting network-dependent services');
   updateNetworkStatus(true);
   
   // Broadcast network change to other files
   broadcastNetworkChange(true);
+  
+  // Start all network-dependent services
+  NETWORK_SERVICE_MANAGER.startAllServices();
   
   // BACKGROUND SYNC: Trigger sync when coming online
   triggerBackgroundSync();
@@ -1661,12 +1884,22 @@ function handleOnline() {
   if (!currentUser) {
     checkForRedirect(currentUser);
   }
+  
+  // Attempt Firebase initialization if not done yet
+  if (!firebaseInitialized && !NETWORK_SERVICE_MANAGER.isServiceRunning('firebase')) {
+    setTimeout(() => {
+      initializeFirebase();
+    }, 1000);
+  }
 }
 
 // Handle offline event
 function handleOffline() {
-  console.log('Network: Offline');
+  console.log('Network: Offline - stopping network-dependent services');
   updateNetworkStatus(false);
+  
+  // Stop all network-dependent services
+  NETWORK_SERVICE_MANAGER.stopAllServices();
   
   // Broadcast network change to other files
   broadcastNetworkChange(false);
@@ -1681,14 +1914,16 @@ function updateNetworkStatus(online) {
     isOnline: isOnline,
     isOffline: !isOnline,
     lastChange: new Date().toISOString(),
-    syncQueueSize: syncQueue.length
+    syncQueueSize: syncQueue.length,
+    services: NETWORK_SERVICE_MANAGER.getServiceStates()
   };
   
   // Dispatch custom event for other components
   const event = new CustomEvent('moodchat-network-change', {
     detail: { 
       isOnline: isOnline, 
-      isOffline: !isOnline 
+      isOffline: !isOnline,
+      services: NETWORK_SERVICE_MANAGER.getServiceStates()
     }
   });
   window.dispatchEvent(event);
@@ -1711,7 +1946,7 @@ function updateNetworkUI(online) {
     indicator.id = 'network-status-indicator';
     indicator.innerHTML = `
       <div class="offline-indicator">
-        <span>⚠️.</span>
+        <span>⚠️ Offline - Using cached data</span>
       </div>
     `;
     
@@ -1748,15 +1983,16 @@ function broadcastNetworkChange(isOnline) {
     type: 'network-status',
     isOnline: isOnline,
     isOffline: !isOnline,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    services: NETWORK_SERVICE_MANAGER.getServiceStates()
   };
   
   try {
-    localStorage.setItem('moodchat-network-status', JSON.stringify(status));
+    localStorage.setItem(CACHE_CONFIG.KEYS.NETWORK_STATUS, JSON.stringify(status));
     
     // Dispatch storage event for other tabs/windows
     window.dispatchEvent(new StorageEvent('storage', {
-      key: 'moodchat-network-status',
+      key: CACHE_CONFIG.KEYS.NETWORK_STATUS,
       newValue: JSON.stringify(status)
     }));
   } catch (e) {
@@ -1777,6 +2013,11 @@ function startSyncMonitor() {
 
 // BACKGROUND SYNC: Process queued messages
 function triggerBackgroundSync() {
+  if (!isOnline) {
+    console.log('Background sync skipped: offline');
+    return;
+  }
+  
   console.log('Background sync triggered - app is online');
   
   // Process queued messages
@@ -1787,6 +2028,59 @@ function triggerBackgroundSync() {
     window.syncOfflineData().catch(error => {
       console.warn('Background sync error:', error);
     });
+  }
+}
+
+// WebSocket service functions (to be implemented by chat.js)
+function startWebSocketService() {
+  console.log('Starting WebSocket service...');
+  // This would be implemented in chat.js
+  if (typeof window.startChatWebSocket === 'function') {
+    window.startChatWebSocket();
+  }
+}
+
+function stopWebSocketService() {
+  console.log('Stopping WebSocket service...');
+  // This would be implemented in chat.js
+  if (typeof window.stopChatWebSocket === 'function') {
+    window.stopChatWebSocket();
+  }
+}
+
+// API service functions
+function startApiService() {
+  console.log('Starting API service...');
+  // Enable API calls
+  networkDependentServices.api = true;
+  // Dispatch event that API is available
+  window.dispatchEvent(new CustomEvent('api-service-ready'));
+}
+
+function stopApiService() {
+  console.log('Stopping API service...');
+  // Disable API calls
+  networkDependentServices.api = false;
+}
+
+// Realtime updates service
+function startRealtimeUpdates() {
+  console.log('Starting realtime updates service...');
+  networkDependentServices.realtimeUpdates = true;
+  
+  // Start listening for updates
+  if (typeof window.startRealtimeListeners === 'function') {
+    window.startRealtimeListeners();
+  }
+}
+
+function stopRealtimeUpdates() {
+  console.log('Stopping realtime updates service...');
+  networkDependentServices.realtimeUpdates = false;
+  
+  // Stop listening for updates
+  if (typeof window.stopRealtimeListeners === 'function') {
+    window.stopRealtimeListeners();
   }
 }
 
@@ -1984,6 +2278,12 @@ function processStoreQueue(db, storeName) {
 
 // Send a queued item
 function sendQueuedItem(item, db, storeName) {
+  // Check if we're still online
+  if (!isOnline) {
+    console.log(`Cannot send ${storeName} ${item.id}: offline`);
+    return;
+  }
+  
   // Determine how to send based on type
   const sendFunction = getSendFunctionForType(item.type || storeName);
   
@@ -2128,7 +2428,7 @@ function updateItemAttempts(itemId, db, storeName, attempts) {
   };
 }
 
-// ENHANCED Safe API call wrapper with offline queuing and caching
+// ENHANCED Safe API call wrapper with network check and offline queuing
 function safeApiCall(apiFunction, data, type = 'action', cacheKey = null) {
   return new Promise((resolve, reject) => {
     // Always try cache first for GET-like operations
@@ -2194,6 +2494,26 @@ function safeApiCall(apiFunction, data, type = 'action', cacheKey = null) {
       return;
     }
     
+    // Check if API service is running
+    if (!networkDependentServices.api && type !== 'get') {
+      console.warn('API service not available, queuing request');
+      queueForSync({
+        apiFunction: apiFunction.name || 'anonymous',
+        data: data,
+        originalCall: new Date().toISOString()
+      }, type)
+      .then(queueResult => {
+        resolve({
+          success: false,
+          offline: false,
+          queued: queueResult.queued,
+          message: 'API service not available, request queued',
+          queueId: queueResult.id
+        });
+      });
+      return;
+    }
+    
     // Online - proceed with API call
     try {
       const result = apiFunction(data);
@@ -2240,7 +2560,7 @@ function safeApiCall(apiFunction, data, type = 'action', cacheKey = null) {
 }
 
 // ============================================================================
-// ENHANCED GLOBAL STATE EXPOSURE WITH OFFLINE SUPPORT
+// ENHANCED GLOBAL STATE EXPOSURE WITH NETWORK SERVICE CONTROL
 // ============================================================================
 
 function exposeGlobalStateToIframes() {
@@ -2278,6 +2598,8 @@ function exposeGlobalStateToIframes() {
     isOnline: () => isOnline,
     isOffline: () => !isOnline,
     getSyncQueueSize: () => syncQueue.length,
+    getServiceStates: () => NETWORK_SERVICE_MANAGER.getServiceStates(),
+    isServiceRunning: (name) => NETWORK_SERVICE_MANAGER.isServiceRunning(name),
     waitForOnline: () => {
       return new Promise((resolve) => {
         if (isOnline) {
@@ -2295,6 +2617,16 @@ function exposeGlobalStateToIframes() {
         }
       });
     }
+  };
+  
+  // Expose network service manager
+  window.MOODCHAT_GLOBAL.networkServices = {
+    registerService: (name, startFn, stopFn) => NETWORK_SERVICE_MANAGER.registerService(name, startFn, stopFn),
+    unregisterService: (name) => NETWORK_SERVICE_MANAGER.unregisterService(name),
+    startService: (name) => NETWORK_SERVICE_MANAGER.startService(name),
+    stopService: (name) => NETWORK_SERVICE_MANAGER.stopService(name),
+    startAllServices: () => NETWORK_SERVICE_MANAGER.startAllServices(),
+    stopAllServices: () => NETWORK_SERVICE_MANAGER.stopAllServices()
   };
   
   // Expose sync functions
@@ -2372,7 +2704,8 @@ function handleIframeMessage(event) {
         type: 'network-state',
         data: {
           isOnline: isOnline,
-          isOffline: !isOnline
+          isOffline: !isOnline,
+          services: NETWORK_SERVICE_MANAGER.getServiceStates()
         }
       }, event.origin);
       break;
@@ -2430,6 +2763,28 @@ function handleIframeMessage(event) {
         }, event.origin);
       }
       break;
+      
+    case 'start-service':
+      // Start a network service from iframe
+      if (data && data.name) {
+        const success = NETWORK_SERVICE_MANAGER.startService(data.name);
+        event.source.postMessage({
+          type: 'service-started',
+          data: { name: data.name, success: success }
+        }, event.origin);
+      }
+      break;
+      
+    case 'stop-service':
+      // Stop a network service from iframe
+      if (data && data.name) {
+        const success = NETWORK_SERVICE_MANAGER.stopService(data.name);
+        event.source.postMessage({
+          type: 'service-stopped',
+          data: { name: data.name, success: success }
+        }, event.origin);
+      }
+      break;
   }
 }
 
@@ -2452,7 +2807,7 @@ function handleStorageEvent(event) {
   }
   
   // Handle network state changes from other tabs
-  if (event.key === 'moodchat-network-status' && event.newValue) {
+  if (event.key === CACHE_CONFIG.KEYS.NETWORK_STATUS && event.newValue) {
     try {
       const networkState = JSON.parse(event.newValue);
       if (networkState.type === 'network-status') {
@@ -2495,7 +2850,8 @@ function broadcastStateToIframes() {
         type: 'network-state-update',
         data: {
           isOnline: isOnline,
-          isOffline: !isOnline
+          isOffline: !isOnline,
+          services: NETWORK_SERVICE_MANAGER.getServiceStates()
         }
       }, window.location.origin);
       
@@ -2561,7 +2917,7 @@ function initializeLoadedContent(container) {
 }
 
 // ============================================================================
-// TAB MANAGEMENT (ENHANCED WITH OFFLINE SUPPORT)
+// TAB MANAGEMENT (ENHANCED WITH NETWORK-AWARE DATA LOADING)
 // ============================================================================
 
 function switchTab(tabName) {
@@ -2602,7 +2958,7 @@ function showTab(tabName) {
     
     console.log(`Switched to tab: ${tabName}`);
     
-    // Trigger data load for the tab (works offline)
+    // Trigger data load for the tab (works offline, network-aware)
     triggerTabDataLoad(tabName);
   } else {
     console.error(`Tab container not found: ${config.container} for tab: ${tabName}`);
@@ -2612,15 +2968,16 @@ function showTab(tabName) {
   }
 }
 
-// Trigger data load for a tab (works online and offline)
+// Trigger data load for a tab (network-aware)
 function triggerTabDataLoad(tabName) {
-  console.log(`Triggering data load for tab: ${tabName} (online: ${isOnline})`);
+  console.log(`Triggering data load for tab: ${tabName} (online: ${isOnline}, services:`, NETWORK_SERVICE_MANAGER.getServiceStates(), ')');
   
   // Dispatch event for other components to load data
   const event = new CustomEvent('tab-data-request', {
     detail: {
       tab: tabName,
       isOnline: isOnline,
+      services: NETWORK_SERVICE_MANAGER.getServiceStates(),
       timestamp: new Date().toISOString()
     }
   });
@@ -2668,7 +3025,7 @@ async function loadExternalTab(tabName, htmlFile) {
     
     console.log(`Loaded external tab: ${tabName} from ${htmlFile}`);
     
-    // Trigger data load for the tab (works offline)
+    // Trigger data load for the tab (network-aware)
     triggerTabDataLoad(tabName);
     
   } catch (error) {
@@ -2904,7 +3261,7 @@ function showError(message) {
 }
 
 // ============================================================================
-// EVENT HANDLERS (UPDATED WITH OFFLINE SUPPORT)
+// EVENT HANDLERS (UPDATED WITH NETWORK-AWARE SUPPORT)
 // ============================================================================
 
 function setupEventListeners() {
@@ -3037,17 +3394,23 @@ function setupEventListeners() {
   
   // Listen for tab data requests
   window.addEventListener('tab-data-request', (event) => {
-    console.log(`Tab data requested: ${event.detail.tab}, online: ${event.detail.isOnline}`);
+    console.log(`Tab data requested: ${event.detail.tab}, online: ${event.detail.isOnline}, services:`, event.detail.services);
     
     // Broadcast to all components that might need to load data
     const broadcastEvent = new CustomEvent('load-tab-data', {
       detail: {
         tab: event.detail.tab,
         isOnline: event.detail.isOnline,
+        services: event.detail.services,
         timestamp: event.detail.timestamp
       }
     });
     window.dispatchEvent(broadcastEvent);
+  });
+  
+  // Listen for network service state changes
+  window.addEventListener('moodchat-network-change', (event) => {
+    console.log('Network state changed, services:', event.detail.services);
   });
 }
 
@@ -3089,11 +3452,11 @@ window.triggerFileInput = function(inputId) {
 };
 
 // ============================================================================
-// ENHANCED INITIALIZATION WITH OFFLINE SUPPORT
+// ENHANCED INITIALIZATION WITH NETWORK-AWARE SERVICE CONTROL
 // ============================================================================
 
 function initializeApp() {
-  console.log('Initializing MoodChat Application Shell...');
+  console.log('Initializing MoodChat Application Shell with network-aware services...');
   
   if (document.readyState !== 'loading') {
     runInitialization();
@@ -3113,7 +3476,10 @@ function runInitialization() {
     // STEP 3: Check for stored auth (offline mode)
     const hasStoredAuth = checkStoredAuth();
     
-    // STEP 4: Initialize Firebase (non-blocking)
+    // STEP 4: Initialize network detection and service manager
+    initializeNetworkDetection();
+    
+    // STEP 5: Initialize Firebase (network-aware - will check isOnline)
     setTimeout(() => {
       initializeFirebase();
       
@@ -3128,17 +3494,14 @@ function runInitialization() {
       }
     }, 100);
     
-    // STEP 5: Expose global state to all pages
+    // STEP 6: Expose global state to all pages
     exposeGlobalStateToIframes();
     
-    // STEP 6: Setup cross-page communication
+    // STEP 7: Setup cross-page communication
     setupCrossPageCommunication();
     
-    // STEP 7: Setup event listeners
+    // STEP 8: Setup event listeners
     setupEventListeners();
-    
-    // STEP 8: Initialize network detection (separate from auth)
-    initializeNetworkDetection();
     
     // Ensure sidebar is properly initialized
     const sidebar = document.querySelector(APP_CONFIG.sidebar);
@@ -3204,13 +3567,26 @@ function runInitialization() {
     console.log('MoodChat Application Shell initialized successfully');
     console.log('Auth state:', currentUser ? `User ${currentUser.uid}` : 'No user');
     console.log('Network:', isOnline ? 'Online' : 'Offline');
+    console.log('Network services:', NETWORK_SERVICE_MANAGER.getServiceStates());
     console.log('Settings loaded:', Object.keys(SETTINGS_SERVICE.current).length, 'categories');
-    console.log('Offline support: ENABLED with data caching');
+    console.log('Network-aware features:');
+    console.log('  ✓ Firebase only starts when online');
+    console.log('  ✓ WebSocket service controlled by network');
+    console.log('  ✓ API calls only when online and services running');
+    console.log('  ✓ Services auto-resume when coming online');
+    console.log('  ✓ All UI remains visible and functional offline');
     
     // Trigger initial data load for current tab
     setTimeout(() => {
       triggerTabDataLoad(currentTab);
     }, 500);
+    
+    // Start services if we're online
+    if (isOnline) {
+      setTimeout(() => {
+        NETWORK_SERVICE_MANAGER.startAllServices();
+      }, 1000);
+    }
     
   } catch (error) {
     console.error('Error during app initialization:', error);
@@ -3366,6 +3742,27 @@ function injectStyles() {
       display: inline-block;
     }
     
+    /* Service status indicator */
+    .service-status {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+    
+    .service-status-running {
+      background-color: #10b981;
+    }
+    
+    .service-status-stopped {
+      background-color: #ef4444;
+    }
+    
+    .service-status-pending {
+      background-color: #f59e0b;
+    }
+    
     @media (max-width: 767px) {
       #sidebar {
         position: fixed;
@@ -3404,7 +3801,7 @@ function injectStyles() {
 }
 
 // ============================================================================
-// ENHANCED PUBLIC API WITH OFFLINE SUPPORT
+// ENHANCED PUBLIC API WITH NETWORK SERVICE CONTROL
 // ============================================================================
 
 // Expose application functions
@@ -3427,8 +3824,12 @@ window.MOODCHAT_NETWORK = {
   isOnline: isOnline,
   isOffline: !isOnline,
   lastChange: null,
-  syncQueueSize: 0
+  syncQueueSize: 0,
+  services: NETWORK_SERVICE_MANAGER.getServiceStates()
 };
+
+// NETWORK SERVICE MANAGER
+window.NETWORK_SERVICE_MANAGER = NETWORK_SERVICE_MANAGER;
 
 // DATA CACHE SERVICE
 window.DATA_CACHE = DATA_CACHE;
@@ -3465,10 +3866,10 @@ window.clearMessageQueue = function() {
 
 window.processQueuedMessages = processQueuedMessages;
 
-// DATA LOADING FUNCTIONS WITH OFFLINE SUPPORT
+// DATA LOADING FUNCTIONS WITH NETWORK-AWARE SUPPORT
 window.loadTabData = function(tabName, forceRefresh = false) {
   return new Promise((resolve) => {
-    console.log(`Loading data for tab: ${tabName}, forceRefresh: ${forceRefresh}, online: ${isOnline}`);
+    console.log(`Loading data for tab: ${tabName}, forceRefresh: ${forceRefresh}, online: ${isOnline}, services:`, NETWORK_SERVICE_MANAGER.getServiceStates());
     
     if (!forceRefresh) {
       // Try cache first
@@ -3502,14 +3903,31 @@ window.loadTabData = function(tabName, forceRefresh = false) {
       }
     }
     
-    // Online mode - would make real API call
+    // Check if API service is running for online calls
+    if (!networkDependentServices.api && tabName !== 'static') {
+      console.warn(`API service not available for ${tabName}, using cached/mock data`);
+      const mockData = OFFLINE_DATA_PROVIDER.getTabData(tabName);
+      if (mockData) {
+        resolve({
+          success: true,
+          offline: false,
+          mock: true,
+          data: mockData,
+          message: 'API service not available, using mock data'
+        });
+        return;
+      }
+    }
+    
+    // Online mode with services available - would make real API call
     // This is where you'd integrate with actual API
-    console.log(`Would make API call for ${tabName} data`);
+    console.log(`Would make API call for ${tabName} data (services available)`);
     resolve({
       success: true,
       online: true,
+      services: NETWORK_SERVICE_MANAGER.getServiceStates(),
       data: null,
-      message: 'Online mode: Would make API request'
+      message: 'Online mode with services: Would make API request'
     });
   });
 };
@@ -3559,6 +3977,23 @@ window.isOffline = function() {
   return !isOnline;
 };
 
+// NETWORK SERVICE FUNCTIONS
+window.registerNetworkService = function(name, startFunction, stopFunction) {
+  return NETWORK_SERVICE_MANAGER.registerService(name, startFunction, stopFunction);
+};
+
+window.startNetworkService = function(name) {
+  return NETWORK_SERVICE_MANAGER.startService(name);
+};
+
+window.stopNetworkService = function(name) {
+  return NETWORK_SERVICE_MANAGER.stopService(name);
+};
+
+window.getNetworkServiceStates = function() {
+  return NETWORK_SERVICE_MANAGER.getServiceStates();
+};
+
 // CACHE MANAGEMENT FUNCTIONS
 window.cacheData = function(key, data, expirationMinutes = 60) {
   return DATA_CACHE.set(key, data, expirationMinutes * 60 * 1000);
@@ -3588,13 +4023,17 @@ if (document.readyState === 'loading') {
   setTimeout(initializeApp, 0);
 }
 
-console.log('MoodChat app.js loaded - Application shell ready with enhanced auth, offline support, and centralized settings service');
-console.log('Offline features:');
-console.log('  ✓ Firebase auth with offline support');
-console.log('  ✓ Auth works offline (localStorage cached)');
-console.log('  ✓ Data caching with expiration');
-console.log('  ✓ Mock data generation for all tabs');
+console.log('MoodChat app.js loaded - Application shell ready with enhanced network-aware services');
+console.log('Key features:');
+console.log('  ✓ Network-dependent services (Firebase, WebSocket, API) only run when online');
+console.log('  ✓ Services auto-stop when going offline');
+console.log('  ✓ Services auto-resume when coming online');
+console.log('  ✓ Firebase initialization skipped when offline');
+console.log('  ✓ WebSocket connections only when online');
+console.log('  ✓ API calls only when online and services available');
+console.log('  ✓ All UI remains visible and functional offline');
+console.log('  ✓ Mock data generation for offline use');
 console.log('  ✓ Background sync when online');
 console.log('  ✓ Safe redirects only when online + unauthenticated');
-console.log('  ✓ All UI remains functional offline');
+console.log('  ✓ Service state management and monitoring');
 console.log('  ✓ All original features preserved');
