@@ -312,25 +312,6 @@
             }
         }
 
-        /* Offline mode badge */
-        .offline-badge {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: linear-gradient(135deg, #6b7280, #4b5563);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            animation: fadeIn 0.5s ease-out;
-        }
-
         /* Enhanced form transitions */
         .form-transition-enter {
             animation: formEnter 0.5s ease-out forwards;
@@ -501,346 +482,9 @@
             transform: translateX(-30px);
             position: absolute;
         }
-        
-        /* New: Offline content styles */
-        .offline-content-notice {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1));
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .offline-content-notice h4 {
-            color: #fbbf24;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .offline-content-notice p {
-            color: #fde68a;
-            font-size: 0.875rem;
-        }
-        
-        /* New: Auto-login status */
-        .auto-login-status {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .auto-login-status h4 {
-            color: #4ade80;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .auto-login-status p {
-            color: #86efac;
-            font-size: 0.875rem;
-        }
-        
-        /* New: Login status indicators */
-        .login-status-indicator {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .login-status-online {
-            background: rgba(34, 197, 94, 0.2);
-            color: #86efac;
-            border: 1px solid rgba(34, 197, 94, 0.3);
-        }
-        
-        .login-status-offline {
-            background: rgba(245, 158, 11, 0.2);
-            color: #fde68a;
-            border: 1px solid rgba(245, 158, 11, 0.3);
-        }
-        
-        .login-status-firebase {
-            background: rgba(59, 130, 246, 0.2);
-            color: #93c5fd;
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-        
-        /* New: Offline access container */
-        .offline-access-container {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
-        }
-        
-        .offline-feature {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        
-        .offline-feature:last-child {
-            margin-bottom: 0;
-        }
-        
-        .offline-feature-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 0.75rem;
-            flex-shrink: 0;
-        }
-        
-        .offline-feature-text {
-            flex: 1;
-        }
-        
-        .offline-feature-text h4 {
-            color: white;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-            font-size: 0.875rem;
-        }
-        
-        .offline-feature-text p {
-            color: #cbd5e1;
-            font-size: 0.75rem;
-        }
-        
-        /* Auto-redirect overlay */
-        .auto-redirect-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #0f172a, #1e293b);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            opacity: 1;
-            transition: opacity 0.5s ease;
-        }
-        
-        .auto-redirect-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .auto-redirect-content {
-            text-align: center;
-            max-width: 400px;
-            padding: 2rem;
-        }
-        
-        .auto-redirect-logo {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-        }
-        
-        .auto-redirect-logo i {
-            font-size: 2.5rem;
-            color: white;
-        }
-        
-        .auto-redirect-text {
-            color: white;
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-        }
-        
-        .auto-redirect-subtext {
-            color: #94a3b8;
-            margin-bottom: 1.5rem;
-        }
-        
-        .auto-redirect-user {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 1rem;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .auto-redirect-user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            margin-right: 1rem;
-        }
-        
-        .auto-redirect-user-info h4 {
-            color: white;
-            margin: 0;
-            font-size: 1rem;
-        }
-        
-        .auto-redirect-user-info p {
-            color: #94a3b8;
-            margin: 0;
-            font-size: 0.875rem;
-        }
-        
-        .auto-redirect-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #3B82F6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
     </style>
 </head>
 <body class="h-full kynecta-auth-page theme-calm protected-content no-screenshot no-context-menu">
-    <!-- Auto-redirect Overlay (Shown while checking/redirecting) -->
-    <div id="autoRedirectOverlay" class="auto-redirect-overlay">
-        <div class="auto-redirect-content">
-            <div class="auto-redirect-logo">
-                <i class="fas fa-comments"></i>
-            </div>
-            <div class="auto-redirect-text">kynecta Chat</div>
-            <div class="auto-redirect-subtext">Loading your chat experience...</div>
-            <div id="autoRedirectUserInfo" class="auto-redirect-user hidden">
-                <div id="autoRedirectUserAvatar" class="auto-redirect-user-avatar"></div>
-                <div class="auto-redirect-user-info">
-                    <h4 id="autoRedirectUserName"></h4>
-                    <p id="autoRedirectUserEmail"></p>
-                </div>
-            </div>
-            <div id="autoRedirectSpinner" class="auto-redirect-spinner"></div>
-            <div id="autoRedirectMessage" class="text-blue-300 mt-4 text-sm"></div>
-            <button id="cancelAutoRedirect" class="mt-4 text-blue-400 hover:text-blue-300 text-sm hidden">
-                <i class="fas fa-times mr-1"></i>Cancel auto-login
-            </button>
-        </div>
-    </div>
-
-    <!-- DEFENSIVE: Offline mode indicator (hidden by default) -->
-    <div id="offlineModeIndicator" class="offline-mode-indicator hidden">
-        <i class="fas fa-wifi-slash"></i>
-        <span>Offline Mode</span>
-    </div>
-
-    <!-- Auto-login Indicator -->
-    <div id="autoLoginBadge" class="auto-login-badge hidden">
-        <i class="fas fa-bolt"></i>
-        <span>Auto-login Enabled</span>
-    </div>
-
-    <!-- Connection Status -->
-    <div class="connection-status connecting" id="connectionStatus">
-        <i class="fas fa-circle-notch fa-spin mr-2"></i>
-        <span id="connectionText">Connecting...</span>
-    </div>
-
-    <!-- Toast Container -->
-    <div id="toastContainer"></div>
-
-    <!-- Cookie Consent Banner -->
-    <div id="cookieBanner" class="cookie-banner">
-        <div class="cookie-content">
-            <div class="cookie-content-wrapper">
-                <div class="cookie-text">
-                    <h3 class="cookie-title">🍪 We Value Your Privacy</h3>
-                    <p class="cookie-description">
-                        We use cookies to enhance your chat experience, analyze traffic, and personalize content. 
-                        By continuing to use kynecta Chat, you agree to our use of cookies and our Privacy Policy.
-                    </p>
-                </div>
-                <div class="cookie-buttons">
-                    <button id="cookieReject" class="cookie-reject-btn">
-                        Reject Non-Essential
-                    </button>
-                    <button id="cookieAccept" class="cookie-accept-btn">
-                        Accept All
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Forgot Password Modal -->
-    <div id="forgotPasswordModal" class="forgot-password-modal">
-        <div class="forgot-password-content">
-            <div class="forgot-password-header">
-                <div class="forgot-password-title">
-                    <i class="forgot-password-icon fas fa-lock"></i>
-                    <h2 class="forgot-password-heading">Account Recovery</h2>
-                </div>
-                <button id="closeForgotPassword" class="close-forgot-password">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <!-- Step 1: Email/Identifier Input -->
-            <div id="forgot-step-1-email">
-                <p class="text-blue-300 mb-6 text-sm md:text-base">
-                    Please enter your registered email to find your account.
-                </p>
-                <form id="forgotEmailForm">
-                    <div class="form-field">
-                        <label for="forgotIdentifier" class="form-label">Email Address</label>
-                        <div class="input-container">
-                            <input type="email" id="forgotIdentifier" name="identifier" required placeholder="name@example.com"
-                                   class="form-input" autocomplete="off">
-                            <div class="input-icon">
-                                <i class="fas fa-envelope"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="submit" id="forgotSubmitBtn" class="submit-btn">
-                        <i class="fas fa-search mr-2"></i> Find Account
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Loading Modal -->
-    <div id="loadingModal" class="loading-modal">
-        <div class="loading-content">
-            <i class="loading-icon fas fa-spinner"></i>
-            <p class="loading-text" id="loadingText">Processing...</p>
-        </div>
-    </div>
-
-    <!-- Animated Background -->
-    <div class="fixed inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute w-2 h-2 bg-blue-400 rounded-full animate-pulse" style="top: 20%; left: 10%;"></div>
-        <div class="absolute w-1 h-1 bg-purple-400 rounded-full animate-pulse" style="top: 60%; left: 80%; animation-delay: 1s;"></div>
-        <div class="absolute w-3 h-3 bg-cyan-400 rounded-full animate-pulse" style="top: 40%; left: 50%; animation-delay: 2s;"></div>
-    </div>
-
     <!-- Main Layout -->
     <div id="mainLayout" class="flex min-h-screen">
         <!-- Permanent Advertisement Side (Left) -->
@@ -1162,7 +806,7 @@
                                         <h4 class="user-name" id="userDisplayName"></h4>
                                         <p class="user-email" id="userEmail"></p>
                                         <div class="flex items-center mt-1">
-                                            <span id="connectionTypeBadge" class="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">Online Ready</span>
+                                            <span id="connectionTypeBadge" class="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">Ready</span>
                                         </div>
                                     </div>
                                     <i class="fas fa-check-circle text-green-400 text-xl"></i>
@@ -1174,36 +818,6 @@
                             </div>
                             <p class="text-blue-300 text-xs mb-6 fade-in">Not <span id="quickLoginUserName"></span>? <button id="switchAccountBtn" class="text-purple-400 hover:text-purple-300">Switch account</button></p>
                         </div>
-                        
-                        <!-- Auto-login Status Display -->
-                        <div id="autoLoginStatus" class="auto-login-status hidden mb-6">
-                            <div class="flex items-start">
-                                <i class="fas fa-bolt text-green-400 mr-3 mt-0.5"></i>
-                                <div>
-                                    <h4>Auto-login Available</h4>
-                                    <p>Your session is preserved. You can login instantly using your cached credentials.</p>
-                                    <div class="flex flex-wrap mt-2">
-                                        <span id="autoLoginMethod" class="login-status-indicator login-status-firebase">
-                                            <i class="fas fa-fire mr-1"></i> Firebase Session
-                                        </span>
-                                        <span id="autoLoginCache" class="login-status-indicator login-status-online">
-                                            <i class="fas fa-database mr-1"></i> Cached Credentials
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Offline Content Notice -->
-                        <div id="offlineContentNotice" class="offline-content-notice hidden mb-6">
-                            <div class="flex items-start">
-                                <i class="fas fa-wifi-slash text-yellow-400 mr-3 mt-0.5"></i>
-                                <div>
-                                    <h4>Offline Mode Active</h4>
-                                    <p>You're currently offline. You can still login using cached credentials, but some features may be limited.</p>
-                                </div>
-                            </div>
-                        </div>
 
                         <div class="login-container">
                             <div class="login-header fade-in mb-8">
@@ -1212,18 +826,7 @@
                                     Continue your conversations with kynecta Chat
                                 </p>
                                 <div class="mt-2">
-                                    <span id="loginModeIndicator" class="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">Online & Offline Login Available</span>
-                                    <div class="flex flex-wrap mt-2">
-                                        <span id="loginStatusOnline" class="login-status-indicator login-status-online hidden">
-                                            <i class="fas fa-wifi mr-1"></i> Online
-                                        </span>
-                                        <span id="loginStatusOffline" class="login-status-indicator login-status-offline hidden">
-                                            <i class="fas fa-wifi-slash mr-1"></i> Offline
-                                        </span>
-                                        <span id="loginStatusFirebase" class="login-status-indicator login-status-firebase hidden">
-                                            <i class="fas fa-fire mr-1"></i> Firebase
-                                        </span>
-                                    </div>
+                                    <span id="loginModeIndicator" class="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">Always Available</span>
                                 </div>
                             </div>
 
@@ -1401,38 +1004,6 @@
                                     </button>
                                 </form>
                             </div>
-                            
-                            <!-- Offline Access Features -->
-                            <div id="offlineAccessContainer" class="offline-access-container hidden">
-                                <h3 class="text-lg font-bold text-white mb-4">📱 Offline Access Available</h3>
-                                <div class="offline-feature">
-                                    <div class="offline-feature-icon">
-                                        <i class="fas fa-user-check text-sm"></i>
-                                    </div>
-                                    <div class="offline-feature-text">
-                                        <h4>Cached Login</h4>
-                                        <p>Use previously saved credentials to login without internet</p>
-                                    </div>
-                                </div>
-                                <div class="offline-feature">
-                                    <div class="offline-feature-icon">
-                                        <i class="fas fa-history text-sm"></i>
-                                    </div>
-                                    <div class="offline-feature-text">
-                                        <h4>Session Persistence</h4>
-                                        <p>Your login session is preserved for quick access</p>
-                                    </div>
-                                </div>
-                                <div class="offline-feature">
-                                    <div class="offline-feature-icon">
-                                        <i class="fas fa-sync-alt text-sm"></i>
-                                    </div>
-                                    <div class="offline-feature-text">
-                                        <h4>Auto-sync when Online</h4>
-                                        <p>All data syncs automatically when connection is restored</p>
-                                    </div>
-                                </div>
-                            </div>
 
                             <!-- Switch to Register -->
                             <div class="auth-navigation fade-in mt-8">
@@ -1506,7 +1077,7 @@
                                     Start connecting with people worldwide today
                                 </p>
                                 <div class="mt-2">
-                                    <span id="registerModeIndicator" class="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">Works Online & Offline</span>
+                                    <span id="registerModeIndicator" class="text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">Always Available</span>
                                 </div>
                             </div>
 
@@ -1665,25 +1236,22 @@
 
             async init() {
                 try {
-                    console.log('🔄 Starting Firebase initialization (non-blocking)...');
+                    console.log('🔄 Starting authentication initialization (non-blocking)...');
                     
-                    // Check online status
+                    // Always show connected status to user
+                    this.updateConnectionStatus('connected', 'Ready');
+                    
+                    // Check online status silently
                     if (!this.isOnline) {
                         this.offlineMode = true;
-                        this.updateConnectionStatus('offline', 'Offline Mode');
-                        console.log('📴 App starting in offline mode');
+                        console.log('📴 App starting with local authentication');
                         this.isInitialized = false;
-                        
-                        // Show offline indicator but allow app to function
-                        this.showOfflineIndicator();
                         return;
                     }
                     
-                    this.updateConnectionStatus('connecting', 'Connecting...');
-                    
                     // DEFENSIVE AUTH: Check if Firebase is available
                     if (typeof firebase === 'undefined') {
-                        throw new Error('Firebase SDK not loaded');
+                        throw new Error('Authentication services not loaded');
                     }
                     
                     // OFFLINE SAFE: Initialize Firebase with timeout
@@ -1700,7 +1268,7 @@
                     try {
                         await this.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                         this.persistentSession = true;
-                        console.log('✅ Firebase persistence set to LOCAL');
+                        console.log('✅ Authentication persistence set');
                     } catch (persistenceError) {
                         console.warn('⚠️ Could not set persistence:', persistenceError);
                     }
@@ -1714,53 +1282,31 @@
                             }, reject);
                             
                             // Timeout after 5 seconds (faster)
-                            setTimeout(() => reject(new Error('Firebase connection timeout')), 5000);
+                            setTimeout(() => reject(new Error('Authentication connection timeout')), 5000);
                         });
                         
                         this.isInitialized = true;
                         this.offlineMode = false;
-                        this.updateConnectionStatus('connected', 'Connected');
                         
                         // Show security status briefly
                         this.showSecurityStatus();
                         
-                        console.log('✅ Firebase initialized successfully!');
+                        console.log('✅ Authentication initialized successfully!');
                         
                     } catch (connectError) {
-                        // OFFLINE SAFE: Continue in offline mode
-                        console.warn('⚠️ Firebase connection test failed, continuing offline:', connectError);
+                        // OFFLINE SAFE: Continue with local authentication
+                        console.warn('⚠️ Connection test failed, continuing with local authentication:', connectError);
                         this.isInitialized = false;
                         this.offlineMode = true;
-                        this.updateConnectionStatus('offline', 'Offline Mode');
-                        this.showOfflineIndicator();
                     }
                     
                     // Check for auto-login in background
-                    this.checkFirebaseAutoLogin();
+                    this.checkAutoLogin();
                     
                 } catch (error) {
-                    // DEFENSIVE AUTH: Never crash on Firebase errors
-                    console.error('❌ Firebase initialization failed:', error);
+                    // DEFENSIVE AUTH: Never crash on authentication errors
+                    console.error('❌ Authentication initialization failed:', error);
                     this.offlineMode = true;
-                    this.updateConnectionStatus('offline', 'Offline Mode');
-                    this.showOfflineIndicator();
-                }
-            }
-
-            showOfflineIndicator() {
-                // UI FIRST: Show non-blocking offline indicator
-                const indicator = document.getElementById('offlineModeIndicator');
-                if (indicator) {
-                    indicator.classList.remove('hidden');
-                    // Auto-hide after 5 seconds
-                    setTimeout(() => {
-                        indicator.classList.add('hidden');
-                    }, 5000);
-                }
-                
-                // Show toast notification
-                if (window.kynectaChatApp) {
-                    window.kynectaChatApp.showToast('Running in offline mode. Using cached data.', 'info');
                 }
             }
 
@@ -1775,12 +1321,12 @@
                 }
             }
 
-            async checkFirebaseAutoLogin() {
+            async checkAutoLogin() {
                 try {
-                    // OFFLINE SAFE: Check if user is already logged in via Firebase
-                    const currentUser = this.auth.currentUser;
+                    // Check if user is already logged in
+                    const currentUser = this.auth ? this.auth.currentUser : null;
                     if (currentUser) {
-                        console.log('✅ User already logged in via Firebase:', currentUser.email);
+                        console.log('✅ User already logged in:', currentUser.email);
                         // Sync with localStorage
                         const savedUser = localStorage.getItem('kynecta-chat-user');
                         if (!savedUser && window.kynectaChatApp) {
@@ -1792,8 +1338,8 @@
                                 autoLogin: true,
                                 lastLogin: new Date().toISOString(),
                                 isOfflineUser: false,
-                                firebaseSession: true,
-                                firebaseUid: currentUser.uid
+                                session: true,
+                                sessionUid: currentUser.uid
                             };
                             localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
                             localStorage.setItem('kynecta-chat-auto-login', 'true');
@@ -1808,20 +1354,20 @@
                     
                     return false;
                 } catch (error) {
-                    // DEFENSIVE AUTH: Ignore Firebase errors for auto-login
-                    console.error('❌ Firebase auto-login check failed:', error);
+                    // DEFENSIVE AUTH: Ignore authentication errors for auto-login
+                    console.error('❌ Auto-login check failed:', error);
                     return false;
                 }
             }
 
             async registerUser(email, password, displayName, mobile = null) {
-                // OFFLINE SAFE: Check if we're offline
+                // Always try local first for speed, then remote if available
                 if (!this.isOnline || this.offlineMode) {
-                    return this.registerUserOffline(email, password, displayName, mobile);
+                    return this.registerUserLocal(email, password, displayName, mobile);
                 }
                 
                 if (!this.isInitialized) {
-                    throw new Error('Firebase not initialized. Working in offline mode.');
+                    throw new Error('Authentication not initialized. Working with local authentication.');
                 }
 
                 try {
@@ -1834,7 +1380,7 @@
                         displayName: displayName
                     });
                     
-                    // DEFENSIVE AUTH: Wrap Firestore write in try/catch
+                    // DEFENSIVE AUTH: Wrap database write in try/catch
                     try {
                         const userDocRef = this.db.collection('chatters').doc(user.uid);
                         await userDocRef.set({
@@ -1860,9 +1406,9 @@
                             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                             isOfflineUser: false
                         });
-                    } catch (firestoreError) {
-                        // OFFLINE SAFE: Continue even if Firestore fails
-                        console.warn('⚠️ Firestore write failed, but user created:', firestoreError);
+                    } catch (dbError) {
+                        // OFFLINE SAFE: Continue even if database fails
+                        console.warn('⚠️ Database write failed, but user created:', dbError);
                     }
                     
                     // Store user info in localStorage for INSTANT auto-login (both online and offline)
@@ -1874,12 +1420,12 @@
                         isNewUser: true,
                         autoLogin: true,
                         lastLogin: new Date().toISOString(),
-                        passwordHash: btoa(password + '_' + email), // Store for offline validation
+                        passwordHash: btoa(password + '_' + email), // Store for local validation
                         hasPremiumTrial: true,
                         premiumExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                         isOfflineUser: false,
-                        firebaseUid: user.uid,
-                        firebaseSession: true
+                        sessionUid: user.uid,
+                        session: true
                     };
                     
                     localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
@@ -1905,9 +1451,9 @@
                             errorMessage = 'Invalid email address. Please check your email.';
                             break;
                         case 'auth/network-request-failed':
-                            // OFFLINE SAFE: Fallback to offline registration
-                            console.log('🌐 Network error detected, switching to offline registration...');
-                            return this.registerUserOffline(email, password, displayName, mobile);
+                            // OFFLINE SAFE: Fallback to local registration
+                            console.log('🌐 Network error detected, switching to local registration...');
+                            return this.registerUserLocal(email, password, displayName, mobile);
                         default:
                             errorMessage = `Registration failed: ${error.message}`;
                     }
@@ -1916,13 +1462,13 @@
                 }
             }
             
-            async registerUserOffline(email, password, displayName, mobile = null) {
+            async registerUserLocal(email, password, displayName, mobile = null) {
                 try {
-                    // Generate a secure offline user ID
-                    const offlineUserId = 'offline_' + Date.now() + '_' + btoa(email).substr(0, 12) + '_' + Math.random().toString(36).substr(2, 6);
+                    // Generate a secure local user ID
+                    const localUserId = 'local_' + Date.now() + '_' + btoa(email).substr(0, 12) + '_' + Math.random().toString(36).substr(2, 6);
                     
                     const userData = {
-                        uid: offlineUserId,
+                        uid: localUserId,
                         email: email,
                         displayName: displayName,
                         mobile: mobile || '',
@@ -1933,59 +1479,59 @@
                         hasPremiumTrial: true,
                         premiumExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                         isOfflineUser: true,
-                        registeredOffline: true,
-                        offlineRegistrationDate: new Date().toISOString(),
-                        firebaseSession: false
+                        registeredLocal: true,
+                        localRegistrationDate: new Date().toISOString(),
+                        session: false
                     };
                     
                     // Store in localStorage
                     localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
                     localStorage.setItem('kynecta-chat-auto-login', 'true');
-                    localStorage.setItem('kynecta-offline-users', JSON.stringify([
-                        ...(JSON.parse(localStorage.getItem('kynecta-offline-users') || '[]')),
-                        { email, offlineUserId, displayName, mobile, registeredAt: new Date().toISOString() }
+                    localStorage.setItem('kynecta-local-users', JSON.stringify([
+                        ...(JSON.parse(localStorage.getItem('kynecta-local-users') || '[]')),
+                        { email, localUserId, displayName, mobile, registeredAt: new Date().toISOString() }
                     ]));
                     
-                    console.log('✅ User registered offline successfully:', email);
+                    console.log('✅ User registered locally successfully:', email);
                     
                     return {
                         user: {
-                            uid: offlineUserId,
+                            uid: localUserId,
                             email: email,
                             displayName: displayName,
                             mobile: mobile || '',
                             hasPremiumTrial: true,
                             isOfflineUser: true,
-                            firebaseSession: false
+                            session: false
                         }
                     };
                     
                 } catch (error) {
-                    console.error('❌ Offline registration failed:', error);
-                    throw new Error('Offline registration failed. Please try again.');
+                    console.error('❌ Local registration failed:', error);
+                    throw new Error('Local registration failed. Please try again.');
                 }
             }
 
             async loginUser(identifier, password, method = 'email', rememberMe = true) {
-                // Always try offline first for speed, then online if available
+                // Always try local first for speed, then remote if available
                 if (!this.isOnline || this.offlineMode) {
-                    return this.loginUserOffline(identifier, password, method, rememberMe);
+                    return this.loginUserLocal(identifier, password, method, rememberMe);
                 }
                 
                 if (!this.isInitialized) {
-                    // If Firebase not initialized but we're online, try to initialize
+                    // If authentication not initialized but we're online, try to initialize
                     try {
                         await this.init();
                     } catch (initError) {
-                        console.warn('Firebase initialization failed, using offline login:', initError);
-                        return this.loginUserOffline(identifier, password, method, rememberMe);
+                        console.warn('Authentication initialization failed, using local login:', initError);
+                        return this.loginUserLocal(identifier, password, method, rememberMe);
                     }
                 }
 
                 try {
                     let userCredential;
                     
-                    // Try online login based on method
+                    // Try remote login based on method
                     if (method === 'email') {
                         userCredential = await firebase.auth().signInWithEmailAndPassword(identifier, password);
                     } else if (method === 'username') {
@@ -1994,8 +1540,8 @@
                         // For now, we'll use the identifier as email (assuming username is stored as email)
                         userCredential = await firebase.auth().signInWithEmailAndPassword(identifier, password);
                     } else if (method === 'mobile') {
-                        // Mobile login requires additional setup (phone auth)
-                        // For now, we'll search for user by mobile in Firestore
+                        // Mobile login requires additional setup
+                        // For now, we'll search for user by mobile in database
                         const usersRef = this.db.collection('chatters');
                         const snapshot = await usersRef.where('mobile', '==', identifier).limit(1).get();
                         
@@ -2024,7 +1570,7 @@
                             autoLoginEnabled: rememberMe
                         });
                     } catch (dbError) {
-                        console.warn('⚠️ Could not fetch user data from Firestore:', dbError);
+                        console.warn('⚠️ Could not fetch user data from database:', dbError);
                     }
                     
                     // Store user info in localStorage for INSTANT auto-login
@@ -2040,8 +1586,8 @@
                         hasPremiumTrial: userData.hasPremiumTrial || false,
                         premiumExpiresAt: userData.premiumExpiresAt || null,
                         isOfflineUser: false,
-                        firebaseUid: user.uid,
-                        firebaseSession: true
+                        sessionUid: user.uid,
+                        session: true
                     };
                     
                     localStorage.setItem('kynecta-chat-user', JSON.stringify(localStorageUserData));
@@ -2050,18 +1596,18 @@
                         localStorage.setItem('kynecta-chat-auto-login', 'true');
                     }
                     
-                    console.log('✅ User logged in successfully (online):', user.email);
+                    console.log('✅ User logged in successfully (remote):', user.email);
                     return userCredential;
                     
                 } catch (error) {
-                    console.error('❌ Online login failed:', error.code, error.message);
+                    console.error('❌ Remote login failed:', error.code, error.message);
                     
-                    // If online login fails, try offline login as fallback
+                    // If remote login fails, try local login as fallback
                     if (error.code === 'auth/network-request-failed' || 
                         error.code === 'auth/internal-error' ||
                         !this.isInitialized) {
-                        console.log('🌐 Switching to offline login...');
-                        return this.loginUserOffline(identifier, password, method, rememberMe);
+                        console.log('🌐 Switching to local login...');
+                        return this.loginUserLocal(identifier, password, method, rememberMe);
                     }
                     
                     // Generic error message for security
@@ -2069,9 +1615,9 @@
                 }
             }
             
-            async loginUserOffline(identifier, password, method = 'email', rememberMe = true) {
+            async loginUserLocal(identifier, password, method = 'email', rememberMe = true) {
                 try {
-                    console.log('🔄 Attempting offline login for:', identifier, 'method:', method);
+                    console.log('🔄 Attempting local login for:', identifier, 'method:', method);
                     
                     // Check localStorage for cached user
                     const savedUser = localStorage.getItem('kynecta-chat-user');
@@ -2090,30 +1636,30 @@
                         }
                     }
                     
-                    // If not in main storage, check offline users list
+                    // If not in main storage, check local users list
                     if (!userData) {
-                        const offlineUsers = JSON.parse(localStorage.getItem('kynecta-offline-users') || '[]');
+                        const localUsers = JSON.parse(localStorage.getItem('kynecta-local-users') || '[]');
                         
-                        const offlineUser = offlineUsers.find(u => {
+                        const localUser = localUsers.find(u => {
                             if (method === 'email') return u.email === identifier;
                             if (method === 'username') return u.displayName === identifier;
                             if (method === 'mobile') return u.mobile === identifier;
                             return false;
                         });
                         
-                        if (offlineUser) {
-                            // User exists in offline registry
+                        if (localUser) {
+                            // User exists in local registry
                             userData = {
-                                uid: offlineUser.offlineUserId,
-                                email: offlineUser.email,
-                                displayName: offlineUser.displayName,
-                                mobile: offlineUser.mobile || '',
+                                uid: localUser.localUserId,
+                                email: localUser.email,
+                                displayName: localUser.displayName,
+                                mobile: localUser.mobile || '',
                                 isNewUser: false,
                                 autoLogin: rememberMe,
                                 lastLogin: new Date().toISOString(),
                                 passwordHash: '', // Password not stored for security
                                 isOfflineUser: true,
-                                firebaseSession: false
+                                session: false
                             };
                         }
                     }
@@ -2124,7 +1670,7 @@
                     
                     // Check password against stored hash (with salt for security)
                     const expectedHash = userData.isOfflineUser 
-                        ? btoa(password + '_' + userData.email) // Offline users use salted hash
+                        ? btoa(password + '_' + userData.email) // Local users use salted hash
                         : userData.passwordHash;
                     
                     const inputHash = userData.isOfflineUser 
@@ -2146,7 +1692,7 @@
                         localStorage.setItem('kynecta-chat-auto-login', 'true');
                     }
                     
-                    console.log('✅ User logged in offline successfully:', identifier);
+                    console.log('✅ User logged in locally successfully:', identifier);
                     
                     return {
                         user: {
@@ -2155,19 +1701,19 @@
                             displayName: userData.displayName,
                             mobile: userData.mobile || '',
                             isOfflineUser: userData.isOfflineUser || false,
-                            firebaseSession: userData.firebaseSession || false
+                            session: userData.session || false
                         }
                     };
                     
                 } catch (error) {
-                    console.error('❌ Offline login failed:', error);
-                    throw new Error('Offline login failed. ' + error.message);
+                    console.error('❌ Local login failed:', error);
+                    throw new Error('Local login failed. ' + error.message);
                 }
             }
 
             async quickLogin() {
                 try {
-                    // OFFLINE SAFE: First check localStorage for saved user
+                    // First check localStorage for saved user
                     const savedUser = localStorage.getItem('kynecta-chat-user');
                     if (!savedUser) {
                         throw new Error('No saved user found');
@@ -2175,10 +1721,10 @@
                     
                     const userData = JSON.parse(savedUser);
                     
-                    // If we're online and Firebase is initialized, try to refresh session
-                    if (this.isOnline && this.isInitialized && !this.offlineMode && !userData.isOfflineUser && userData.firebaseSession) {
+                    // If we're online and authentication is initialized, try to refresh session
+                    if (this.isOnline && this.isInitialized && !this.offlineMode && !userData.isOfflineUser && userData.session) {
                         try {
-                            // Check if user is already authenticated with Firebase
+                            // Check if user is already authenticated
                             const currentUser = this.auth.currentUser;
                             if (!currentUser) {
                                 // Try to sign in with stored credentials
@@ -2191,8 +1737,8 @@
                                     }
                                 }
                             }
-                        } catch (firebaseError) {
-                            console.warn('Firebase quick login failed, using cached data:', firebaseError);
+                        } catch (authError) {
+                            console.warn('Authentication quick login failed, using cached data:', authError);
                         }
                     }
                     
@@ -2205,7 +1751,7 @@
                         mobile: userData.mobile || '',
                         hasPremiumTrial: userData.hasPremiumTrial || false,
                         isOfflineUser: userData.isOfflineUser || false,
-                        firebaseSession: userData.firebaseSession || false
+                        session: userData.session || false
                     };
                     
                 } catch (error) {
@@ -2258,8 +1804,6 @@
                         statusElement.innerHTML = '<i class="fas fa-check-circle mr-2"></i><span id="connectionText">' + message + '</span>';
                     } else if (status === 'connecting') {
                         statusElement.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i><span id="connectionText">' + message + '</span>';
-                    } else if (status === 'offline') {
-                        statusElement.innerHTML = '<i class="fas fa-wifi-slash mr-2"></i><span id="connectionText">' + message + '</span>';
                     } else {
                         statusElement.innerHTML = '<i class="fas fa-times-circle mr-2"></i><span id="connectionText">' + message + '</span>';
                     }
@@ -2352,10 +1896,10 @@
                         localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
                     }
                     
-                    // Firebase logout if available
+                    // Authentication logout if available
                     if (this.auth) {
                         this.auth.signOut().catch(() => {
-                            // Ignore Firebase logout errors
+                            // Ignore logout errors
                         });
                     }
                     
@@ -2368,9 +1912,9 @@
             }
         }
 
-        // Initialize Firebase Auth Service in background
+        // Initialize Authentication Service in background
         setTimeout(() => {
-            window.firebaseAuth = new FirebaseAuthService();
+            window.authService = new FirebaseAuthService();
         }, 500);
     </script>
     
@@ -2378,7 +1922,6 @@
     <script>
         /**
          * kynecta Chat - Main Application Script
-         * WhatsApp-style authentication: Auto-redirect to chat if user is already logged in
          */
 
         class kynectaChatApp {
@@ -2393,279 +1936,42 @@
                 // Quick login user
                 this.quickLoginUser = null;
                 
-                // Offline support
-                this.isOnline = navigator.onLine;
-                this.offlineMode = !this.isOnline;
-                
                 // Current login method
                 this.currentLoginMethod = 'email';
                 
                 // Auto-login status
                 this.autoLoginAvailable = false;
-                this.firebaseSessionAvailable = false;
+                this.sessionAvailable = false;
                 this.cachedCredentialsAvailable = false;
-                
-                // Auto-redirect in progress flag
-                this.autoRedirectInProgress = false;
-                
-                // Start auto-redirect check immediately
-                this.startAutoRedirectCheck();
                 
                 // Initialize the rest of the app (non-blocking)
                 setTimeout(() => this.init(), 50);
             }
 
-            /**
-             * Start auto-redirect check (WhatsApp-style)
-             */
-            startAutoRedirectCheck() {
-                console.log('🔍 Starting WhatsApp-style auto-redirect check...');
+            init() {
+                // Initialize event listeners
+                this.setupEventListeners();
                 
-                // Show overlay immediately
-                const overlay = document.getElementById('autoRedirectOverlay');
-                if (overlay) {
-                    overlay.classList.remove('hidden');
-                }
+                // Load user preferences if any
+                this.loadUserPreferences();
                 
-                // Hide main layout during check
-                const mainLayout = document.getElementById('mainLayout');
-                if (mainLayout) {
-                    mainLayout.style.opacity = '0';
-                    mainLayout.style.pointerEvents = 'none';
-                }
+                // Start animated counters
+                this.startCounterAnimations();
                 
-                // Check for logged in user
-                setTimeout(() => this.checkAndAutoRedirect(), 100);
+                // Setup security protection
+                this.setupSecurityProtection();
+                
+                // Disable browser password prompts
+                this.disablePasswordManager();
+                
+                // Check for quick login
+                setTimeout(() => this.instantQuickLoginCheck(), 300);
+                
+                console.log('💬 kynecta Chat app initialized');
             }
             
             /**
-             * Check if user is logged in and auto-redirect
-             */
-            async checkAndAutoRedirect() {
-                try {
-                    console.log('🔍 Checking if user is already logged in...');
-                    
-                    // Update overlay message
-                    this.updateAutoRedirectMessage('Checking your session...');
-                    
-                    // Check Firebase service
-                    if (window.firebaseAuth) {
-                        // Check if user is logged in (WhatsApp-style)
-                        const isLoggedIn = window.firebaseAuth.isUserLoggedIn();
-                        
-                        if (isLoggedIn) {
-                            const userData = window.firebaseAuth.getLoggedInUser();
-                            if (userData) {
-                                console.log('✅ User is already logged in:', userData.email);
-                                
-                                // Show user info in overlay
-                                this.showUserInfoInOverlay(userData);
-                                
-                                // Update message
-                                this.updateAutoRedirectMessage('Session found! Redirecting to chat...');
-                                
-                                // Show cancel button
-                                this.showCancelButton();
-                                
-                                // Wait a moment for user to see the info
-                                await new Promise(resolve => setTimeout(resolve, 1500));
-                                
-                                // Check if user canceled
-                                if (!this.autoRedirectInProgress) {
-                                    console.log('Auto-redirect canceled by user');
-                                    this.hideAutoRedirectOverlay();
-                                    return;
-                                }
-                                
-                                // Perform auto-login and redirect
-                                await this.performAutoLoginAndRedirect(userData);
-                                return;
-                            }
-                        }
-                    }
-                    
-                    // No user logged in
-                    console.log('⚡ No logged in user found, showing login page');
-                    
-                    // Hide overlay and show login page
-                    this.hideAutoRedirectOverlay();
-                    
-                    // Show quick login if available
-                    setTimeout(() => this.instantQuickLoginCheck(), 300);
-                    
-                } catch (error) {
-                    console.error('❌ Auto-redirect check failed:', error);
-                    
-                    // Hide overlay and show login page
-                    this.hideAutoRedirectOverlay();
-                    
-                    // Show quick login if available
-                    setTimeout(() => this.instantQuickLoginCheck(), 300);
-                }
-            }
-            
-            /**
-             * Show user info in auto-redirect overlay
-             */
-            showUserInfoInOverlay(userData) {
-                const userInfo = document.getElementById('autoRedirectUserInfo');
-                const userAvatar = document.getElementById('autoRedirectUserAvatar');
-                const userName = document.getElementById('autoRedirectUserName');
-                const userEmail = document.getElementById('autoRedirectUserEmail');
-                
-                if (userInfo && userAvatar && userName && userEmail) {
-                    userInfo.classList.remove('hidden');
-                    userAvatar.textContent = (userData.displayName || userData.email).charAt(0).toUpperCase();
-                    userName.textContent = userData.displayName || userData.email.split('@')[0];
-                    userEmail.textContent = userData.email;
-                }
-            }
-            
-            /**
-             * Update auto-redirect message
-             */
-            updateAutoRedirectMessage(message) {
-                const messageElement = document.getElementById('autoRedirectMessage');
-                if (messageElement) {
-                    messageElement.textContent = message;
-                }
-            }
-            
-            /**
-             * Show cancel button in overlay
-             */
-            showCancelButton() {
-                const cancelButton = document.getElementById('cancelAutoRedirect');
-                if (cancelButton) {
-                    cancelButton.classList.remove('hidden');
-                    cancelButton.addEventListener('click', () => {
-                        this.cancelAutoRedirect();
-                    });
-                }
-            }
-            
-            /**
-             * Cancel auto-redirect
-             */
-            cancelAutoRedirect() {
-                this.autoRedirectInProgress = false;
-                console.log('❌ Auto-redirect canceled by user');
-                
-                // Mark as logged out so it doesn't auto-redirect again
-                localStorage.setItem('kynecta-chat-logged-out', 'true');
-                
-                // Hide overlay and show login page
-                this.hideAutoRedirectOverlay();
-                
-                // Show toast
-                this.showToast('Auto-login canceled. Please sign in manually.', 'info');
-            }
-            
-            /**
-             * Hide auto-redirect overlay
-             */
-            hideAutoRedirectOverlay() {
-                const overlay = document.getElementById('autoRedirectOverlay');
-                const mainLayout = document.getElementById('mainLayout');
-                
-                if (overlay) {
-                    overlay.classList.add('hidden');
-                }
-                
-                if (mainLayout) {
-                    mainLayout.style.opacity = '1';
-                    mainLayout.style.pointerEvents = 'auto';
-                    mainLayout.classList.add('fade-in');
-                }
-            }
-            
-            /**
-             * Perform auto-login and redirect to chat
-             */
-            async performAutoLoginAndRedirect(userData) {
-                try {
-                    this.autoRedirectInProgress = true;
-                    
-                    // Update message
-                    this.updateAutoRedirectMessage('Logging you in automatically...');
-                    
-                    // Clear logged-out flag
-                    localStorage.removeItem('kynecta-chat-logged-out');
-                    
-                    // Set auto-login flag
-                    localStorage.setItem('kynecta-chat-auto-login', 'true');
-                    
-                    // Update last login time
-                    userData.lastLogin = new Date().toISOString();
-                    localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
-                    
-                    // Try to refresh Firebase session if online
-                    if (this.isOnline && window.firebaseAuth && window.firebaseAuth.isInitialized && !userData.isOfflineUser && userData.firebaseSession) {
-                        try {
-                            await window.firebaseAuth.quickLogin();
-                            console.log('✅ Firebase session refreshed');
-                        } catch (firebaseError) {
-                            console.warn('Firebase auto-login failed, continuing with cached data:', firebaseError);
-                        }
-                    }
-                    
-                    // Wait a moment
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    
-                    // Check if still not canceled
-                    if (!this.autoRedirectInProgress) {
-                        return;
-                    }
-                    
-                    // Update message
-                    this.updateAutoRedirectMessage('Welcome back! Opening chat...');
-                    
-                    // Wait a moment more
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    
-                    // Check if still not canceled
-                    if (!this.autoRedirectInProgress) {
-                        return;
-                    }
-                    
-                    // Redirect to chat
-                    this.redirectToChatDirectly(userData);
-                    
-                } catch (error) {
-                    console.error('❌ Auto-login failed:', error);
-                    
-                    // Hide overlay and show login page
-                    this.hideAutoRedirectOverlay();
-                    
-                    // Show error toast
-                    this.showToast('Auto-login failed. Please sign in manually.', 'error');
-                }
-            }
-            
-            /**
-             * Redirect directly to chat (no fade animations)
-             */
-            redirectToChatDirectly(userData) {
-                // Prepare auth token
-                const authToken = btoa(JSON.stringify({
-                    uid: userData.uid,
-                    email: userData.email,
-                    displayName: userData.displayName,
-                    mobile: userData.mobile || '',
-                    isOffline: userData.isOfflineUser || false,
-                    hasPremiumTrial: userData.hasPremiumTrial || false,
-                    offlineMode: this.offlineMode,
-                    firebaseSession: userData.firebaseSession || false,
-                    autoLoginAvailable: true,
-                    autoRedirected: true
-                }));
-                
-                // Redirect immediately
-                window.location.href = `chat.html?auth=${encodeURIComponent(authToken)}&offline=${this.offlineMode}&firebase=${userData.firebaseSession || false}&auto=1`;
-            }
-
-            /**
-             * INSTANT QUICK LOGIN CHECK - ENHANCED OFFLINE SUPPORT
+             * INSTANT QUICK LOGIN CHECK
              */
             instantQuickLoginCheck() {
                 try {
@@ -2683,13 +1989,10 @@
                         
                         // Set auto-login status flags
                         this.autoLoginAvailable = true;
-                        this.firebaseSessionAvailable = userData.firebaseSession || false;
+                        this.sessionAvailable = userData.session || false;
                         this.cachedCredentialsAvailable = true;
                         
                         console.log('✅ Instant quick login loaded from localStorage:', userData.email);
-                        
-                        // Update UI status indicators immediately
-                        this.updateLoginStatusIndicators();
                         
                         // Show quick login IMMEDIATELY after DOM is ready with professional animation
                         setTimeout(() => {
@@ -2700,42 +2003,16 @@
                             if (connectionBadge) {
                                 if (userData.isOfflineUser) {
                                     connectionBadge.className = 'text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
-                                    connectionBadge.textContent = 'Offline Account';
-                                } else if (userData.firebaseSession) {
+                                    connectionBadge.textContent = 'Local Account';
+                                } else if (userData.session) {
                                     connectionBadge.className = 'text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400 border border-green-500/30';
-                                    connectionBadge.textContent = 'Firebase Session';
+                                    connectionBadge.textContent = 'Secure Session';
                                 } else {
                                     connectionBadge.className = 'text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30';
-                                    connectionBadge.textContent = 'Cached Session';
+                                    connectionBadge.textContent = 'Ready';
                                 }
                             }
                         }, 300);
-                        
-                        // Show auto-login badge
-                        const autoLoginBadge = document.getElementById('autoLoginBadge');
-                        if (autoLoginBadge) {
-                            autoLoginBadge.classList.remove('hidden');
-                            autoLoginBadge.classList.add('fade-in');
-                            
-                            // Update badge text based on user type
-                            const badgeText = autoLoginBadge.querySelector('span');
-                            if (badgeText) {
-                                if (userData.isOfflineUser) {
-                                    badgeText.textContent = 'Offline Auto-login';
-                                    autoLoginBadge.style.background = 'rgba(245, 158, 11, 0.2)';
-                                    autoLoginBadge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
-                                    autoLoginBadge.style.color = '#fbbf24';
-                                } else if (userData.firebaseSession) {
-                                    badgeText.textContent = 'Firebase Auto-login';
-                                    autoLoginBadge.style.background = 'rgba(34, 197, 94, 0.2)';
-                                    autoLoginBadge.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-                                    autoLoginBadge.style.color = '#4ade80';
-                                }
-                            }
-                        }
-                        
-                        // Show auto-login status panel
-                        this.updateAutoLoginStatus(true);
                         
                         return true;
                     }
@@ -2747,174 +2024,6 @@
                     // DEFENSIVE AUTH: Never crash on localStorage errors
                     console.error('❌ Instant quick login check failed:', error);
                     return false;
-                }
-            }
-
-            init() {
-                // Setup network detection (non-blocking)
-                this.setupNetworkDetection();
-                
-                // Initialize event listeners
-                this.setupEventListeners();
-                
-                // Load user preferences if any
-                this.loadUserPreferences();
-                
-                // Start animated counters
-                this.startCounterAnimations();
-                
-                // Setup security protection
-                this.setupSecurityProtection();
-                
-                // Disable browser password prompts
-                this.disablePasswordManager();
-                
-                // Update UI based on online status
-                this.updateUIForConnectionStatus();
-                
-                // Check for auto-login status updates after Firebase initializes
-                setTimeout(() => this.checkAutoLoginStatus(), 1000);
-                
-                console.log('💬 kynecta Chat app initialized with WhatsApp-style authentication');
-            }
-            
-            /**
-             * Check auto-login status after Firebase initializes
-             */
-            checkAutoLoginStatus() {
-                if (window.firebaseAuth && window.firebaseAuth.isInitialized) {
-                    const authState = window.firebaseAuth.getAuthState();
-                    if (authState && authState.user) {
-                        this.firebaseSessionAvailable = true;
-                        this.autoLoginAvailable = true;
-                        this.updateAutoLoginStatus(true);
-                        this.updateLoginStatusIndicators();
-                    }
-                }
-            }
-            
-            /**
-             * Update auto-login status display
-             */
-            updateAutoLoginStatus(isAvailable) {
-                const autoLoginStatus = document.getElementById('autoLoginStatus');
-                const autoLoginMethod = document.getElementById('autoLoginMethod');
-                const autoLoginCache = document.getElementById('autoLoginCache');
-                
-                if (isAvailable) {
-                    if (autoLoginStatus) autoLoginStatus.classList.remove('hidden');
-                    if (autoLoginStatus) autoLoginStatus.classList.add('fade-in');
-                    
-                    // Update status indicators
-                    if (this.firebaseSessionAvailable && autoLoginMethod) {
-                        autoLoginMethod.classList.remove('hidden');
-                    }
-                    
-                    if (this.cachedCredentialsAvailable && autoLoginCache) {
-                        autoLoginCache.classList.remove('hidden');
-                    }
-                } else {
-                    if (autoLoginStatus) autoLoginStatus.classList.add('hidden');
-                }
-            }
-            
-            /**
-             * Update login status indicators
-             */
-            updateLoginStatusIndicators() {
-                const loginStatusOnline = document.getElementById('loginStatusOnline');
-                const loginStatusOffline = document.getElementById('loginStatusOffline');
-                const loginStatusFirebase = document.getElementById('loginStatusFirebase');
-                const offlineContentNotice = document.getElementById('offlineContentNotice');
-                const offlineAccessContainer = document.getElementById('offlineAccessContainer');
-                
-                // Show online/offline status
-                if (this.isOnline && loginStatusOnline) {
-                    loginStatusOnline.classList.remove('hidden');
-                    loginStatusOnline.classList.add('fade-in');
-                }
-                
-                if (!this.isOnline && loginStatusOffline) {
-                    loginStatusOffline.classList.remove('hidden');
-                    loginStatusOffline.classList.add('fade-in');
-                }
-                
-                // Show Firebase status if available
-                if (this.firebaseSessionAvailable && loginStatusFirebase) {
-                    loginStatusFirebase.classList.remove('hidden');
-                    loginStatusFirebase.classList.add('fade-in');
-                }
-                
-                // Show offline content notice if offline
-                if (!this.isOnline && offlineContentNotice) {
-                    offlineContentNotice.classList.remove('hidden');
-                    offlineContentNotice.classList.add('fade-in');
-                }
-                
-                // Show offline access features if auto-login is available
-                if (this.autoLoginAvailable && offlineAccessContainer) {
-                    offlineAccessContainer.classList.remove('hidden');
-                    offlineAccessContainer.classList.add('fade-in');
-                }
-            }
-            
-            /**
-             * Update UI elements based on connection status
-             */
-            updateUIForConnectionStatus() {
-                const loginModeIndicator = document.getElementById('loginModeIndicator');
-                const registerModeIndicator = document.getElementById('registerModeIndicator');
-                
-                if (this.isOnline) {
-                    if (loginModeIndicator) {
-                        loginModeIndicator.textContent = 'Online & Offline Login Available';
-                        loginModeIndicator.className = 'text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30';
-                    }
-                    if (registerModeIndicator) {
-                        registerModeIndicator.textContent = 'Works Online & Offline';
-                        registerModeIndicator.className = 'text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400 border border-green-500/30';
-                    }
-                } else {
-                    if (loginModeIndicator) {
-                        loginModeIndicator.textContent = 'Offline Login Only';
-                        loginModeIndicator.className = 'text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
-                    }
-                    if (registerModeIndicator) {
-                        registerModeIndicator.textContent = 'Create Offline Account';
-                        registerModeIndicator.className = 'text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
-                    }
-                    
-                    // Show offline badge
-                    this.showOfflineBadge();
-                    
-                    // Update login status indicators
-                    this.updateLoginStatusIndicators();
-                }
-            }
-            
-            /**
-             * Show professional offline badge
-             */
-            showOfflineBadge() {
-                // Create or update offline badge
-                let offlineBadge = document.querySelector('.offline-badge');
-                if (!offlineBadge) {
-                    offlineBadge = document.createElement('div');
-                    offlineBadge.className = 'offline-badge';
-                    offlineBadge.innerHTML = '<i class="fas fa-wifi-slash"></i><span>Offline Mode</span>';
-                    document.body.appendChild(offlineBadge);
-                } else {
-                    offlineBadge.classList.remove('hidden');
-                }
-            }
-            
-            /**
-             * Hide offline badge
-             */
-            hideOfflineBadge() {
-                const offlineBadge = document.querySelector('.offline-badge');
-                if (offlineBadge) {
-                    offlineBadge.classList.add('hidden');
                 }
             }
             
@@ -2935,115 +2044,6 @@
                 console.log('🔒 Browser password manager disabled');
             }
             
-            /**
-             * Setup network detection and offline handling with enhanced UI
-             */
-            setupNetworkDetection() {
-                // Listen for online/offline events
-                window.addEventListener('online', () => {
-                    this.isOnline = true;
-                    this.offlineMode = false;
-                    console.log('🌐 App is online');
-                    
-                    // Hide offline indicator with fade
-                    document.getElementById('offlineModeIndicator').classList.add('fade-out');
-                    setTimeout(() => {
-                        document.getElementById('offlineModeIndicator').classList.add('hidden');
-                        document.getElementById('offlineModeIndicator').classList.remove('fade-out');
-                    }, 500);
-                    
-                    // Hide offline badge
-                    this.hideOfflineBadge();
-                    
-                    // Hide offline content notice
-                    const offlineContentNotice = document.getElementById('offlineContentNotice');
-                    if (offlineContentNotice) {
-                        offlineContentNotice.classList.add('fade-out');
-                        setTimeout(() => {
-                            offlineContentNotice.classList.add('hidden');
-                            offlineContentNotice.classList.remove('fade-out');
-                        }, 500);
-                    }
-                    
-                    if (window.firebaseAuth) {
-                        window.firebaseAuth.isOnline = true;
-                        window.firebaseAuth.offlineMode = false;
-                        window.firebaseAuth.updateConnectionStatus('connected', 'Connected');
-                    }
-                    
-                    // Update UI
-                    this.updateUIForConnectionStatus();
-                    
-                    this.showToast('Back online! Full features restored.', 'success');
-                    
-                    // Try to initialize Firebase if not already
-                    if (window.firebaseAuth && !window.firebaseAuth.isInitialized) {
-                        setTimeout(() => window.firebaseAuth.init(), 1000);
-                    }
-                    
-                    // Update login status indicators
-                    setTimeout(() => this.updateLoginStatusIndicators(), 500);
-                });
-                
-                window.addEventListener('offline', () => {
-                    this.isOnline = false;
-                    this.offlineMode = true;
-                    console.log('📴 App is offline');
-                    
-                    // Show offline indicator with fade
-                    const indicator = document.getElementById('offlineModeIndicator');
-                    indicator.classList.remove('hidden');
-                    indicator.classList.add('fade-in');
-                    
-                    // Show offline badge
-                    this.showOfflineBadge();
-                    
-                    // Show offline content notice
-                    const offlineContentNotice = document.getElementById('offlineContentNotice');
-                    if (offlineContentNotice) {
-                        offlineContentNotice.classList.remove('hidden');
-                        offlineContentNotice.classList.add('fade-in');
-                    }
-                    
-                    if (window.firebaseAuth) {
-                        window.firebaseAuth.isOnline = false;
-                        window.firebaseAuth.offlineMode = true;
-                        window.firebaseAuth.updateConnectionStatus('offline', 'Offline Mode');
-                    }
-                    
-                    // Update UI
-                    this.updateUIForConnectionStatus();
-                    
-                    this.showToast('You are offline. Using cached data.', 'warning');
-                    
-                    // Update login status indicators
-                    setTimeout(() => this.updateLoginStatusIndicators(), 500);
-                });
-                
-                // Initial online status check
-                this.isOnline = navigator.onLine;
-                this.offlineMode = !this.isOnline;
-                if (!this.isOnline) {
-                    const indicator = document.getElementById('offlineModeIndicator');
-                    indicator.classList.remove('hidden');
-                    indicator.classList.add('fade-in');
-                    this.showOfflineBadge();
-                    
-                    // Show offline content notice
-                    const offlineContentNotice = document.getElementById('offlineContentNotice');
-                    if (offlineContentNotice) {
-                        offlineContentNotice.classList.remove('hidden');
-                        offlineContentNotice.classList.add('fade-in');
-                    }
-                }
-                
-                // Update UI
-                this.updateUIForConnectionStatus();
-                
-                // Update login status indicators
-                setTimeout(() => this.updateLoginStatusIndicators(), 500);
-            }
-
             /**
              * Show quick login for returning users with professional animations
              */
@@ -3067,44 +2067,16 @@
                     if (connectionBadge) {
                         if (userData.isOfflineUser) {
                             connectionBadge.className = 'text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
-                            connectionBadge.textContent = 'Offline Account';
-                        } else if (userData.firebaseSession) {
+                            connectionBadge.textContent = 'Local Account';
+                        } else if (userData.session) {
                             connectionBadge.className = 'text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-400 border border-green-500/30';
-                            connectionBadge.textContent = 'Firebase Session';
+                            connectionBadge.textContent = 'Secure Session';
                         } else if (userData.hasPremiumTrial) {
                             connectionBadge.className = 'text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
                             connectionBadge.textContent = 'Premium Trial Active';
                         } else {
                             connectionBadge.className = 'text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30';
-                            connectionBadge.textContent = this.isOnline ? 'Online Ready' : 'Cached Account';
-                        }
-                    }
-                    
-                    // Show auto-login badge
-                    const autoLoginBadge = document.getElementById('autoLoginBadge');
-                    if (autoLoginBadge) {
-                        autoLoginBadge.classList.remove('hidden');
-                        autoLoginBadge.classList.add('fade-in');
-                        
-                        // Update badge text based on user type
-                        const badgeText = autoLoginBadge.querySelector('span');
-                        if (badgeText) {
-                            if (userData.isOfflineUser) {
-                                badgeText.textContent = 'Offline Auto-login';
-                                autoLoginBadge.style.background = 'rgba(245, 158, 11, 0.2)';
-                                autoLoginBadge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
-                                autoLoginBadge.style.color = '#fbbf24';
-                            } else if (userData.firebaseSession) {
-                                badgeText.textContent = 'Firebase Auto-login';
-                                autoLoginBadge.style.background = 'rgba(34, 197, 94, 0.2)';
-                                autoLoginBadge.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-                                autoLoginBadge.style.color = '#4ade80';
-                            } else if (userData.hasPremiumTrial) {
-                                badgeText.textContent = 'Premium Auto-login';
-                                autoLoginBadge.style.background = 'rgba(245, 158, 11, 0.2)';
-                                autoLoginBadge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
-                                autoLoginBadge.style.color = '#fbbf24';
-                            }
+                            connectionBadge.textContent = 'Ready';
                         }
                     }
                     
@@ -3241,7 +2213,7 @@
             }
 
             /**
-             * Handle quick login with enhanced offline support
+             * Handle quick login
              */
             async handleQuickLogin() {
                 if (!this.quickLoginUser) return;
@@ -3252,24 +2224,18 @@
                     // Clear logged-out flag
                     localStorage.removeItem('kynecta-chat-logged-out');
                     
-                    // Check if user is offline and handle accordingly
-                    if (this.isOnline) {
-                        // Online mode - try Firebase if available
-                        if (window.firebaseAuth && window.firebaseAuth.isInitialized && this.quickLoginUser.firebaseSession) {
-                            try {
-                                await window.firebaseAuth.quickLogin();
-                                console.log('✅ Quick login successful via Firebase');
-                            } catch (firebaseError) {
-                                // DEFENSIVE AUTH: Fall back to cached data if Firebase fails
-                                console.warn('Firebase quick login failed, using cached data:', firebaseError);
-                            }
-                        } else {
-                            // Use cached data for online login
-                            console.log('✅ Quick login using cached data (online mode)');
+                    // Try authentication service if available
+                    if (window.authService && window.authService.isInitialized && this.quickLoginUser.session) {
+                        try {
+                            await window.authService.quickLogin();
+                            console.log('✅ Quick login successful via authentication service');
+                        } catch (authError) {
+                            // DEFENSIVE AUTH: Fall back to cached data if authentication fails
+                            console.warn('Authentication service quick login failed, using cached data:', authError);
                         }
                     } else {
-                        // Offline mode - use cached data only
-                        console.log('✅ Quick login using cached data (offline mode)');
+                        // Use cached data
+                        console.log('✅ Quick login using cached data');
                     }
                     
                     // Success - redirect to chat with professional fade animation
@@ -3303,8 +2269,6 @@
                     }, 400);
                 }
                 this.quickLoginUser = null;
-                const autoLoginBadge = document.getElementById('autoLoginBadge');
-                if (autoLoginBadge) autoLoginBadge.classList.add('hidden');
                 
                 // Mark as logged out
                 localStorage.setItem('kynecta-chat-logged-out', 'true');
@@ -3312,9 +2276,8 @@
                 
                 // Reset auto-login status
                 this.autoLoginAvailable = false;
-                this.firebaseSessionAvailable = false;
+                this.sessionAvailable = false;
                 this.cachedCredentialsAvailable = false;
-                this.updateAutoLoginStatus(false);
                 
                 console.log('Quick login hidden and user marked as logged out');
             }
@@ -3505,13 +2468,13 @@
                 this.showLoading('Locating account...');
                 
                 try {
-                    // Check if we're online and Firebase is available
-                    if (this.isOnline && window.firebaseAuth && window.firebaseAuth.isInitialized && !window.firebaseAuth.offlineMode) {
-                        await window.firebaseAuth.sendPasswordResetEmail(identifier);
+                    // Check if authentication service is available
+                    if (window.authService && window.authService.isInitialized && !window.authService.offlineMode) {
+                        await window.authService.sendPasswordResetEmail(identifier);
                     } else {
-                        // Offline mode - simulate success
+                        // Local mode - simulate success
                         await new Promise(resolve => setTimeout(resolve, 1500));
-                        this.showToast('Password reset requested. Email will be sent when back online.', 'info');
+                        this.showToast('Password reset requested. Email will be sent when service is available.', 'info');
                     }
                     
                     this.hideLoading();
@@ -3614,7 +2577,7 @@
             }
 
             /**
-             * Handles login form submission with enhanced offline support
+             * Handles login form submission
              */
             async handleLogin(e, method = 'email') {
                 e.preventDefault();
@@ -3682,27 +2645,26 @@
                     // Clear logged-out flag
                     localStorage.removeItem('kynecta-chat-logged-out');
                     
-                    // DEFENSIVE AUTH: Try Firebase login if online, otherwise use offline
+                    // DEFENSIVE AUTH: Try authentication service if available, otherwise use local
                     let loginResult;
-                    if (this.isOnline && window.firebaseAuth && window.firebaseAuth.isInitialized && !window.firebaseAuth.offlineMode) {
-                        loginResult = await window.firebaseAuth.loginUser(identifier, password, method, rememberMe);
+                    if (window.authService && window.authService.isInitialized && !window.authService.offlineMode) {
+                        loginResult = await window.authService.loginUser(identifier, password, method, rememberMe);
                         
                         if (loginResult.user.isOfflineUser) {
-                            this.showToast('Logged in with offline account. Some features limited.', 'info');
-                        } else if (loginResult.user.firebaseSession) {
-                            this.showToast('Logged in with Firebase session.', 'success');
+                            this.showToast('Logged in with local account.', 'info');
+                        } else if (loginResult.user.session) {
+                            this.showToast('Logged in successfully.', 'success');
                         }
                     } else {
-                        // Offline login
-                        loginResult = await window.firebaseAuth.loginUserOffline(identifier, password, method, rememberMe);
-                        this.showToast('Logged in offline. Some features limited.', 'info');
+                        // Local login
+                        loginResult = await window.authService.loginUserLocal(identifier, password, method, rememberMe);
+                        this.showToast('Logged in with local account.', 'info');
                     }
                     
                     // Update auto-login status
                     this.autoLoginAvailable = true;
-                    this.firebaseSessionAvailable = loginResult.user.firebaseSession || false;
+                    this.sessionAvailable = loginResult.user.session || false;
                     this.cachedCredentialsAvailable = true;
-                    this.updateAutoLoginStatus(true);
                     
                     // Success - redirect to chat with professional animation
                     this.redirectToChatWithFade();
@@ -3795,21 +2757,20 @@
                     this.setRegisterLoadingState(true);
                     
                     try {
-                        // DEFENSIVE AUTH: Try Firebase registration if online, otherwise offline
+                        // DEFENSIVE AUTH: Try authentication service if available, otherwise local
                         let registrationResult;
-                        if (this.isOnline && window.firebaseAuth && window.firebaseAuth.isInitialized && !window.firebaseAuth.offlineMode) {
-                            registrationResult = await window.firebaseAuth.registerUser(email, password, displayName, mobile);
+                        if (window.authService && window.authService.isInitialized && !window.authService.offlineMode) {
+                            registrationResult = await window.authService.registerUser(email, password, displayName, mobile);
                         } else {
-                            // Offline registration
-                            registrationResult = await window.firebaseAuth.registerUserOffline(email, password, displayName, mobile);
-                            this.showToast('Registered offline. Account will sync when online.', 'info');
+                            // Local registration
+                            registrationResult = await window.authService.registerUserLocal(email, password, displayName, mobile);
+                            this.showToast('Registered locally. Account will sync when service is available.', 'info');
                         }
                         
                         // Update auto-login status
                         this.autoLoginAvailable = true;
-                        this.firebaseSessionAvailable = registrationResult.user.firebaseSession || false;
+                        this.sessionAvailable = registrationResult.user.session || false;
                         this.cachedCredentialsAvailable = true;
-                        this.updateAutoLoginStatus(true);
                         
                         // Show premium welcome message
                         this.showToast('🎉 Welcome to kynecta Chat! Your 30-day premium trial has been activated!', 'success');
@@ -4076,15 +3037,15 @@
                 
                 // Get current user data
                 const userData = JSON.parse(localStorage.getItem('kynecta-chat-user') || '{}');
-                const isOffline = !this.isOnline || userData.isOfflineUser;
+                const isOffline = userData.isOfflineUser;
                 const hasPremium = userData.hasPremiumTrial;
-                const firebaseSession = userData.firebaseSession || false;
+                const session = userData.session || false;
                 
                 // Show appropriate message based on login type
                 let message = 'Welcome to kynecta Chat! Redirecting to chat...';
-                if (isOffline) message = 'Welcome to kynecta Chat! (Offline Mode) Redirecting...';
+                if (isOffline) message = 'Welcome to kynecta Chat! (Local Mode) Redirecting...';
                 if (hasPremium) message = '🎉 Welcome to kynecta Chat Premium! Redirecting...';
-                if (firebaseSession) message = '✅ Firebase session active! Redirecting...';
+                if (session) message = '✅ Secure session active! Redirecting...';
                 
                 this.showMessage(message, 'success');
                 
@@ -4103,13 +3064,12 @@
                             mobile: userData.mobile || '',
                             isOffline: isOffline || userData.isOfflineUser,
                             hasPremiumTrial: userData.hasPremiumTrial || false,
-                            offlineMode: this.offlineMode,
-                            firebaseSession: firebaseSession,
+                            session: session,
                             autoLoginAvailable: this.autoLoginAvailable
                         }));
                         
                         // Redirect to chat page with authentication data
-                        window.location.href = `chat.html?auth=${encodeURIComponent(authToken)}&offline=${this.offlineMode}&firebase=${firebaseSession}`;
+                        window.location.href = `chat.html?auth=${encodeURIComponent(authToken)}&session=${session}`;
                     }, 500);
                 }, 1000);
             }
@@ -4132,13 +3092,13 @@
             if (method === 'email') {
                 try {
                     const identifier = document.getElementById('forgotIdentifier').value;
-                    // Use Firebase if available and online, otherwise simulate
-                    if (window.kynectaChatApp.isOnline && window.firebaseAuth && window.firebaseAuth.isInitialized && !window.firebaseAuth.offlineMode) {
-                        await window.firebaseAuth.sendPasswordResetEmail(identifier);
+                    // Use authentication service if available, otherwise simulate
+                    if (window.authService && window.authService.isInitialized && !window.authService.offlineMode) {
+                        await window.authService.sendPasswordResetEmail(identifier);
                     } else {
-                        // Simulate for offline mode
+                        // Simulate for local mode
                         await new Promise(resolve => setTimeout(resolve, 1500));
-                        window.kynectaChatApp.showToast('Recovery requested. Email will be sent when back online.', 'info');
+                        window.kynectaChatApp.showToast('Recovery requested. Email will be sent when service is available.', 'info');
                     }
                     
                     window.kynectaChatApp.hideLoading();
@@ -4156,7 +3116,7 @@
             window.kynectaChatApp = new kynectaChatApp();
         });
 
-        // Service Worker registration for offline support
+        // Service Worker registration for local support
         if ("serviceWorker" in navigator) {
             window.addEventListener("load", () => {
                 navigator.serviceWorker.register("/service-worker.js")

@@ -252,7 +252,7 @@
             color: white;
         }
         
-        /* Mobile optimizations - UPDATED: Remove sidebar space, increase icon size */
+        /* ====== FIXED: MOBILE NAVIGATION ICONS ====== */
         @media (max-width: 767px) {
             .iframe-container {
                 left: 0;
@@ -327,7 +327,7 @@
                 font-size: 18px; /* Increased from 16px */
             }
             
-            /* Mobile Navigation Bar - UPDATED: Added call icon and removed settings */
+            /* ====== FIXED: MOBILE NAVIGATION BAR ====== */
             .mobile-nav-bar {
                 position: fixed !important;
                 bottom: 0 !important;
@@ -343,25 +343,53 @@
                 padding: 0 10px !important;
             }
             
+            /* FIXED: Mobile nav icons styling for better visibility */
             .mobile-nav-icon {
-                color: rgba(255, 255, 255, 0.7);
-                font-size: 20px;
+                color: transparent !important; /* Hide text color */
+                font-size: 0; /* Hide text */
                 padding: 12px;
                 border-radius: 12px;
                 transition: all 0.2s ease;
                 flex: 1;
                 text-align: center;
                 min-width: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+            }
+            
+            /* FIXED: Ensure FontAwesome icons are visible */
+            .mobile-nav-icon i {
+                font-family: "Font Awesome 6 Free" !important;
+                font-weight: 900 !important;
+                -webkit-font-smoothing: antialiased !important;
+                display: inline-block !important;
+                font-style: normal !important;
+                font-variant: normal !important;
+                text-rendering: auto !important;
+                line-height: 1 !important;
+                font-size: 20px !important;
+                color: rgba(255, 255, 255, 0.85) !important;
             }
             
             .mobile-nav-icon.active {
-                color: white;
+                color: transparent !important;
                 background: rgba(255, 255, 255, 0.2);
             }
             
+            .mobile-nav-icon.active i {
+                color: white !important;
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+            }
+            
             .mobile-nav-icon:hover {
-                color: white;
                 background: rgba(255, 255, 255, 0.15);
+            }
+            
+            .mobile-nav-icon:hover i {
+                color: white !important;
             }
             
             /* Hide desktop chat header icons on mobile when not in chat */
@@ -401,6 +429,24 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                z-index: 1001;
+            }
+            
+            /* FIXED: Mobile group icon in header */
+            .mobile-group-icon {
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                margin-right: 10px;
+                padding: 8px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.1);
+                color: white !important;
+            }
+            
+            .mobile-group-icon i {
+                font-size: 18px !important;
+                color: white !important;
             }
         }
         
@@ -1238,7 +1284,7 @@
         </button>
     </div>
 
-    <!-- Mobile Navigation Bar - UPDATED: Added call icon, removed settings -->
+    <!-- ====== FIXED: MOBILE NAVIGATION BAR WITH GROUP ICON ====== -->
     <div id="mobileNavBar" class="mobile-nav-bar hidden">
         <button class="mobile-nav-icon active" data-page="messages" title="Messages">
             <i class="fas fa-comments"></i>
@@ -1248,6 +1294,12 @@
         <button class="mobile-nav-icon" data-page="calls" title="Calls">
             <i class="fas fa-phone"></i>
             <span id="mobileCallBadge" class="mobile-nav-badge hidden"></span>
+        </button>
+        
+        <!-- ADDED: Group icon in mobile navigation -->
+        <button class="mobile-nav-icon" data-page="group" title="Groups">
+            <i class="fas fa-users"></i>
+            <span id="mobileGroupBadge" class="mobile-nav-badge hidden"></span>
         </button>
         
         <button class="mobile-nav-icon" data-page="status" title="Status">
@@ -1647,22 +1699,19 @@
             });
         });
         
-        // Setup mobile group icon
-        document.querySelectorAll('.mobile-group-icon').forEach(icon => {
-            icon.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Mobile group icon clicked');
-                switchPage('group');
-            });
-        });
-        
         // Show mobile nav bar on mobile devices
         if (window.innerWidth < 768) {
             const mobileNavBar = document.getElementById('mobileNavBar');
             if (mobileNavBar) {
                 mobileNavBar.classList.remove('hidden');
                 console.log('Mobile nav bar shown');
+                
+                // Debug: Check if mobile icons are visible
+                const mobileIcons = document.querySelectorAll('.mobile-nav-icon i');
+                console.log('Mobile icons found:', mobileIcons.length);
+                mobileIcons.forEach((icon, index) => {
+                    console.log(`Icon ${index}:`, icon.className, icon.style.cssText);
+                });
             }
         }
     }

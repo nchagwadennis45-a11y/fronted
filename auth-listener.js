@@ -2,12 +2,15 @@
 /**
  * UniConnect - Authentication State Listener
  * Handles real-time authentication state changes and user session management
+ * Offline-first design with cached sessions
  */
 
 import { auth, db } from './firebase-config.js';
 import { 
     onAuthStateChanged, 
-    signOut 
+    signOut,
+    setPersistence,
+    browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 import { 
     doc, 
@@ -21,6 +24,7 @@ class AuthStateListener {
         this.currentUser = null;
         this.authStateSubscribers = [];
         this.isListening = false;
+        this.isOfflineMode = false;
         this.init();
     }
 
@@ -33,7 +37,13 @@ class AuthStateListener {
         try {
             console.log('🔐 Initializing Auth State Listener...');
             
-            // Start listening to auth state changes
+            // Set persistence to local storage
+            await setPersistence(auth, browserLocalPersistence);
+            
+            // First: Try to load cached user for immediate UI display
+            await this.loadCachedUser();
+            
+            // Then: Start listening to auth state changes in background
             this.unsubscribe = onAuthStateChanged(auth, 
                 (user) => this.handleAuthStateChange(user),
                 (error) => this.handleAuthError(error)
@@ -44,37 +54,111 @@ class AuthStateListener {
             
         } catch (error) {
             console.error('❌ Auth State Listener initialization failed:', error);
-            this.handleAuthError(error);
+            // Even if Firebase fails, show UI with cached user
+            await this.loadCachedUser();
+            this.isListening = true;
         }
     }
 
     /**
-     * Handles authentication state changes
+     * Loads cached user from localStorage for immediate UI display
+     */
+    async loadCachedUser() {
+        try {
+            const cachedUser = localStorage.getItem('uniconnect-user');
+            const lastAuth = localStorage.getItem('uniconnect-last-auth');
+            
+            if (cachedUser && lastAuth) {
+                const user = JSON.parse(cachedUser);
+                const lastAuthDate = new Date(lastAuth);
+                const now = new Date();
+                const hoursDiff = (now - lastAuthDate) / (1000 * 60 * 60);
+                
+                // Use cached user if less than 24 hours old
+                if (hoursDiff < 24) {
+                    console.log('📱 Loading cached user session:', user.email);
+                    this.currentUser = user;
+                    this.isOfflineMode = true;
+                    
+                    // Apply cached preferences immediately
+                    await this.loadCachedPreferences();
+                    
+                    // Update UI immediately (don't wait for Firebase)
+                    this.updateUILoggedIn(this.currentUser);
+                    
+                    // Notify subscribers with cached user
+                    this.notifySubscribers(this.currentUser);
+                    
+                    return true;
+                } else {
+                    console.log('🕐 Cached session expired, clearing...');
+                    this.clearCachedSession();
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error loading cached user:', error);
+        }
+        
+        // No cached user or error - show logged out UI
+        this.updateUILoggedOut();
+        return false;
+    }
+
+    /**
+     * Loads cached preferences from localStorage
+     */
+    async loadCachedPreferences() {
+        try {
+            const cachedPrefs = localStorage.getItem('uniconnect-preferences');
+            if (cachedPrefs) {
+                const preferences = JSON.parse(cachedPrefs);
+                this.applyUserSelections(preferences);
+                console.log('✅ Applied cached preferences');
+            }
+        } catch (error) {
+            console.error('❌ Error loading cached preferences:', error);
+        }
+    }
+
+    /**
+     * Clears cached session data
+     */
+    clearCachedSession() {
+        localStorage.removeItem('uniconnect-user');
+        localStorage.removeItem('uniconnect-last-auth');
+        this.isOfflineMode = false;
+    }
+
+    /**
+     * Handles authentication state changes (runs in background)
      */
     async handleAuthStateChange(user) {
         try {
             if (user) {
-                // User just signed in
-                await this.handleUserSignedIn(user);
+                // User authenticated with Firebase
+                await this.handleFirebaseUserSignedIn(user);
             } else {
-                // User signed out
+                // No user in Firebase - check if we have cached user
+                if (this.isOfflineMode) {
+                    console.log('🌐 Offline mode: Keeping cached user session');
+                    // Keep showing cached user, don't sign out
+                    return;
+                }
                 await this.handleUserSignedOut();
             }
             
-            // Notify all subscribers
-            this.notifySubscribers(user);
-            
         } catch (error) {
             console.error('❌ Error handling auth state change:', error);
+            // Don't break UI on Firebase errors
             this.handleAuthError(error);
         }
     }
 
     /**
-     * Handles user sign-in
+     * Handles Firebase user sign-in (background verification)
      */
-    async handleUserSignedIn(user) {
-        console.log('👤 User signed in:', user.email);
+    async handleFirebaseUserSignedIn(user) {
+        console.log('✅ Firebase verification successful:', user.email);
         
         try {
             // Update user status in Firestore
@@ -90,7 +174,7 @@ class AuthStateListener {
             const userDoc = await getDoc(userDocRef);
             const userData = userDoc.exists() ? userDoc.data() : null;
 
-            // Store user in memory
+            // Store updated user in memory
             this.currentUser = {
                 uid: user.uid,
                 email: user.email,
@@ -100,26 +184,85 @@ class AuthStateListener {
                 ...userData
             };
 
-            // Store in localStorage for persistence
+            // Update localStorage with fresh data
             localStorage.setItem('uniconnect-user', JSON.stringify(this.currentUser));
             localStorage.setItem('uniconnect-last-auth', new Date().toISOString());
 
-            // 🔄 NEW: Load user selections after auth
+            // Exit offline mode
+            this.isOfflineMode = false;
+
+            // Load fresh user selections
             await this.loadUserSelections();
 
-            // 🔄 NEW: Sync with UserData manager
+            // Sync with UserData manager
             await this.syncWithUserDataManager();
 
-            // 🔄 NEW: Apply theme colors on login
+            // Apply theme colors
             this.applyThemeColors();
 
-            // Update UI
+            // Update UI with fresh data
             this.updateUILoggedIn(this.currentUser);
             
-            console.log('✅ User session established:', user.email);
+            // Notify subscribers with updated user
+            this.notifySubscribers(this.currentUser);
+            
+            console.log('✅ User session synchronized:', user.email);
 
         } catch (error) {
-            console.error('❌ Error handling user sign-in:', error);
+            console.error('❌ Error during Firebase sync:', error);
+            // If Firebase fails, keep using cached data
+            if (this.isOfflineMode) {
+                console.log('🌐 Staying in offline mode due to sync error');
+            }
+        }
+    }
+
+    /**
+     * Handles user sign-out
+     */
+    async handleUserSignedOut() {
+        console.log('👤 User signed out');
+        
+        try {
+            // Update user status in Firestore if we have a previous user and online
+            if (this.currentUser && this.currentUser.uid && !this.isOfflineMode) {
+                const userDocRef = doc(db, 'users', this.currentUser.uid);
+                await updateDoc(userDocRef, {
+                    status: 'Offline',
+                    statusType: 'offline',
+                    lastSeen: serverTimestamp()
+                }).catch(error => {
+                    console.warn('⚠️ Could not update offline status:', error);
+                });
+            }
+
+            // Clear user data
+            this.currentUser = null;
+            this.isOfflineMode = false;
+            
+            // Clear localStorage (keep theme preference)
+            const theme = localStorage.getItem('uniconnect-theme');
+            
+            localStorage.clear();
+            
+            // Restore theme if exists
+            if (theme) localStorage.setItem('uniconnect-theme', theme);
+            
+            localStorage.setItem('uniconnect-last-auth', new Date().toISOString());
+
+            // Reset theme to default
+            this.resetThemeToDefault();
+
+            // Update UI
+            this.updateUILoggedOut();
+            
+            // Notify subscribers
+            this.notifySubscribers(null);
+            
+            console.log('✅ User session cleared');
+
+        } catch (error) {
+            console.error('❌ Error handling user sign-out:', error);
             throw error;
         }
     }
@@ -133,23 +276,29 @@ class AuthStateListener {
 
             console.log('📥 Loading user selections...');
             
-            // Load user preferences from Firestore
-            const preferencesRef = doc(db, 'userPreferences', this.currentUser.uid);
-            const preferencesDoc = await getDoc(preferencesRef);
-            
-            if (preferencesDoc.exists()) {
-                const preferences = preferencesDoc.data();
+            // Try to load from Firestore first
+            try {
+                const preferencesRef = doc(db, 'userPreferences', this.currentUser.uid);
+                const preferencesDoc = await getDoc(preferencesRef);
                 
-                // Apply user selections to UI
-                this.applyUserSelections(preferences);
-                
-                // Store in local storage for quick access
-                localStorage.setItem('uniconnect-preferences', JSON.stringify(preferences));
-                
-                console.log('✅ User selections loaded:', Object.keys(preferences).length, 'preferences');
-            } else {
-                console.log('ℹ️ No saved preferences found for user');
+                if (preferencesDoc.exists()) {
+                    const preferences = preferencesDoc.data();
+                    
+                    // Apply user selections to UI
+                    this.applyUserSelections(preferences);
+                    
+                    // Store in local storage for offline use
+                    localStorage.setItem('uniconnect-preferences', JSON.stringify(preferences));
+                    
+                    console.log('✅ User selections loaded from Firestore');
+                    return;
+                }
+            } catch (firestoreError) {
+                console.log('🌐 Could not reach Firestore, using cached preferences');
             }
+            
+            // Fallback to cached preferences
+            await this.loadCachedPreferences();
             
         } catch (error) {
             console.error('❌ Error loading user selections:', error);
@@ -164,6 +313,7 @@ class AuthStateListener {
             // Apply theme selection if exists
             if (preferences.theme) {
                 document.documentElement.setAttribute('data-theme', preferences.theme);
+                this.applyThemeSpecificColors(preferences.theme);
             }
 
             // Apply language selection if exists
@@ -257,9 +407,9 @@ class AuthStateListener {
      */
     applyThemeColors() {
         try {
-            // Get theme from preferences or localStorage
+            // Get theme from preferences or localStorage or default
             const storedPreferences = localStorage.getItem('uniconnect-preferences');
-            let theme = 'light'; // default
+            let theme = localStorage.getItem('uniconnect-theme') || 'light';
             
             if (storedPreferences) {
                 const preferences = JSON.parse(storedPreferences);
@@ -273,6 +423,9 @@ class AuthStateListener {
             
             // Apply theme-specific colors
             this.applyThemeSpecificColors(theme);
+            
+            // Store theme separately for logout persistence
+            localStorage.setItem('uniconnect-theme', theme);
             
             // Trigger theme change event for other components
             this.dispatchThemeChangeEvent(theme);
@@ -336,60 +489,13 @@ class AuthStateListener {
     }
 
     /**
-     * Handles user sign-out
-     */
-    async handleUserSignedOut() {
-        console.log('👤 User signed out');
-        
-        try {
-            // Update user status in Firestore if we have a previous user
-            if (this.currentUser && this.currentUser.uid) {
-                const userDocRef = doc(db, 'users', this.currentUser.uid);
-                await updateDoc(userDocRef, {
-                    status: 'Offline',
-                    statusType: 'offline',
-                    lastSeen: serverTimestamp()
-                }).catch(error => {
-                    console.warn('⚠️ Could not update offline status:', error);
-                });
-            }
-
-            // Clear user data
-            this.currentUser = null;
-            
-            // Clear localStorage (keep some preferences)
-            const rememberMe = localStorage.getItem('uniconnect-remember');
-            const theme = localStorage.getItem('uniconnect-theme');
-            
-            localStorage.clear();
-            
-            // Restore preferences if needed
-            if (rememberMe) localStorage.setItem('uniconnect-remember', rememberMe);
-            if (theme) localStorage.setItem('uniconnect-theme', theme);
-            
-            localStorage.setItem('uniconnect-last-auth', new Date().toISOString());
-
-            // 🔄 NEW: Reset theme to default on logout
-            this.resetThemeToDefault();
-
-            // Update UI
-            this.updateUILoggedOut();
-            
-            console.log('✅ User session cleared');
-
-        } catch (error) {
-            console.error('❌ Error handling user sign-out:', error);
-            throw error;
-        }
-    }
-
-    /**
      * 🔄 NEW: Reset theme to default on logout
      */
     resetThemeToDefault() {
         document.documentElement.setAttribute('data-theme', 'light');
         this.applyThemeSpecificColors('light');
         this.dispatchThemeChangeEvent('light');
+        localStorage.setItem('uniconnect-theme', 'light');
     }
 
     /**
@@ -398,9 +504,17 @@ class AuthStateListener {
     handleAuthError(error) {
         console.error('🔐 Auth Error:', error);
         
+        // Don't break UI on auth errors
+        if (this.isOfflineMode) {
+            console.log('🌐 Offline mode: Ignoring Firebase auth error');
+            return;
+        }
+        
         const errorHandlers = {
             'auth/network-request-failed': () => {
                 this.showNetworkError();
+                // Switch to offline mode on network failure
+                this.isOfflineMode = true;
             },
             'auth/too-many-requests': () => {
                 this.showMessage('Too many attempts. Please try again later.', 'error');
@@ -427,9 +541,13 @@ class AuthStateListener {
         console.warn('🔄 Auth token expired, refreshing...');
         
         try {
-            // Force sign out to clear expired token
-            await signOut(auth);
-            this.showMessage('Session expired. Please sign in again.', 'warning');
+            // Only sign out if not in offline mode
+            if (!this.isOfflineMode) {
+                await signOut(auth);
+                this.showMessage('Session expired. Please sign in again.', 'warning');
+            } else {
+                console.log('🌐 Offline mode: Keeping cached session despite expired token');
+            }
         } catch (error) {
             console.error('❌ Error handling token expiration:', error);
         }
@@ -440,7 +558,10 @@ class AuthStateListener {
      */
     handleUserNotFound() {
         console.warn('👤 User not found in auth system');
-        this.clearInvalidSession();
+        // Only clear if not in offline mode
+        if (!this.isOfflineMode) {
+            this.clearInvalidSession();
+        }
     }
 
     /**
@@ -448,6 +569,7 @@ class AuthStateListener {
      */
     clearInvalidSession() {
         this.currentUser = null;
+        this.isOfflineMode = false;
         localStorage.removeItem('uniconnect-user');
         this.updateUILoggedOut();
     }
@@ -458,7 +580,7 @@ class AuthStateListener {
     subscribe(callback) {
         this.authStateSubscribers.push(callback);
         
-        // Immediately call with current state
+        // Immediately call with current state (cached or null)
         if (this.currentUser !== undefined) {
             callback(this.currentUser);
         }
@@ -492,7 +614,7 @@ class AuthStateListener {
     }
 
     /**
-     * Checks if user is authenticated
+     * Checks if user is authenticated (cached or online)
      */
     isAuthenticated() {
         return this.currentUser !== null;
@@ -506,10 +628,20 @@ class AuthStateListener {
     }
 
     /**
+     * Checks if app is in offline mode
+     */
+    isOffline() {
+        return this.isOfflineMode;
+    }
+
+    /**
      * Forces refresh of user data from Firestore
      */
     async refreshUserData() {
-        if (!this.currentUser) return null;
+        if (!this.currentUser || this.isOfflineMode) {
+            console.log('🌐 Offline mode: Cannot refresh user data');
+            return this.currentUser;
+        }
 
         try {
             const userDocRef = doc(db, 'users', this.currentUser.uid);
@@ -523,8 +655,9 @@ class AuthStateListener {
                 
                 // Update localStorage
                 localStorage.setItem('uniconnect-user', JSON.stringify(this.currentUser));
+                localStorage.setItem('uniconnect-last-auth', new Date().toISOString());
                 
-                // 🔄 NEW: Reload user selections after refresh
+                // Reload user selections
                 await this.loadUserSelections();
                 
                 // Notify subscribers
@@ -534,6 +667,8 @@ class AuthStateListener {
             }
         } catch (error) {
             console.error('❌ Error refreshing user data:', error);
+            // Stay in offline mode on error
+            this.isOfflineMode = true;
         }
         
         return null;
@@ -554,6 +689,9 @@ class AuthStateListener {
         
         // Update page title with user info
         document.title = `${user.displayName || 'User'} - UniConnect`;
+        
+        // Show offline indicator if applicable
+        this.updateOfflineIndicator();
     }
 
     /**
@@ -571,6 +709,25 @@ class AuthStateListener {
         
         // Reset page title
         document.title = 'UniConnect - University Social Platform';
+        
+        // Hide offline indicator
+        this.updateOfflineIndicator();
+    }
+
+    /**
+     * Updates offline indicator
+     */
+    updateOfflineIndicator() {
+        const connectionStatus = document.getElementById('connectionStatus');
+        if (connectionStatus) {
+            if (this.isOfflineMode) {
+                connectionStatus.innerHTML = '<i class="fas fa-wifi-slash mr-2"></i><span>Offline Mode</span>';
+                connectionStatus.className = 'connection-status offline';
+                connectionStatus.style.display = 'flex';
+            } else {
+                connectionStatus.style.display = 'none';
+            }
+        }
     }
 
     /**
@@ -699,14 +856,10 @@ class AuthStateListener {
      * Shows network error message
      */
     showNetworkError() {
-        this.showMessage('Network connection lost. Please check your internet connection.', 'error');
+        this.showMessage('Network connection lost. Using offline mode.', 'warning');
         
         // Show offline indicator
-        const connectionStatus = document.getElementById('connectionStatus');
-        if (connectionStatus) {
-            connectionStatus.innerHTML = '<i class="fas fa-wifi-slash mr-2"></i><span>Offline</span>';
-            connectionStatus.className = 'connection-status disconnected';
-        }
+        this.updateOfflineIndicator();
     }
 
     /**
@@ -722,11 +875,7 @@ class AuthStateListener {
             
             // Create temporary message element
             const messageEl = document.createElement('div');
-            messageEl.className = `fixed top-4 right-4 p-4 rounded-lg z-50 ${
-                type === 'error' ? 'bg-red-500 text-white' :
-                type === 'warning' ? 'bg-yellow-500 text-black' :
-                'bg-blue-500 text-white'
-            }`;
+            messageEl.className = `fixed top-4 right-4 p-4 rounded-lg z-50 ${type === 'error' ? 'bg-red-500 text-white' : type === 'warning' ? 'bg-yellow-500 text-black' : 'bg-blue-500 text-white'}`;
             messageEl.textContent = message;
             
             document.body.appendChild(messageEl);
@@ -746,7 +895,49 @@ class AuthStateListener {
     getDefaultAvatar(name) {
         const colors = ['6366f1', 'ef4444', '10b981', 'f59e0b', '8b5cf6'];
         const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${randomColor}&color=fff&size=150&bold=true`;
+        return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=${randomColor}&color=fff&size=150&bold=true`;
+    }
+
+    /**
+     * Manual sign out for user action
+     */
+    async manualSignOut() {
+        try {
+            // Clear offline mode
+            this.isOfflineMode = false;
+            
+            // Sign out from Firebase
+            await signOut(auth);
+            
+            // Handle sign out
+            await this.handleUserSignedOut();
+            
+            console.log('✅ Manual sign out completed');
+        } catch (error) {
+            console.error('❌ Error during manual sign out:', error);
+            // Still clear local session even if Firebase fails
+            await this.handleUserSignedOut();
+        }
+    }
+
+    /**
+     * Attempt to reconnect to Firebase when back online
+     */
+    async attemptReconnect() {
+        if (!this.isOfflineMode) return;
+        
+        console.log('🌐 Attempting to reconnect to Firebase...');
+        
+        try {
+            // Force auth state check
+            const user = auth.currentUser;
+            if (user) {
+                await this.handleFirebaseUserSignedIn(user);
+                this.showMessage('Reconnected to server', 'success');
+            }
+        } catch (error) {
+            console.log('🌐 Reconnect failed, staying in offline mode');
+        }
     }
 
     /**
@@ -763,6 +954,13 @@ class AuthStateListener {
 
 // Initialize and export the auth listener
 window.authListener = new AuthStateListener();
+
+// Listen for online/offline events
+window.addEventListener('online', () => {
+    if (window.authListener) {
+        window.authListener.attemptReconnect();
+    }
+});
 
 // Export for module usage
 export default window.authListener;
