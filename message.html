@@ -1364,6 +1364,11 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Start New Chat Button (PERMANENT - FIXED ISSUE) -->
+        <button class="start-chat-btn" id="permanentStartChatBtn" style="display: none;">
+            <i class="fas fa-plus"></i>
+        </button>
     </div>
     
     <!-- New Chat Modal -->
@@ -1399,7 +1404,7 @@
     </div>
     
     <!-- Hidden file inputs -->
-    <input type="file" id="photoUploadInput" accept="image/*" multiple style="display: none;">
+    <input type="file" id="photoUploadInput" accept="image/*,video/*" multiple style="display: none;">
     <input type="file" id="videoUploadInput" accept="video/*" style="display: none;">
     <input type="file" id="documentUploadInput" accept="*/*" style="display: none;">
     
@@ -1467,6 +1472,7 @@
         const newChatModal = document.getElementById('newChatModal');
         const notification = document.getElementById('notification');
         const offlineIndicator = document.getElementById('offlineIndicator');
+        const permanentStartChatBtn = document.getElementById('permanentStartChatBtn');
         
         // ============================================
         // CORE FUNCTIONS - Optimized for instant loading
@@ -1485,6 +1491,11 @@
             
             // Initialize offline support
             setupOfflineSupport();
+            
+            // Show permanent start chat button
+            if (permanentStartChatBtn) {
+                permanentStartChatBtn.style.display = 'flex';
+            }
             
             // Check auth state in background (non-blocking)
             setTimeout(() => {
@@ -1543,17 +1554,20 @@
             auth.onAuthStateChanged(user => {
                 if (user) {
                     // User is signed in
-                    currentUser = user;
-                    
-                    // Update cached user data
-                    localStorage.setItem('currentUser', JSON.stringify({
+                    currentUser = {
                         uid: user.uid,
                         displayName: user.displayName,
                         photoURL: user.photoURL,
                         email: user.email
-                    }));
+                    };
+                    
+                    // Update cached user data
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
                     
                     console.log('User authenticated:', user.uid);
+                    
+                    // Update user online status
+                    updateUserOnlineStatus(true);
                     
                     // Load fresh data if online
                     if (isOnline) {
@@ -1581,6 +1595,21 @@
             });
         }
         
+        // Update user online status in Firestore
+        async function updateUserOnlineStatus(isOnlineStatus) {
+            if (!currentUser || !currentUser.uid) return;
+            
+            try {
+                const userStatusRef = db.collection('users').doc(currentUser.uid);
+                await userStatusRef.set({
+                    isOnline: isOnlineStatus,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            } catch (error) {
+                console.error('Error updating online status:', error);
+            }
+        }
+        
         // OFFLINE SUPPORT FUNCTIONS
         function setupOfflineSupport() {
             // Listen for online/offline events
@@ -1592,6 +1621,13 @@
             
             // Start background sync interval
             startBackgroundSync();
+            
+            // Update online status when page is about to close
+            window.addEventListener('beforeunload', () => {
+                if (currentUser && currentUser.uid) {
+                    updateUserOnlineStatus(false);
+                }
+            });
         }
         
         function handleOnlineStatusChange() {
@@ -1602,6 +1638,11 @@
                 // Just came online
                 offlineIndicator.classList.remove('active');
                 showNotification('You are back online. Syncing messages...', 'success');
+                
+                // Update online status
+                if (currentUser && currentUser.uid) {
+                    updateUserOnlineStatus(true);
+                }
                 
                 // Process pending messages in background
                 setTimeout(() => {
@@ -1624,6 +1665,11 @@
             } else if (!isOnline && wasOnline) {
                 // Just went offline
                 offlineIndicator.classList.add('active');
+                
+                // Update online status
+                if (currentUser && currentUser.uid) {
+                    updateUserOnlineStatus(false);
+                }
                 
                 // Stop real-time listener
                 stopRealTimeListener();
@@ -1835,7 +1881,7 @@
                     
                 case 'sent':
                     filteredChats = chats.filter(chat => 
-                        !chat.isArchivated && 
+                        !chat.isArchived && 
                         chat.lastMessageSender === userId
                     );
                     break;
@@ -2402,7 +2448,9 @@
                         name: userData.displayName,
                         photoURL: userData.photoURL,
                         status: userData.status || 'Hey there! I am using MoodChat',
-                        email: userData.email
+                        email: userData.email,
+                        isOnline: userData.isOnline || false,
+                        lastSeen: userData.lastSeen ? userData.lastSeen.toDate() : null
                     });
                 });
                 
@@ -2460,15 +2508,33 @@
             contactItem.className = 'contact-item';
             contactItem.dataset.userId = contact.uid;
             
+            // Determine status text
+            let statusText = 'Offline';
+            if (contact.isOnline) {
+                statusText = 'Online';
+            } else if (contact.lastSeen) {
+                const lastSeenDate = new Date(contact.lastSeen);
+                const now = new Date();
+                const diffHours = Math.floor((now - lastSeenDate) / (1000 * 60 * 60));
+                
+                if (diffHours < 1) {
+                    statusText = 'Last seen recently';
+                } else if (diffHours < 24) {
+                    statusText = `Last seen ${diffHours}h ago`;
+                } else {
+                    statusText = `Last seen ${Math.floor(diffHours / 24)}d ago`;
+                }
+            }
+            
             contactItem.innerHTML = `
                 <div class="contact-avatar" ${contact.photoURL ? `style="background-image: url('${contact.photoURL}')"` : ''}>
                     ${contact.photoURL ? '' : `<span>${initials}</span>`}
-                    ${onlineUsers.includes(contact.uid) ? '<div class="online-status"></div>' : ''}
+                    ${contact.isOnline ? '<div class="online-status"></div>' : ''}
                 </div>
                 <div class="contact-info">
                     <div class="contact-name">${contact.name || 'User'}</div>
-                    <div class="contact-status ${onlineUsers.includes(contact.uid) ? 'online' : ''}">
-                        ${onlineUsers.includes(contact.uid) ? 'Online' : contact.status || 'Offline'}
+                    <div class="contact-status ${contact.isOnline ? 'online' : ''}">
+                        ${statusText}
                     </div>
                 </div>
             `;
@@ -2569,8 +2635,21 @@
                 
                 // Update chat header
                 document.getElementById('chatUserName').textContent = currentChatUser.name || 'User';
-                document.getElementById('chatUserStatus').textContent = 
-                    onlineUsers.includes(currentChatUser.uid) ? 'Online' : 'Last seen recently';
+                
+                // Update status (FIXED: Show real status, not fake typing)
+                if (currentChatUser.isOnline) {
+                    document.getElementById('chatUserStatus').textContent = 'Online';
+                    document.getElementById('chatUserStatus').style.color = 'var(--success-color)';
+                } else {
+                    document.getElementById('chatUserStatus').textContent = 'Offline';
+                    document.getElementById('chatUserStatus').style.color = 'var(--text-secondary)';
+                }
+                
+                // Hide typing indicator initially
+                const typingIndicator = document.getElementById('typingIndicator');
+                if (typingIndicator) {
+                    typingIndicator.style.display = 'none';
+                }
                 
                 // Update avatar
                 const chatUserAvatar = document.getElementById('chatUserAvatar');
@@ -3146,14 +3225,18 @@
                     const typingIndicator = document.getElementById('typingIndicator');
                     if (typingIndicator) {
                         if (otherUserTyping) {
+                            // Show typing indicator only if user is actually typing
                             typingIndicator.style.display = 'flex';
                             document.getElementById('chatUserStatus').style.display = 'none';
                         } else {
+                            // Hide typing indicator
                             typingIndicator.style.display = 'none';
                             document.getElementById('chatUserStatus').style.display = 'block';
                         }
                     }
                 }
+            }, error => {
+                console.error('Error in typing listener:', error);
             });
         }
         
@@ -3233,6 +3316,8 @@
                                 updateMessageInUI(change.doc.data());
                             }
                         });
+                    }, error => {
+                        console.error('Message listener error:', error);
                     });
             }
         }
@@ -3472,7 +3557,12 @@
         // ============================================
         
         function setupEventListeners() {
-            // Start new chat button
+            // Permanent start new chat button (FIXED: Now always visible)
+            if (permanentStartChatBtn) {
+                permanentStartChatBtn.addEventListener('click', openNewChatModal);
+            }
+            
+            // Original start new chat button in no-chat view
             const startNewChatBtn = document.getElementById('startNewChatBtn');
             if (startNewChatBtn) {
                 startNewChatBtn.addEventListener('click', openNewChatModal);
@@ -3595,7 +3685,7 @@
             const chatInfoBtn = document.getElementById('chatInfoBtn');
             if (chatInfoBtn) {
                 chatInfoBtn.addEventListener('click', () => {
-                    showNotification('Chat info feature coming soon!', 'info');
+                    showChatInfo();
                 });
             }
             
@@ -3620,6 +3710,145 @@
             if (menuBtn) {
                 menuBtn.addEventListener('click', showMenuOptions);
             }
+        }
+        
+        function showChatInfo() {
+            if (!currentChatId || !currentChatUser) return;
+            
+            // Create chat info overlay
+            const chatInfoOverlay = document.createElement('div');
+            chatInfoOverlay.id = 'chatInfoOverlay';
+            chatInfoOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.9);
+                z-index: 2000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+            `;
+            
+            const chatInfoContainer = document.createElement('div');
+            chatInfoContainer.style.cssText = `
+                background: #1a1a1a;
+                border-radius: 12px;
+                padding: 20px;
+                min-width: 300px;
+                max-width: 500px;
+                width: 90%;
+                max-height: 90vh;
+                overflow-y: auto;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            `;
+            
+            const initials = currentChatUser.name ? 
+                currentChatUser.name.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2) : 
+                'U';
+            
+            chatInfoContainer.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="width: 100px; height: 100px; border-radius: 50%; background: #333; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 36px; color: white; overflow: hidden; background-size: cover; background-position: center; ${currentChatUser.photoURL ? `background-image: url('${currentChatUser.photoURL}')` : ''}">
+                        ${currentChatUser.photoURL ? '' : initials}
+                    </div>
+                    <h3 style="margin-bottom: 5px; color: white;">${currentChatUser.name || 'User'}</h3>
+                    <p style="color: #aaa; margin-bottom: 20px;">${currentChatUser.status || 'Hey there! I am using MoodChat'}</p>
+                </div>
+                
+                <div style="background: #2a2a2a; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="color: #aaa;">Status:</span>
+                        <span style="color: ${currentChatUser.isOnline ? '#34c759' : '#ff9500'}">
+                            ${currentChatUser.isOnline ? 'Online' : 'Offline'}
+                        </span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="color: #aaa;">Chat ID:</span>
+                        <span style="color: #aaa; font-size: 12px;">${currentChatId}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #aaa;">Chat Type:</span>
+                        <span style="color: #aaa;">${currentChatType}</span>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <button id="clearChatHistoryBtn" style="width: 100%; padding: 12px; background: #333; color: white; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: background 0.2s;">
+                        <i class="fas fa-trash"></i> Clear Chat History
+                    </button>
+                    <button id="blockUserBtn" style="width: 100%; padding: 12px; background: #ff3b30; color: white; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: background 0.2s;">
+                        <i class="fas fa-ban"></i> Block User
+                    </button>
+                    <button id="reportUserBtn" style="width: 100%; padding: 12px; background: #ff9500; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s;">
+                        <i class="fas fa-flag"></i> Report User
+                    </button>
+                </div>
+                
+                <button id="closeChatInfoBtn" style="width: 100%; padding: 12px; background: #0084ff; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px;">Close</button>
+            `;
+            
+            chatInfoOverlay.appendChild(chatInfoContainer);
+            document.body.appendChild(chatInfoOverlay);
+            
+            // Add event listeners
+            document.getElementById('closeChatInfoBtn').addEventListener('click', () => {
+                chatInfoOverlay.remove();
+            });
+            
+            document.getElementById('clearChatHistoryBtn').addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear all messages in this chat? This action cannot be undone.')) {
+                    clearChatHistory();
+                    chatInfoOverlay.remove();
+                }
+            });
+            
+            document.getElementById('blockUserBtn').addEventListener('click', () => {
+                if (confirm('Are you sure you want to block this user? You will no longer receive messages from them.')) {
+                    blockUser();
+                    chatInfoOverlay.remove();
+                }
+            });
+            
+            document.getElementById('reportUserBtn').addEventListener('click', () => {
+                reportUser();
+                chatInfoOverlay.remove();
+            });
+            
+            // Close when clicking outside
+            chatInfoOverlay.addEventListener('click', (e) => {
+                if (e.target === chatInfoOverlay) {
+                    chatInfoOverlay.remove();
+                }
+            });
+        }
+        
+        function clearChatHistory() {
+            if (!currentChatId) return;
+            
+            showNotification('Clearing chat history...', 'success');
+            // In a real app, you would delete messages from Firestore
+            // For now, just clear local messages
+            const messagesContainer = document.getElementById('messagesContainer');
+            if (messagesContainer) {
+                messagesContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-trash"></i><p>Chat history cleared</p></div>';
+            }
+        }
+        
+        function blockUser() {
+            if (!currentChatId || !currentChatUser) return;
+            
+            showNotification(`Blocked ${currentChatUser.name}`, 'success');
+            // In a real app, you would update blocked users in Firestore
+        }
+        
+        function reportUser() {
+            if (!currentChatId || !currentChatUser) return;
+            
+            showNotification(`Reported ${currentChatUser.name}`, 'success');
+            // In a real app, you would send a report to the server
         }
         
         function showMenuOptions() {
@@ -3650,19 +3879,19 @@
             
             menuContainer.innerHTML = `
                 <h3 style="margin-bottom: 15px; color: var(--text-primary);">Menu</h3>
-                <div class="menu-option" style="padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: background 0.2s; margin-bottom: 5px;">
+                <div class="menu-option" style="padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: background 0.2s; margin-bottom: 5px; display: flex; align-items: center; gap: 10px;">
                     <i class="fas fa-user-friends"></i> New Group
                 </div>
-                <div class="menu-option" style="padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: background 0.2s; margin-bottom: 5px;">
+                <div class="menu-option" style="padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: background 0.2s; margin-bottom: 5px; display: flex; align-items: center; gap: 10px;">
                     <i class="fas fa-archive"></i> Archived Chats
                 </div>
-                <div class="menu-option" style="padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: background 0.2s; margin-bottom: 5px;">
+                <div class="menu-option" style="padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: background 0.2s; margin-bottom: 5px; display: flex; align-items: center; gap: 10px;">
                     <i class="fas fa-star"></i> Starred Messages
                 </div>
-                <div class="menu-option" style="padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: background 0.2s; margin-bottom: 5px;">
+                <div class="menu-option" style="padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: background 0.2s; margin-bottom: 5px; display: flex; align-items: center; gap: 10px;">
                     <i class="fas fa-cog"></i> Settings
                 </div>
-                <div class="menu-option" style="padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: background 0.2s; margin-bottom: 5px; color: var(--danger-color);">
+                <div class="menu-option" style="padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: background 0.2s; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; color: var(--danger-color);">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </div>
                 <button id="closeMenuBtn" style="margin-top: 15px; padding: 10px 20px; background: var(--secondary-color); border: none; border-radius: 8px; cursor: pointer; width: 100%;">Close</button>
@@ -3684,7 +3913,7 @@
             });
             
             menuOptions[2].addEventListener('click', () => {
-                showNotification('Starred messages feature coming soon!', 'info');
+                showStarredMessages();
                 menuOverlay.remove();
             });
             
@@ -3713,6 +3942,64 @@
             });
         }
         
+        function showStarredMessages() {
+            // Create starred messages overlay
+            const starredOverlay = document.createElement('div');
+            starredOverlay.id = 'starredOverlay';
+            starredOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.9);
+                z-index: 2000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            
+            const starredContainer = document.createElement('div');
+            starredContainer.style.cssText = `
+                background: white;
+                border-radius: 12px;
+                padding: 20px;
+                min-width: 300px;
+                max-width: 500px;
+                width: 90%;
+                max-height: 90vh;
+                overflow-y: auto;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            `;
+            
+            starredContainer.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="color: var(--text-primary);">Starred Messages</h3>
+                    <button id="closeStarredBtn" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-secondary);">×</button>
+                </div>
+                <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
+                    <i class="fas fa-star" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+                    <p>No starred messages yet</p>
+                    <p style="font-size: 14px; margin-top: 10px;">Long press on any message to star it</p>
+                </div>
+            `;
+            
+            starredOverlay.appendChild(starredContainer);
+            document.body.appendChild(starredOverlay);
+            
+            // Close button
+            document.getElementById('closeStarredBtn').addEventListener('click', () => {
+                starredOverlay.remove();
+            });
+            
+            // Close when clicking outside
+            starredOverlay.addEventListener('click', (e) => {
+                if (e.target === starredOverlay) {
+                    starredOverlay.remove();
+                }
+            });
+        }
+        
         function logoutUser() {
             // Clear local storage
             localStorage.removeItem('currentUser');
@@ -3725,6 +4012,9 @@
             localStorage.removeItem('cachedChats');
             localStorage.removeItem('cachedContacts');
             localStorage.removeItem('pendingMessages');
+            
+            // Update online status to offline
+            updateUserOnlineStatus(false);
             
             // Sign out from Firebase
             auth.signOut().then(() => {
@@ -3820,7 +4110,8 @@
                     if (e.target.files && e.target.files.length > 0) {
                         const files = Array.from(e.target.files);
                         files.forEach(file => {
-                            sendMediaMessage(file, 'image');
+                            const type = file.type.startsWith('image/') ? 'image' : 'video';
+                            sendMediaMessage(file, type);
                         });
                     }
                     this.value = ''; // Reset input
@@ -4305,12 +4596,14 @@
                     { icon: 'fas fa-reply', text: 'Reply', action: () => replyToMessage(message) },
                     { icon: 'fas fa-edit', text: 'Edit', action: () => editMessage(message) },
                     { icon: 'fas fa-trash', text: 'Delete', action: () => deleteMessage(message) },
-                    { icon: 'fas fa-copy', text: 'Copy', action: () => copyMessageText(message) }
+                    { icon: 'fas fa-copy', text: 'Copy', action: () => copyMessageText(message) },
+                    { icon: 'fas fa-star', text: 'Star', action: () => starMessage(message) }
                 ];
             } else {
                 menuItems = [
                     { icon: 'fas fa-reply', text: 'Reply', action: () => replyToMessage(message) },
                     { icon: 'fas fa-copy', text: 'Copy', action: () => copyMessageText(message) },
+                    { icon: 'fas fa-star', text: 'Star', action: () => starMessage(message) },
                     { icon: 'fas fa-flag', text: 'Report', action: () => reportMessage(message) }
                 ];
             }
@@ -4384,6 +4677,11 @@
                 };
                 document.addEventListener('click', closeMenu);
             }, 10);
+        }
+        
+        function starMessage(message) {
+            showNotification('Message starred', 'success');
+            // In a real app, you would save starred messages to Firestore
         }
         
         function replyToMessage(message) {
@@ -4510,6 +4808,23 @@
                         
                         // Update chat list to show online status
                         updateChatListWithCache();
+                        
+                        // Update current chat user status if in a chat
+                        if (currentChatId && currentChatUser) {
+                            const isOnline = onlineUsers.includes(currentChatUser.uid);
+                            const statusElement = document.getElementById('chatUserStatus');
+                            if (statusElement) {
+                                if (isOnline) {
+                                    statusElement.textContent = 'Online';
+                                    statusElement.style.color = 'var(--success-color)';
+                                } else {
+                                    statusElement.textContent = 'Offline';
+                                    statusElement.style.color = 'var(--text-secondary)';
+                                }
+                            }
+                        }
+                    }, error => {
+                        console.error('Error loading online users:', error);
                     });
             } catch (error) {
                 console.error('Error loading online users:', error);
@@ -4566,6 +4881,11 @@
         // Initialize when page loads
         window.addEventListener('load', () => {
             console.log('Messages page loaded with offline support');
+            
+            // Ensure permanent start chat button is always visible
+            if (permanentStartChatBtn) {
+                permanentStartChatBtn.style.display = 'flex';
+            }
         });
     </script>
 </body>

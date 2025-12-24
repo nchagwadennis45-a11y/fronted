@@ -592,10 +592,6 @@
             box-shadow: var(--shadow);
         }
         
-        .refresh-btn:active {
-            transform: translateY(0);
-        }
-        
         /* Tool Categories */
         .tool-categories {
             display: flex;
@@ -1626,10 +1622,10 @@
     </style>
 </head>
 <body>
-    <!-- Auth State Loader -->
+    <!-- Auth State Loader - Simplified -->
     <div class="auth-loader" id="authLoader">
         <div class="auth-loader-spinner"></div>
-        <div class="auth-loader-text">Checking authentication...</div>
+        <div class="auth-loader-text">Loading Business Tools...</div>
     </div>
     
     <!-- Offline Overlay -->
@@ -2171,7 +2167,7 @@
 
     <script>
         // =============================================
-        // COMPLETE BUSINESS TOOLS SYSTEM
+        // UPDATED BUSINESS TOOLS SYSTEM - NO AUTH CHECK
         // =============================================
 
         // Firebase Configuration
@@ -2239,8 +2235,7 @@
             AFFILIATE: 'knecta_affiliate',
             LAST_SYNC: 'knecta_tools_last_sync',
             OFFLINE_OVERLAY_DISMISSED: 'knecta_tools_offline_overlay_dismissed',
-            PENDING_ACTIONS: 'knecta_tools_pending_actions',
-            AUTH_INTENT: 'knecta_auth_intent'
+            PENDING_ACTIONS: 'knecta_tools_pending_actions'
         };
         
         // Subscription Plans
@@ -2565,105 +2560,95 @@
             // Initialize offline detection
             initializeOfflineDetection();
             
-            // Check for auth intent from localStorage
-            const authIntent = localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_INTENT);
-            if (authIntent === 'tools') {
-                console.log('Detected auth intent for tools page');
-                localStorage.removeItem(LOCAL_STORAGE_KEYS.AUTH_INTENT);
+            // Try to get user from main app
+            await loadUserFromMainApp();
+            
+            // Load tools and setup
+            await loadToolsFromCache();
+            setupEventListeners();
+            
+            if (allTools.length === 0) {
+                generateSampleData();
             }
             
-            // Wait for auth state using onAuthStateChanged
-            if (firebaseInitialized && auth) {
-                console.log('Waiting for Firebase auth state...');
-                auth.onAuthStateChanged(async (user) => {
-                    if (user) {
-                        console.log('User authenticated:', user.uid);
-                        currentUser = user;
-                        await initializeUserInFirebase();
-                        await loadToolsFromCache();
-                        setupEventListeners();
-                        
-                        if (allTools.length === 0) {
-                            generateSampleData();
-                        }
-                        
-                        // Show the app
-                        authLoader.classList.add('hidden');
-                        setTimeout(() => {
-                            authLoader.style.display = 'none';
-                            document.querySelector('.app-container').style.display = 'flex';
-                            updateUI();
-                            showToast('Welcome to Business Tools!', 'success');
-                        }, 500);
-                    } else {
-                        console.log('No user authenticated, loading offline mode');
-                        await loadUserFromCache();
-                        await loadToolsFromCache();
-                        setupEventListeners();
-                        
-                        if (allTools.length === 0) {
-                            generateSampleData();
-                        }
-                        
-                        // Show the app in offline mode
-                        authLoader.classList.add('hidden');
-                        setTimeout(() => {
-                            authLoader.style.display = 'none';
-                            document.querySelector('.app-container').style.display = 'flex';
-                            updateUI();
-                            showToast('Loaded in offline mode. Some features may be limited.', 'warning');
-                        }, 500);
-                    }
-                    
-                    // Hide loading screen after auth check
-                    loadingScreen.style.display = 'none';
-                    
-                    // Try to sync with server in background
-                    if (isOnline && firebaseInitialized && currentUser) {
-                        trySyncWithServer();
-                    }
-                });
-            } else {
-                // Firebase not available, load offline mode
-                console.log('Firebase not available, loading offline mode');
-                await loadUserFromCache();
-                await loadToolsFromCache();
-                setupEventListeners();
-                
-                if (allTools.length === 0) {
-                    generateSampleData();
-                }
-                
-                // Show the app
-                authLoader.classList.add('hidden');
-                setTimeout(() => {
-                    authLoader.style.display = 'none';
-                    document.querySelector('.app-container').style.display = 'flex';
-                    updateUI();
-                    showToast('Loaded in offline mode', 'info');
-                    loadingScreen.style.display = 'none';
-                }, 500);
+            // Show the app
+            authLoader.classList.add('hidden');
+            setTimeout(() => {
+                authLoader.style.display = 'none';
+                document.querySelector('.app-container').style.display = 'flex';
+                updateUI();
+                showToast('Welcome to Business Tools!', 'success');
+                loadingScreen.style.display = 'none';
+            }, 500);
+            
+            // Try to sync with server in background
+            if (isOnline && firebaseInitialized && currentUser) {
+                trySyncWithServer();
             }
             
-            console.log('Business Tools System initialization started');
+            console.log('Business Tools System initialization completed');
         }
         
-        // Load user from cache first
-        async function loadUserFromCache() {
+        // Load user from main app
+        async function loadUserFromMainApp() {
             try {
-                // Try to get user from localStorage first
-                const cachedUser = localStorage.getItem(LOCAL_STORAGE_KEYS.USER);
-                if (cachedUser) {
-                    currentUser = JSON.parse(cachedUser);
-                    console.log('Loaded user from cache:', currentUser.uid);
-                }
-                
-                // Try to get user data from app.js
+                // Try to get user from global app state
                 if (window.appState && window.appState.currentUser) {
                     currentUser = window.appState.currentUser;
-                    console.log('User detected from app.js:', currentUser.uid);
+                    console.log('User loaded from app.js:', currentUser.uid);
                 }
                 
+                // Try to get user from localStorage (backup)
+                if (!currentUser) {
+                    const cachedUser = localStorage.getItem(LOCAL_STORAGE_KEYS.USER);
+                    if (cachedUser) {
+                        currentUser = JSON.parse(cachedUser);
+                        console.log('User loaded from localStorage:', currentUser.uid);
+                    }
+                }
+                
+                // Try to get user from Firebase auth (if available)
+                if (!currentUser && firebaseInitialized && auth) {
+                    try {
+                        const user = auth.currentUser;
+                        if (user) {
+                            currentUser = user;
+                            console.log('User loaded from Firebase auth:', currentUser.uid);
+                        }
+                    } catch (error) {
+                        console.log('Could not get user from Firebase auth:', error.message);
+                    }
+                }
+                
+                // If still no user, create a demo user
+                if (!currentUser) {
+                    currentUser = {
+                        uid: 'demo_user_' + Date.now(),
+                        displayName: 'Business User',
+                        email: 'user@example.com',
+                        photoURL: ''
+                    };
+                    console.log('Created demo user for tools');
+                }
+                
+                // Load user data from localStorage
+                await loadUserDataFromCache();
+                
+            } catch (error) {
+                console.error('Error loading user from main app:', error);
+                // Create a fallback user
+                currentUser = {
+                    uid: 'fallback_user_' + Date.now(),
+                    displayName: 'User',
+                    email: '',
+                    photoURL: ''
+                };
+            }
+        }
+        
+        // Load user data from cache
+        async function loadUserDataFromCache() {
+            try {
                 // Load user profile from cache
                 const cachedProfile = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_PROFILE);
                 if (cachedProfile) {
@@ -2700,30 +2685,12 @@
                     productivityScore = parseInt(productivity) || 78;
                 }
                 
-                // If no user found, create a minimal user object
-                if (!currentUser) {
-                    currentUser = {
-                        uid: 'local_user_' + Date.now(),
-                        displayName: 'Business User',
-                        email: '',
-                        photoURL: ''
-                    };
-                    console.log('Created minimal user object for offline use');
-                }
-                
             } catch (error) {
-                console.error('Error loading user from cache:', error);
-                // Create a fallback user
-                currentUser = {
-                    uid: 'fallback_user_' + Date.now(),
-                    displayName: 'User',
-                    email: '',
-                    photoURL: ''
-                };
+                console.error('Error loading user data from cache:', error);
             }
         }
         
-        // Initialize user in Firebase
+        // Initialize user in Firebase (if needed)
         async function initializeUserInFirebase() {
             if (!isOnline || !firebaseInitialized || !currentUser || !db) return;
             
@@ -2840,6 +2807,7 @@
         // Save user data to cache
         function saveUserDataToCache() {
             try {
+                localStorage.setItem(LOCAL_STORAGE_KEYS.USER, JSON.stringify(currentUser));
                 localStorage.setItem(LOCAL_STORAGE_KEYS.SUBSCRIPTION, currentSubscription);
                 localStorage.setItem(LOCAL_STORAGE_KEYS.CREDITS, availableCredits.toString());
                 localStorage.setItem(LOCAL_STORAGE_KEYS.REVENUE, monthlyRevenue.toString());
@@ -4182,7 +4150,7 @@
             }, 2000);
         }
         
-        console.log('Business Tools System fully loaded');
+        console.log('Business Tools System fully loaded - No authentication required');
     </script>
 </body>
 </html>

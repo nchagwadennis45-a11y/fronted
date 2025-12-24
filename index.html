@@ -619,9 +619,132 @@
             color: #cbd5e1;
             font-size: 0.75rem;
         }
+        
+        /* Auto-redirect overlay */
+        .auto-redirect-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        
+        .auto-redirect-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .auto-redirect-content {
+            text-align: center;
+            max-width: 400px;
+            padding: 2rem;
+        }
+        
+        .auto-redirect-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+        
+        .auto-redirect-logo i {
+            font-size: 2.5rem;
+            color: white;
+        }
+        
+        .auto-redirect-text {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .auto-redirect-subtext {
+            color: #94a3b8;
+            margin-bottom: 1.5rem;
+        }
+        
+        .auto-redirect-user {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .auto-redirect-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+        
+        .auto-redirect-user-info h4 {
+            color: white;
+            margin: 0;
+            font-size: 1rem;
+        }
+        
+        .auto-redirect-user-info p {
+            color: #94a3b8;
+            margin: 0;
+            font-size: 0.875rem;
+        }
+        
+        .auto-redirect-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #3B82F6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body class="h-full kynecta-auth-page theme-calm protected-content no-screenshot no-context-menu">
+    <!-- Auto-redirect Overlay (Shown while checking/redirecting) -->
+    <div id="autoRedirectOverlay" class="auto-redirect-overlay">
+        <div class="auto-redirect-content">
+            <div class="auto-redirect-logo">
+                <i class="fas fa-comments"></i>
+            </div>
+            <div class="auto-redirect-text">kynecta Chat</div>
+            <div class="auto-redirect-subtext">Loading your chat experience...</div>
+            <div id="autoRedirectUserInfo" class="auto-redirect-user hidden">
+                <div id="autoRedirectUserAvatar" class="auto-redirect-user-avatar"></div>
+                <div class="auto-redirect-user-info">
+                    <h4 id="autoRedirectUserName"></h4>
+                    <p id="autoRedirectUserEmail"></p>
+                </div>
+            </div>
+            <div id="autoRedirectSpinner" class="auto-redirect-spinner"></div>
+            <div id="autoRedirectMessage" class="text-blue-300 mt-4 text-sm"></div>
+            <button id="cancelAutoRedirect" class="mt-4 text-blue-400 hover:text-blue-300 text-sm hidden">
+                <i class="fas fa-times mr-1"></i>Cancel auto-login
+            </button>
+        </div>
+    </div>
+
     <!-- DEFENSIVE: Offline mode indicator (hidden by default) -->
     <div id="offlineModeIndicator" class="offline-mode-indicator hidden">
         <i class="fas fa-wifi-slash"></i>
@@ -719,7 +842,7 @@
     </div>
 
     <!-- Main Layout -->
-    <div class="flex min-h-screen">
+    <div id="mainLayout" class="flex min-h-screen">
         <!-- Permanent Advertisement Side (Left) -->
         <div class="fixed-side">
             <div class="advertisement-content p-8">
@@ -1513,11 +1636,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             // UI FIRST: Show layout immediately
             console.log('✅ UI rendering complete - layout visible');
-            
-            // Start counters and animations (UI-only)
-            if (window.kynectaChatApp) {
-                window.kynectaChatApp.startCounterAnimations();
-            }
         });
         
         // DEFENSIVE AUTH: Firebase configuration with offline fallback
@@ -2164,6 +2282,90 @@
                 }
                 return null;
             }
+            
+            // New method: Check if user is logged in (WhatsApp-style)
+            isUserLoggedIn() {
+                try {
+                    // Check localStorage first (fastest)
+                    const savedUser = localStorage.getItem('kynecta-chat-user');
+                    const autoLoginEnabled = localStorage.getItem('kynecta-chat-auto-login') === 'true';
+                    
+                    if (!savedUser || !autoLoginEnabled) {
+                        return false;
+                    }
+                    
+                    const userData = JSON.parse(savedUser);
+                    
+                    // Check if user has been logged out manually
+                    const isLoggedOut = localStorage.getItem('kynecta-chat-logged-out') === 'true';
+                    if (isLoggedOut) {
+                        return false;
+                    }
+                    
+                    // Check if session is expired (30 days)
+                    if (userData.lastLogin) {
+                        const lastLogin = new Date(userData.lastLogin);
+                        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+                        if (lastLogin < thirtyDaysAgo) {
+                            console.log('Session expired (older than 30 days)');
+                            return false;
+                        }
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Error checking login status:', error);
+                    return false;
+                }
+            }
+            
+            // New method: Get logged in user data
+            getLoggedInUser() {
+                try {
+                    if (!this.isUserLoggedIn()) {
+                        return null;
+                    }
+                    
+                    const savedUser = localStorage.getItem('kynecta-chat-user');
+                    return JSON.parse(savedUser);
+                } catch (error) {
+                    console.error('Error getting logged in user:', error);
+                    return null;
+                }
+            }
+            
+            // New method: Logout user (clear session)
+            logoutUser() {
+                try {
+                    // Mark as logged out
+                    localStorage.setItem('kynecta-chat-logged-out', 'true');
+                    
+                    // Clear auto-login
+                    localStorage.removeItem('kynecta-chat-auto-login');
+                    
+                    // Keep user data for future login but remove sensitive info
+                    const savedUser = localStorage.getItem('kynecta-chat-user');
+                    if (savedUser) {
+                        const userData = JSON.parse(savedUser);
+                        // Keep basic info but mark as logged out
+                        userData.autoLogin = false;
+                        localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
+                    }
+                    
+                    // Firebase logout if available
+                    if (this.auth) {
+                        this.auth.signOut().catch(() => {
+                            // Ignore Firebase logout errors
+                        });
+                    }
+                    
+                    console.log('✅ User logged out');
+                    return true;
+                } catch (error) {
+                    console.error('Error logging out:', error);
+                    return false;
+                }
+            }
         }
 
         // Initialize Firebase Auth Service in background
@@ -2176,8 +2378,7 @@
     <script>
         /**
          * kynecta Chat - Main Application Script
-         * Simplified version without mood/interest selection
-         * Opens directly to login with multiple authentication methods
+         * WhatsApp-style authentication: Auto-redirect to chat if user is already logged in
          */
 
         class kynectaChatApp {
@@ -2204,11 +2405,263 @@
                 this.firebaseSessionAvailable = false;
                 this.cachedCredentialsAvailable = false;
                 
-                // UI FIRST: Run instant quick login check without blocking
-                setTimeout(() => this.instantQuickLoginCheck(), 0);
+                // Auto-redirect in progress flag
+                this.autoRedirectInProgress = false;
+                
+                // Start auto-redirect check immediately
+                this.startAutoRedirectCheck();
                 
                 // Initialize the rest of the app (non-blocking)
                 setTimeout(() => this.init(), 50);
+            }
+
+            /**
+             * Start auto-redirect check (WhatsApp-style)
+             */
+            startAutoRedirectCheck() {
+                console.log('🔍 Starting WhatsApp-style auto-redirect check...');
+                
+                // Show overlay immediately
+                const overlay = document.getElementById('autoRedirectOverlay');
+                if (overlay) {
+                    overlay.classList.remove('hidden');
+                }
+                
+                // Hide main layout during check
+                const mainLayout = document.getElementById('mainLayout');
+                if (mainLayout) {
+                    mainLayout.style.opacity = '0';
+                    mainLayout.style.pointerEvents = 'none';
+                }
+                
+                // Check for logged in user
+                setTimeout(() => this.checkAndAutoRedirect(), 100);
+            }
+            
+            /**
+             * Check if user is logged in and auto-redirect
+             */
+            async checkAndAutoRedirect() {
+                try {
+                    console.log('🔍 Checking if user is already logged in...');
+                    
+                    // Update overlay message
+                    this.updateAutoRedirectMessage('Checking your session...');
+                    
+                    // Check Firebase service
+                    if (window.firebaseAuth) {
+                        // Check if user is logged in (WhatsApp-style)
+                        const isLoggedIn = window.firebaseAuth.isUserLoggedIn();
+                        
+                        if (isLoggedIn) {
+                            const userData = window.firebaseAuth.getLoggedInUser();
+                            if (userData) {
+                                console.log('✅ User is already logged in:', userData.email);
+                                
+                                // Show user info in overlay
+                                this.showUserInfoInOverlay(userData);
+                                
+                                // Update message
+                                this.updateAutoRedirectMessage('Session found! Redirecting to chat...');
+                                
+                                // Show cancel button
+                                this.showCancelButton();
+                                
+                                // Wait a moment for user to see the info
+                                await new Promise(resolve => setTimeout(resolve, 1500));
+                                
+                                // Check if user canceled
+                                if (!this.autoRedirectInProgress) {
+                                    console.log('Auto-redirect canceled by user');
+                                    this.hideAutoRedirectOverlay();
+                                    return;
+                                }
+                                
+                                // Perform auto-login and redirect
+                                await this.performAutoLoginAndRedirect(userData);
+                                return;
+                            }
+                        }
+                    }
+                    
+                    // No user logged in
+                    console.log('⚡ No logged in user found, showing login page');
+                    
+                    // Hide overlay and show login page
+                    this.hideAutoRedirectOverlay();
+                    
+                    // Show quick login if available
+                    setTimeout(() => this.instantQuickLoginCheck(), 300);
+                    
+                } catch (error) {
+                    console.error('❌ Auto-redirect check failed:', error);
+                    
+                    // Hide overlay and show login page
+                    this.hideAutoRedirectOverlay();
+                    
+                    // Show quick login if available
+                    setTimeout(() => this.instantQuickLoginCheck(), 300);
+                }
+            }
+            
+            /**
+             * Show user info in auto-redirect overlay
+             */
+            showUserInfoInOverlay(userData) {
+                const userInfo = document.getElementById('autoRedirectUserInfo');
+                const userAvatar = document.getElementById('autoRedirectUserAvatar');
+                const userName = document.getElementById('autoRedirectUserName');
+                const userEmail = document.getElementById('autoRedirectUserEmail');
+                
+                if (userInfo && userAvatar && userName && userEmail) {
+                    userInfo.classList.remove('hidden');
+                    userAvatar.textContent = (userData.displayName || userData.email).charAt(0).toUpperCase();
+                    userName.textContent = userData.displayName || userData.email.split('@')[0];
+                    userEmail.textContent = userData.email;
+                }
+            }
+            
+            /**
+             * Update auto-redirect message
+             */
+            updateAutoRedirectMessage(message) {
+                const messageElement = document.getElementById('autoRedirectMessage');
+                if (messageElement) {
+                    messageElement.textContent = message;
+                }
+            }
+            
+            /**
+             * Show cancel button in overlay
+             */
+            showCancelButton() {
+                const cancelButton = document.getElementById('cancelAutoRedirect');
+                if (cancelButton) {
+                    cancelButton.classList.remove('hidden');
+                    cancelButton.addEventListener('click', () => {
+                        this.cancelAutoRedirect();
+                    });
+                }
+            }
+            
+            /**
+             * Cancel auto-redirect
+             */
+            cancelAutoRedirect() {
+                this.autoRedirectInProgress = false;
+                console.log('❌ Auto-redirect canceled by user');
+                
+                // Mark as logged out so it doesn't auto-redirect again
+                localStorage.setItem('kynecta-chat-logged-out', 'true');
+                
+                // Hide overlay and show login page
+                this.hideAutoRedirectOverlay();
+                
+                // Show toast
+                this.showToast('Auto-login canceled. Please sign in manually.', 'info');
+            }
+            
+            /**
+             * Hide auto-redirect overlay
+             */
+            hideAutoRedirectOverlay() {
+                const overlay = document.getElementById('autoRedirectOverlay');
+                const mainLayout = document.getElementById('mainLayout');
+                
+                if (overlay) {
+                    overlay.classList.add('hidden');
+                }
+                
+                if (mainLayout) {
+                    mainLayout.style.opacity = '1';
+                    mainLayout.style.pointerEvents = 'auto';
+                    mainLayout.classList.add('fade-in');
+                }
+            }
+            
+            /**
+             * Perform auto-login and redirect to chat
+             */
+            async performAutoLoginAndRedirect(userData) {
+                try {
+                    this.autoRedirectInProgress = true;
+                    
+                    // Update message
+                    this.updateAutoRedirectMessage('Logging you in automatically...');
+                    
+                    // Clear logged-out flag
+                    localStorage.removeItem('kynecta-chat-logged-out');
+                    
+                    // Set auto-login flag
+                    localStorage.setItem('kynecta-chat-auto-login', 'true');
+                    
+                    // Update last login time
+                    userData.lastLogin = new Date().toISOString();
+                    localStorage.setItem('kynecta-chat-user', JSON.stringify(userData));
+                    
+                    // Try to refresh Firebase session if online
+                    if (this.isOnline && window.firebaseAuth && window.firebaseAuth.isInitialized && !userData.isOfflineUser && userData.firebaseSession) {
+                        try {
+                            await window.firebaseAuth.quickLogin();
+                            console.log('✅ Firebase session refreshed');
+                        } catch (firebaseError) {
+                            console.warn('Firebase auto-login failed, continuing with cached data:', firebaseError);
+                        }
+                    }
+                    
+                    // Wait a moment
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    // Check if still not canceled
+                    if (!this.autoRedirectInProgress) {
+                        return;
+                    }
+                    
+                    // Update message
+                    this.updateAutoRedirectMessage('Welcome back! Opening chat...');
+                    
+                    // Wait a moment more
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Check if still not canceled
+                    if (!this.autoRedirectInProgress) {
+                        return;
+                    }
+                    
+                    // Redirect to chat
+                    this.redirectToChatDirectly(userData);
+                    
+                } catch (error) {
+                    console.error('❌ Auto-login failed:', error);
+                    
+                    // Hide overlay and show login page
+                    this.hideAutoRedirectOverlay();
+                    
+                    // Show error toast
+                    this.showToast('Auto-login failed. Please sign in manually.', 'error');
+                }
+            }
+            
+            /**
+             * Redirect directly to chat (no fade animations)
+             */
+            redirectToChatDirectly(userData) {
+                // Prepare auth token
+                const authToken = btoa(JSON.stringify({
+                    uid: userData.uid,
+                    email: userData.email,
+                    displayName: userData.displayName,
+                    mobile: userData.mobile || '',
+                    isOffline: userData.isOfflineUser || false,
+                    hasPremiumTrial: userData.hasPremiumTrial || false,
+                    offlineMode: this.offlineMode,
+                    firebaseSession: userData.firebaseSession || false,
+                    autoLoginAvailable: true,
+                    autoRedirected: true
+                }));
+                
+                // Redirect immediately
+                window.location.href = `chat.html?auth=${encodeURIComponent(authToken)}&offline=${this.offlineMode}&firebase=${userData.firebaseSession || false}&auto=1`;
             }
 
             /**
@@ -2322,7 +2775,7 @@
                 // Check for auto-login status updates after Firebase initializes
                 setTimeout(() => this.checkAutoLoginStatus(), 1000);
                 
-                console.log('💬 kynecta Chat app initialized with simplified flow');
+                console.log('💬 kynecta Chat app initialized with WhatsApp-style authentication');
             }
             
             /**
@@ -2796,6 +3249,9 @@
                 this.showLoading('Logging in...');
                 
                 try {
+                    // Clear logged-out flag
+                    localStorage.removeItem('kynecta-chat-logged-out');
+                    
                     // Check if user is offline and handle accordingly
                     if (this.isOnline) {
                         // Online mode - try Firebase if available
@@ -2850,8 +3306,8 @@
                 const autoLoginBadge = document.getElementById('autoLoginBadge');
                 if (autoLoginBadge) autoLoginBadge.classList.add('hidden');
                 
-                // Clear localStorage to prevent auto-login next time
-                localStorage.removeItem('kynecta-chat-user');
+                // Mark as logged out
+                localStorage.setItem('kynecta-chat-logged-out', 'true');
                 localStorage.removeItem('kynecta-chat-auto-login');
                 
                 // Reset auto-login status
@@ -2860,7 +3316,7 @@
                 this.cachedCredentialsAvailable = false;
                 this.updateAutoLoginStatus(false);
                 
-                console.log('Quick login hidden and localStorage cleared');
+                console.log('Quick login hidden and user marked as logged out');
             }
 
             /**
@@ -3223,6 +3679,9 @@
                 this.setLoginLoadingState(true, method);
                 
                 try {
+                    // Clear logged-out flag
+                    localStorage.removeItem('kynecta-chat-logged-out');
+                    
                     // DEFENSIVE AUTH: Try Firebase login if online, otherwise use offline
                     let loginResult;
                     if (this.isOnline && window.firebaseAuth && window.firebaseAuth.isInitialized && !window.firebaseAuth.offlineMode) {
@@ -3329,6 +3788,9 @@
                 }
                 
                 if (isValid) {
+                    // Clear logged-out flag
+                    localStorage.removeItem('kynecta-chat-logged-out');
+                    
                     // Set loading state
                     this.setRegisterLoadingState(true);
                     

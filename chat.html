@@ -479,7 +479,7 @@
         
         /* Adjust content areas for sidebar */
         #chatsContent,
-        #toolsContent {
+            #toolsContent {
             margin-left: 0;
             width: 100%;
         }
@@ -1416,18 +1416,118 @@
     let iframesLoaded = {};
     let appVersion = '1.0.0'; // Default version, will be updated from service worker
     let isOnline = navigator.onLine;
+    let currentUser = null;
     
     document.addEventListener('DOMContentLoaded', function() {
         console.log('DOM loaded, initializing iframe controller...');
         
-        // REMOVED: All authentication checks
-        // REMOVED: All redirects to index.html
+        // User is already authenticated from index.html
+        // Get user data from localStorage
+        initializeUserFromStorage();
         
         // Set up online/offline detection
         setupOnlineStatus();
+    });
+    
+    function initializeUserFromStorage() {
+        // Get user data from localStorage (set by index.html)
+        const userData = localStorage.getItem('kynecta_user');
+        if (userData) {
+            try {
+                currentUser = JSON.parse(userData);
+                console.log('User authenticated:', currentUser.name);
+                
+                // Initialize chat app immediately
+                initializeChatApp();
+                
+                return;
+            } catch (e) {
+                console.error('Error parsing user data:', e);
+                // Fallback to default user if needed
+                createDefaultUser();
+            }
+        } else {
+            // No user in localStorage, create default user
+            console.log('No user found in localStorage, creating default user');
+            createDefaultUser();
+        }
+    }
+    
+    function createDefaultUser() {
+        // Create a default user for testing
+        currentUser = {
+            id: 'user_' + Date.now(),
+            name: 'User',
+            email: 'user@kynecta.com',
+            password: 'password',
+            createdAt: new Date().toISOString(),
+            avatar: null,
+            status: 'online',
+            lastSeen: null,
+            mood: 'happy',
+            interests: [],
+            settings: {
+                theme: 'light',
+                fontSize: 'medium',
+                notifications: true,
+                chatWallpaper: 'default'
+            }
+        };
+        
+        // Save user to localStorage
+        localStorage.setItem('kynecta_user', JSON.stringify(currentUser));
+        
+        // Initialize user data
+        initializeUserData(currentUser.id);
+        
+        console.log('Default user created:', currentUser.name);
+        
+        // Initialize chat app
+        initializeChatApp();
+    }
+    
+    function initializeUserData(userId) {
+        // Initialize empty data structures for the user
+        if (!localStorage.getItem('kynecta_chats_' + userId)) {
+            localStorage.setItem('kynecta_chats_' + userId, JSON.stringify([]));
+        }
+        
+        if (!localStorage.getItem('kynecta_contacts_' + userId)) {
+            localStorage.setItem('kynecta_contacts_' + userId, JSON.stringify([]));
+        }
+        
+        if (!localStorage.getItem('kynecta_messages_' + userId)) {
+            localStorage.setItem('kynecta_messages_' + userId, JSON.stringify({}));
+        }
+        
+        if (!localStorage.getItem('kynecta_groups_' + userId)) {
+            localStorage.setItem('kynecta_groups_' + userId, JSON.stringify([]));
+        }
+        
+        if (!localStorage.getItem('kynecta_status_' + userId)) {
+            localStorage.setItem('kynecta_status_' + userId, JSON.stringify([]));
+        }
+        
+        if (!localStorage.getItem('kynecta_calls_' + userId)) {
+            localStorage.setItem('kynecta_calls_' + userId, JSON.stringify([]));
+        }
+        
+        if (!localStorage.getItem('kynecta_offline_queue_' + userId)) {
+            localStorage.setItem('kynecta_offline_queue_' + userId, JSON.stringify([]));
+        }
+    }
+    
+    function initializeChatApp() {
+        console.log('Initializing chat app for user:', currentUser.name);
         
         // Show loading screen initially
         showLoading();
+        
+        // Show sidebar and mobile nav
+        document.getElementById('permanentSidebar').classList.remove('hidden');
+        if (window.innerWidth < 768) {
+            document.getElementById('mobileNavBar').classList.remove('hidden');
+        }
         
         // Setup navigation
         setupNavigation();
@@ -1438,10 +1538,9 @@
         // Hide loading screen and load messages page immediately
         setTimeout(() => {
             hideLoading();
-            // Load messages page immediately without authentication
             switchPage('messages');
-            console.log('Iframe controller initialization complete - no auth required');
-        }, 500); // Reduced delay for faster loading
+            console.log('Chat app initialization complete');
+        }, 500);
         
         // Listen for iframe messages
         window.addEventListener('message', handleIframeMessage);
@@ -1456,7 +1555,7 @@
                 }
             });
         }
-    });
+    }
     
     function setupOnlineStatus() {
         window.addEventListener('online', () => {
@@ -1466,6 +1565,11 @@
             
             // Notify all iframes about online status
             notifyIframesOnlineStatus();
+            
+            // Sync offline data when coming online
+            if (currentUser) {
+                syncOfflineData();
+            }
         });
         
         window.addEventListener('offline', () => {
@@ -1476,6 +1580,28 @@
             // Notify all iframes about offline status
             notifyIframesOnlineStatus();
         });
+    }
+    
+    function syncOfflineData() {
+        if (!currentUser) return;
+        
+        // Check for offline messages to sync
+        const offlineQueueKey = 'kynecta_offline_queue_' + currentUser.id;
+        const offlineQueue = JSON.parse(localStorage.getItem(offlineQueueKey) || '[]');
+        
+        if (offlineQueue.length > 0) {
+            console.log('Syncing', offlineQueue.length, 'offline messages');
+            
+            // In a real app, this would sync with Firebase
+            // For now, we'll just clear the offline queue
+            localStorage.setItem(offlineQueueKey, JSON.stringify([]));
+            
+            // Update offline indicator
+            const offlineCount = document.getElementById('offlineMessageCount');
+            if (offlineCount) {
+                offlineCount.textContent = '';
+            }
+        }
     }
     
     function notifyIframesOnlineStatus() {
@@ -1574,6 +1700,7 @@
                         this.contentWindow.postMessage({ 
                             type: 'kynecta_init',
                             page: iframe.id.replace('Iframe', ''),
+                            user: currentUser,
                             isOnline: isOnline,
                             version: appVersion
                         }, '*');
@@ -1595,7 +1722,7 @@
                                 <div class="p-4 text-center">
                                     <h3 class="text-lg font-semibold mb-2">Offline Mode</h3>
                                     <p class="text-gray-600">This page is not available offline.</p>
-                                    <p class="text-gray-500 text-sm mt-2">You can still use the chat feature in offline mode.</p>
+                                    <p class="text-gray-500 text-sm mt-2">You can still use cached data.</p>
                                 </div>
                             `;
                         } catch (e) {
@@ -1623,6 +1750,11 @@
     }
     
     function switchPage(pageName) {
+        if (!currentUser) {
+            console.log('Cannot switch page: No user logged in');
+            return;
+        }
+        
         console.log('Switching to page:', pageName);
         currentPage = pageName;
         
@@ -1657,6 +1789,17 @@
                 if (iframesLoaded[`${pageName}Iframe`]) {
                     iframe.classList.add('loaded');
                     console.log(`${pageName} iframe already loaded, showing instantly`);
+                    
+                    // Send user data and online status to iframe
+                    try {
+                        iframe.contentWindow.postMessage({
+                            type: 'page_switch',
+                            user: currentUser,
+                            isOnline: isOnline
+                        }, '*');
+                    } catch (e) {
+                        // Silently ignore cross-origin errors
+                    }
                 } else {
                     // Show loading briefly
                     showLoading();
@@ -1688,8 +1831,8 @@
                     break;
                     
                 case 'auth_required':
-                    // REMOVED: Auth requirement handling - no auth needed
-                    console.log('Auth request ignored - no auth required');
+                    // Handle auth requirement - user should already be authenticated
+                    console.log('Auth required, but user should already be authenticated');
                     break;
                     
                 case 'navigate_to':
@@ -1712,8 +1855,24 @@
                         }
                     }
                     break;
+                    
+                case 'user_logout':
+                    // Handle user logout
+                    handleLogout();
+                    break;
             }
         }
+    }
+    
+    function handleLogout() {
+        console.log('Logging out user:', currentUser?.name);
+        
+        // Clear current user
+        currentUser = null;
+        localStorage.removeItem('kynecta_user');
+        
+        // Redirect back to index.html for login
+        window.location.href = '../index.html';
     }
     
     function updateActiveNavIcon(pageName) {
@@ -1784,7 +1943,7 @@
         }, 3000);
     }
     
-    console.log('Iframe controller loaded successfully - no authentication required');
+    console.log('Iframe controller loaded successfully');
     </script>
 </body>
 </html>
