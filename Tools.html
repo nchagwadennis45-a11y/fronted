@@ -1948,22 +1948,22 @@
         
         // Tool URL mapping - Updated with real tool paths
         const toolUrlMap = {
-            'ai-content': '../ai-tools/content-generator.html',
-            'ai-image': '../ai-tools/image-generator.html',
-            'seo-analyzer': '../ai-tools/seo-analyzer.html',
-            'chatbot-builder': '../ai-tools/chatbot-builder.html',
-            'bulk-email': '../business-tools/email-sender.html',
-            'predictive-analytics': '../business-tools/analytics.html',
-            'invoice-generator': '../business-tools/invoice-generator.html',
-            'payment-gateway': '../business-tools/payment-gateway.html',
-            'crm-advanced': '../business-tools/crm.html',
-            'data-export': '../productivity-tools/data-export.html',
-            'social-scheduler': '../productivity-tools/social-scheduler.html',
-            'analytics-dashboard': '../productivity-tools/analytics-dashboard.html',
-            'ai-templates': '../marketplace/templates-marketplace.html',
-            'analytics-addon': '../premium-tools/advanced-analytics.html',
-            'integration-plugin': '../premium-tools/integrations.html',
-            'video-editor': '../premium-tools/video-editor.html'
+            'ai-content': '../tools/content-generator.html',
+            'ai-image': '../tools/image-generator.html',
+            'seo-analyzer': '../tools/seo-analyzer.html',
+            'chatbot-builder': '../tools/chatbot-builder.html',
+            'bulk-email': '../tools/email-sender.html',
+            'predictive-analytics': '../tools/analytics.html',
+            'invoice-generator': '../tools/invoice-generator.html',
+            'payment-gateway': '../tools/payment-gateway.html',
+            'crm-advanced': '../tools/crm.html',
+            'data-export': '../tools/data-export.html',
+            'social-scheduler': '../tools/social-scheduler.html',
+            'analytics-dashboard': '../tools/analytics-dashboard.html',
+            'ai-templates': '../tools/templates-marketplace.html',
+            'analytics-addon': '../tools/advanced-analytics.html',
+            'integration-plugin': '../tools/integrations.html',
+            'video-editor': '../tools/video-editor.html'
         };
         
         // Marketplace items
@@ -2210,17 +2210,22 @@
         const whyMoodchatSection = document.getElementById('whyMoodchatSection');
         const ctaSection = document.getElementById('ctaSection');
         
-        // Local Storage Keys
-        const LOCAL_STORAGE_KEYS = {
-            USER: 'moodchat_current_user',
-            TOOLS: 'moodchat_tools',
-            TRANSACTIONS: 'moodchat_transactions',
-            USER_DATA: 'moodchat_user_data',
-            CREDITS: 'moodchat_user_credits',
-            PLAN: 'moodchat_user_plan',
-            LAST_SYNC: 'moodchat_tools_last_sync',
-            OFFLINE_OVERLAY_DISMISSED: 'moodchat_offline_overlay_dismissed',
-            AUTH_TOKEN: 'moodchat_auth_token'
+        // Storage Keys
+        const STORAGE_KEYS = {
+            // Local Storage
+            LOCAL_USER: 'moodchat_current_user',
+            LOCAL_TOOLS: 'moodchat_tools',
+            LOCAL_TRANSACTIONS: 'moodchat_transactions',
+            LOCAL_USER_DATA: 'moodchat_user_data',
+            LOCAL_CREDITS: 'moodchat_user_credits',
+            LOCAL_PLAN: 'moodchat_user_plan',
+            LOCAL_LAST_SYNC: 'moodchat_tools_last_sync',
+            LOCAL_OFFLINE_DISMISSED: 'moodchat_offline_overlay_dismissed',
+            
+            // Session Storage (for compatibility with index.html login)
+            SESSION_USER: 'session_current_user',
+            SESSION_TOKEN: 'session_auth_token',
+            SESSION_USER_DATA: 'session_user_data'
         };
         
         // Initialize the application
@@ -2232,11 +2237,11 @@
             // Initialize offline detection
             initializeOfflineDetection();
             
-            // Check if user is logged in from session
+            // Check user authentication from multiple sources
             await checkUserAuthentication();
             
-            // Load user data from cache
-            await loadUserFromCache();
+            // Load user data
+            await loadUserData();
             
             // Load tools from cache
             await loadToolsFromCache();
@@ -2264,44 +2269,174 @@
         
         async function checkUserAuthentication() {
             try {
-                // Check if user is logged in via session/local storage
-                const authToken = localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN);
-                const storedUser = localStorage.getItem(LOCAL_STORAGE_KEYS.USER);
+                // Check multiple authentication sources in order of priority
                 
-                if (authToken && storedUser) {
-                    currentUser = JSON.parse(storedUser);
+                // 1. Check Firebase authentication (if initialized)
+                if (firebaseInitialized && auth) {
+                    await checkFirebaseAuth();
+                }
+                
+                // 2. Check session storage (from index.html login)
+                await checkSessionStorage();
+                
+                // 3. Check local storage
+                await checkLocalStorage();
+                
+                // 4. Only create demo user if NO authentication source found
+                if (!currentUser) {
+                    console.log('No user found in any authentication source');
                     
-                    if (firebaseInitialized && auth) {
-                        // Try to get current user from Firebase
-                        const firebaseUser = auth.currentUser;
+                    // Check if we should create demo user (only if absolutely necessary)
+                    const shouldCreateDemo = await shouldCreateDemoUser();
+                    if (shouldCreateDemo) {
+                        createDemoUser();
+                    } else {
+                        // Redirect to login
+                        redirectToLogin();
+                        return false;
+                    }
+                }
+                
+                return true;
+                
+            } catch (error) {
+                console.error('Authentication error:', error);
+                
+                // Fallback to local storage
+                const localUser = localStorage.getItem(STORAGE_KEYS.LOCAL_USER);
+                if (localUser) {
+                    currentUser = JSON.parse(localUser);
+                    return true;
+                }
+                
+                // Last resort: create demo user
+                createDemoUser();
+                return false;
+            }
+        }
+        
+        async function checkFirebaseAuth() {
+            if (!firebaseInitialized || !auth) return;
+            
+            try {
+                // Check Firebase auth state
+                return new Promise((resolve) => {
+                    auth.onAuthStateChanged(async (firebaseUser) => {
                         if (firebaseUser) {
                             currentUser = {
                                 uid: firebaseUser.uid,
                                 displayName: firebaseUser.displayName || 'User',
                                 email: firebaseUser.email,
-                                photoURL: firebaseUser.photoURL
+                                photoURL: firebaseUser.photoURL,
+                                source: 'firebase'
                             };
                             
                             // Fetch user data from Firestore
                             await fetchUserDataFromFirestore();
+                            
+                            // Save to local storage for offline access
+                            saveUserToLocalStorage();
+                            
+                            console.log('Firebase user authenticated:', currentUser.displayName);
+                            resolve(true);
+                        } else {
+                            resolve(false);
                         }
-                    }
-                    
-                    console.log('User authenticated:', currentUser.displayName);
-                    return true;
-                } else {
-                    // Redirect to login if no user found
-                    console.log('No user found, redirecting to login...');
-                    // window.location.href = '../index.html';
-                    // For now, create demo user
-                    createDemoUser();
-                    return false;
-                }
+                    });
+                });
             } catch (error) {
-                console.error('Authentication error:', error);
-                createDemoUser();
+                console.error('Firebase auth check error:', error);
                 return false;
             }
+        }
+        
+        async function checkSessionStorage() {
+            try {
+                const sessionUser = sessionStorage.getItem(STORAGE_KEYS.SESSION_USER);
+                const sessionToken = sessionStorage.getItem(STORAGE_KEYS.SESSION_TOKEN);
+                
+                if (sessionUser && sessionToken) {
+                    currentUser = JSON.parse(sessionUser);
+                    currentUser.source = 'session';
+                    
+                    // Load session user data
+                    const sessionData = sessionStorage.getItem(STORAGE_KEYS.SESSION_USER_DATA);
+                    if (sessionData) {
+                        userData = JSON.parse(sessionData);
+                        currentPlan = userData.plan || 'free';
+                        currentCredits = userData.credits || 0;
+                        monthlyRevenue = userData.monthlyRevenue || 0;
+                        aiUsage = userData.aiUsage || 0;
+                        productivityScore = userData.productivityScore || 50;
+                    }
+                    
+                    // Sync to local storage for persistence
+                    saveUserToLocalStorage();
+                    
+                    console.log('Session user authenticated:', currentUser.displayName);
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Session storage check error:', error);
+                return false;
+            }
+        }
+        
+        async function checkLocalStorage() {
+            try {
+                const localUser = localStorage.getItem(STORAGE_KEYS.LOCAL_USER);
+                
+                if (localUser) {
+                    currentUser = JSON.parse(localUser);
+                    currentUser.source = 'local';
+                    
+                    // Load local user data
+                    await loadUserFromLocalStorage();
+                    
+                    console.log('Local storage user loaded:', currentUser.displayName);
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Local storage check error:', error);
+                return false;
+            }
+        }
+        
+        async function shouldCreateDemoUser() {
+            // Only create demo user if:
+            // 1. We're in offline mode AND
+            // 2. No user exists in any storage AND
+            // 3. User is accessing tools page directly (not redirected from login)
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromLogin = urlParams.get('fromLogin') === 'true';
+            
+            if (fromLogin) {
+                return false; // User came from login, shouldn't create demo
+            }
+            
+            if (!isOnline) {
+                // Check all storage sources
+                const hasSessionUser = sessionStorage.getItem(STORAGE_KEYS.SESSION_USER);
+                const hasLocalUser = localStorage.getItem(STORAGE_KEYS.LOCAL_USER);
+                
+                if (!hasSessionUser && !hasLocalUser) {
+                    return true; // Offline and no user found
+                }
+            }
+            
+            return false;
+        }
+        
+        function redirectToLogin() {
+            console.log('Redirecting to login page...');
+            // In a real app, redirect to login
+            // window.location.href = '../index.html?redirect=' + encodeURIComponent(window.location.pathname);
+            
+            // For now, create demo user to prevent redirect loop
+            createDemoUser();
         }
         
         async function fetchUserDataFromFirestore() {
@@ -2315,24 +2450,29 @@
                     currentCredits = userData.credits || 0;
                     monthlyRevenue = userData.monthlyRevenue || 0;
                     aiUsage = userData.aiUsage || 0;
-                    productivityScore = userData.productivityScore || 0;
+                    productivityScore = userData.productivityScore || 50;
                     
-                    // Save to cache
-                    saveUserDataToCache();
+                    // Save to local storage
+                    saveUserDataToLocalStorage();
                     
                     console.log('User data loaded from Firestore');
                 }
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                console.error('Error fetching user data from Firestore:', error);
+                // Fallback to local storage
+                await loadUserFromLocalStorage();
             }
         }
         
         function createDemoUser() {
+            console.log('Creating demo user for offline access');
+            
             currentUser = {
                 uid: 'demo_user_' + Date.now(),
                 displayName: 'Demo User',
                 email: 'demo@moodchat.com',
-                photoURL: ''
+                photoURL: '',
+                source: 'demo'
             };
             
             userData = {
@@ -2349,61 +2489,74 @@
             aiUsage = 0;
             productivityScore = 50;
             
-            localStorage.setItem(LOCAL_STORAGE_KEYS.USER, JSON.stringify(currentUser));
-            localStorage.setItem(LOCAL_STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
-            localStorage.setItem(LOCAL_STORAGE_KEYS.CREDITS, currentCredits.toString());
-            localStorage.setItem(LOCAL_STORAGE_KEYS.PLAN, currentPlan);
+            // Save to storage
+            saveUserToLocalStorage();
+            saveUserDataToLocalStorage();
             
-            console.log('Demo user created');
+            console.log('Demo user created for offline access');
         }
         
-        async function loadUserFromCache() {
+        async function loadUserData() {
             try {
-                const cachedUser = localStorage.getItem(LOCAL_STORAGE_KEYS.USER);
-                if (cachedUser) {
-                    currentUser = JSON.parse(cachedUser);
-                    console.log('Loaded user from cache:', currentUser.displayName);
-                }
+                // Try to load from local storage first
+                await loadUserFromLocalStorage();
                 
-                // Load user data
-                const cachedData = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_DATA);
-                if (cachedData) {
-                    userData = JSON.parse(cachedData);
-                    currentPlan = userData.plan || 'free';
-                    currentCredits = userData.credits || 0;
-                    monthlyRevenue = userData.monthlyRevenue || 0;
-                    aiUsage = userData.aiUsage || 0;
-                    productivityScore = userData.productivityScore || 0;
-                }
-                
-                // Load credits and plan
-                const savedCredits = localStorage.getItem(LOCAL_STORAGE_KEYS.CREDITS);
-                if (savedCredits) {
-                    currentCredits = parseInt(savedCredits);
-                }
-                
-                const savedPlan = localStorage.getItem(LOCAL_STORAGE_KEYS.PLAN);
-                if (savedPlan) {
-                    currentPlan = savedPlan;
+                // If no user data, check session storage
+                if (!currentUser) {
+                    await checkSessionStorage();
                 }
                 
                 // Set user avatar initials
                 const userAvatar = document.getElementById('userAvatar');
-                if (userAvatar) {
-                    const initials = currentUser?.displayName 
+                if (userAvatar && currentUser) {
+                    const initials = currentUser.displayName 
                         ? currentUser.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
                         : 'DU';
                     userAvatar.textContent = initials;
                 }
                 
             } catch (error) {
-                console.error('Error loading user from cache:', error);
+                console.error('Error loading user data:', error);
+            }
+        }
+        
+        async function loadUserFromLocalStorage() {
+            try {
+                const cachedUser = localStorage.getItem(STORAGE_KEYS.LOCAL_USER);
+                if (cachedUser) {
+                    currentUser = JSON.parse(cachedUser);
+                }
+                
+                // Load user data
+                const cachedData = localStorage.getItem(STORAGE_KEYS.LOCAL_USER_DATA);
+                if (cachedData) {
+                    userData = JSON.parse(cachedData);
+                    currentPlan = userData.plan || 'free';
+                    currentCredits = userData.credits || 0;
+                    monthlyRevenue = userData.monthlyRevenue || 0;
+                    aiUsage = userData.aiUsage || 0;
+                    productivityScore = userData.productivityScore || 50;
+                }
+                
+                // Load credits and plan
+                const savedCredits = localStorage.getItem(STORAGE_KEYS.LOCAL_CREDITS);
+                if (savedCredits) {
+                    currentCredits = parseInt(savedCredits);
+                }
+                
+                const savedPlan = localStorage.getItem(STORAGE_KEYS.LOCAL_PLAN);
+                if (savedPlan) {
+                    currentPlan = savedPlan;
+                }
+                
+            } catch (error) {
+                console.error('Error loading user from local storage:', error);
             }
         }
         
         async function loadToolsFromCache() {
             try {
-                const cachedTools = localStorage.getItem(LOCAL_STORAGE_KEYS.TOOLS);
+                const cachedTools = localStorage.getItem(STORAGE_KEYS.LOCAL_TOOLS);
                 if (cachedTools) {
                     allTools = JSON.parse(cachedTools);
                     isLoadedFromLocalStorage = true;
@@ -2411,7 +2564,7 @@
                 } else {
                     // Use preloaded tools if no cache
                     allTools = preloadedTools;
-                    saveToolsToCache();
+                    saveToolsToLocalStorage();
                 }
                 
                 // Apply current plan to determine locked status
@@ -2425,7 +2578,7 @@
         
         async function loadTransactionsFromCache() {
             try {
-                const cachedTransactions = localStorage.getItem(LOCAL_STORAGE_KEYS.TRANSACTIONS);
+                const cachedTransactions = localStorage.getItem(STORAGE_KEYS.LOCAL_TRANSACTIONS);
                 if (cachedTransactions) {
                     transactions = JSON.parse(cachedTransactions);
                     console.log('Loaded transactions from cache:', transactions.length);
@@ -2448,37 +2601,60 @@
                 { id: '4', type: 'subscription', title: 'Pro Plan Renewal', amount: '$49.00', date: new Date(Date.now() - 259200000).toISOString().split('T')[0], status: 'completed' }
             ];
             
-            saveTransactionsToCache();
+            saveTransactionsToLocalStorage();
         }
         
-        function saveToolsToCache() {
+        function saveUserToLocalStorage() {
             try {
-                localStorage.setItem(LOCAL_STORAGE_KEYS.TOOLS, JSON.stringify(allTools));
-            } catch (error) {
-                console.error('Error saving tools to cache:', error);
-            }
-        }
-        
-        function saveTransactionsToCache() {
-            try {
-                localStorage.setItem(LOCAL_STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
-            } catch (error) {
-                console.error('Error saving transactions to cache:', error);
-            }
-        }
-        
-        function saveUserDataToCache() {
-            try {
-                localStorage.setItem(LOCAL_STORAGE_KEYS.CREDITS, currentCredits.toString());
-                localStorage.setItem(LOCAL_STORAGE_KEYS.PLAN, currentPlan);
-                if (userData) {
-                    localStorage.setItem(LOCAL_STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
-                }
                 if (currentUser) {
-                    localStorage.setItem(LOCAL_STORAGE_KEYS.USER, JSON.stringify(currentUser));
+                    localStorage.setItem(STORAGE_KEYS.LOCAL_USER, JSON.stringify(currentUser));
                 }
             } catch (error) {
-                console.error('Error saving user data to cache:', error);
+                console.error('Error saving user to local storage:', error);
+            }
+        }
+        
+        function saveUserDataToLocalStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.LOCAL_CREDITS, currentCredits.toString());
+                localStorage.setItem(STORAGE_KEYS.LOCAL_PLAN, currentPlan);
+                
+                if (!userData) {
+                    userData = {
+                        plan: currentPlan,
+                        credits: currentCredits,
+                        monthlyRevenue: monthlyRevenue,
+                        aiUsage: aiUsage,
+                        productivityScore: productivityScore
+                    };
+                } else {
+                    userData.plan = currentPlan;
+                    userData.credits = currentCredits;
+                    userData.monthlyRevenue = monthlyRevenue;
+                    userData.aiUsage = aiUsage;
+                    userData.productivityScore = productivityScore;
+                }
+                
+                localStorage.setItem(STORAGE_KEYS.LOCAL_USER_DATA, JSON.stringify(userData));
+                
+            } catch (error) {
+                console.error('Error saving user data to local storage:', error);
+            }
+        }
+        
+        function saveToolsToLocalStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.LOCAL_TOOLS, JSON.stringify(allTools));
+            } catch (error) {
+                console.error('Error saving tools to local storage:', error);
+            }
+        }
+        
+        function saveTransactionsToLocalStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.LOCAL_TRANSACTIONS, JSON.stringify(transactions));
+            } catch (error) {
+                console.error('Error saving transactions to local storage:', error);
             }
         }
         
@@ -2545,7 +2721,7 @@
         }
         
         function checkOfflineOverlay() {
-            const overlayDismissed = localStorage.getItem(LOCAL_STORAGE_KEYS.OFFLINE_OVERLAY_DISMISSED);
+            const overlayDismissed = localStorage.getItem(STORAGE_KEYS.LOCAL_OFFLINE_DISMISSED);
             
             if (overlayDismissed === 'true') {
                 offlineOverlay.classList.remove('active');
@@ -2556,7 +2732,7 @@
         
         function dismissOfflineOverlay() {
             offlineOverlay.classList.remove('active');
-            localStorage.setItem(LOCAL_STORAGE_KEYS.OFFLINE_OVERLAY_DISMISSED, 'true');
+            localStorage.setItem(STORAGE_KEYS.LOCAL_OFFLINE_DISMISSED, 'true');
             cacheIndicator.style.display = 'flex';
         }
         
@@ -2630,7 +2806,7 @@
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 // Update last sync timestamp
-                localStorage.setItem(LOCAL_STORAGE_KEYS.LAST_SYNC, Date.now().toString());
+                localStorage.setItem(STORAGE_KEYS.LOCAL_LAST_SYNC, Date.now().toString());
                 
                 console.log('Sync completed');
                 
@@ -2980,8 +3156,8 @@
                     status: 'completed'
                 });
                 
-                saveTransactionsToCache();
-                saveUserDataToCache();
+                saveTransactionsToLocalStorage();
+                saveUserDataToLocalStorage();
                 
                 // Update productivity score
                 productivityScore = Math.min(100, productivityScore + 1);
@@ -2996,12 +3172,12 @@
                 updateStatsDisplay();
             }
             
-            // Open tool in iframe within modal
-            const toolUrl = toolUrlMap[tool.id] || `../tools/placeholder.html?tool=${tool.id}`;
+            // Get tool URL - check if it exists
+            const toolUrl = getToolUrl(tool.id);
             
             document.getElementById('toolModalContent').innerHTML = `
                 <div class="tool-iframe-container">
-                    <iframe src="${toolUrl}" class="tool-iframe" frameborder="0"></iframe>
+                    <iframe src="${toolUrl}" class="tool-iframe" frameborder="0" allow="fullscreen"></iframe>
                 </div>
             `;
             
@@ -3020,6 +3196,16 @@
             `;
             
             renderTransactions();
+        }
+        
+        function getToolUrl(toolId) {
+            // Check if tool exists in mapping
+            if (toolUrlMap[toolId]) {
+                return toolUrlMap[toolId];
+            }
+            
+            // Fallback to placeholder
+            return `../tools/placeholder.html?tool=${toolId}`;
         }
         
         function showUpgradeModal(tool) {
@@ -3362,8 +3548,8 @@
                 monthlyRevenue += selectedPackageData.price;
                 updateStatsDisplay();
                 
-                saveUserDataToCache();
-                saveTransactionsToCache();
+                saveUserDataToLocalStorage();
+                saveTransactionsToLocalStorage();
                 renderTransactions();
                 
                 paymentModal.classList.remove('active');
@@ -3399,7 +3585,7 @@
             currentPlan = planKey;
             updateUserDisplay();
             updateToolLockStatus();
-            saveUserDataToCache();
+            saveUserDataToLocalStorage();
             
             // Add transaction for paid plans
             const plan = subscriptionPlans[planKey];
@@ -3412,7 +3598,7 @@
                     date: new Date().toISOString().split('T')[0],
                     status: 'completed'
                 });
-                saveTransactionsToCache();
+                saveTransactionsToLocalStorage();
                 renderTransactions();
             }
             
@@ -3434,7 +3620,7 @@
                 status: 'scheduled'
             });
             
-            saveTransactionsToCache();
+            saveTransactionsToLocalStorage();
             renderTransactions();
             
             paymentModal.classList.remove('active');
@@ -3456,7 +3642,7 @@
             document.getElementById('userCredits').textContent = currentCredits + ' credits';
             document.getElementById('availableCredits').textContent = currentCredits.toLocaleString();
             
-            saveUserDataToCache();
+            saveUserDataToLocalStorage();
         }
         
         function formatDate(dateString) {
@@ -3601,9 +3787,9 @@
                     clearInterval(offlineCheckInterval);
                 }
                 
-                saveToolsToCache();
-                saveTransactionsToCache();
-                saveUserDataToCache();
+                saveToolsToLocalStorage();
+                saveTransactionsToLocalStorage();
+                saveUserDataToLocalStorage();
             });
             
             // Keyboard shortcuts
