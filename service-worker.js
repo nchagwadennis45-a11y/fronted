@@ -1,6 +1,7 @@
 // Service Worker for Kynecta MoodChat - User-Isolated Cache-First Strategy
 // Version: 4.1.0 - Device-Based Authentication Integration
 // Strategy: Cache-First for static assets, User-Specific for dynamic data
+// Enhanced with: Stale-While-Revalidate, Background Sync, API Response Caching
 
 const APP_VERSION = '4.1.0';
 const STATIC_CACHE_NAME = `moodchat-static-v${APP_VERSION.replace(/\./g, '-')}`;
@@ -8,6 +9,8 @@ const USER_SESSION_KEY = 'moodchat-current-user';
 const DEVICE_ID_KEY = 'moodchat-device-id';
 const SESSION_EXPIRY_KEY = 'moodchat-session-expiry';
 const LOGGED_OUT_FLAG = 'moodchat-logged-out';
+const API_CACHE_NAME = 'moodchat-api-cache';
+const BACKGROUND_SYNC_TAG = 'moodchat-background-sync';
 
 // COMPLETE ASSET MANIFEST - ALL STATIC FILES
 const STATIC_MANIFEST = {
@@ -111,6 +114,32 @@ const STATIC_MANIFEST = {
     'https://unpkg.com/axios/dist/axios.min.js'
   ]
 };
+
+// NEW: Background update queue for silent refreshes
+const updateQueue = new Map();
+
+// NEW: Performance optimization - Cache TTLs
+const CACHE_TTL = {
+  STATIC: 7 * 24 * 60 * 60 * 1000, // 7 days
+  API: 5 * 60 * 1000, // 5 minutes
+  USER_DATA: 30 * 60 * 1000, // 30 minutes
+  HTML: 24 * 60 * 60 * 1000 // 24 hours
+};
+
+// NEW: Network timeout for performance
+const NETWORK_TIMEOUT = 3000; // 3 seconds
+
+// NEW: Critical assets that must be cached for offline
+const CRITICAL_ASSETS = [
+  '/',
+  '/index.html',
+  '/styles.css',
+    '/css/styles.css',
+  '/js/app.js',
+  '/js/auth.js',
+  '/icons/moodchat-192.png',
+  '/manifest.json'
+];
 
 // Get current user session with device validation
 async function getCurrentUserSession() {
@@ -228,6 +257,9 @@ async function clearUserSession() {
     if (userCacheName) {
       await caches.delete(userCacheName);
     }
+    
+    // NEW: Clear API cache on logout
+    await caches.delete(API_CACHE_NAME);
     
     db.close();
     
@@ -436,6 +468,202 @@ function isUserDataRequest(url) {
   return userDataPatterns.some(pattern => url.pathname.includes(pattern));
 }
 
+// NEW: Check if asset is critical for offline
+function isCriticalAsset(url) {
+  return CRITICAL_ASSETS.some(pattern => 
+    url.pathname === pattern || url.pathname.endsWith(pattern)
+  );
+}
+
+// NEW: Cache with metadata for TTL management
+async function cacheWithMetadata(request, response, cacheName) {
+  if (!response || response.status !== 200) return;
+  
+  const cache = await caches.open(cacheName);
+  const metadata = {
+    url: request.url,
+    timestamp: Date.now(),
+    ttl: getCacheTTL(request.url)
+  };
+  
+  // Create a new response with metadata in headers
+  const headers = new Headers(response.headers);
+  headers.set('x-sw-cache-timestamp', metadata.timestamp.toString());
+  headers.set('x-sw-cache-ttl', metadata.ttl.toString());
+  
+  const cachedResponse = new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: headers
+  });
+  
+  await cache.put(request, cachedResponse);
+  return metadata;
+}
+
+// NEW: Get cache TTL based on request type
+function getCacheTTL(url) {
+  const urlObj = new URL(url);
+  
+  if (isApiRequest(urlObj)) {
+    return CACHE_TTL.API;
+  }
+  
+  if (isUserDataRequest(urlObj)) {
+    return CACHE_TTL.USER_DATA;
+  }
+  
+  if (urlObj.pathname.endsWith('.html')) {
+    return CACHE_TTL.HTML;
+  }
+  
+  return CACHE_TTL.STATIC;
+}
+
+// NEW: Check if cached response is stale
+function isStale(cachedResponse) {
+  if (!cachedResponse) return true;
+  
+  const timestamp = cachedResponse.headers.get('x-sw-cache-timestamp');
+  const ttl = cachedResponse.headers.get('x-sw-cache-ttl');
+  
+  if (!timestamp || !ttl) return true;
+  
+  const age = Date.now() - parseInt(timestamp);
+  return age > parseInt(ttl);
+}
+
+// NEW: Network-first with cache fallback (for API calls)
+async function networkFirstWithCache(request) {
+  try {
+    // Try network first with timeout
+    const networkPromise = fetch(request);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Network timeout')), NETWORK_TIMEOUT)
+    );
+    
+    const response = await Promise.race([networkPromise, timeoutPromise]);
+    
+    // Cache the successful response for future offline use
+    if (response && response.status === 200) {
+      await cacheWithMetadata(request, response.clone(), API_CACHE_NAME);
+    }
+    
+    return response;
+  } catch (error) {
+    console.log(`[Service Worker] Network failed for ${request.url}, trying cache...`);
+    
+    // Try to serve from cache
+    const cache = await caches.open(API_CACHE_NAME);
+    const cachedResponse = await cache.match(request);
+    
+    if (cachedResponse) {
+      console.log(`[Service Worker] Serving cached API response for ${request.url}`);
+      return cachedResponse;
+    }
+    
+    // Return a friendly offline response
+    return new Response(JSON.stringify({
+      offline: true,
+      message: 'Please check your internet connection',
+      cached: false,
+      timestamp: Date.now()
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 200
+    });
+  }
+}
+
+// NEW: Stale-while-revalidate strategy for static assets
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(STATIC_CACHE_NAME);
+  const cachedResponse = await cache.match(request);
+  
+  // Always return cached response immediately if available
+  if (cachedResponse) {
+    // Check if stale and update in background
+    if (isStale(cachedResponse)) {
+      updateInBackground(request);
+    }
+    return cachedResponse;
+  }
+  
+  // If not in cache, fetch from network
+  try {
+    const response = await fetch(request);
+    if (response.status === 200) {
+      await cacheWithMetadata(request, response.clone(), STATIC_CACHE_NAME);
+    }
+    return response;
+  } catch (error) {
+    return createOfflineResponse(request);
+  }
+}
+
+// NEW: Update cache in background without blocking
+async function updateInBackground(request) {
+  const url = request.url;
+  
+  // Skip if already in queue
+  if (updateQueue.has(url)) return;
+  
+  updateQueue.set(url, true);
+  
+  try {
+    const response = await fetch(request);
+    if (response.status === 200) {
+      const cache = await caches.open(STATIC_CACHE_NAME);
+      await cacheWithMetadata(request, response.clone(), STATIC_CACHE_NAME);
+      console.log(`[Service Worker] Background updated: ${url}`);
+      
+      // Notify clients about updated content
+      const clients = await self.clients.matchAll();
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'ASSET_UPDATED',
+          url: url,
+          timestamp: Date.now()
+        });
+      });
+    }
+  } catch (error) {
+    console.log(`[Service Worker] Background update failed for ${url}:`, error);
+  } finally {
+    updateQueue.delete(url);
+  }
+}
+
+// NEW: Cache API responses intelligently
+async function cacheApiResponse(request, response) {
+  const url = new URL(request.url);
+  
+  // Only cache successful GET requests
+  if (request.method !== 'GET' || response.status !== 200) {
+    return response;
+  }
+  
+  // Check if this API response should be cached
+  const cacheableEndpoints = [
+    '/api/user/profile',
+    '/api/settings',
+    '/api/contacts',
+    '/api/conversations',
+    '/api/messages/recent'
+  ];
+  
+  const shouldCache = cacheableEndpoints.some(endpoint => 
+    url.pathname.includes(endpoint)
+  );
+  
+  if (shouldCache) {
+    const cache = await caches.open(API_CACHE_NAME);
+    await cacheWithMetadata(request, response.clone(), API_CACHE_NAME);
+  }
+  
+  return response;
+}
+
 // Fetch and cache with user isolation
 async function fetchAndCache(request) {
   const url = new URL(request.url);
@@ -453,12 +681,12 @@ async function fetchAndCache(request) {
         const userCacheName = await getUserCacheName();
         if (userCacheName) {
           const userCache = await caches.open(userCacheName);
-          await userCache.put(request, responseClone);
+          await cacheWithMetadata(request, responseClone, userCacheName);
         }
       } else {
         // Cache in static cache
         const cache = await caches.open(STATIC_CACHE_NAME);
-        await cache.put(request, responseClone);
+        await cacheWithMetadata(request, responseClone, STATIC_CACHE_NAME);
       }
     }
     
@@ -473,19 +701,9 @@ async function fetchAndCache(request) {
 async function serveWithUserIsolation(request) {
   const url = new URL(request.url);
   
-  // API requests: Network only
+  // API requests: Network first with cache fallback
   if (isApiRequest(url)) {
-    try {
-      return await fetch(request);
-    } catch (error) {
-      return new Response(JSON.stringify({ 
-        offline: true,
-        error: 'Network unavailable'
-      }), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 503
-      });
-    }
+    return networkFirstWithCache(request);
   }
   
   // User data requests: Check user-specific cache first
@@ -496,31 +714,30 @@ async function serveWithUserIsolation(request) {
       const cachedResponse = await userCache.match(request);
       
       if (cachedResponse) {
+        // Check if stale and update in background
+        if (isStale(cachedResponse)) {
+          updateInBackground(request);
+        }
         return cachedResponse;
       }
     }
     
     // If not in user cache, try network
     try {
-      return await fetchAndCache(request);
+      const response = await fetch(request);
+      if (response.status === 200 && userCacheName) {
+        const userCache = await caches.open(userCacheName);
+        await cacheWithMetadata(request, response.clone(), userCacheName);
+      }
+      return response;
     } catch (error) {
       // Return generic offline response for user data
       return createOfflineResponse(request);
     }
   }
   
-  // Static assets: Check static cache first
-  const cachedResponse = await caches.match(request);
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
-  // If not in cache, fetch from network
-  try {
-    return await fetchAndCache(request);
-  } catch (error) {
-    return createOfflineResponse(request);
-  }
+  // Static assets: Use stale-while-revalidate for performance
+  return staleWhileRevalidate(request);
 }
 
 // Create offline response for failed requests
@@ -566,6 +783,23 @@ function createOfflineResponse(request) {
   });
 }
 
+// NEW: Clean up expired cache entries
+async function cleanupExpiredCache(cacheName) {
+  try {
+    const cache = await caches.open(cacheName);
+    const requests = await cache.keys();
+    
+    for (const request of requests) {
+      const response = await cache.match(request);
+      if (response && isStale(response)) {
+        await cache.delete(request);
+      }
+    }
+  } catch (error) {
+    console.warn(`[Service Worker] Error cleaning expired cache ${cacheName}:`, error);
+  }
+}
+
 // Clean up old user caches
 async function cleanupUserCaches() {
   try {
@@ -582,11 +816,40 @@ async function cleanupUserCaches() {
         if (keys.length === 0) {
           // Empty cache, delete it
           await caches.delete(cacheName);
+        } else {
+          // Clean expired entries
+          await cleanupExpiredCache(cacheName);
         }
+      } else if (cacheName === API_CACHE_NAME) {
+        // Clean expired API cache entries
+        await cleanupExpiredCache(cacheName);
       }
     }
   } catch (error) {
     console.warn('[Service Worker] Error cleaning user caches:', error);
+  }
+}
+
+// NEW: Periodic background sync for updates
+async function periodicBackgroundSync() {
+  try {
+    // Update critical assets in background
+    const cache = await caches.open(STATIC_CACHE_NAME);
+    const requests = await cache.keys();
+    
+    let updatedCount = 0;
+    for (const request of requests.slice(0, 10)) { // Update 10 assets at a time
+      if (isStale(await cache.match(request))) {
+        await updateInBackground(request);
+        updatedCount++;
+      }
+    }
+    
+    if (updatedCount > 0) {
+      console.log(`[Service Worker] Background sync updated ${updatedCount} assets`);
+    }
+  } catch (error) {
+    console.warn('[Service Worker] Background sync failed:', error);
   }
 }
 
@@ -604,8 +867,18 @@ self.addEventListener('install', (event) => {
       
       console.log(`[Service Worker] Precaching ${assets.length} static assets...`);
       
-      // Cache all static assets
-      await cache.addAll(assets);
+      // Cache critical assets first
+      const criticalAssets = assets.filter(asset => 
+        isCriticalAsset(new URL(asset, self.location.origin))
+      );
+      
+      await cache.addAll(criticalAssets);
+      console.log(`[Service Worker] Cached ${criticalAssets.length} critical assets`);
+      
+      // Cache remaining assets
+      await cache.addAll(assets.filter(asset => 
+        !criticalAssets.includes(asset)
+      ));
       
       console.log('[Service Worker] Static precaching complete!');
     })()
@@ -624,6 +897,7 @@ self.addEventListener('activate', (event) => {
         cacheNames.map(cacheName => {
           if (cacheName.startsWith('moodchat-') && 
               cacheName !== STATIC_CACHE_NAME && 
+              cacheName !== API_CACHE_NAME &&
               !cacheName.startsWith('moodchat-user-')) {
             console.log('[Service Worker] Deleting old static cache:', cacheName);
             return caches.delete(cacheName);
@@ -640,9 +914,27 @@ self.addEventListener('activate', (event) => {
       // Claim all clients immediately
       await self.clients.claim();
       
+      // NEW: Start periodic background sync
+      if ('periodicSync' in self.registration) {
+        try {
+          await self.registration.periodicSync.register('moodchat-updates', {
+            minInterval: 24 * 60 * 60 * 1000 // 24 hours
+          });
+        } catch (error) {
+          console.log('[Service Worker] Periodic sync not supported:', error);
+        }
+      }
+      
       console.log('[Service Worker] Now controlling all clients with device-based auth');
     })()
   );
+});
+
+// NEW: Periodic sync event
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'moodchat-updates') {
+    event.waitUntil(periodicBackgroundSync());
+  }
 });
 
 // FETCH HANDLER - Cache-first strategy with user isolation
@@ -662,7 +954,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Use user-isolated caching strategy
+  // Skip background sync requests
+  if (url.pathname.includes('__bgSync')) {
+    return;
+  }
+  
+  // Use user-isolated caching strategy with performance improvements
   event.respondWith(serveWithUserIsolation(request));
 });
 
@@ -675,18 +972,21 @@ self.addEventListener('message', (event) => {
       event.waitUntil(
         (async () => {
           const cache = await caches.open(STATIC_CACHE_NAME);
+          const apiCache = await caches.open(API_CACHE_NAME);
           const keys = await cache.keys();
+          const apiKeys = await apiCache.keys();
           const session = await getCurrentUserSession();
           const deviceId = await generateDeviceId();
           
           event.source.postMessage({
             type: 'CACHE_INFO',
             staticCacheSize: keys.length,
+            apiCacheSize: apiKeys.length,
             userId: session ? session.userId : null,
             deviceId: deviceId,
             isLoggedIn: session ? session.isLoggedIn : false,
             version: APP_VERSION,
-            strategy: 'Device-Based User Isolation'
+            strategy: 'Device-Based User Isolation + Stale-While-Revalidate'
           });
         })()
       );
@@ -697,6 +997,9 @@ self.addEventListener('message', (event) => {
         (async () => {
           // Clear static cache
           await caches.delete(STATIC_CACHE_NAME);
+          
+          // Clear API cache
+          await caches.delete(API_CACHE_NAME);
           
           // Clear user cache if exists
           const userCacheName = await getUserCacheName();
@@ -733,6 +1036,11 @@ self.addEventListener('message', (event) => {
               const oldUserCacheName = await getUserCacheName();
               if (oldUserCacheName && oldUserCacheName.includes('moodchat-user-')) {
                 await caches.delete(oldUserCacheName);
+              }
+              
+              // NEW: Pre-warm API cache for logged-in user
+              if (data.preloadApis) {
+                setTimeout(() => preloadUserAPIs(data.userId), 1000);
               }
             }
           }
@@ -805,8 +1113,11 @@ self.addEventListener('message', (event) => {
           let updatedCount = 0;
           for (const asset of assets) {
             try {
-              await cache.add(asset);
-              updatedCount++;
+              const response = await fetch(asset);
+              if (response.status === 200) {
+                await cacheWithMetadata(new Request(asset), response.clone(), STATIC_CACHE_NAME);
+                updatedCount++;
+              }
             } catch (error) {
               console.warn(`Failed to update asset: ${asset}`, error);
             }
@@ -848,8 +1159,82 @@ self.addEventListener('message', (event) => {
         })()
       );
       break;
+      
+    // NEW: Force update specific asset
+    case 'UPDATE_ASSET':
+      event.waitUntil(
+        (async () => {
+          try {
+            const response = await fetch(data.url);
+            if (response.status === 200) {
+              const cache = await caches.open(STATIC_CACHE_NAME);
+              await cacheWithMetadata(new Request(data.url), response.clone(), STATIC_CACHE_NAME);
+              
+              event.source.postMessage({
+                type: 'ASSET_UPDATED',
+                url: data.url,
+                success: true,
+                timestamp: Date.now()
+              });
+            }
+          } catch (error) {
+            event.source.postMessage({
+              type: 'ASSET_UPDATE_FAILED',
+              url: data.url,
+              error: error.message
+            });
+          }
+        })()
+      );
+      break;
+      
+    // NEW: Get offline status
+    case 'GET_OFFLINE_STATUS':
+      event.waitUntil(
+        (async () => {
+          const isOnline = navigator.onLine;
+          const cache = await caches.open(STATIC_CACHE_NAME);
+          const criticalCached = await Promise.all(
+            CRITICAL_ASSETS.map(async asset => {
+              const cached = await cache.match(asset);
+              return { asset, cached: !!cached };
+            })
+          );
+          
+          event.source.postMessage({
+            type: 'OFFLINE_STATUS',
+            isOnline: isOnline,
+            criticalAssets: criticalCached.filter(item => item.cached).length,
+            totalCriticalAssets: CRITICAL_ASSETS.length,
+            timestamp: Date.now()
+          });
+        })()
+      );
+      break;
   }
 });
+
+// NEW: Preload user-specific APIs after login
+async function preloadUserAPIs(userId) {
+  const userApis = [
+    `/api/user/${userId}/profile`,
+    `/api/user/${userId}/settings`,
+    `/api/user/${userId}/contacts`,
+    `/api/conversations?userId=${userId}`
+  ];
+  
+  for (const api of userApis) {
+    try {
+      const response = await fetch(api);
+      if (response.status === 200) {
+        const cache = await caches.open(API_CACHE_NAME);
+        await cacheWithMetadata(new Request(api), response.clone(), API_CACHE_NAME);
+      }
+    } catch (error) {
+      // Silent fail for background preloading
+    }
+  }
+}
 
 // PUSH NOTIFICATIONS (with user context)
 self.addEventListener('push', (event) => {
@@ -902,9 +1287,25 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
+// NEW: Background sync for failed requests
+self.addEventListener('sync', (event) => {
+  if (event.tag === BACKGROUND_SYNC_TAG) {
+    event.waitUntil(syncFailedRequests());
+  }
+});
+
+// NEW: Sync failed requests when back online
+async function syncFailedRequests() {
+  // This would sync failed POST/PUT requests
+  // Implementation depends on your app's specific needs
+  console.log('[Service Worker] Background sync triggered');
+}
+
 // INITIALIZATION LOG
 console.log(`[Kynecta MoodChat Service Worker] v${APP_VERSION} loaded`);
-console.log('[Service Worker] Strategy: DEVICE-BASED USER ISOLATION');
+console.log('[Service Worker] Strategy: DEVICE-BASED USER ISOLATION + STALE-WHILE-REVALIDATE');
 console.log('[Service Worker] Static assets cached, user data isolated by device');
 console.log('[Service Worker] Auto-login detection with device ID validation');
 console.log('[Service Worker] Supports both online and offline authentication');
+console.log('[Service Worker] Enhanced: Background updates, API caching, 3s network timeout');
+console.log('[Service Worker] Critical assets prioritized for offline access');

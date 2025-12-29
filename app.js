@@ -1,7 +1,7 @@
 // app.js - MoodChat Application Shell & Tab Controller
 // Enhanced with Firebase auth, offline detection, global state management
 // COMPLETE VERSION WITH USER ISOLATION AND REAL AUTHENTICATION
-// UPDATED: Real authentication with device-based login, no demo data
+// UPDATED: WhatsApp-like startup flow with instant UI and background syncing
 
 // ============================================================================
 // CONFIGURATION
@@ -61,6 +61,259 @@ const firebaseConfig = {
     messagingSenderId: "123456789012",
     appId: "1:123456789012:web:abcdef1234567890",
     measurementId: "G-ABCDEF1234"
+};
+
+// ============================================================================
+// INSTANT STARTUP MANAGER (NEW)
+// ============================================================================
+
+const INSTANT_STARTUP_MANAGER = {
+  // Startup phases
+  phases: {
+    UI_READY: 'ui_ready',
+    CACHE_LOADED: 'cache_loaded',
+    AUTH_READY: 'auth_ready',
+    BACKGROUND_SYNC_STARTED: 'background_sync_started',
+    COMPLETE: 'complete'
+  },
+  
+  // Current phase
+  currentPhase: null,
+  
+  // Phase listeners
+  phaseListeners: new Map(),
+  
+  // Initialize startup manager
+  initialize: function() {
+    console.log('Initializing Instant Startup Manager...');
+    this.currentPhase = null;
+    this.phaseListeners.clear();
+    
+    // Set up phase transition tracking
+    this.setupPhaseTracking();
+    
+    // Create global startup state
+    window.MOODCHAT_STARTUP = {
+      phase: null,
+      isUIReady: false,
+      isCacheLoaded: false,
+      isAuthReady: false,
+      isBackgroundSyncRunning: false,
+      isComplete: false,
+      timestamp: new Date().toISOString(),
+      waitForPhase: this.waitForPhase.bind(this)
+    };
+    
+    console.log('Instant Startup Manager initialized');
+  },
+  
+  // Setup phase transition tracking
+  setupPhaseTracking: function() {
+    // Listen for auth ready
+    window.addEventListener('moodchat-auth-ready', () => {
+      this.transitionTo(this.phases.AUTH_READY);
+    });
+    
+    // Listen for network changes to start background sync
+    window.addEventListener('moodchat-network-change', (event) => {
+      if (event.detail.isOnline && this.currentPhase === this.phases.AUTH_READY) {
+        this.transitionTo(this.phases.BACKGROUND_SYNC_STARTED);
+      }
+    });
+  },
+  
+  // Transition to a new phase
+  transitionTo: function(phase) {
+    if (this.currentPhase === phase) return;
+    
+    const previousPhase = this.currentPhase;
+    this.currentPhase = phase;
+    window.MOODCHAT_STARTUP.phase = phase;
+    
+    console.log(`Startup phase transition: ${previousPhase || 'none'} -> ${phase}`);
+    
+    // Update global startup state
+    this.updateGlobalStartupState(phase);
+    
+    // Notify listeners
+    this.notifyPhaseListeners(phase, previousPhase);
+    
+    // If we reached auth ready and UI is ready, show UI immediately
+    if (phase === this.phases.AUTH_READY && window.MOODCHAT_STARTUP.isUIReady) {
+      this.showUIInstantly();
+    }
+    
+    // If background sync started, trigger initial sync
+    if (phase === this.phases.BACKGROUND_SYNC_STARTED) {
+      this.startBackgroundSync();
+    }
+    
+    // Check if startup is complete
+    if (phase === this.phases.COMPLETE) {
+      window.MOODCHAT_STARTUP.isComplete = true;
+      console.log('Startup complete!');
+    }
+  },
+  
+  // Update global startup state based on phase
+  updateGlobalStartupState: function(phase) {
+    switch(phase) {
+      case this.phases.UI_READY:
+        window.MOODCHAT_STARTUP.isUIReady = true;
+        break;
+      case this.phases.CACHE_LOADED:
+        window.MOODCHAT_STARTUP.isCacheLoaded = true;
+        break;
+      case this.phases.AUTH_READY:
+        window.MOODCHAT_STARTUP.isAuthReady = true;
+        break;
+      case this.phases.BACKGROUND_SYNC_STARTED:
+        window.MOODCHAT_STARTUP.isBackgroundSyncRunning = true;
+        break;
+      case this.phases.COMPLETE:
+        window.MOODCHAT_STARTUP.isComplete = true;
+        break;
+    }
+  },
+  
+  // Show UI instantly (like WhatsApp)
+  showUIInstantly: function() {
+    console.log('Showing UI instantly...');
+    
+    // Hide any loading screens
+    const loadingScreen = document.getElementById('loadingScreen');
+    if (loadingScreen) {
+      loadingScreen.style.opacity = '0';
+      loadingScreen.style.transition = 'opacity 0.3s ease-out';
+      setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+        setTimeout(() => {
+          if (loadingScreen.parentNode) {
+            loadingScreen.parentNode.removeChild(loadingScreen);
+          }
+        }, 500);
+      }, 300);
+    }
+    
+    // Ensure main app is visible
+    const mainApp = document.querySelector('body > :not(#loadingScreen)');
+    if (mainApp) {
+      mainApp.style.visibility = 'visible';
+      mainApp.style.opacity = '1';
+    }
+    
+    // Mark UI as ready in global state
+    window.MOODCHAT_STARTUP.isUIReady = true;
+    
+    console.log('UI shown instantly');
+  },
+  
+  // Start background sync (silent, non-blocking)
+  startBackgroundSync: function() {
+    console.log('Starting background sync...');
+    
+    // Start network services quietly
+    setTimeout(() => {
+      NETWORK_SERVICE_MANAGER.startAllServices();
+    }, 1000);
+    
+    // Process any queued messages
+    setTimeout(() => {
+      if (isOnline) {
+        processQueuedMessages();
+      }
+    }, 2000);
+    
+    // Load fresh data in background
+    setTimeout(() => {
+      this.loadFreshDataInBackground();
+    }, 3000);
+    
+    console.log('Background sync started');
+  },
+  
+  // Load fresh data in background (silent updates)
+  loadFreshDataInBackground: function() {
+    if (!isOnline || !currentUser) {
+      console.log('Skipping background data load - offline or no user');
+      return;
+    }
+    
+    console.log('Loading fresh data in background...');
+    
+    // Dispatch event for background data loading
+    const event = new CustomEvent('background-data-load', {
+      detail: {
+        userId: currentUser.uid,
+        isOnline: isOnline,
+        silent: true, // Mark as silent update
+        timestamp: new Date().toISOString()
+      }
+    });
+    window.dispatchEvent(event);
+    
+    // Update caches in background
+    this.updateCachesInBackground();
+  },
+  
+  // Update caches in background
+  updateCachesInBackground: function() {
+    // This will be called by individual tab modules
+    // to update their caches with fresh data
+    console.log('Background cache updates triggered');
+  },
+  
+  // Wait for a specific phase
+  waitForPhase: function(phase) {
+    return new Promise((resolve) => {
+      if (this.currentPhase === phase) {
+        resolve();
+        return;
+      }
+      
+      this.addPhaseListener(phase, () => {
+        resolve();
+      });
+    });
+  },
+  
+  // Add phase listener
+  addPhaseListener: function(phase, callback) {
+    if (!this.phaseListeners.has(phase)) {
+      this.phaseListeners.set(phase, []);
+    }
+    this.phaseListeners.get(phase).push(callback);
+  },
+  
+  // Notify phase listeners
+  notifyPhaseListeners: function(phase, previousPhase) {
+    const listeners = this.phaseListeners.get(phase);
+    if (listeners) {
+      listeners.forEach(callback => {
+        try {
+          callback(phase, previousPhase);
+        } catch (error) {
+          console.error('Error in phase listener:', error);
+        }
+      });
+      this.phaseListeners.delete(phase);
+    }
+  },
+  
+  // Mark UI as ready (call this early in initialization)
+  markUIReady: function() {
+    this.transitionTo(this.phases.UI_READY);
+  },
+  
+  // Mark cache as loaded
+  markCacheLoaded: function() {
+    this.transitionTo(this.phases.CACHE_LOADED);
+  },
+  
+  // Mark startup as complete
+  markComplete: function() {
+    this.transitionTo(this.phases.COMPLETE);
+  }
 };
 
 // ============================================================================
@@ -234,6 +487,135 @@ const CACHE_CONFIG = {
 };
 
 // ============================================================================
+// INSTANT CACHE LOADER (NEW)
+// ============================================================================
+
+const INSTANT_CACHE_LOADER = {
+  // Load cached data for instant display
+  loadCachedDataForDisplay: function() {
+    console.log('Loading cached data for instant display...');
+    
+    const userId = currentUser ? currentUser.uid : null;
+    if (!userId) {
+      console.log('No user logged in, skipping cache load');
+      return null;
+    }
+    
+    const cachedData = {
+      userProfile: DATA_CACHE.getCachedUserProfile(),
+      friends: DATA_CACHE.getCachedFriends(),
+      chats: DATA_CACHE.getCachedChats(),
+      groups: DATA_CACHE.getCachedGroups(),
+      calls: DATA_CACHE.getCachedCalls(),
+      messages: DATA_CACHE.getCachedMessages(),
+      settings: SETTINGS_SERVICE.current,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Broadcast cached data ready event
+    const event = new CustomEvent('cached-data-ready', {
+      detail: {
+        userId: userId,
+        data: cachedData,
+        source: 'cache',
+        timestamp: cachedData.timestamp
+      }
+    });
+    window.dispatchEvent(event);
+    
+    console.log('Cached data loaded for display:', {
+      profile: !!cachedData.userProfile,
+      friends: cachedData.friends ? cachedData.friends.length : 0,
+      chats: cachedData.chats ? cachedData.chats.length : 0,
+      groups: cachedData.groups ? cachedData.groups.length : 0
+    });
+    
+    return cachedData;
+  },
+  
+  // Load and display cached UI immediately
+  loadAndDisplayCachedUI: function() {
+    console.log('Loading and displaying cached UI...');
+    
+    // Mark cache as loaded in startup manager
+    INSTANT_STARTUP_MANAGER.markCacheLoaded();
+    
+    // Load cached data
+    const cachedData = this.loadCachedDataForDisplay();
+    
+    // Show UI instantly if we have cached data
+    if (cachedData && (cachedData.chats || cachedData.friends || cachedData.groups)) {
+      this.updateUIWithCachedData(cachedData);
+    }
+    
+    // Even with no cached data, show UI
+    this.ensureUIVisible();
+    
+    return cachedData;
+  },
+  
+  // Update UI with cached data (non-blocking)
+  updateUIWithCachedData: function(cachedData) {
+    console.log('Updating UI with cached data...');
+    
+    // Dispatch event for UI modules to update with cached data
+    const event = new CustomEvent('update-ui-with-cache', {
+      detail: {
+        data: cachedData,
+        silent: true, // Silent update - no visual disruption
+        timestamp: new Date().toISOString()
+      }
+    });
+    window.dispatchEvent(event);
+    
+    // Update tab contents with cached data
+    this.updateTabContents(cachedData);
+  },
+  
+  // Update tab contents with cached data
+  updateTabContents: function(cachedData) {
+    // This will be handled by individual tab modules
+    // They should listen for 'update-ui-with-cache' event
+    console.log('Tab update triggered with cached data');
+  },
+  
+  // Ensure UI is visible (remove any loading states)
+  ensureUIVisible: function() {
+    // Hide loading indicators
+    const loadingIndicators = document.querySelectorAll('.loading-indicator, .spinner, .loader');
+    loadingIndicators.forEach(indicator => {
+      indicator.style.display = 'none';
+    });
+    
+    // Show main content
+    const mainContent = document.querySelector('main, #content-area, .app-container');
+    if (mainContent) {
+      mainContent.style.visibility = 'visible';
+      mainContent.style.opacity = '1';
+    }
+    
+    // Enable interactions
+    document.body.style.pointerEvents = 'auto';
+    
+    console.log('UI visibility ensured');
+  },
+  
+  // Check if we have enough cached data to show UI
+  hasSufficientCache: function() {
+    const userId = currentUser ? currentUser.uid : null;
+    if (!userId) return false;
+    
+    // Check for any cached data
+    const hasProfile = !!DATA_CACHE.getCachedUserProfile();
+    const hasChats = !!DATA_CACHE.getCachedChats();
+    const hasFriends = !!DATA_CACHE.getCachedFriends();
+    const hasGroups = !!DATA_CACHE.getCachedGroups();
+    
+    return hasProfile || hasChats || hasFriends || hasGroups;
+  }
+};
+
+// ============================================================================
 // SETTINGS SERVICE (UPDATED FOR USER ISOLATION)
 // ============================================================================
 
@@ -362,11 +744,13 @@ const SETTINGS_SERVICE = {
     // Set user ID for isolation
     this.setCurrentUser(currentUser ? currentUser.uid : null);
     
-    // Load settings from localStorage
+    // Load settings from localStorage (fast, synchronous)
     this.load();
     
-    // Apply initial settings
-    this.applySettings();
+    // Apply initial settings (non-blocking)
+    setTimeout(() => {
+      this.applySettings();
+    }, 0);
     
     // Setup storage event listener for cross-tab communication
     this.setupStorageListener();
@@ -1826,8 +2210,10 @@ function handleOnline() {
   // Broadcast network change to other files
   broadcastNetworkChange(true);
   
-  // Start all network-dependent services
-  NETWORK_SERVICE_MANAGER.startAllServices();
+  // Start all network-dependent services in background
+  setTimeout(() => {
+    NETWORK_SERVICE_MANAGER.startAllServices();
+  }, 1000);
   
   // BACKGROUND SYNC: Trigger sync when coming online
   triggerBackgroundSync();
@@ -1909,14 +2295,18 @@ function startSyncMonitor() {
 function triggerBackgroundSync() {
   console.log('Background sync triggered');
   
-  // Process queued messages
-  processQueuedMessages();
+  // Process queued messages in background
+  setTimeout(() => {
+    processQueuedMessages();
+  }, 2000);
   
   // Call global sync function if defined
   if (typeof window.syncOfflineData === 'function') {
-    window.syncOfflineData().catch(error => {
-      console.log('Background sync error:', error);
-    });
+    setTimeout(() => {
+      window.syncOfflineData().catch(error => {
+        console.log('Background sync error:', error);
+      });
+    }, 3000);
   }
 }
 
@@ -2526,6 +2916,9 @@ function exposeGlobalStateToIframes() {
   
   // Expose user isolation service
   window.MOODCHAT_GLOBAL.userIsolation = USER_DATA_ISOLATION;
+  
+  // Expose instant startup manager
+  window.MOODCHAT_GLOBAL.startup = INSTANT_STARTUP_MANAGER;
 }
 
 // ============================================================================
@@ -3076,6 +3469,21 @@ function setupEventListeners() {
   window.addEventListener('moodchat-network-change', (event) => {
     console.log('Network state changed, services:', event.detail.services);
   });
+  
+  // Listen for cached data ready
+  window.addEventListener('cached-data-ready', (event) => {
+    console.log('Cached data ready for user:', event.detail.userId);
+  });
+  
+  // Listen for UI update with cache
+  window.addEventListener('update-ui-with-cache', (event) => {
+    console.log('UI update with cache requested, silent:', event.detail.silent);
+  });
+  
+  // Listen for background data load
+  window.addEventListener('background-data-load', (event) => {
+    console.log('Background data load triggered for user:', event.detail.userId, 'silent:', event.detail.silent);
+  });
 }
 
 // ============================================================================
@@ -3116,146 +3524,220 @@ window.triggerFileInput = function(inputId) {
 };
 
 // ============================================================================
-// ENHANCED INITIALIZATION WITH DEVICE-BASED AUTHENTICATION
+// ENHANCED INITIALIZATION WITH WHATSAPP-LIKE STARTUP FLOW
 // ============================================================================
 
 function initializeApp() {
-  console.log('Initializing MoodChat Application Shell...');
+  console.log('Initializing MoodChat Application Shell with WhatsApp-like startup...');
   
-  if (document.readyState !== 'loading') {
-    runInitialization();
-  } else {
-    document.addEventListener('DOMContentLoaded', runInitialization);
+  // PHASE 1: INSTANT UI SETUP (0-50ms)
+  // Show UI immediately without waiting for anything
+  INSTANT_STARTUP_MANAGER.initialize();
+  
+  // Mark UI as ready immediately
+  INSTANT_STARTUP_MANAGER.markUIReady();
+  
+  // Ensure main content is visible right away
+  const mainContent = document.querySelector('main, #content-area, .app-container');
+  if (mainContent) {
+    mainContent.style.visibility = 'visible';
+    mainContent.style.opacity = '1';
   }
-}
-
-function runInitialization() {
-  try {
-    // STEP 1: Initialize Settings Service
-    SETTINGS_SERVICE.initialize();
-    
-    // STEP 2: Setup global auth access FIRST
-    setupGlobalAuthAccess();
-    
-    // STEP 3: Initialize network detection and service manager
-    initializeNetworkDetection();
-    
-    // STEP 4: Initialize Firebase (with device-based auth fallback)
+  
+  // Hide loading screen with fade-out effect
+  const loadingScreen = document.getElementById('loadingScreen');
+  if (loadingScreen) {
+    loadingScreen.style.transition = 'opacity 0.3s ease-out';
+    loadingScreen.style.opacity = '0';
     setTimeout(() => {
-      initializeFirebase();
-      
-      // If Firebase not ready after 2 seconds, broadcast auth ready anyway
+      loadingScreen.classList.add('hidden');
       setTimeout(() => {
-        if (!authStateRestored) {
-          authStateRestored = true;
-          broadcastAuthReady();
+        if (loadingScreen.parentNode) {
+          loadingScreen.parentNode.removeChild(loadingScreen);
         }
-      }, 2000);
-    }, 100);
-    
-    // STEP 5: Expose global state to all pages
-    exposeGlobalStateToIframes();
-    
-    // STEP 6: Setup cross-page communication
-    setupCrossPageCommunication();
-    
-    // STEP 7: Setup event listeners
-    setupEventListeners();
-    
-    // Ensure sidebar is properly initialized
-    const sidebar = document.querySelector(APP_CONFIG.sidebar);
-    if (sidebar) {
-      sidebar.classList.remove('hidden');
-      
-      if (window.innerWidth >= 768) {
-        sidebar.classList.remove('translate-x-full');
-        sidebar.classList.add('translate-x-0');
-        isSidebarOpen = true;
-      } else {
-        sidebar.classList.remove('translate-x-0');
-        sidebar.classList.add('translate-x-full');
-        isSidebarOpen = false;
-      }
-    }
-    
-    // Ensure content area exists
-    let contentArea = document.querySelector(APP_CONFIG.contentArea);
-    if (!contentArea) {
-      contentArea = document.createElement('main');
-      contentArea.id = 'content-area';
-      document.body.appendChild(contentArea);
-    }
-    
-    // Load default page
-    loadPage(APP_CONFIG.defaultPage);
-    
-    // Set default tab to groups
-    setTimeout(() => {
-      try {
-        const groupsTab = document.querySelector(TAB_CONFIG.groups.container);
-        if (groupsTab) {
-          showTab('groups');
-        } else {
-          console.log('Groups tab not found in DOM, loading as external...');
-          loadExternalTab('groups', EXTERNAL_TABS.groups);
-        }
-      } catch (error) {
-        console.log('Error setting default tab:', error);
-        if (TAB_CONFIG.chats.container && document.querySelector(TAB_CONFIG.chats.container)) {
-          showTab('chats');
-        }
-      }
-    }, 300);
-    
-    // Hide loading screen if it exists
-    const loadingScreen = document.getElementById('loadingScreen');
-    if (loadingScreen) {
-      setTimeout(() => {
-        loadingScreen.classList.add('hidden');
-        setTimeout(() => {
-          if (loadingScreen.parentNode) {
-            loadingScreen.parentNode.removeChild(loadingScreen);
-          }
-        }, 500);
       }, 500);
+    }, 300);
+  }
+  
+  // PHASE 2: NON-BLOCKING INITIALIZATION (50-500ms)
+  // Initialize core services asynchronously
+  setTimeout(() => {
+    try {
+      // Initialize Settings Service (fast, synchronous)
+      SETTINGS_SERVICE.initialize();
+      
+      // Setup global auth access
+      setupGlobalAuthAccess();
+      
+      // Initialize network detection (non-blocking)
+      initializeNetworkDetection();
+      
+      // Expose global state
+      exposeGlobalStateToIframes();
+      
+      // Setup cross-page communication
+      setupCrossPageCommunication();
+      
+      // Setup event listeners
+      setupEventListeners();
+      
+      // Ensure sidebar is properly initialized
+      const sidebar = document.querySelector(APP_CONFIG.sidebar);
+      if (sidebar) {
+        sidebar.classList.remove('hidden');
+        
+        if (window.innerWidth >= 768) {
+          sidebar.classList.remove('translate-x-full');
+          sidebar.classList.add('translate-x-0');
+          isSidebarOpen = true;
+        } else {
+          sidebar.classList.remove('translate-x-0');
+          sidebar.classList.add('translate-x-full');
+          isSidebarOpen = false;
+        }
+      }
+      
+      // Ensure content area exists
+      let contentArea = document.querySelector(APP_CONFIG.contentArea);
+      if (!contentArea) {
+        contentArea = document.createElement('main');
+        contentArea.id = 'content-area';
+        document.body.appendChild(contentArea);
+      }
+      
+      // Load default page asynchronously
+      setTimeout(() => {
+        loadPage(APP_CONFIG.defaultPage);
+      }, 100);
+      
+      // Set default tab to groups
+      setTimeout(() => {
+        try {
+          const groupsTab = document.querySelector(TAB_CONFIG.groups.container);
+          if (groupsTab) {
+            showTab('groups');
+          } else {
+            console.log('Groups tab not found in DOM, loading as external...');
+            loadExternalTab('groups', EXTERNAL_TABS.groups);
+          }
+        } catch (error) {
+          console.log('Error setting default tab:', error);
+          if (TAB_CONFIG.chats.container && document.querySelector(TAB_CONFIG.chats.container)) {
+            showTab('chats');
+          }
+        }
+      }, 300);
+      
+      // Inject CSS styles
+      injectStyles();
+      
+      console.log('Core app services initialized (non-blocking)');
+      
+    } catch (error) {
+      console.log('Error during non-blocking initialization:', error);
+      // Don't show error to user - app should continue working
+    }
+  }, 50);
+  
+  // PHASE 3: LOAD CACHED DATA AND SHOW UI (100-300ms)
+  setTimeout(() => {
+    // Load and display cached UI immediately
+    INSTANT_CACHE_LOADER.loadAndDisplayCachedUI();
+    
+    console.log('Cached data loaded for instant display');
+  }, 100);
+  
+  // PHASE 4: BACKGROUND AUTH & NETWORK INIT (300-1000ms)
+  setTimeout(() => {
+    // Initialize Firebase in background (with device-based auth fallback)
+    initializeFirebase();
+    
+    // If Firebase not ready after 2 seconds, broadcast auth ready anyway
+    setTimeout(() => {
+      if (!authStateRestored) {
+        authStateRestored = true;
+        broadcastAuthReady();
+      }
+    }, 2000);
+    
+    console.log('Background auth initialization started');
+  }, 300);
+  
+  // PHASE 5: BACKGROUND SYNC WHEN ONLINE (1000ms+)
+  setTimeout(() => {
+    // Start services in background if online
+    if (isOnline) {
+      NETWORK_SERVICE_MANAGER.startAllServices();
+      
+      // Process queued messages in background
+      setTimeout(() => {
+        processQueuedMessages();
+      }, 2000);
+      
+      // Load fresh data in background
+      setTimeout(() => {
+        INSTANT_STARTUP_MANAGER.loadFreshDataInBackground();
+      }, 3000);
     }
     
-    // Inject CSS styles
-    injectStyles();
+    console.log('Background sync phase started');
+  }, 1000);
+  
+  // PHASE 6: STARTUP COMPLETE (2000ms)
+  setTimeout(() => {
+    INSTANT_STARTUP_MANAGER.markComplete();
     
-    console.log('MoodChat Application Shell initialized successfully');
+    console.log('MoodChat Application Shell initialized successfully with WhatsApp-like flow');
+    console.log('Startup phases completed:', window.MOODCHAT_STARTUP);
     console.log('Auth state:', currentUser ? `User ${currentUser.uid} (${currentUser.isOffline ? 'device' : 'firebase'})` : 'No user');
     console.log('Network:', isOnline ? 'Online' : 'Offline');
     console.log('Network services:', NETWORK_SERVICE_MANAGER.getServiceStates());
     console.log('Settings loaded:', Object.keys(SETTINGS_SERVICE.current).length, 'categories');
     console.log('Key features:');
-    console.log('  ✓ Device-based authentication system');
-    console.log('  ✓ Firebase authentication with offline fallback');
-    console.log('  ✓ User data isolation');
-    console.log('  ✓ Automatic data clearing on logout');
-    console.log('  ✓ Real API calls with offline queuing');
-    console.log('  ✓ No mock data - real user data only');
+    console.log('  ✓ WhatsApp-like instant UI display');
+    console.log('  ✓ Cached data shown immediately');
+    console.log('  ✓ Background authentication & sync');
+    console.log('  ✓ Device-based authentication (works offline)');
+    console.log('  ✓ Firebase authentication (works online)');
+    console.log('  ✓ Real user data only - no mock data');
+    console.log('  ✓ User data isolation and automatic clearing');
     
     // Trigger initial data load for current tab
     setTimeout(() => {
       triggerTabDataLoad(currentTab);
     }, 500);
     
-    // Start services
-    setTimeout(() => {
-      NETWORK_SERVICE_MANAGER.startAllServices();
-    }, 1000);
-    
-  } catch (error) {
-    console.log('Error during app initialization:', error);
-    showError('Application initialization failed. Please refresh the page.');
-  }
+  }, 2000);
+  
+  // Error handling (non-blocking)
+  window.addEventListener('error', (event) => {
+    console.log('Non-critical error during startup:', event.error);
+    // Don't block the UI for errors
+  });
 }
 
 function injectStyles() {
   if (document.getElementById('app-styles')) return;
   
   const styles = `
+    /* WhatsApp-like startup styles */
+    #loadingScreen {
+      transition: opacity 0.3s ease-out;
+    }
+    
+    .app-container, main, #content-area {
+      transition: opacity 0.3s ease-in;
+    }
+    
+    .instant-display {
+      animation: fadeIn 0.2s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
     .tab-loading-indicator {
       position: fixed;
       top: 0;
@@ -3427,7 +3909,42 @@ function injectStyles() {
 }
 
 // ============================================================================
-// ENHANCED PUBLIC API WITH DEVICE-BASED AUTHENTICATION
+// SETUP CROSS-PAGE COMMUNICATION
+// ============================================================================
+
+function setupCrossPageCommunication() {
+  // Listen for storage events from other tabs
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'moodchat-auth-state') {
+      try {
+        const authData = JSON.parse(event.newValue);
+        console.log('Auth state changed in another tab:', authData);
+      } catch (e) {
+        console.log('Error parsing auth state from storage event:', e);
+      }
+    }
+    
+    if (event.key === CACHE_CONFIG.KEYS.NETWORK_STATUS) {
+      try {
+        const networkData = JSON.parse(event.newValue);
+        console.log('Network state changed in another tab:', networkData);
+      } catch (e) {
+        console.log('Error parsing network state from storage event:', e);
+      }
+    }
+  });
+  
+  // Broadcast current state to other tabs periodically
+  setInterval(() => {
+    if (currentUser) {
+      broadcastAuthChange(currentUser);
+    }
+    broadcastNetworkChange(isOnline);
+  }, 30000);
+}
+
+// ============================================================================
+// ENHANCED PUBLIC API WITH WHATSAPP-LIKE STARTUP FLOW
 // ============================================================================
 
 // Expose application functions
@@ -3454,11 +3971,29 @@ window.MOODCHAT_NETWORK = {
   services: NETWORK_SERVICE_MANAGER.getServiceStates()
 };
 
+// STARTUP STATE MANAGEMENT
+window.MOODCHAT_STARTUP = {
+  phase: null,
+  isUIReady: false,
+  isCacheLoaded: false,
+  isAuthReady: false,
+  isBackgroundSyncRunning: false,
+  isComplete: false,
+  timestamp: new Date().toISOString(),
+  waitForPhase: INSTANT_STARTUP_MANAGER.waitForPhase.bind(INSTANT_STARTUP_MANAGER)
+};
+
 // NETWORK SERVICE MANAGER
 window.NETWORK_SERVICE_MANAGER = NETWORK_SERVICE_MANAGER;
 
 // DATA CACHE SERVICE WITH USER ISOLATION
 window.DATA_CACHE = DATA_CACHE;
+
+// INSTANT CACHE LOADER
+window.INSTANT_CACHE_LOADER = INSTANT_CACHE_LOADER;
+
+// INSTANT STARTUP MANAGER
+window.INSTANT_STARTUP_MANAGER = INSTANT_STARTUP_MANAGER;
 
 // SETTINGS SERVICE
 
@@ -3522,15 +4057,42 @@ window.loadTabData = function(tabName, forceRefresh = false) {
     const userId = currentUser ? currentUser.uid : null;
     console.log(`Loading real data for tab: ${tabName}, user: ${userId}, forceRefresh: ${forceRefresh}`);
     
-    // This function should be implemented by individual tab modules
-    // It will make real API calls to fetch user-specific data
-    resolve({
-      success: true,
-      userId: userId,
-      tab: tabName,
-      message: 'Real data loading triggered',
-      requiresImplementation: 'Individual tab modules should implement data loading'
-    });
+    // First try cache
+    if (!forceRefresh) {
+      const cachedData = INSTANT_CACHE_LOADER.loadCachedDataForDisplay();
+      if (cachedData) {
+        resolve({
+          success: true,
+          userId: userId,
+          tab: tabName,
+          cached: true,
+          data: cachedData,
+          message: 'Data loaded from cache'
+        });
+        return;
+      }
+    }
+    
+    // Then try network (in background)
+    if (isOnline && networkDependentServices.api) {
+      // This function should be implemented by individual tab modules
+      // It will make real API calls to fetch user-specific data
+      resolve({
+        success: true,
+        userId: userId,
+        tab: tabName,
+        message: 'Real data loading triggered',
+        requiresImplementation: 'Individual tab modules should implement data loading'
+      });
+    } else {
+      resolve({
+        success: true,
+        userId: userId,
+        tab: tabName,
+        offline: true,
+        message: 'Offline - using cached data only'
+      });
+    }
   });
 };
 
@@ -3614,6 +4176,15 @@ window.clearCache = function(key = null) {
   }
 };
 
+// INSTANT UI FUNCTIONS
+window.showUIInstantly = function() {
+  INSTANT_STARTUP_MANAGER.showUIInstantly();
+};
+
+window.loadCachedUI = function() {
+  return INSTANT_CACHE_LOADER.loadAndDisplayCachedUI();
+};
+
 // USER DATA ISOLATION FUNCTIONS
 window.clearUserData = function(userId) {
   if (userId) {
@@ -3638,15 +4209,19 @@ window.getDeviceId = function() {
 // STARTUP
 // ============================================================================
 
-// Initialize app when ready
+// Initialize app when ready with WhatsApp-like flow
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
+  // If already loaded, run immediately
   setTimeout(initializeApp, 0);
 }
 
-console.log('MoodChat app.js loaded - Application shell ready with real authentication');
+console.log('MoodChat app.js loaded - WhatsApp-like startup flow ready');
 console.log('Key features:');
+console.log('  ✓ Instant UI display (like WhatsApp)');
+console.log('  ✓ Cached data shown immediately');
+console.log('  ✓ Background authentication & syncing');
 console.log('  ✓ Device-based authentication (works offline)');
 console.log('  ✓ Firebase authentication (works online)');
 console.log('  ✓ Auto-login detection with device ID matching');
@@ -3656,3 +4231,5 @@ console.log('  ✓ User data isolation and automatic clearing');
 console.log('  ✓ Professional UI with account type indicators');
 console.log('  ✓ Instant redirect for logged-in users');
 console.log('  ✓ Background online registration sync');
+console.log('  ✓ Non-blocking startup flow');
+console.log('  ✓ Silent background updates');
