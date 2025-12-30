@@ -2096,6 +2096,9 @@
         <span id="notificationText">Operation completed successfully</span>
     </div>
 
+    <!-- Import settingsManager.js -->
+    <script src="../js/settingsManager.js"></script>
+
     <script>
         // =============================================
         // COMPLETE OFFLINE-FIRST FRIENDS SYSTEM
@@ -2237,6 +2240,13 @@
         });
         
         async function initializeApp() {
+            // Initialize settings manager first
+            if (typeof settingsManager !== 'undefined') {
+                settingsManager.initializeSettings();
+            } else {
+                console.warn('settingsManager.js not loaded, using fallback settings');
+            }
+            
             // Check if we were redirected from "Start Chat" button elsewhere
             const urlParams = new URLSearchParams(window.location.search);
             const startChatParam = urlParams.get('startChat');
@@ -2399,17 +2409,18 @@
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
                         online: true,
+                        // Use settingsManager for privacy settings if available
                         privacySettings: {
-                            profileVisible: 'friends',
-                            lastSeenVisible: 'friends',
-                            statusVisible: 'friends',
-                            allowFriendRequests: true,
-                            allowMessages: 'friends'
+                            profileVisible: settingsManager.getSetting('profileVisibility') || 'friends',
+                            lastSeenVisible: settingsManager.getSetting('lastSeenVisibility') || 'friends',
+                            statusVisible: settingsManager.getSetting('statusVisibility') || 'friends',
+                            allowFriendRequests: settingsManager.getSetting('allowFriendRequests') !== false,
+                            allowMessages: settingsManager.getSetting('messagePermissions') || 'friends'
                         },
                         friendSettings: {
-                            autoAddContacts: false,
-                            notifyOnFriendRequest: true,
-                            notifyOnFriendAccept: true,
+                            autoAddContacts: settingsManager.getSetting('autoAddContacts') === true,
+                            notifyOnFriendRequest: settingsManager.getSetting('notifyFriendRequest') !== false,
+                            notifyOnFriendAccept: settingsManager.getSetting('notifyFriendAccept') !== false,
                             defaultFriendCategory: 'friend'
                         }
                     });
@@ -3650,6 +3661,17 @@
                     if (!isOnline) {
                         showNotification('Voice calls require internet connection', 'warning');
                     } else {
+                        // Check call permissions using settingsManager
+                        if (typeof settingsManager !== 'undefined') {
+                            const callPermissions = settingsManager.getSetting('callPermissions');
+                            if (callPermissions === 'none') {
+                                showNotification('Calls are disabled in your settings', 'warning');
+                                return;
+                            } else if (callPermissions === 'friends' && type !== 'friend') {
+                                showNotification('Only friends can call you', 'warning');
+                                return;
+                            }
+                        }
                         startCallWithFriend(friendData);
                     }
                     break;
@@ -3658,6 +3680,14 @@
                     if (!isOnline) {
                         showNotification('Cannot add friends while offline', 'warning');
                     } else {
+                        // Check if friend requests are allowed using settingsManager
+                        if (typeof settingsManager !== 'undefined') {
+                            const allowFriendRequests = settingsManager.getSetting('allowFriendRequests');
+                            if (allowFriendRequests === false) {
+                                showNotification('Friend requests are currently disabled', 'warning');
+                                return;
+                            }
+                        }
                         sendFriendRequest(friendData.uid);
                     }
                     break;
@@ -3897,6 +3927,15 @@
             if (!isOnline) {
                 showNotification('Cannot send friend requests while offline', 'error');
                 return;
+            }
+            
+            // Check friend request settings using settingsManager
+            if (typeof settingsManager !== 'undefined') {
+                const allowFriendRequests = settingsManager.getSetting('allowFriendRequests');
+                if (allowFriendRequests === false) {
+                    showNotification('Friend requests are currently disabled', 'warning');
+                    return;
+                }
             }
             
             try {
@@ -4211,7 +4250,7 @@
             }
             
             if (!isOnline) {
-                showNotification('Cannot extend friendship while offline', 'error');
+                showNotification('Extending friendship requires internet connection', 'error');
                 return;
             }
             
@@ -4278,7 +4317,7 @@
             }
             
             if (!isOnline) {
-                showNotification('Cannot update friendship while offline', 'error');
+                showNotification('Updating friendship requires internet connection', 'error');
                 return;
             }
             
@@ -4535,6 +4574,17 @@
                         if (!isOnline) {
                             showNotification('Voice calls require internet connection', 'warning');
                         } else {
+                            // Check call permissions using settingsManager
+                            if (typeof settingsManager !== 'undefined') {
+                                const callPermissions = settingsManager.getSetting('callPermissions');
+                                if (callPermissions === 'none') {
+                                    showNotification('Calls are disabled in your settings', 'warning');
+                                    return;
+                                } else if (callPermissions === 'friends' && type !== 'friend') {
+                                    showNotification('Only friends can call you', 'warning');
+                                    return;
+                                }
+                            }
                             startCallWithFriend(friendData);
                         }
                     });
@@ -4568,6 +4618,14 @@
                         if (!isOnline) {
                             showNotification('Cannot add friends while offline', 'warning');
                         } else {
+                            // Check if friend requests are allowed using settingsManager
+                            if (typeof settingsManager !== 'undefined') {
+                                const allowFriendRequests = settingsManager.getSetting('allowFriendRequests');
+                                if (allowFriendRequests === false) {
+                                    showNotification('Friend requests are currently disabled', 'warning');
+                                    return;
+                                }
+                            }
                             sendFriendRequest(friendData.uid);
                         }
                     });
@@ -4871,8 +4929,15 @@
                                 if (userDoc.exists) {
                                     const userData = userDoc.data();
                                     
-                                    // Show notification
-                                    showNotification(`New friend request from ${userData.displayName}`, 'info');
+                                    // Show notification (check notification settings)
+                                    if (typeof settingsManager !== 'undefined') {
+                                        const notifyFriendRequest = settingsManager.getSetting('notifyFriendRequest');
+                                        if (notifyFriendRequest !== false) {
+                                            showNotification(`New friend request from ${userData.displayName}`, 'info');
+                                        }
+                                    } else {
+                                        showNotification(`New friend request from ${userData.displayName}`, 'info');
+                                    }
                                     
                                     // Update request count
                                     loadFriendRequestsFromFirebase();
@@ -5024,7 +5089,7 @@
             return searchIn.includes(searchTerm);
         }
         
-        // QR code generation works offline
+        // QR code generation - now ensures each friend has a unique QR code
         function generateQRCode() {
             try {
                 const qrContainer = document.getElementById('qrCodeContainer');
@@ -5043,13 +5108,15 @@
                     return;
                 }
                 
-                // Create QR code data
+                // Create unique QR code data with user's unique ID
                 const qrData = JSON.stringify({
                     type: 'knecta_friend',
                     userId: currentUser.uid,
                     username: userData?.username || '',
                     displayName: userData?.displayName || '',
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    // Add a unique identifier to ensure each QR code is different
+                    uniqueId: `${currentUser.uid}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
                 });
                 
                 // Generate QR code - works offline
@@ -5062,7 +5129,7 @@
                     correctLevel: QRCode.CorrectLevel.H
                 });
                 
-                console.log('QR code generated successfully');
+                console.log('Unique QR code generated for user:', currentUser.uid);
                 
             } catch (error) {
                 console.error('Error in generateQRCode:', error);
@@ -5322,6 +5389,15 @@
                     return;
                 }
                 
+                // Check if friend requests are allowed using settingsManager
+                if (typeof settingsManager !== 'undefined') {
+                    const allowFriendRequests = settingsManager.getSetting('allowFriendRequests');
+                    if (allowFriendRequests === false) {
+                        showNotification('Friend requests are currently disabled', 'warning');
+                        return;
+                    }
+                }
+                
                 addFriendModal.classList.add('active');
                 document.querySelector('.add-friend-tab[data-tab="methods"]').click();
             });
@@ -5338,11 +5414,21 @@
                     return;
                 }
                 
+                // Check auto-add contacts setting using settingsManager
+                let shouldAutoAdd = false;
+                if (typeof settingsManager !== 'undefined') {
+                    shouldAutoAdd = settingsManager.getSetting('autoAddContacts') === true;
+                }
+                
                 if (navigator.contacts) {
                     navigator.contacts.select(['name', 'email', 'tel'], { multiple: true })
                         .then(contacts => {
                             console.log('Contacts selected:', contacts);
-                            showNotification(`${contacts.length} contacts selected for sync`, 'success');
+                            if (shouldAutoAdd) {
+                                showNotification(`${contacts.length} contacts selected and will be auto-added`, 'success');
+                            } else {
+                                showNotification(`${contacts.length} contacts selected for sync`, 'success');
+                            }
                         })
                         .catch(error => {
                             console.error('Error accessing contacts:', error);
@@ -5441,6 +5527,15 @@
                     if (!isOnline) {
                         showNotification('Cannot send friend requests while offline', 'error');
                         return;
+                    }
+                    
+                    // Check if friend requests are allowed using settingsManager
+                    if (typeof settingsManager !== 'undefined') {
+                        const allowFriendRequests = settingsManager.getSetting('allowFriendRequests');
+                        if (allowFriendRequests === false) {
+                            showNotification('Friend requests are currently disabled', 'warning');
+                            return;
+                        }
                     }
                     
                     try {
@@ -5579,7 +5674,7 @@
             });
         }
         
-        console.log('Complete offline-first friends system initialized successfully');
+        console.log('Complete offline-first friends system initialized successfully with settingsManager integration');
     </script>
 </body>
 </html>

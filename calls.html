@@ -1876,7 +1876,7 @@
                                 <span class="premium-badge-small">Free</span>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" id="reactionsToggle" checked>
+                                <input type="checkbox" id="reactionsToggle" data-setting="liveReactions">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
@@ -1888,7 +1888,7 @@
                                 <span class="premium-badge-small">Free</span>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" id="chatToggle" checked>
+                                <input type="checkbox" id="chatToggle" data-setting="inCallChat">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
@@ -1900,7 +1900,7 @@
                                 <span class="premium-badge-small">Free</span>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" id="whiteboardToggle" checked>
+                                <input type="checkbox" id="whiteboardToggle" data-setting="sharedWhiteboard">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
@@ -1912,7 +1912,7 @@
                                 <span class="premium-badge-small">Free</span>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" id="pollsToggle" checked>
+                                <input type="checkbox" id="pollsToggle" data-setting="polls">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
@@ -1924,14 +1924,14 @@
                                 <span class="premium-badge-small">Free</span>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" id="notesToggle" checked>
+                                <input type="checkbox" id="notesToggle" data-setting="sharedNotes">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
                         
                         <div class="settings-item">
                             <button class="notes-btn" id="resetSettingsBtn" style="width: 100%; margin-top: 10px;">
-                                <i class="fas fa-undo"></i> Reset to Default Settings
+                                <i class="fas fa-undo"></i> Reset Call Settings
                             </button>
                         </div>
                     </div>
@@ -2308,6 +2308,280 @@
     </div>
 
     <script>
+        // Import settingsManager.js
+        const SettingsManager = {
+            // Default settings for calls
+            defaultSettings: {
+                liveReactions: true,
+                inCallChat: true,
+                sharedWhiteboard: true,
+                polls: true,
+                sharedNotes: true,
+                theme: 'light',
+                notifications: true,
+                notificationSound: true,
+                whoCanFriendMe: 'everyone',
+                moodVisibility: 'friends',
+                callPermissions: 'everyone'
+            },
+            
+            // Initialize settings
+            initializeSettings: function() {
+                // Load settings from localStorage or use defaults
+                const savedSettings = localStorage.getItem('userSettings');
+                if (savedSettings) {
+                    try {
+                        window.userSettings = JSON.parse(savedSettings);
+                    } catch (e) {
+                        window.userSettings = { ...this.defaultSettings };
+                        this.saveSettings();
+                    }
+                } else {
+                    window.userSettings = { ...this.defaultSettings };
+                    this.saveSettings();
+                }
+                
+                // Apply settings to UI
+                this.applySettings();
+                
+                // Set up storage event listener for cross-tab synchronization
+                window.addEventListener('storage', (event) => {
+                    if (event.key === 'userSettings') {
+                        try {
+                            window.userSettings = JSON.parse(event.newValue);
+                            this.applySettings();
+                            this.showNotification('Settings updated', 'success');
+                        } catch (e) {
+                            console.error('Error parsing settings from storage event:', e);
+                        }
+                    }
+                });
+                
+                console.log('SettingsManager initialized:', window.userSettings);
+            },
+            
+            // Save a single setting
+            saveSetting: function(settingName, value) {
+                if (!window.userSettings) {
+                    window.userSettings = { ...this.defaultSettings };
+                }
+                
+                window.userSettings[settingName] = value;
+                this.saveSettings();
+                this.applySetting(settingName, value);
+                
+                // Broadcast to other tabs
+                this.broadcastSettingChange(settingName, value);
+                
+                console.log('Setting saved:', settingName, value);
+            },
+            
+            // Save all settings to localStorage
+            saveSettings: function() {
+                try {
+                    localStorage.setItem('userSettings', JSON.stringify(window.userSettings));
+                } catch (e) {
+                    console.error('Error saving settings:', e);
+                }
+            },
+            
+            // Apply a specific setting
+            applySetting: function(settingName, value) {
+                const element = document.querySelector(`[data-setting="${settingName}"]`);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = value;
+                    } else if (element.type === 'select-one') {
+                        element.value = value;
+                    } else {
+                        element.value = value;
+                    }
+                }
+                
+                // Apply visual changes based on setting
+                this.applyVisualSetting(settingName, value);
+            },
+            
+            // Apply all settings to UI
+            applySettings: function() {
+                if (!window.userSettings) return;
+                
+                // Apply to all settings elements
+                document.querySelectorAll('[data-setting]').forEach(element => {
+                    const settingName = element.dataset.setting;
+                    if (window.userSettings.hasOwnProperty(settingName)) {
+                        const value = window.userSettings[settingName];
+                        if (element.type === 'checkbox') {
+                            element.checked = value;
+                        } else if (element.type === 'select-one') {
+                            element.value = value;
+                        } else {
+                            element.value = value;
+                        }
+                    }
+                });
+                
+                // Apply all visual settings
+                Object.keys(window.userSettings).forEach(settingName => {
+                    this.applyVisualSetting(settingName, window.userSettings[settingName]);
+                });
+            },
+            
+            // Apply visual changes for specific settings
+            applyVisualSetting: function(settingName, value) {
+                switch(settingName) {
+                    case 'theme':
+                        this.applyTheme(value);
+                        break;
+                    case 'liveReactions':
+                        this.applyReactionsSetting(value);
+                        break;
+                    case 'inCallChat':
+                        this.applyChatSetting(value);
+                        break;
+                    case 'sharedWhiteboard':
+                        this.applyWhiteboardSetting(value);
+                        break;
+                    case 'polls':
+                        this.applyPollsSetting(value);
+                        break;
+                    case 'sharedNotes':
+                        this.applyNotesSetting(value);
+                        break;
+                }
+            },
+            
+            // Apply theme
+            applyTheme: function(theme) {
+                document.body.classList.remove('light-theme', 'dark-theme');
+                document.body.classList.add(`${theme}-theme`);
+                
+                if (theme === 'dark') {
+                    document.documentElement.style.setProperty('--bg-color', '#1a1a1a');
+                    document.documentElement.style.setProperty('--text-primary', '#ffffff');
+                    document.documentElement.style.setProperty('--text-secondary', '#b0b3b8');
+                    document.documentElement.style.setProperty('--secondary-color', '#2d2d2d');
+                    document.documentElement.style.setProperty('--border-color', '#3e4042');
+                } else {
+                    document.documentElement.style.setProperty('--bg-color', '#ffffff');
+                    document.documentElement.style.setProperty('--text-primary', '#050505');
+                    document.documentElement.style.setProperty('--text-secondary', '#65676b');
+                    document.documentElement.style.setProperty('--secondary-color', '#f0f2f5');
+                    document.documentElement.style.setProperty('--border-color', '#dddfe2');
+                }
+            },
+            
+            // Apply reactions setting
+            applyReactionsSetting: function(enabled) {
+                const reactionsContainer = document.getElementById('reactionsContainer');
+                if (reactionsContainer) {
+                    reactionsContainer.style.display = enabled ? 'flex' : 'none';
+                }
+            },
+            
+            // Apply chat setting
+            applyChatSetting: function(enabled) {
+                const chatTab = document.querySelector('.panel-tab[data-panel="chat"]');
+                if (chatTab) {
+                    chatTab.style.display = enabled ? 'flex' : 'none';
+                }
+                
+                // If chat is disabled and currently active, switch to participants
+                if (!enabled) {
+                    const activeTab = document.querySelector('.panel-tab.active');
+                    if (activeTab && activeTab.dataset.panel === 'chat') {
+                        const participantsTab = document.querySelector('.panel-tab[data-panel="participants"]');
+                        if (participantsTab) {
+                            participantsTab.click();
+                        }
+                    }
+                }
+            },
+            
+            // Apply whiteboard setting
+            applyWhiteboardSetting: function(enabled) {
+                const whiteboardTab = document.querySelector('.panel-tab[data-panel="whiteboard"]');
+                if (whiteboardTab) {
+                    whiteboardTab.style.display = enabled ? 'flex' : 'none';
+                }
+            },
+            
+            // Apply polls setting
+            applyPollsSetting: function(enabled) {
+                const pollsTab = document.querySelector('.panel-tab[data-panel="polls"]');
+                if (pollsTab) {
+                    pollsTab.style.display = enabled ? 'flex' : 'none';
+                }
+            },
+            
+            // Apply notes setting
+            applyNotesSetting: function(enabled) {
+                const notesTab = document.querySelector('.panel-tab[data-panel="notes"]');
+                if (notesTab) {
+                    notesTab.style.display = enabled ? 'flex' : 'none';
+                }
+            },
+            
+            // Reset settings to defaults
+            resetToDefaults: function() {
+                window.userSettings = { ...this.defaultSettings };
+                this.saveSettings();
+                this.applySettings();
+                this.showNotification('Settings reset to defaults', 'success');
+                console.log('Settings reset to defaults');
+            },
+            
+            // Reset call-specific settings to defaults
+            resetCallSettings: function() {
+                const callSettings = ['liveReactions', 'inCallChat', 'sharedWhiteboard', 'polls', 'sharedNotes'];
+                callSettings.forEach(setting => {
+                    window.userSettings[setting] = this.defaultSettings[setting];
+                });
+                this.saveSettings();
+                this.applySettings();
+                this.showNotification('Call settings reset to defaults', 'success');
+                console.log('Call settings reset to defaults');
+            },
+            
+            // Broadcast setting change to other tabs
+            broadcastSettingChange: function(settingName, value) {
+                try {
+                    // Update localStorage to trigger storage event
+                    const currentSettings = JSON.parse(localStorage.getItem('userSettings') || '{}');
+                    currentSettings[settingName] = value;
+                    localStorage.setItem('userSettings', JSON.stringify(currentSettings));
+                    
+                    // Also dispatch a custom event for same-tab listening
+                    window.dispatchEvent(new CustomEvent('settingChanged', {
+                        detail: { settingName, value }
+                    }));
+                } catch (e) {
+                    console.error('Error broadcasting setting change:', e);
+                }
+            },
+            
+            // Show notification
+            showNotification: function(message, type = 'success') {
+                // Use existing notification system
+                const notificationText = document.getElementById('notificationText');
+                const notification = document.getElementById('notification');
+                
+                if (notificationText && notification) {
+                    notificationText.textContent = message;
+                    notification.className = 'notification';
+                    notification.classList.add(type);
+                    notification.classList.add('active');
+                    
+                    setTimeout(() => {
+                        notification.classList.remove('active');
+                    }, 3000);
+                } else {
+                    // Fallback if notification element doesn't exist
+                    console.log(`${type}: ${message}`);
+                }
+            }
+        };
+
         // Enhanced Firebase Configuration with offline support
         const firebaseConfig = {
             apiKey: "AIzaSyDHHyGgsSV18BcXrGgzi4C8frzDAE1C1zo",
@@ -2376,24 +2650,6 @@
         let isOnline = navigator.onLine;
         let offlineCheckInterval = null;
         
-        // User settings with default values - NOW LOADS FROM APP-WIDE SETTINGS
-        let userSettings = {
-            reactions: true,
-            chat: true,
-            whiteboard: true,
-            polls: true,
-            notes: true
-        };
-        
-        // Default settings (for reset functionality)
-        const defaultSettings = {
-            reactions: true,
-            chat: true,
-            whiteboard: true,
-            polls: true,
-            notes: true
-        };
-        
         // Premium subscription management
         let userSubscription = {
             isPremium: false,
@@ -2442,11 +2698,11 @@
         });
         
         async function initializeApp() {
+            // Initialize settings manager
+            SettingsManager.initializeSettings();
+            
             // Initialize offline detection
             initializeOfflineDetection();
-            
-            // Listen for settings changes from settings.html
-            setupSettingsSync();
             
             // First try to get user from localStorage for immediate UI
             const cachedUser = localStorage.getItem('currentUser');
@@ -2457,7 +2713,6 @@
                     
                     // Initialize UI immediately with cached user
                     await initializeUser();
-                    await loadAppWideSettings(); // Load from app-wide settings
                     await loadUserSubscription();
                     setupEventListeners();
                     initializeWhiteboard();
@@ -2495,7 +2750,6 @@
                         }));
                         
                         await initializeUser();
-                        await loadAppWideSettings(); // Load from app-wide settings
                         await loadUserSubscription();
                         setupEventListeners();
                         initializeWhiteboard();
@@ -2846,108 +3100,6 @@
             }
         }
         
-        // NEW: Load settings from app-wide settings storage
-        function loadAppWideSettings() {
-            try {
-                // Check if there's a global settings object from settings.html
-                if (window.appSettings) {
-                    console.log('Loading settings from app-wide settings:', window.appSettings);
-                    
-                    // Map app-wide settings to call-specific settings
-                    userSettings = {
-                        reactions: window.appSettings.liveReactions !== false,
-                        chat: window.appSettings.inCallChat !== false,
-                        whiteboard: window.appSettings.sharedWhiteboard !== false,
-                        polls: window.appSettings.polls !== false,
-                        notes: window.appSettings.sharedNotes !== false
-                    };
-                    
-                    // Save to localStorage for offline use
-                    if (currentUser) {
-                        localStorage.setItem(`userSettings_${currentUser.uid}`, JSON.stringify(userSettings));
-                    }
-                    
-                    // Update UI immediately
-                    updateSettingsUI();
-                    applyUserSettings();
-                    
-                    console.log('Call settings loaded from app-wide settings:', userSettings);
-                    return;
-                }
-                
-                // Fallback to local storage
-                if (currentUser) {
-                    const localSettings = localStorage.getItem(`userSettings_${currentUser.uid}`);
-                    if (localSettings) {
-                        userSettings = JSON.parse(localSettings);
-                        updateSettingsUI();
-                        applyUserSettings();
-                        console.log('Call settings loaded from localStorage:', userSettings);
-                        return;
-                    }
-                }
-                
-                // Use defaults
-                updateSettingsUI();
-                applyUserSettings();
-                console.log('Using default call settings');
-                
-            } catch (error) {
-                console.error('Error loading app-wide settings:', error);
-                updateSettingsUI();
-                applyUserSettings();
-            }
-        }
-        
-        // NEW: Listen for settings changes from settings.html
-        function setupSettingsSync() {
-            // Listen for storage events (when settings.html changes localStorage)
-            window.addEventListener('storage', function(event) {
-                if (event.key === 'appSettings' || event.key?.startsWith('userSettings_')) {
-                    console.log('Settings changed detected, reloading...');
-                    loadAppWideSettings();
-                    showNotification('Settings updated', 'success');
-                }
-            });
-            
-            // Also listen for messages from other tabs
-            window.addEventListener('message', function(event) {
-                if (event.data && event.data.type === 'settingsUpdated') {
-                    console.log('Settings updated message received');
-                    loadAppWideSettings();
-                    showNotification('Settings updated', 'success');
-                }
-            });
-            
-            // Check for settings every 5 seconds (for real-time sync)
-            setInterval(() => {
-                const latestSettings = localStorage.getItem('appSettings');
-                if (latestSettings) {
-                    try {
-                        const parsed = JSON.parse(latestSettings);
-                        // Map to call settings
-                        const newCallSettings = {
-                            reactions: parsed.liveReactions !== false,
-                            chat: parsed.inCallChat !== false,
-                            whiteboard: parsed.sharedWhiteboard !== false,
-                            polls: parsed.polls !== false,
-                            notes: parsed.sharedNotes !== false
-                        };
-                        
-                        // Check if settings changed
-                        if (JSON.stringify(userSettings) !== JSON.stringify(newCallSettings)) {
-                            userSettings = newCallSettings;
-                            updateSettingsUI();
-                            applyUserSettings();
-                            console.log('Call settings synced from app-wide settings');
-                        }
-                    } catch (e) {
-                        console.error('Error parsing settings:', e);
-                    }
-                }
-            }, 5000);
-        }
-        
         // Enhanced localStorage management for calls
         function getLocalStorageKey(key) {
             return currentUser ? `calls_${currentUser.uid}_${key}` : `calls_${key}`;
@@ -3060,7 +3212,7 @@
             }
         }
         
-        // NEW: Get contact name with fallback to Firebase
+        // Get contact name with fallback to Firebase
         async function getContactNameWithFallback(userId) {
             if (!userId || userId === currentUser.uid) return 'You';
             
@@ -3328,7 +3480,6 @@
                 // Handle settings updates
                 if (event.data && event.data.type === 'settingsUpdated') {
                     console.log('Settings updated from friends.html');
-                    loadAppWideSettings();
                 }
             });
             
@@ -3771,7 +3922,7 @@
                     });
                 });
                 
-                // FIXED: Improved incoming call handler for immediate response
+                // Improved incoming call handler for immediate response
                 peer.on('call', async (incomingCall) => {
                     console.log('📞 Incoming call from:', incomingCall.peer);
                     
@@ -4187,7 +4338,7 @@
             if (dataConnections.has(targetUserId)) {
                 const connection = dataConnections.get(targetUserId);
                 if (connection.open) {
-                    // FIXED: Ensure emojis are properly encoded
+                    // Ensure emojis are properly encoded
                     if (message.type === 'reaction') {
                         message.reaction = String.fromCodePoint(...message.reaction.split('-').map(c => parseInt(c, 16)));
                     }
@@ -4202,7 +4353,7 @@
         function broadcastDataMessage(message, excludeUserId = null) {
             dataConnections.forEach((connection, userId) => {
                 if (userId !== excludeUserId && connection.open) {
-                    // FIXED: Ensure emojis are properly encoded
+                    // Ensure emojis are properly encoded
                     if (message.type === 'reaction') {
                         message.reaction = String.fromCodePoint(...message.reaction.split('-').map(c => parseInt(c, 16)));
                     }
@@ -4220,21 +4371,21 @@
                     break;
                     
                 case 'reaction':
-                    if (userSettings.reactions) {
-                        // FIXED: Properly display emojis
+                    if (window.userSettings && window.userSettings.liveReactions) {
+                        // Properly display emojis
                         const reaction = data.reaction;
                         showFloatingReaction(reaction);
                     }
                     break;
                     
                 case 'chat':
-                    if (userSettings.chat) {
+                    if (window.userSettings && window.userSettings.inCallChat) {
                         addChatMessage(data.message, senderId, false);
                     }
                     break;
                     
                 case 'whiteboard':
-                    if (userSettings.whiteboard) {
+                    if (window.userSettings && window.userSettings.sharedWhiteboard) {
                         handleWhiteboardData(data, senderId);
                     }
                     break;
@@ -4732,108 +4883,6 @@
             showNotification('Call declined', 'success');
         }
         
-        // Updated to sync with app-wide settings
-        function updateSettingsUI() {
-            const reactionsToggle = document.getElementById('reactionsToggle');
-            const chatToggle = document.getElementById('chatToggle');
-            const whiteboardToggle = document.getElementById('whiteboardToggle');
-            const pollsToggle = document.getElementById('pollsToggle');
-            const notesToggle = document.getElementById('notesToggle');
-            
-            if (reactionsToggle) reactionsToggle.checked = userSettings.reactions;
-            if (chatToggle) chatToggle.checked = userSettings.chat;
-            if (whiteboardToggle) whiteboardToggle.checked = userSettings.whiteboard;
-            if (pollsToggle) pollsToggle.checked = userSettings.polls;
-            if (notesToggle) notesToggle.checked = userSettings.notes;
-        }
-        
-        // Updated to save to app-wide settings
-        function saveUserSettings() {
-            if (!currentUser) return;
-            
-            // Save to app-wide settings
-            if (window.appSettings) {
-                window.appSettings.liveReactions = userSettings.reactions;
-                window.appSettings.inCallChat = userSettings.chat;
-                window.appSettings.sharedWhiteboard = userSettings.whiteboard;
-                window.appSettings.polls = userSettings.polls;
-                window.appSettings.sharedNotes = userSettings.notes;
-                
-                // Save to localStorage for other tabs
-                localStorage.setItem('appSettings', JSON.stringify(window.appSettings));
-            }
-            
-            // Also save to call-specific storage
-            localStorage.setItem(`userSettings_${currentUser.uid}`, JSON.stringify(userSettings));
-            
-            // Apply settings immediately
-            applyUserSettings();
-            
-            // Try to save to Firebase if online
-            if (isOnline && db) {
-                try {
-                    db.collection('userSettings').doc(currentUser.uid).set(userSettings, { merge: true })
-                        .then(() => {
-                            console.log('Settings saved to Firebase');
-                            showNotification('Settings updated', 'success');
-                        })
-                        .catch(error => {
-                            console.error('Error saving user settings to Firebase:', error);
-                            showNotification('Settings saved locally', 'warning');
-                        });
-                } catch (error) {
-                    console.error('Error saving user settings:', error);
-                    showNotification('Settings saved locally', 'warning');
-                }
-            } else {
-                showNotification('Settings saved locally', 'success');
-            }
-        }
-        
-        function resetSettingsToDefault() {
-            userSettings = { ...defaultSettings };
-            updateSettingsUI();
-            applyUserSettings();
-            saveUserSettings();
-            showNotification('Settings reset to default', 'success');
-        }
-        
-        function applyUserSettings() {
-            const reactionsContainer = document.getElementById('reactionsContainer');
-            if (reactionsContainer) {
-                reactionsContainer.style.display = userSettings.reactions ? 'flex' : 'none';
-            }
-            
-            const panelTabs = document.querySelectorAll('.panel-tab');
-            panelTabs.forEach(tab => {
-                const panelType = tab.dataset.panel;
-                
-                switch(panelType) {
-                    case 'chat':
-                        tab.style.display = userSettings.chat ? 'flex' : 'none';
-                        break;
-                    case 'whiteboard':
-                        tab.style.display = userSettings.whiteboard ? 'flex' : 'none';
-                        break;
-                    case 'notes':
-                        tab.style.display = userSettings.notes ? 'flex' : 'none';
-                        break;
-                    case 'polls':
-                        tab.style.display = userSettings.polls ? 'flex' : 'none';
-                        break;
-                }
-            });
-            
-            // If active tab is now hidden, switch to participants tab
-            const activeTab = document.querySelector('.panel-tab.active');
-            if (activeTab && activeTab.style.display === 'none') {
-                const participantsTab = document.querySelector('.panel-tab[data-panel="participants"]');
-                if (participantsTab) {
-                    participantsTab.click();
-                }
-            }
-        }
-        
         async function loadAllCalls() {
             try {
                 allCallsList.innerHTML = '<div class="loading-placeholder"><div class="loading-spinner"></div><p>Loading call history...</p></div>';
@@ -4944,7 +4993,7 @@
                                 <i class="fas fa-phone-slash"></i>
                                 <p>No missed calls</p>
                                 <p class="subtext">All calls have been answered</p>
-                            </div>
+                        </div>
                         `;
                         break;
                     case 'group':
@@ -5128,7 +5177,7 @@
         }
         
         function startDrawing(e) {
-            if (!userSettings.whiteboard) return;
+            if (!window.userSettings || !window.userSettings.sharedWhiteboard) return;
             
             isDrawing = true;
             const rect = whiteboardCanvas.getBoundingClientRect();
@@ -5142,7 +5191,7 @@
         }
         
         function draw(e) {
-            if (!isDrawing || !userSettings.whiteboard) return;
+            if (!isDrawing || !window.userSettings || !window.userSettings.sharedWhiteboard) return;
             
             const rect = whiteboardCanvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -5187,7 +5236,7 @@
         }
         
         function clearWhiteboard() {
-            if (!userSettings.whiteboard) return;
+            if (!window.userSettings || !window.userSettings.sharedWhiteboard) return;
             whiteboardCtx.fillStyle = '#ffffff';
             whiteboardCtx.fillRect(0, 0, whiteboardCanvas.width, whiteboardCanvas.height);
         }
@@ -5548,57 +5597,21 @@
                 }
             });
             
-            // Settings toggles - with immediate effect
-            const reactionsToggle = document.getElementById('reactionsToggle');
-            const chatToggle = document.getElementById('chatToggle');
-            const whiteboardToggle = document.getElementById('whiteboardToggle');
-            const pollsToggle = document.getElementById('pollsToggle');
-            const notesToggle = document.getElementById('notesToggle');
-            
-            if (reactionsToggle) {
-                reactionsToggle.addEventListener('change', function() {
-                    userSettings.reactions = this.checked;
-                    applyUserSettings(); // Immediate effect
-                    saveUserSettings(); // Save immediately
+            // Settings toggles - connected to SettingsManager
+            document.querySelectorAll('input[data-setting]').forEach(input => {
+                input.addEventListener('change', function() {
+                    const settingName = this.dataset.setting;
+                    const value = this.type === 'checkbox' ? this.checked : this.value;
+                    SettingsManager.saveSetting(settingName, value);
                 });
-            }
+            });
             
-            if (chatToggle) {
-                chatToggle.addEventListener('change', function() {
-                    userSettings.chat = this.checked;
-                    applyUserSettings(); // Immediate effect
-                    saveUserSettings(); // Save immediately
-                });
-            }
-            
-            if (whiteboardToggle) {
-                whiteboardToggle.addEventListener('change', function() {
-                    userSettings.whiteboard = this.checked;
-                    applyUserSettings(); // Immediate effect
-                    saveUserSettings(); // Save immediately
-                });
-            }
-            
-            if (pollsToggle) {
-                pollsToggle.addEventListener('change', function() {
-                    userSettings.polls = this.checked;
-                    applyUserSettings(); // Immediate effect
-                    saveUserSettings(); // Save immediately
-                });
-            }
-            
-            if (notesToggle) {
-                notesToggle.addEventListener('change', function() {
-                    userSettings.notes = this.checked;
-                    applyUserSettings(); // Immediate effect
-                    saveUserSettings(); // Save immediately
-                });
-            }
-            
-            // Reset settings button
+            // Reset call settings button
             const resetSettingsBtn = document.getElementById('resetSettingsBtn');
             if (resetSettingsBtn) {
-                resetSettingsBtn.addEventListener('click', resetSettingsToDefault);
+                resetSettingsBtn.addEventListener('click', () => {
+                    SettingsManager.resetCallSettings();
+                });
             }
             
             // New call button
@@ -5872,16 +5885,16 @@
                     let isEnabled = true;
                     switch(panelName) {
                         case 'chat':
-                            isEnabled = userSettings.chat;
+                            isEnabled = window.userSettings && window.userSettings.inCallChat;
                             break;
                         case 'whiteboard':
-                            isEnabled = userSettings.whiteboard;
+                            isEnabled = window.userSettings && window.userSettings.sharedWhiteboard;
                             break;
                         case 'notes':
-                            isEnabled = userSettings.notes;
+                            isEnabled = window.userSettings && window.userSettings.sharedNotes;
                             break;
                         case 'polls':
-                            isEnabled = userSettings.polls;
+                            isEnabled = window.userSettings && window.userSettings.polls;
                             break;
                     }
                     
@@ -5924,7 +5937,7 @@
             
             // Chat functionality
             document.getElementById('sendChatBtn').addEventListener('click', () => {
-                if (!userSettings.chat) {
+                if (!window.userSettings || !window.userSettings.inCallChat) {
                     showNotification('Chat is disabled in your settings', 'warning');
                     return;
                 }
@@ -5961,7 +5974,7 @@
             // Whiteboard tools
             document.querySelectorAll('[data-tool]').forEach(toolBtn => {
                 toolBtn.addEventListener('click', function() {
-                    if (!userSettings.whiteboard) {
+                    if (!window.userSettings || !window.userSettings.sharedWhiteboard) {
                         showNotification('Whiteboard is disabled in your settings', 'warning');
                         return;
                     }
@@ -5984,7 +5997,7 @@
             
             // Notes functionality
             document.getElementById('saveNoteBtn').addEventListener('click', () => {
-                if (!userSettings.notes) {
+                if (!window.userSettings || !window.userSettings.sharedNotes) {
                     showNotification('Notes are disabled in your settings', 'warning');
                     return;
                 }
@@ -5995,7 +6008,7 @@
             });
             
             document.getElementById('loadNotesBtn').addEventListener('click', () => {
-                if (!userSettings.notes) {
+                if (!window.userSettings || !window.userSettings.sharedNotes) {
                     showNotification('Notes are disabled in your settings', 'warning');
                     return;
                 }
@@ -6038,10 +6051,10 @@
                 document.getElementById('notesPreview').innerHTML = html;
             });
             
-            // Reactions - FIXED: Proper emoji handling
+            // Reactions - Proper emoji handling
             document.querySelectorAll('.reaction-btn').forEach(reactionBtn => {
                 reactionBtn.addEventListener('click', function() {
-                    if (!userSettings.reactions) {
+                    if (!window.userSettings || !window.userSettings.liveReactions) {
                         showNotification('Reactions are disabled in your settings', 'warning');
                         return;
                     }

@@ -56,6 +56,7 @@ const STATIC_MANIFEST = {
   // JavaScript - All scripts (excluding user-specific data)
   js: [
     '/js/app.js',
+    '/settingsManager.js',
     '/js/chat.js',
     '/js/main.js',
     '/js/auth.js',

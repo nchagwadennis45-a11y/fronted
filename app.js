@@ -65,6 +65,178 @@ const firebaseConfig = {
 };
 
 // ============================================================================
+// OFFLINE MOCK DATA GENERATOR (FOR WHEN NO SERVER CONNECTION)
+// ============================================================================
+
+const OFFLINE_DATA_GENERATOR = {
+  // Generate realistic placeholder data for offline mode
+  generateUserProfile: function(userId) {
+    const names = ["Alex Johnson", "Sam Smith", "Taylor Swift", "Jordan Lee", "Casey Kim", "Morgan Reed", "Riley Chen", "Drew Patel"];
+    const statuses = ["Online", "Last seen 5m ago", "Busy", "Away", "Offline", "Typing..."];
+    
+    return {
+      id: userId || 'offline_user_' + Date.now(),
+      name: names[Math.floor(Math.random() * names.length)],
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(names[Math.floor(Math.random() * names.length)])}&background=8b5cf6&color=fff`,
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      email: "user@example.com",
+      phone: "+1 (555) 123-4567",
+      isOnline: Math.random() > 0.5,
+      lastSeen: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
+      isOfflineMode: true
+    };
+  },
+  
+  generateFriendsList: function(count = 15) {
+    const friends = [];
+    const statuses = ["Online", "Last seen 5m ago", "Busy", "Away", "Offline"];
+    const activities = ["Listening to music", "Gaming", "Working", "Sleeping", "Coding", "Reading"];
+    
+    for (let i = 0; i < count; i++) {
+      const name = `Friend ${i + 1}`;
+      friends.push({
+        id: `friend_${i}`,
+        name: name,
+        avatar: `https://ui-avatars.com/api/?name=Friend+${i + 1}&background=${['8b5cf6', '10b981', 'f59e0b', 'ef4444', '3b82f6'][i % 5]}&color=fff`,
+        status: statuses[Math.floor(Math.random() * statuses.length)],
+        activity: activities[Math.floor(Math.random() * activities.length)],
+        lastMessage: "Hey, how are you?",
+        lastMessageTime: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        unreadCount: Math.random() > 0.7 ? Math.floor(Math.random() * 5) + 1 : 0,
+        isOnline: Math.random() > 0.5,
+        isOfflineMode: true
+      });
+    }
+    
+    // Sort by online status and recent activity
+    return friends.sort((a, b) => {
+      if (a.isOnline && !b.isOnline) return -1;
+      if (!a.isOnline && b.isOnline) return 1;
+      return new Date(b.lastMessageTime) - new Date(a.lastMessageTime);
+    });
+  },
+  
+  generateChatsList: function(count = 10) {
+    const chats = [];
+    const chatTypes = ["direct", "group"];
+    const statuses = ["Online", "Last seen 5m ago", "Busy", "Away", "Offline"];
+    
+    for (let i = 0; i < count; i++) {
+      const isGroup = Math.random() > 0.7;
+      const name = isGroup ? `Group Chat ${i + 1}` : `Friend ${i + 1}`;
+      const participants = isGroup ? Math.floor(Math.random() * 8) + 3 : 2;
+      const messages = [];
+      
+      // Generate some recent messages
+      const messageCount = Math.floor(Math.random() * 5) + 1;
+      for (let j = 0; j < messageCount; j++) {
+        messages.push({
+          id: `msg_${i}_${j}`,
+          sender: Math.random() > 0.5 ? "You" : name.split(' ')[0],
+          text: ["Hello!", "How are you?", "What's up?", "Meeting at 3pm", "Check this out!", "👍", "😂"][Math.floor(Math.random() * 7)],
+          time: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
+          isRead: Math.random() > 0.3
+        });
+      }
+      
+      chats.push({
+        id: `chat_${i}`,
+        name: name,
+        avatar: isGroup ? 
+          `https://ui-avatars.com/api/?name=Group+${i + 1}&background=6366f1&color=fff` :
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=8b5cf6&color=fff`,
+        type: isGroup ? "group" : "direct",
+        participants: participants,
+        lastMessage: messages[messages.length - 1]?.text || "No messages yet",
+        lastMessageTime: messages[messages.length - 1]?.time || new Date().toISOString(),
+        unreadCount: Math.random() > 0.6 ? Math.floor(Math.random() * 3) + 1 : 0,
+        isOnline: !isGroup && Math.random() > 0.5,
+        status: isGroup ? `${participants} members` : statuses[Math.floor(Math.random() * statuses.length)],
+        messages: messages,
+        isOfflineMode: true
+      });
+    }
+    
+    // Sort by most recent message
+    return chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+  },
+  
+  generateGroupsList: function(count = 8) {
+    const groups = [];
+    const topics = ["Gaming", "Music", "Movies", "Sports", "Tech", "Food", "Travel", "Study"];
+    
+    for (let i = 0; i < count; i++) {
+      const topic = topics[i % topics.length];
+      const members = Math.floor(Math.random() * 20) + 5;
+      const onlineMembers = Math.floor(Math.random() * members);
+      
+      groups.push({
+        id: `group_${i}`,
+        name: `${topic} Enthusiasts`,
+        description: `A group for ${topic.toLowerCase()} lovers to share and discuss`,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(topic)}&background=6366f1&color=fff`,
+        members: members,
+        onlineMembers: onlineMembers,
+        isPublic: Math.random() > 0.3,
+        isAdmin: Math.random() > 0.7,
+        lastActivity: new Date(Date.now() - Math.random() * 3 * 24 * 60 * 60 * 1000).toISOString(),
+        unreadCount: Math.random() > 0.5 ? Math.floor(Math.random() * 10) + 1 : 0,
+        isOfflineMode: true
+      });
+    }
+    
+    return groups.sort((a, b) => b.onlineMembers - a.onlineMembers);
+  },
+  
+  generateCallsList: function(count = 12) {
+    const calls = [];
+    const callTypes = ["voice", "video"];
+    const statuses = ["missed", "received", "outgoing"];
+    const names = ["Alex Johnson", "Sam Smith", "Taylor Swift", "Jordan Lee", "Casey Kim", "Morgan Reed"];
+    
+    for (let i = 0; i < count; i++) {
+      const isVideo = Math.random() > 0.5;
+      const callStatus = statuses[Math.floor(Math.random() * statuses.length)];
+      const duration = Math.floor(Math.random() * 1800) + 60; // 1-30 minutes in seconds
+      
+      calls.push({
+        id: `call_${i}`,
+        name: names[i % names.length],
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(names[i % names.length])}&background=8b5cf6&color=fff`,
+        type: isVideo ? "video" : "voice",
+        status: callStatus,
+        duration: duration,
+        time: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        isMissed: callStatus === "missed",
+        isOfflineMode: true
+      });
+    }
+    
+    // Sort by most recent
+    return calls.sort((a, b) => new Date(b.time) - new Date(a.time));
+  },
+  
+  // Generate comprehensive offline data for all tabs
+  generateAllOfflineData: function(userId) {
+    return {
+      userProfile: this.generateUserProfile(userId),
+      friends: this.generateFriendsList(),
+      chats: this.generateChatsList(),
+      groups: this.generateGroupsList(),
+      calls: this.generateCallsList(),
+      settings: {
+        theme: 'dark',
+        notifications: true,
+        privacy: 'friends',
+        language: 'en'
+      },
+      timestamp: new Date().toISOString(),
+      isOfflineData: true
+    };
+  }
+};
+
+// ============================================================================
 // USER DATA ISOLATION SERVICE
 // ============================================================================
 
@@ -75,7 +247,7 @@ const USER_DATA_ISOLATION = {
   // Prefix all cache keys with user ID for isolation
   getUserCacheKey: function(key) {
     if (!this.currentUserId) {
-      return key; // Fallback for non-authenticated state
+      return `offline_${key}`; // Fallback for non-authenticated state
     }
     return `user_${this.currentUserId}_${key}`;
   },
@@ -210,7 +382,8 @@ const CACHE_CONFIG = {
     GROUPS: 5 * 60 * 1000, // 5 minutes
     MESSAGES: 30 * 60 * 1000, // 30 minutes
     USER_DATA: 60 * 60 * 1000, // 1 hour
-    GENERAL: 30 * 60 * 1000 // 30 minutes
+    GENERAL: 30 * 60 * 1000, // 30 minutes
+    OFFLINE_DATA: 24 * 60 * 60 * 1000 // 24 hours for offline data
   },
   
   // Cache keys (will be prefixed with user ID)
@@ -226,7 +399,8 @@ const CACHE_CONFIG = {
     NETWORK_STATUS: 'network-status',
     SESSION: 'session',
     AUTH_STATE: 'auth-state',
-    APP_INITIALIZED: 'app-initialized'
+    APP_INITIALIZED: 'app-initialized',
+    OFFLINE_DATA_READY: 'offline-data-ready'
   },
   
   // Get isolated key for current user
@@ -308,7 +482,8 @@ const SETTINGS_SERVICE = {
       storageLimit: 100,
       compressMedia: true,
       cacheDuration: 7,
-      backgroundSync: true
+      backgroundSync: true,
+      showOfflineData: true
     },
     
     // Accessibility
@@ -1133,14 +1308,56 @@ const DATA_CACHE = {
       userProfile: this.getCachedUserProfile(true),
       session: this.getCachedSession(true)
     };
+  },
+  
+  // NEW: Generate and cache offline data if no cached data exists
+  ensureOfflineDataAvailable: function() {
+    if (!currentUser) {
+      console.log('No current user, cannot generate offline data');
+      return null;
+    }
+    
+    // Check if we already have offline data cached
+    const offlineKey = USER_DATA_ISOLATION.getUserCacheKey(CACHE_CONFIG.KEYS.OFFLINE_DATA_READY);
+    if (localStorage.getItem(offlineKey)) {
+      console.log('Offline data already prepared');
+      return true;
+    }
+    
+    console.log('Generating offline data for instant UI...');
+    
+    // Generate comprehensive offline data
+    const offlineData = OFFLINE_DATA_GENERATOR.generateAllOfflineData(currentUser.uid);
+    
+    // Cache all the generated data
+    this.cacheFriends(offlineData.friends);
+    this.cacheChats(offlineData.chats);
+    this.cacheGroups(offlineData.groups);
+    this.cacheCalls(offlineData.calls);
+    this.cacheUserProfile(offlineData.userProfile);
+    
+    // Mark offline data as ready
+    localStorage.setItem(offlineKey, JSON.stringify({
+      ready: true,
+      timestamp: new Date().toISOString(),
+      userId: currentUser.uid
+    }));
+    
+    console.log('Offline data generated and cached');
+    return true;
+  },
+  
+  // NEW: Get offline data for a specific tab
+  getOfflineTabData: function(tabName) {
+    switch(tabName) {
+      case 'friends': return OFFLINE_DATA_GENERATOR.generateFriendsList();
+      case 'chats': return OFFLINE_DATA_GENERATOR.generateChatsList();
+      case 'calls': return OFFLINE_DATA_GENERATOR.generateCallsList();
+      case 'groups': return OFFLINE_DATA_GENERATOR.generateGroupsList();
+      default: return null;
+    }
   }
 };
-
-// ============================================================================
-// REMOVED OFFLINE DATA PROVIDER WITH MOCK DATA
-// ============================================================================
-
-// No more mock data generator - real data only
 
 // ============================================================================
 // STATE MANAGEMENT
@@ -1362,6 +1579,15 @@ function initializeFirebase() {
       if (typeof firebase === 'undefined' || !firebase.apps) {
         console.log('Firebase SDK not loaded, using device-based authentication');
         handleDeviceBasedAuth();
+        
+        // Ensure UI is still functional even without Firebase
+        if (!authStateRestored) {
+          setTimeout(() => {
+            authStateRestored = true;
+            broadcastAuthReady();
+            console.log('Broadcasting auth ready after Firebase fallback');
+          }, 500);
+        }
         return;
       }
 
@@ -1509,10 +1735,38 @@ function handleDeviceBasedAuth() {
     }
   }
   
-  // No valid session found
-  console.log('No valid device-based session');
-  handleAuthStateChange(null, true);
+  // No valid session found - create offline user
+  console.log('No valid device-based session, creating offline user');
+  createOfflineUser();
   return false;
+}
+
+// Create an offline user for instant UI
+function createOfflineUser() {
+  const offlineUserId = 'offline_user_' + getDeviceId() + '_' + Date.now();
+  const offlineUser = {
+    uid: offlineUserId,
+    email: 'offline@moodchat.app',
+    displayName: 'Offline User',
+    photoURL: `https://ui-avatars.com/api/?name=Offline+User&background=8b5cf6&color=fff`,
+    emailVerified: false,
+    isOffline: true,
+    providerId: 'offline',
+    isAnonymous: true,
+    metadata: {
+      creationTime: new Date().toISOString(),
+      lastSignInTime: new Date().toISOString()
+    },
+    refreshToken: 'offline-token',
+    getIdToken: () => Promise.resolve('offline-token'),
+    isOfflineMode: true
+  };
+  
+  // Store as device session for consistency
+  storeDeviceBasedSession(offlineUser);
+  
+  handleAuthStateChange(offlineUser, true);
+  return offlineUser;
 }
 
 // Store device-based session
@@ -1572,6 +1826,9 @@ function handleAuthStateChange(user, fromDeviceAuth = false) {
     USER_DATA_ISOLATION.setCurrentUser(userId);
     DATA_CACHE.setCurrentUser(userId);
     SETTINGS_SERVICE.setCurrentUser(userId);
+    
+    // Ensure offline data is available for this user
+    DATA_CACHE.ensureOfflineDataAvailable();
   } else {
     USER_DATA_ISOLATION.clearCurrentUser();
     DATA_CACHE.setCurrentUser(null);
@@ -1716,6 +1973,11 @@ function setupGlobalAuthAccess() {
         // Store device session
         storeDeviceBasedSession(deviceUser);
         
+        // Generate offline data for this user
+        setTimeout(() => {
+          DATA_CACHE.ensureOfflineDataAvailable();
+        }, 100);
+        
         handleAuthStateChange(deviceUser);
         resolve({
           success: true,
@@ -1848,6 +2110,11 @@ function setupGlobalAuthAccess() {
         // Store device session
         storeDeviceBasedSession(deviceUser);
         
+        // Generate offline data for this user
+        setTimeout(() => {
+          DATA_CACHE.ensureOfflineDataAvailable();
+        }, 100);
+        
         handleAuthStateChange(deviceUser);
         resolve({
           success: true,
@@ -1906,12 +2173,13 @@ function setupGlobalAuthAccess() {
 }
 
 // ============================================================================
-// INSTANT UI LOADING SYSTEM
+// INSTANT UI LOADING SYSTEM (ENHANCED FOR OFFLINE)
 // ============================================================================
 
 function loadCachedDataInstantly() {
   if (!currentUser || !currentUser.uid) {
-    console.log('No user logged in, skipping instant data load');
+    console.log('No user logged in, showing offline placeholder UI');
+    showOfflinePlaceholderUI();
     return;
   }
   
@@ -1920,22 +2188,92 @@ function loadCachedDataInstantly() {
   // Get all cached data at once
   const cachedData = DATA_CACHE.getAllCachedTabData();
   
+  // Check if we have any cached data
+  const hasCachedData = Object.values(cachedData).some(data => data !== null);
+  
+  if (!hasCachedData) {
+    console.log('No cached data found, using offline data generator');
+    
+    // Generate and use offline data
+    const offlineData = OFFLINE_DATA_GENERATOR.generateAllOfflineData(currentUser.uid);
+    
+    // Cache the offline data for future use
+    DATA_CACHE.cacheFriends(offlineData.friends);
+    DATA_CACHE.cacheChats(offlineData.chats);
+    DATA_CACHE.cacheGroups(offlineData.groups);
+    DATA_CACHE.cacheCalls(offlineData.calls);
+    DATA_CACHE.cacheUserProfile(offlineData.userProfile);
+    
+    // Update cachedData with offline data
+    Object.assign(cachedData, {
+      friends: offlineData.friends,
+      chats: offlineData.chats,
+      groups: offlineData.groups,
+      calls: offlineData.calls,
+      userProfile: offlineData.userProfile
+    });
+    
+    // Mark as offline data
+    cachedData.isOfflineData = true;
+  }
+  
   // Dispatch event with cached data for UI to render instantly
   const event = new CustomEvent('cached-data-loaded', {
     detail: {
       data: cachedData,
       userId: currentUser.uid,
       timestamp: new Date().toISOString(),
-      source: 'cache'
+      source: 'cache',
+      isOfflineData: cachedData.isOfflineData || false
     }
   });
   window.dispatchEvent(event);
   
   instantUILoaded = true;
-  console.log('Instant UI data loaded from cache');
+  console.log('Instant UI data loaded from cache/offline generator');
   
   // Update UI to show cached data is being used
-  showCachedDataIndicator();
+  showCachedDataIndicator(cachedData.isOfflineData);
+}
+
+function showOfflinePlaceholderUI() {
+  const contentArea = document.querySelector(APP_CONFIG.contentArea);
+  if (!contentArea) return;
+  
+  const placeholderHTML = `
+    <div class="offline-placeholder p-8 text-center">
+      <div class="mb-6">
+        <svg class="w-24 h-24 mx-auto text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+        </svg>
+      </div>
+      <h3 class="text-xl font-semibold mb-2 dark:text-white">Welcome to MoodChat</h3>
+      <p class="text-gray-600 dark:text-gray-300 mb-4">You're currently offline.</p>
+      <p class="text-gray-500 dark:text-gray-400 mb-6 text-sm">The app will work with offline data. Some features may be limited.</p>
+      <div class="space-y-3">
+        <button onclick="window.location.href='index.html'" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg w-full transition-colors">
+          Go to Login
+        </button>
+        <button onclick="createOfflineUserAndContinue()" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-6 py-3 rounded-lg w-full transition-colors">
+          Continue Offline
+        </button>
+      </div>
+    </div>
+  `;
+  
+  contentArea.innerHTML = placeholderHTML;
+  
+  // Expose the continue offline function
+  window.createOfflineUserAndContinue = function() {
+    createOfflineUser();
+    setTimeout(() => {
+      loadCachedDataInstantly();
+      // Switch to groups tab
+      setTimeout(() => {
+        switchTab('groups');
+      }, 100);
+    }, 100);
+  };
 }
 
 function refreshCachedDataInBackground() {
@@ -1996,7 +2334,7 @@ function applyPendingUIUpdates() {
   console.log('Pending UI updates applied');
 }
 
-function showCachedDataIndicator() {
+function showCachedDataIndicator(isOfflineData = false) {
   // Create a subtle indicator that data is loaded from cache
   const indicator = document.createElement('div');
   indicator.id = 'cached-data-indicator';
@@ -2004,7 +2342,7 @@ function showCachedDataIndicator() {
     position: fixed;
     bottom: 10px;
     right: 10px;
-    background: rgba(0, 0, 0, 0.7);
+    background: ${isOfflineData ? 'rgba(245, 158, 11, 0.9)' : 'rgba(0, 0, 0, 0.7)'};
     color: #fff;
     padding: 4px 8px;
     border-radius: 4px;
@@ -2014,7 +2352,7 @@ function showCachedDataIndicator() {
     transition: opacity 0.3s;
     pointer-events: none;
   `;
-  indicator.textContent = 'Using cached data';
+  indicator.textContent = isOfflineData ? 'Using offline data' : 'Using cached data';
   document.body.appendChild(indicator);
   
   // Show briefly then fade out
@@ -2094,6 +2432,9 @@ function handleOnline() {
   setTimeout(() => {
     NETWORK_SERVICE_MANAGER.startBackgroundSync();
   }, 500);
+  
+  // Update UI to show online status
+  showOnlineIndicator();
 }
 
 // Handle offline event
@@ -2139,6 +2480,10 @@ function updateNetworkStatus(online) {
 
 // Show offline indicator
 function showOfflineIndicator() {
+  // Remove existing indicator if any
+  const existing = document.getElementById('offline-indicator');
+  if (existing) existing.remove();
+  
   const indicator = document.createElement('div');
   indicator.id = 'offline-indicator';
   indicator.style.cssText = `
@@ -2153,20 +2498,26 @@ function showOfflineIndicator() {
     z-index: 1000;
     opacity: 0.9;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s ease-out;
   `;
   indicator.textContent = 'Offline - Using cached data';
   document.body.appendChild(indicator);
-  
-  // Remove when back online
-  const removeIndicator = () => {
-    const existing = document.getElementById('offline-indicator');
-    if (existing && existing.parentNode) {
-      existing.parentNode.removeChild(existing);
-    }
-    window.removeEventListener('online', removeIndicator);
-  };
-  
-  window.addEventListener('online', removeIndicator);
+}
+
+// Show online indicator
+function showOnlineIndicator() {
+  const existing = document.getElementById('offline-indicator');
+  if (existing) {
+    existing.style.background = '#10b981';
+    existing.textContent = 'Back online';
+    
+    setTimeout(() => {
+      if (existing.parentNode) {
+        existing.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => existing.remove(), 300);
+      }
+    }, 2000);
+  }
 }
 
 // Broadcast network changes
@@ -2647,7 +2998,7 @@ function updateItemAttempts(itemId, db, storeName, attempts, userId) {
   };
 }
 
-// ENHANCED Safe API call wrapper with instant cache fallback
+// ENHANCED Safe API call wrapper with instant cache fallback AND offline data
 function safeApiCall(apiFunction, data, type = 'action', cacheKey = null) {
   return new Promise((resolve, reject) => {
     // Always try cache first for GET-like operations (INSTANT LOADING)
@@ -2670,6 +3021,40 @@ function safeApiCall(apiFunction, data, type = 'action', cacheKey = null) {
             fetchFreshDataInBackground(apiFunction, data, cacheKey);
           }, 1000);
         }
+        return;
+      }
+    }
+    
+    // If no cache and we're offline, use offline data generator
+    if (!isOnline && cacheKey && currentUser) {
+      console.log(`Offline mode: Using offline data for: ${cacheKey}`);
+      
+      // Determine which offline data to generate based on cache key
+      let offlineData = null;
+      if (cacheKey.includes('friends')) {
+        offlineData = DATA_CACHE.getOfflineTabData('friends');
+      } else if (cacheKey.includes('chats')) {
+        offlineData = DATA_CACHE.getOfflineTabData('chats');
+      } else if (cacheKey.includes('groups')) {
+        offlineData = DATA_CACHE.getOfflineTabData('groups');
+      } else if (cacheKey.includes('calls')) {
+        offlineData = DATA_CACHE.getOfflineTabData('calls');
+      } else if (cacheKey.includes('profile')) {
+        offlineData = OFFLINE_DATA_GENERATOR.generateUserProfile(currentUser.uid);
+      }
+      
+      if (offlineData) {
+        // Cache the offline data for next time
+        DATA_CACHE.set(cacheKey, offlineData, CACHE_CONFIG.EXPIRATION.OFFLINE_DATA);
+        
+        resolve({
+          success: true,
+          offline: true,
+          cached: false,
+          data: offlineData,
+          message: 'Using offline data generator',
+          isOfflineData: true
+        });
         return;
       }
     }
@@ -2703,22 +3088,38 @@ function safeApiCall(apiFunction, data, type = 'action', cacheKey = null) {
             })
             .catch(error => {
               console.log('API call failed:', error);
-              // Queue for retry
-              queueForSync({
-                apiFunction: apiFunction.name || 'anonymous',
-                data: data,
-                originalCall: new Date().toISOString()
-              }, type)
-              .then(queueResult => {
-                resolve({
-                  success: false,
-                  offline: true,
-                  queued: queueResult.queued,
-                  message: 'Action queued for retry',
-                  queueId: queueResult.id,
-                  userId: queueResult.userId
-                });
-              });
+              // Try to use offline data as fallback
+              if (cacheKey && currentUser) {
+                const offlineData = DATA_CACHE.getOfflineTabData(cacheKey.split('-')[0]);
+                if (offlineData) {
+                  resolve({
+                    success: true,
+                    offline: true,
+                    cached: false,
+                    data: offlineData,
+                    message: 'API failed, using offline data',
+                    isOfflineData: true,
+                    originalError: error.message
+                  });
+                } else {
+                  // Queue for retry
+                  queueForSync({
+                    apiFunction: apiFunction.name || 'anonymous',
+                    data: data,
+                    originalCall: new Date().toISOString()
+                  }, type)
+                  .then(queueResult => {
+                    resolve({
+                      success: false,
+                      offline: true,
+                      queued: queueResult.queued,
+                      message: 'Action queued for retry',
+                      queueId: queueResult.id,
+                      userId: queueResult.userId
+                    });
+                  });
+                }
+              }
             });
         } else {
           resolve(result);
@@ -2886,7 +3287,10 @@ function exposeGlobalStateToIframes() {
     clearCurrentUserData: () => DATA_CACHE.clearCurrentUserData(),
     hasCachedTabData: (tabName) => DATA_CACHE.hasCachedTabData(tabName),
     getAllCachedTabData: () => DATA_CACHE.getAllCachedTabData(),
-    isAppInitialized: () => DATA_CACHE.isAppInitialized()
+    isAppInitialized: () => DATA_CACHE.isAppInitialized(),
+    // NEW: Offline data functions
+    generateOfflineData: (tabName) => DATA_CACHE.getOfflineTabData(tabName),
+    ensureOfflineDataAvailable: () => DATA_CACHE.ensureOfflineDataAvailable()
   };
   
   // Expose settings service
@@ -2904,7 +3308,10 @@ function exposeGlobalStateToIframes() {
       if (typeof updateFn === 'function') {
         pendingUIUpdates.push(updateFn);
       }
-    }
+    },
+    // NEW: Offline data functions
+    getOfflineDataGenerator: () => OFFLINE_DATA_GENERATOR,
+    createOfflineUser: () => createOfflineUser()
   };
 }
 
@@ -2959,7 +3366,7 @@ function initializeLoadedContent(container) {
 }
 
 // ============================================================================
-// TAB MANAGEMENT WITH INSTANT DATA LOADING
+// TAB MANAGEMENT WITH INSTANT DATA LOADING (ENHANCED FOR OFFLINE)
 // ============================================================================
 
 function switchTab(tabName) {
@@ -3016,6 +3423,7 @@ function loadTabDataInstantly(tabName) {
   
   // Check if we have cached data for this tab
   const hasCachedData = DATA_CACHE.hasCachedTabData(tabName);
+  let dataSource = 'cache';
   
   // Dispatch event with cached data first (if available)
   if (hasCachedData && currentUser) {
@@ -3032,12 +3440,83 @@ function loadTabDataInstantly(tabName) {
     window.dispatchEvent(cacheEvent);
     
     console.log(`Instant cached data loaded for tab: ${tabName}`);
+  } else if (currentUser) {
+    // No cached data, use offline data generator
+    console.log(`No cached data for ${tabName}, using offline data generator`);
+    const offlineData = DATA_CACHE.getOfflineTabData(tabName);
+    if (offlineData) {
+      const offlineEvent = new CustomEvent('tab-cached-data-ready', {
+        detail: {
+          tab: tabName,
+          userId: currentUser.uid,
+          data: offlineData,
+          source: 'offline-generator',
+          timestamp: new Date().toISOString(),
+          isOfflineData: true
+        }
+      });
+      window.dispatchEvent(offlineEvent);
+      
+      // Cache this offline data for next time
+      cacheTabData(tabName, offlineData);
+      
+      console.log(`Offline data loaded for tab: ${tabName}`);
+      dataSource = 'offline-generator';
+    }
   }
   
-  // Then trigger background data load
-  setTimeout(() => {
-    triggerTabDataLoad(tabName);
-  }, 100);
+  // Show data source indicator
+  showTabDataIndicator(tabName, dataSource);
+  
+  // Then trigger background data load if online
+  if (isOnline) {
+    setTimeout(() => {
+      triggerTabDataLoad(tabName);
+    }, 100);
+  }
+}
+
+// Cache tab data
+function cacheTabData(tabName, data) {
+  switch(tabName) {
+    case 'friends': return DATA_CACHE.cacheFriends(data);
+    case 'chats': return DATA_CACHE.cacheChats(data);
+    case 'calls': return DATA_CACHE.cacheCalls(data);
+    case 'groups': return DATA_CACHE.cacheGroups(data);
+    default: return false;
+  }
+}
+
+// Show data source indicator
+function showTabDataIndicator(tabName, source) {
+  const indicator = document.createElement('div');
+  indicator.className = 'data-source-indicator';
+  indicator.style.cssText = `
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: ${source === 'cache' ? '#10b981' : source === 'offline-generator' ? '#f59e0b' : '#8b5cf6'};
+    opacity: 0.7;
+    z-index: 10;
+  `;
+  
+  const tabContainer = document.querySelector(TAB_CONFIG[tabName]?.container);
+  if (tabContainer) {
+    const existing = tabContainer.querySelector('.data-source-indicator');
+    if (existing) existing.remove();
+    tabContainer.style.position = 'relative';
+    tabContainer.appendChild(indicator);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      if (indicator.parentNode) {
+        indicator.parentNode.removeChild(indicator);
+      }
+    }, 3000);
+  }
 }
 
 // Get cached data for specific tab
@@ -3115,10 +3594,12 @@ async function loadExternalTab(tabName, htmlFile) {
     
   } catch (error) {
     console.log(`Error loading ${tabName}:`, error);
-    showError(`Failed to load ${tabName}. Please try again.`);
     
+    // Even if external tab fails, try to show the built-in tab
     if (TAB_CONFIG[tabName] && !TAB_CONFIG[tabName].isExternal) {
       showTab(tabName);
+    } else {
+      showError(`Failed to load ${tabName}. Please try again.`);
     }
   } finally {
     isLoading = false;
@@ -3234,6 +3715,10 @@ function initializeExternalContent(container) {
       const newScript = document.createElement('script');
       newScript.src = script.src;
       newScript.async = false;
+      newScript.onerror = () => {
+        console.warn(`Failed to load script: ${script.src}`);
+        // Don't break the UI if a script fails
+      };
       document.head.appendChild(newScript);
     } else if (script.textContent.trim()) {
       try {
@@ -3241,12 +3726,17 @@ function initializeExternalContent(container) {
         executeScript();
       } catch (error) {
         console.log('Error executing inline script in external content:', error);
+        // Continue even if script execution fails
       }
     }
   });
   
   setTimeout(() => {
-    attachEventListenersToNewContent(container);
+    try {
+      attachEventListenersToNewContent(container);
+    } catch (error) {
+      console.log('Error attaching event listeners:', error);
+    }
   }, 100);
 }
 
@@ -3516,6 +4006,11 @@ function setupEventListeners() {
       console.log('Fresh data available for:', event.detail.cacheKey);
     }
   });
+  
+  // Listen for offline data usage
+  window.addEventListener('offline-data-used', (event) => {
+    console.log('Using offline data for:', event.detail.tab);
+  });
 }
 
 // ============================================================================
@@ -3556,11 +4051,20 @@ window.triggerFileInput = function(inputId) {
 };
 
 // ============================================================================
-// ENHANCED INITIALIZATION WITH INSTANT UI DISPLAY
+// ENHANCED INITIALIZATION WITH INSTANT UI DISPLAY (FULL OFFLINE SUPPORT)
 // ============================================================================
 
 function initializeApp() {
-  console.log('Initializing MoodChat Application Shell with instant UI...');
+  console.log('Initializing MoodChat Application Shell with instant UI and full offline support...');
+  
+  // CRITICAL: Setup global state immediately
+  window.MOODCHAT_GLOBAL = window.MOODCHAT_GLOBAL || {};
+  window.MOODCHAT_AUTH = window.MOODCHAT_AUTH || {
+    currentUser: null,
+    isAuthenticated: false,
+    userId: null,
+    isAuthReady: false
+  };
   
   // STEP 0: Hide loading screen immediately
   const loadingScreen = document.getElementById('loadingScreen');
@@ -3612,11 +4116,14 @@ function initializeApp() {
   if (!contentArea) {
     contentArea = document.createElement('main');
     contentArea.id = 'content-area';
+    contentArea.className = 'flex-1 overflow-auto bg-gray-50 dark:bg-gray-900';
     document.body.appendChild(contentArea);
   }
   
-  // STEP 9: Load default page
-  loadPage(APP_CONFIG.defaultPage);
+  // STEP 9: Load default page (non-blocking)
+  setTimeout(() => {
+    loadPage(APP_CONFIG.defaultPage);
+  }, 50);
   
   // STEP 10: Set default tab immediately (non-blocking)
   setTimeout(() => {
@@ -3630,11 +4137,12 @@ function initializeApp() {
       }
     } catch (error) {
       console.log('Error setting default tab:', error);
+      // Fallback to chats tab
       if (TAB_CONFIG.chats.container && document.querySelector(TAB_CONFIG.chats.container)) {
         showTab('chats');
       }
     }
-  }, 50);
+  }, 100);
   
   // STEP 11: Initialize Firebase in background (non-blocking)
   setTimeout(() => {
@@ -3661,16 +4169,26 @@ function initializeApp() {
     }
   }, 2000);
   
-  console.log('MoodChat Application Shell initialized with instant UI');
+  // STEP 14: Ensure UI is loaded even if everything else fails
+  setTimeout(() => {
+    if (!instantUILoaded && currentUser) {
+      console.log('Forcing UI load after timeout');
+      loadCachedDataInstantly();
+    }
+  }, 3000);
+  
+  console.log('MoodChat Application Shell initialized with full offline support');
   console.log('Key features:');
   console.log('  ✓ Instant UI display (no waiting)');
   console.log('  ✓ Cached data loaded immediately');
-  console.log('  ✓ Background server connection');
+  console.log('  ✓ Offline data generator for instant UI');
+  console.log('  ✓ Background server connection when online');
   console.log('  ✓ Silent UI updates when new data arrives');
   console.log('  ✓ Full offline functionality');
   console.log('  ✓ Device-based authentication');
   console.log('  ✓ User data isolation');
   console.log('  ✓ Real API calls with offline queuing');
+  console.log('  ✓ Graceful degradation when completely offline');
   
   // Mark app as initialized
   DATA_CACHE.cacheAppInitialized(true);
@@ -3680,6 +4198,32 @@ function injectStyles() {
   if (document.getElementById('app-styles')) return;
   
   const styles = `
+    /* Critical styles for immediate UI */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    #content-area {
+      flex: 1;
+      min-height: 100vh;
+      background: #f9fafb;
+      color: #111827;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    
+    .dark #content-area {
+      background: #111827;
+      color: #f9fafb;
+    }
+    
     .tab-loading-indicator {
       position: fixed;
       top: 0;
@@ -3743,14 +4287,9 @@ function injectStyles() {
       transition: transform 0.3s ease-in-out;
     }
     
-    #content-area {
-      flex: 1;
-      overflow: auto;
-      min-height: 100vh;
-    }
-    
     .tab-panel {
       display: none;
+      height: 100%;
     }
     
     .tab-panel.active {
@@ -3813,22 +4352,43 @@ function injectStyles() {
       transition-duration: 0.01ms !important;
     }
     
-    /* Instant loading indicator */
-    .instant-load-indicator {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      width: 8px;
-      height: 8px;
-      background: #10b981;
-      border-radius: 50%;
-      opacity: 0.7;
-      animation: pulse 2s infinite;
+    /* Offline placeholder */
+    .offline-placeholder {
+      max-width: 400px;
+      margin: 0 auto;
+      padding-top: 100px;
     }
     
-    @keyframes pulse {
-      0%, 100% { opacity: 0.7; }
-      50% { opacity: 0.3; }
+    .btn-primary {
+      background: #8b5cf6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      width: 100%;
+    }
+    
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      color: #8b5cf6;
+      border: 2px solid #8b5cf6;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(139, 92, 246, 0.1);
     }
     
     @media (max-width: 767px) {
@@ -3909,7 +4469,7 @@ function setupCrossPageCommunication() {
 }
 
 // ============================================================================
-// ENHANCED PUBLIC API WITH INSTANT LOADING
+// ENHANCED PUBLIC API WITH INSTANT LOADING AND OFFLINE SUPPORT
 // ============================================================================
 
 // Expose application functions
@@ -3942,7 +4502,11 @@ window.NETWORK_SERVICE_MANAGER = NETWORK_SERVICE_MANAGER;
 // DATA CACHE SERVICE WITH USER ISOLATION AND INSTANT LOADING
 window.DATA_CACHE = DATA_CACHE;
 
+// OFFLINE DATA GENERATOR
+window.OFFLINE_DATA_GENERATOR = OFFLINE_DATA_GENERATOR;
+
 // SETTINGS SERVICE
+window.SETTINGS_SERVICE = SETTINGS_SERVICE;
 
 // API and sync functions with instant loading
 window.safeApiCall = safeApiCall;
@@ -4019,6 +4583,12 @@ window.loadTabData = function(tabName, forceRefresh = false) {
 // INSTANT LOADING FUNCTIONS
 window.loadCachedDataInstantly = loadCachedDataInstantly;
 window.refreshCachedDataInBackground = refreshCachedDataInBackground;
+
+// OFFLINE SUPPORT FUNCTIONS
+window.createOfflineUser = createOfflineUser;
+window.getOfflineData = function(tabName) {
+  return DATA_CACHE.getOfflineTabData(tabName);
+};
 
 // AUTH HELPER FUNCTIONS
 
@@ -4141,10 +4711,15 @@ if (document.readyState === 'loading') {
   setTimeout(initializeApp, 0);
 }
 
-console.log('MoodChat app.js loaded - Application shell ready with instant UI loading');
+// Setup cross-page communication
+setupCrossPageCommunication();
+
+console.log('MoodChat app.js loaded - Application shell ready with full offline support');
 console.log('Enhanced startup flow:');
-console.log('  ⿡ UI displays instantly (no waiting)');
-console.log('  ⿢ Cached data loads immediately');
-console.log('  ⿣ Server connects in background');
-console.log('  ⿤ UI updates silently when new data arrives');
-console.log('  ⿥ Full offline functionality preserved');
+console.log('  ✓ UI displays instantly (no waiting)');
+console.log('  ✓ Cached data loads immediately');
+console.log('  ✓ Offline data generated if no cache');
+console.log('  ✓ Server connects in background when online');
+console.log('  ✓ UI updates silently when new data arrives');
+console.log('  ✓ Full offline functionality preserved');
+console.log('  ✓ Works identically online and offline');

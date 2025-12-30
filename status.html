@@ -2311,6 +2311,16 @@
         <span id="notificationText">Operation completed successfully</span>
     </div>
     
+    <!-- Settings Manager -->
+    <script type="module">
+        import { initializeSettings } from './js/settingsManager.js';
+        
+        // Initialize settings on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeSettings();
+        });
+    </script>
+    
     <script>
         // Firebase Configuration
         const firebaseConfig = {
@@ -2361,7 +2371,6 @@
         let selectedEmoji = '😊';
         let currentStatusId = null;
         let screenshotDetected = false;
-        let userTheme = null;
         let userMood = null;
         let wavesurfer = null;
         let mediaRecorder = null;
@@ -2369,7 +2378,7 @@
         let isRecording = false;
         let recordingTime = 0;
         let recordingTimer = null;
-        let selectedDuration = 72; // Default 72 hours
+        let selectedDuration = 24; // STATUSES NOW EXPIRE AFTER 24 HOURS
         let scheduledTime = null;
         let selectedGroup = null;
         let isPaused = false;
@@ -2451,7 +2460,7 @@
             
             // Load current user from app.js or localStorage
             loadCurrentUser();
-            loadUserThemeAndMood();
+            loadUserMood();
             
             // Initialize app in background
             setTimeout(() => {
@@ -2550,6 +2559,18 @@
             }
         }
         
+        // Load user mood only (theme is handled by settingsManager.js)
+        function loadUserMood() {
+            try {
+                // Load mood from localStorage
+                const savedMood = localStorage.getItem('selectedMood');
+                userMood = savedMood || 'happy';
+            } catch (error) {
+                console.error('Error loading user mood:', error);
+                userMood = 'happy';
+            }
+        }
+        
         // OFFLINE SUPPORT FUNCTIONS - Optimized
         function setupOfflineSupport() {
             // Listen for online/offline events
@@ -2627,7 +2648,7 @@
                 if (cachedData) {
                     cachedStatuses = JSON.parse(cachedData);
                     
-                    // Filter out expired statuses
+                    // Filter out expired statuses (24 hours)
                     const now = new Date();
                     cachedStatuses = cachedStatuses.filter(status => {
                         if (!status.expiresAt) return true;
@@ -3027,7 +3048,7 @@
                         }
                     }
                     
-                    // Prepare status data for Firestore
+                    // Prepare status data for Firestore - STATUSES EXPIRE AFTER 24 HOURS
                     const statusData = {
                         ...pendingStatus,
                         content: mediaUrl,
@@ -3035,7 +3056,7 @@
                         userName: currentUser.displayName || 'User',
                         userAvatar: currentUser.photoURL || '',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        expiresAt: new Date(Date.now() + (pendingStatus.duration || 72) * 60 * 60 * 1000),
+                        expiresAt: new Date(Date.now() + (24 * 60 * 60 * 1000)), // 24 hours
                         viewers: [],
                         reactions: {},
                         pollVotes: {},
@@ -3098,7 +3119,7 @@
                     }
                 }
                 
-                // Prepare status data for Firestore
+                // Prepare status data for Firestore - STATUSES EXPIRE AFTER 24 HOURS
                 const statusData = {
                     ...pendingStatus,
                     content: mediaUrl,
@@ -3106,7 +3127,7 @@
                     userName: currentUser.displayName || 'User',
                     userAvatar: currentUser.photoURL || '',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    expiresAt: new Date(Date.now() + (pendingStatus.duration || 72) * 60 * 60 * 1000),
+                    expiresAt: new Date(Date.now() + (24 * 60 * 60 * 1000)), // 24 hours
                     viewers: [],
                     reactions: {},
                     pollVotes: {},
@@ -3398,8 +3419,8 @@
                     return tempId;
                 }
                 
-                // Calculate expiration time based on selected duration
-                const expiresAt = new Date(Date.now() + selectedDuration * 60 * 60 * 1000);
+                // Calculate expiration time - STATUSES EXPIRE AFTER 24 HOURS
+                const expiresAt = new Date(Date.now() + (24 * 60 * 60 * 1000));
                 
                 // If scheduled, use scheduled time
                 const createdAt = scheduledTime ? new Date(scheduledTime) : firebase.firestore.FieldValue.serverTimestamp();
@@ -3559,42 +3580,6 @@
             }
         }
         
-        function loadUserThemeAndMood() {
-            try {
-                // Load theme from localStorage or default
-                const savedTheme = localStorage.getItem('selectedTheme');
-                const savedMood = localStorage.getItem('selectedMood');
-                
-                userTheme = savedTheme || 'light';
-                userMood = savedMood || 'happy';
-                
-                // Apply theme
-                applyTheme(userTheme);
-                
-            } catch (error) {
-                console.error('Error loading user theme/mood:', error);
-                userTheme = 'light';
-                userMood = 'happy';
-            }
-        }
-        
-        function applyTheme(theme) {
-            // Apply theme colors based on selection
-            if (theme === 'dark') {
-                document.documentElement.style.setProperty('--bg-color', '#1a1a1a');
-                document.documentElement.style.setProperty('--text-primary', '#ffffff');
-                document.documentElement.style.setProperty('--text-secondary', '#b0b3b8');
-                document.documentElement.style.setProperty('--secondary-color', '#2d2d2d');
-                document.documentElement.style.setProperty('--border-color', '#3e3e3e');
-            } else {
-                document.documentElement.style.setProperty('--bg-color', '#ffffff');
-                document.documentElement.style.setProperty('--text-primary', '#050505');
-                document.documentElement.style.setProperty('--text-secondary', '#65676b');
-                document.documentElement.style.setProperty('--secondary-color', '#f0f2f5');
-                document.documentElement.style.setProperty('--border-color', '#dddfe2');
-            }
-        }
-        
         function initializeApp() {
             // Check if user is loaded
             if (!currentUser) {
@@ -3742,7 +3727,7 @@
         }
         
         function isStatusVisible(status) {
-            // Check if status has expired
+            // Check if status has expired (24 hours)
             const now = new Date();
             if (status.expiresAt && new Date(status.expiresAt) < now) return false;
             
@@ -5926,17 +5911,23 @@
                 }
             }
             
-            // Duration selection
-            document.querySelectorAll('.duration-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    selectedDuration = parseInt(this.dataset.hours);
-                    
+            // Duration selection - STATUSES NOW EXPIRE AFTER 24 HOURS (only 24h option)
+            const durationSelector = document.getElementById('durationSelector');
+            if (durationSelector) {
+                durationSelector.innerHTML = '';
+                const durationBtn = document.createElement('button');
+                durationBtn.className = 'duration-btn active';
+                durationBtn.dataset.hours = '24';
+                durationBtn.textContent = '24h';
+                durationBtn.addEventListener('click', function() {
+                    selectedDuration = 24;
                     document.querySelectorAll('.duration-btn').forEach(b => {
                         b.classList.remove('active');
                     });
                     this.classList.add('active');
                 });
-            });
+                durationSelector.appendChild(durationBtn);
+            }
             
             // Schedule input
             const scheduleInput = document.getElementById('scheduleInput');
@@ -6004,7 +5995,7 @@
                             type: selectedStatusType,
                             privacy: selectedPrivacy,
                             mood: userMood || 'happy',
-                            duration: selectedDuration
+                            duration: selectedDuration // 24 hours
                         };
                         
                         if (selectedStatusType === 'text') {
@@ -6448,48 +6439,36 @@
                         const statusId = userStatuses[currentStatusIndex].id;
                         
                         if (statusId && !userStatuses[currentStatusIndex].tempId) {
-                            db.collection('statuses').doc(statusId).update({
-                                [`reactions.${currentUser.uid}`]: emoji
-                            }).then(() => {
-                                showNotification(`Reacted with ${emoji}`, 'success');
-                            }).catch(error => {
-                                console.error('Error saving reaction:', error);
-                                // Save reaction for offline sync
-                                const offlineReactions = JSON.parse(localStorage.getItem(`offlineReactions_${currentUser.uid}`) || '{}');
-                                offlineReactions[statusId] = emoji;
-                                localStorage.setItem(`offlineReactions_${currentUser.uid}`, JSON.stringify(offlineReactions));
+                            // Save reaction locally for offline sync
+                            const offlineReactions = JSON.parse(localStorage.getItem(`offlineReactions_${currentUser.uid}`) || '{}');
+                            offlineReactions[statusId] = emoji;
+                            localStorage.setItem(`offlineReactions_${currentUser.uid}`, JSON.stringify(offlineReactions));
+                            
+                            if (isOnline) {
+                                db.collection('statuses').doc(statusId).update({
+                                    [`reactions.${currentUser.uid}`]: emoji
+                                }).then(() => {
+                                    showNotification(`Reacted with ${emoji}`, 'success');
+                                }).catch(error => {
+                                    console.error('Error saving reaction:', error);
+                                });
+                            } else {
                                 showNotification(`Reacted with ${emoji} (offline)`, 'success');
-                            });
-                        } else {
-                            showNotification('Cannot react to offline status', 'warning');
+                            }
                         }
                     }
-                    
-                    this.style.transform = 'scale(1.3)';
-                    setTimeout(() => {
-                        this.style.transform = 'scale(1)';
-                    }, 300);
                 });
             });
             
-            // Close screenshot overlay by clicking outside
-            if (screenshotOverlay) {
-                screenshotOverlay.addEventListener('click', function(e) {
-                    if (e.target === this) {
-                        this.classList.remove('active');
-                    }
-                });
-            }
-            
             // Category tabs
-            document.querySelectorAll('.category-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
+            document.querySelectorAll('.category-btn').forEach(tab => {
+                tab.addEventListener('click', function() {
                     const category = this.id.replace('Tab', '');
                     currentCategory = category;
                     
                     // Update active tab
-                    document.querySelectorAll('.category-btn').forEach(b => {
-                        b.classList.remove('active');
+                    document.querySelectorAll('.category-btn').forEach(t => {
+                        t.classList.remove('active');
                     });
                     this.classList.add('active');
                     
@@ -6510,207 +6489,93 @@
                                 sectionTitle.textContent = 'Archived Statuses';
                                 break;
                             case 'highlights':
-                                sectionTitle.textContent = 'Highlighted Statuses';
+                                sectionTitle.textContent = 'Highlights';
                                 break;
                         }
                     }
                     
-                    // Update status list
+                    // Update the status list
                     updateStatusListWithCache();
                 });
             });
+        }
+        
+        function resetCreateStatusForm() {
+            // Reset text editor
+            const textEditor = document.getElementById('textEditor');
+            if (textEditor) textEditor.value = '';
             
-            // Reset create status form
-            function resetCreateStatusForm() {
-                // Reset text editor
-                const textEditor = document.getElementById('textEditor');
-                if (textEditor) textEditor.value = '';
-                
-                // Reset emoji
-                selectedEmoji = '😊';
-                const emojiDisplay = document.getElementById('emojiOnlyDisplay');
-                if (emojiDisplay) emojiDisplay.textContent = selectedEmoji;
-                
-                // Reset media
-                currentMediaFile = null;
-                
-                // Reset photo preview
-                const photoPreview = document.getElementById('photoPreview');
-                if (photoPreview) photoPreview.classList.remove('active');
-                const photoPreviewImg = document.getElementById('photoPreviewImg');
-                if (photoPreviewImg) photoPreviewImg.src = '';
-                const photoEditTools = document.getElementById('photoEditTools');
-                if (photoEditTools) photoEditTools.style.display = 'none';
-                const photoCaptionInput = document.getElementById('photoCaptionInput');
-                if (photoCaptionInput) photoCaptionInput.value = '';
-                
-                // Reset video preview
-                const videoPreview = document.getElementById('videoPreview');
-                if (videoPreview) videoPreview.classList.remove('active');
-                const videoPreviewVideo = document.getElementById('videoPreviewVideo');
-                if (videoPreviewVideo) {
-                    videoPreviewVideo.src = '';
-                    videoPreviewVideo.load();
-                }
-                const videoEditTools = document.getElementById('videoEditTools');
-                if (videoEditTools) videoEditTools.style.display = 'none';
-                const videoCaptionInput = document.getElementById('videoCaptionInput');
-                if (videoCaptionInput) videoCaptionInput.value = '';
-                const videoDurationWarning = document.getElementById('videoDurationWarning');
-                if (videoDurationWarning) videoDurationWarning.style.display = 'none';
-                
-                // Reset voice recording
-                isRecording = false;
-                recordingTime = 0;
-                const recordBtn = document.getElementById('recordBtn');
-                if (recordBtn) recordBtn.classList.remove('recording');
-                const recordingTimer = document.getElementById('recordingTimer');
-                if (recordingTimer) recordingTimer.textContent = '00:00';
-                const voicePlayback = document.getElementById('voicePlayback');
-                if (voicePlayback) voicePlayback.style.display = 'none';
-                audioChunks = [];
-                
-                // Reset poll
-                const pollQuestionInput = document.getElementById('pollQuestionInput');
-                if (pollQuestionInput) pollQuestionInput.value = '';
-                const pollOptionsContainer = document.getElementById('pollOptionsContainer');
-                if (pollOptionsContainer) {
-                    pollOptionsContainer.innerHTML = `
-                        <div class="poll-option">
-                            <input type="text" class="poll-option-input" placeholder="Option 1" data-index="0">
-                        <\/div>
-                        <div class="poll-option">
-                            <input type="text" class="poll-option-input" placeholder="Option 2" data-index="1">
-                        <\/div>
-                    `;
-                }
-                
-                // Reset question
-                const questionInput = document.getElementById('questionInput');
-                if (questionInput) questionInput.value = '';
-                
-                // Reset music selection
-                window.selectedMusic = null;
-                const musicResults = document.querySelectorAll('.music-result');
-                musicResults.forEach(result => {
-                    result.style.background = 'none';
-                });
-                
-                // Reset group selection
-                selectedGroup = null;
-                const groupOptions = document.querySelectorAll('.group-option');
-                groupOptions.forEach(option => {
-                    option.classList.remove('active');
-                });
-                
-                // Reset to text tab
-                selectedStatusType = 'text';
-                document.querySelectorAll('.create-status-tab').forEach(tab => {
-                    tab.classList.remove('active');
-                });
-                const textTab = document.querySelector('.create-status-tab[data-type="text"]');
-                if (textTab) textTab.classList.add('active');
-                
-                document.querySelectorAll('.status-type-container').forEach(container => {
-                    container.classList.remove('active');
-                });
-                const textContainer = document.getElementById('textStatusContainer');
-                if (textContainer) textContainer.classList.add('active');
-                
-                // Reset schedule
-                scheduledTime = null;
-                const scheduleInput = document.getElementById('scheduleInput');
-                if (scheduleInput) scheduleInput.value = '';
-                
-                // Hide additional containers
-                const durationSelector = document.getElementById('durationSelector');
-                if (durationSelector) durationSelector.style.display = 'none';
-                const scheduleContainer = document.getElementById('scheduleContainer');
-                if (scheduleContainer) scheduleContainer.style.display = 'none';
-                const groupStatusContent = document.getElementById('groupStatusContent');
-                if (groupStatusContent) groupStatusContent.style.display = 'none';
-                
-                // Reset colors to default
-                if (textColors.length > 0) selectTextColor(textColors[0]);
-                if (backgroundColors.length > 0) selectBackgroundColor(backgroundColors[0]);
-                if (fonts.length > 0) selectFont(fonts[0].value);
+            // Reset emoji
+            selectedEmoji = '😊';
+            const emojiOnlyDisplay = document.getElementById('emojiOnlyDisplay');
+            if (emojiOnlyDisplay) emojiOnlyDisplay.textContent = selectedEmoji;
+            
+            // Reset media previews
+            const photoPreview = document.getElementById('photoPreview');
+            if (photoPreview) photoPreview.classList.remove('active');
+            
+            const videoPreview = document.getElementById('videoPreview');
+            if (videoPreview) videoPreview.classList.remove('active');
+            
+            // Hide edit tools
+            const photoEditTools = document.getElementById('photoEditTools');
+            if (photoEditTools) photoEditTools.style.display = 'none';
+            
+            const videoEditTools = document.getElementById('videoEditTools');
+            if (videoEditTools) videoEditTools.style.display = 'none';
+            
+            // Reset voice recording
+            const voicePlayback = document.getElementById('voicePlayback');
+            if (voicePlayback) voicePlayback.style.display = 'none';
+            currentMediaFile = null;
+            audioChunks = [];
+            isRecording = false;
+            recordingTime = 0;
+            clearInterval(recordingTimer);
+            const recordBtn = document.getElementById('recordBtn');
+            if (recordBtn) recordBtn.classList.remove('recording');
+            
+            // Reset poll
+            const pollQuestionInput = document.getElementById('pollQuestionInput');
+            if (pollQuestionInput) pollQuestionInput.value = '';
+            
+            const pollOptionsContainer = document.getElementById('pollOptionsContainer');
+            if (pollOptionsContainer) {
+                pollOptionsContainer.innerHTML = `
+                    <div class="poll-option">
+                        <input type="text" class="poll-option-input" placeholder="Option 1" data-index="0">
+                    <\/div>
+                    <div class="poll-option">
+                        <input type="text" class="poll-option-input" placeholder="Option 2" data-index="1">
+                    <\/div>
+                `;
             }
+            
+            // Reset question
+            const questionInput = document.getElementById('questionInput');
+            if (questionInput) questionInput.value = '';
+            
+            // Reset music selection
+            window.selectedMusic = null;
+            const musicResults = document.getElementById('musicResults');
+            if (musicResults) {
+                musicResults.querySelectorAll('.music-result').forEach(r => {
+                    r.style.background = 'none';
+                });
+            }
+            
+            // Reset group selection
+            selectedGroup = null;
+            const groupOptions = document.querySelectorAll('.group-option');
+            groupOptions.forEach(opt => {
+                opt.classList.remove('active');
+            });
+            
+            // Reset scheduled time
+            scheduledTime = null;
+            const scheduleInput = document.getElementById('scheduleInput');
+            if (scheduleInput) scheduleInput.value = '';
         }
     </script>
-    <script>
-    // Settings integration for [Page Name]
-    let pageSettings = null;
-    
-    function initializePageSettings() {
-        if (window.KYNECTA_SETTINGS) {
-            window.KYNECTA_SETTINGS.registerPageCallback('[page-name]-page', applyPageSettings);
-            pageSettings = window.KYNECTA_SETTINGS.currentSettings;
-            applyPageSettings(pageSettings);
-        }
-    }
-    
-    function applyPageSettings(settings) {
-        console.log('[Page] applying settings:', settings);
-        pageSettings = settings;
-        
-        // Apply theme
-        const container = document.getElementById('mainContainer') || document.body;
-        container.className = container.className.replace(/theme-\S+/g, '');
-        if (settings.appearance.theme) {
-            container.classList.add(`theme-${settings.appearance.theme}`);
-        }
-        
-        // Apply font size
-        container.className = container.className.replace(/font-\S+/g, '');
-        if (settings.appearance.fontSize) {
-            container.classList.add(`font-${settings.appearance.fontSize}`);
-        }
-        
-        // Apply privacy settings
-        if (settings.privacy) {
-            // Example: Hide last seen based on privacy settings
-            const lastSeenElements = document.querySelectorAll('.last-seen');
-            lastSeenElements.forEach(el => {
-                if (settings.privacy.lastSeenVisibility === 'nobody') {
-                    el.textContent = 'Last seen hidden';
-                }
-            });
-        }
-        
-        // Apply notification settings
-        if (settings.notifications) {
-            // Enable/disable notification sounds
-            window.notificationSoundsEnabled = settings.notifications.sound;
-        }
-        
-        // Apply chat settings
-        if (settings.chat && document.getElementById('messageInput')) {
-            // Set enter to send behavior
-            const messageInput = document.getElementById('messageInput');
-            messageInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    if (settings.chat.enterToSend && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                    }
-                }
-            });
-        }
-    }
-    
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-        if (window.KYNECTA_SETTINGS) {
-            window.KYNECTA_SETTINGS.unregisterPageCallback('[page-name]-page');
-        }
-    });
-    
-    // Initialize
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializePageSettings);
-    } else {
-        setTimeout(initializePageSettings, 100);
-    }
-</script>
 </body>
 </html>

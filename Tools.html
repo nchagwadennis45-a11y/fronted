@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2385,7 +2384,7 @@
                     'Community support',
                     'Basic analytics'
                 ],
-                toolAccess: ['content-generator', 'invoice-generator', 'data-export']
+                toolAccess: ['content-generator', 'invoice-generator', 'data-export', 'analytics-dashboard', 'crm-dashboard']
             },
             'basic': {
                 name: 'Basic',
@@ -2401,7 +2400,7 @@
                     'Advanced analytics',
                     '3 marketplace items'
                 ],
-                toolAccess: ['content-generator', 'image-generator', 'seo-analyzer', 'invoice-generator', 'payment-gateway', 'data-export', 'social-scheduler']
+                toolAccess: ['content-generator', 'image-generator', 'analytics-dashboard', 'invoice-generator', 'payment-gateway', 'data-export', 'email-sender', 'crm-dashboard', 'seo-analyzer', 'social-scheduler']
             },
             'pro': {
                 name: 'Pro',
@@ -2520,7 +2519,7 @@
             }
         ];
         
-        // Tools data (16 tools as specified)
+        // Tools data with REAL FILE PATHS to your tools folder
         const toolsData = [
             // AI Tools (4)
             {
@@ -2530,7 +2529,7 @@
                 category: 'ai',
                 icon: 'fas fa-pen-fancy',
                 credits: 10,
-                url: 'https://content-generator.example.com',
+                url: './tools/content-generator.html', // REAL FILE PATH
                 requiresPlan: 'free',
                 usageCount: 0,
                 features: ['SEO optimized', 'Multiple languages', 'Tone adjustment', 'Plagiarism check'],
@@ -2543,7 +2542,7 @@
                 category: 'ai',
                 icon: 'fas fa-image',
                 credits: 15,
-                url: 'https://image-generator.example.com',
+                url: './tools/image-generator.html', // REAL FILE PATH
                 requiresPlan: 'basic',
                 usageCount: 0,
                 features: ['Multiple styles', 'High resolution', 'Commercial license', 'Custom dimensions'],
@@ -2556,7 +2555,7 @@
                 category: 'ai',
                 icon: 'fas fa-search',
                 credits: 8,
-                url: 'https://seo-analyzer.example.com',
+                url: './tools/seo-analyzer.html', // You'll need to create this file
                 requiresPlan: 'basic',
                 usageCount: 0,
                 features: ['Keyword analysis', 'Competitor tracking', 'Technical SEO', 'Content suggestions'],
@@ -2569,7 +2568,7 @@
                 category: 'ai',
                 icon: 'fas fa-robot',
                 credits: 20,
-                url: 'https://chatbot-builder.example.com',
+                url: './tools/chatbot-builder.html', // You'll need to create this file
                 requiresPlan: 'pro',
                 usageCount: 0,
                 features: ['No-code builder', 'Multi-language', 'Integration ready', 'Analytics dashboard'],
@@ -2578,13 +2577,13 @@
             
             // Business Tools (5)
             {
-                id: 'bulk-email-sender',
+                id: 'email-sender',
                 name: 'Bulk Email Sender',
                 description: 'Send marketing campaigns and newsletters to your email list.',
                 category: 'business',
                 icon: 'fas fa-mail-bulk',
                 credits: 5,
-                url: 'https://email-sender.example.com',
+                url: './tools/email-sender.html', // REAL FILE PATH
                 requiresPlan: 'basic',
                 usageCount: 0,
                 features: ['Email templates', 'List management', 'A/B testing', 'Analytics'],
@@ -2597,7 +2596,7 @@
                 category: 'business',
                 icon: 'fas fa-chart-line',
                 credits: 12,
-                url: 'https://predictive-analytics.example.com',
+                url: './tools/predictive-analytics.html', // You'll need to create this file
                 requiresPlan: 'pro',
                 usageCount: 0,
                 features: ['Sales forecasting', 'Trend analysis', 'Risk assessment', 'Custom models'],
@@ -2610,7 +2609,7 @@
                 category: 'business',
                 icon: 'fas fa-file-invoice',
                 credits: 3,
-                url: 'https://invoice-generator.example.com',
+                url: './tools/invoice-generator.html', // You'll need to create this file
                 requiresPlan: 'free',
                 usageCount: 0,
                 features: ['Custom templates', 'Tax calculation', 'Payment tracking', 'Export options'],
@@ -2623,21 +2622,21 @@
                 category: 'business',
                 icon: 'fas fa-credit-card',
                 credits: 0, // No credits needed, commission based
-                url: 'https://payment-gateway.example.com',
+                url: './tools/payment-gateway.html', // You'll need to create this file
                 requiresPlan: 'basic',
                 usageCount: 0,
                 features: ['Multiple currencies', 'African payments', 'Security compliant', 'Real-time processing'],
                 instructions: 'Integrate payment buttons or use hosted checkout page.'
             },
             {
-                id: 'advanced-crm',
-                name: 'Advanced CRM',
+                id: 'crm-dashboard',
+                name: 'CRM Dashboard',
                 description: 'Manage customer relationships and sales pipeline.',
                 category: 'business',
                 icon: 'fas fa-users',
                 credits: 8,
-                url: 'https://crm.example.com',
-                requiresPlan: 'pro',
+                url: './tools/crm.html', // REAL FILE PATH
+                requiresPlan: 'basic',
                 usageCount: 0,
                 features: ['Lead tracking', 'Pipeline management', 'Automation', 'Reporting'],
                 instructions: 'Import contacts, track interactions, and manage sales process.'
@@ -2651,7 +2650,7 @@
                 category: 'productivity',
                 icon: 'fas fa-download',
                 credits: 4,
-                url: 'https://data-export.example.com',
+                url: './tools/data-export.html', // REAL FILE PATH
                 requiresPlan: 'free',
                 usageCount: 0,
                 features: ['Multiple formats', 'Scheduled exports', 'Data filtering', 'Cloud storage'],
@@ -2664,7 +2663,7 @@
                 category: 'productivity',
                 icon: 'fas fa-share-alt',
                 credits: 6,
-                url: 'https://social-scheduler.example.com',
+                url: './tools/social-scheduler.html', // You'll need to create this file
                 requiresPlan: 'basic',
                 usageCount: 0,
                 features: ['Multi-platform', 'Content calendar', 'Analytics', 'Auto-posting'],
@@ -2677,8 +2676,8 @@
                 category: 'productivity',
                 icon: 'fas fa-chart-bar',
                 credits: 7,
-                url: 'https://analytics-dashboard.example.com',
-                requiresPlan: 'pro',
+                url: './tools/analytics.html', // REAL FILE PATH
+                requiresPlan: 'basic',
                 usageCount: 0,
                 features: ['Real-time data', 'Custom reports', 'Data visualization', 'Alert system'],
                 instructions: 'Connect data sources and customize your dashboard view.'
@@ -2686,13 +2685,13 @@
             
             // Marketplace Tools (1)
             {
-                id: 'ai-templates-marketplace',
-                name: 'AI Templates Marketplace',
+                id: 'marketplace-tools',
+                name: 'Tools Marketplace',
                 description: 'Browse and purchase AI-generated templates for various needs.',
                 category: 'marketplace',
                 icon: 'fas fa-store',
                 credits: 0, // Uses direct payment
-                url: 'https://marketplace.example.com',
+                url: './tools/marketplace.html', // You'll need to create this file
                 requiresPlan: 'basic',
                 usageCount: 0,
                 features: ['Various categories', 'Royalty-free', 'Customizable', 'Regular updates'],
@@ -2701,13 +2700,13 @@
             
             // Premium Tools (3)
             {
-                id: 'advanced-analytics-addon',
-                name: 'Advanced Analytics Add-on',
+                id: 'advanced-analytics',
+                name: 'Advanced Analytics',
                 description: 'Enhanced analytics with predictive insights and custom reporting.',
                 category: 'premium',
                 icon: 'fas fa-chart-pie',
                 credits: 15,
-                url: 'https://advanced-analytics.example.com',
+                url: './tools/advanced-analytics.html', // You'll need to create this file
                 requiresPlan: 'pro',
                 usageCount: 0,
                 features: ['Predictive modeling', 'Custom dashboards', 'Data warehousing', 'API access'],
@@ -2720,7 +2719,7 @@
                 category: 'premium',
                 icon: 'fas fa-plug',
                 credits: 10,
-                url: 'https://integration-plugin.example.com',
+                url: './tools/integration-plugin.html', // You'll need to create this file
                 requiresPlan: 'pro',
                 usageCount: 0,
                 features: ['Zapier integration', 'API endpoints', 'Webhook support', 'Custom connectors'],
@@ -2733,7 +2732,7 @@
                 category: 'premium',
                 icon: 'fas fa-video',
                 credits: 25,
-                url: 'https://video-editor.example.com',
+                url: './tools/video-editor.html', // You'll need to create this file
                 requiresPlan: 'business',
                 usageCount: 0,
                 features: ['4K editing', 'AI effects', 'Stock library', 'Export options'],
@@ -3499,7 +3498,7 @@
             offlineOverlayDismissed = true;
             
             // Save dismissal preference
-            localStorage.setItem(LOCAL_STORAGE_KEYS.OFFLINE_OVERLAY_DISMISSED, 'true');
+            localStorage.setItem(LOCAL_STORAGE_KEYS.OFFLINE_OVERLAY_DismissED, 'true');
             
             // Show cache indicator
             cacheIndicator.style.display = 'flex';
@@ -3964,7 +3963,7 @@
             toolModal.classList.add('active');
         }
         
-        // Use a tool
+        // Use a tool with enhanced iframe loading
         async function useTool(tool) {
             // Check if user has enough credits (if tool requires credits)
             if (tool.credits > 0 && userCredits < tool.credits) {
@@ -3979,6 +3978,9 @@
                 showPaymentModal('subscription');
                 return;
             }
+            
+            // Show loading state
+            openToolIframe(tool);
             
             // Deduct credits if required
             if (tool.credits > 0) {
@@ -4021,12 +4023,9 @@
             
             // Show success message
             showNotification(`${tool.name} launched successfully${tool.credits > 0 ? ` (${tool.credits} credits deducted)` : ''}`, 'success');
-            
-            // Open tool in iframe modal
-            openToolIframe(tool);
         }
         
-        // Open tool in iframe
+        // Enhanced tool iframe loading with error handling
         function openToolIframe(tool) {
             const iframeToolTitle = document.getElementById('iframeToolTitle');
             const toolIframe = document.getElementById('toolIframe');
@@ -4039,19 +4038,97 @@
             
             // Show loading state
             iframeLoading.style.display = 'flex';
+            iframeLoading.innerHTML = `
+                <i class="fas fa-spinner fa-spin" style="font-size: 36px; margin-bottom: 15px; color: var(--primary-color);"></i>
+                <p>Loading ${tool.name}...</p>
+                <p style="font-size: 14px; color: var(--text-secondary); margin-top: 10px;">This may take a few seconds</p>
+            `;
             toolIframe.style.display = 'none';
             
-            // Set iframe source
+            // Set iframe source with error handling
             toolIframe.src = tool.url;
             
-            // When iframe loads
+            // Create a timeout for loading
+            const loadTimeout = setTimeout(() => {
+                if (toolIframe.style.display === 'none') {
+                    // Still loading after timeout, check if file exists
+                    checkToolAvailability(tool.url, tool.name);
+                }
+            }, 10000); // 10 second timeout
+            
+            // When iframe loads successfully
             toolIframe.onload = function() {
+                clearTimeout(loadTimeout);
                 iframeLoading.style.display = 'none';
                 toolIframe.style.display = 'block';
             };
             
+            // Handle iframe loading errors
+            toolIframe.onerror = function() {
+                clearTimeout(loadTimeout);
+                showToolError(tool.name, tool.url);
+            };
+            
             // Show modal
             toolIframeModal.classList.add('active');
+        }
+        
+        // Check if tool file exists
+        function checkToolAvailability(url, toolName) {
+            fetch(url, { method: 'HEAD' })
+                .then(response => {
+                    if (!response.ok) {
+                        showToolError(toolName, url, true);
+                    }
+                })
+                .catch(() => {
+                    showToolError(toolName, url, true);
+                });
+        }
+        
+        // Show tool loading error
+        function showToolError(toolName, url, isFileMissing = false) {
+            const iframeLoading = document.getElementById('iframeLoading');
+            
+            iframeLoading.innerHTML = `
+                <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px; color: var(--warning-color);"></i>
+                <p>Unable to load ${toolName}</p>
+                <p style="font-size: 14px; color: var(--text-secondary); margin-top: 10px; max-width: 300px;">
+                    ${isFileMissing ? 
+                        'The tool file is not available. Please contact support or try another tool.' : 
+                        'There was an error loading the tool. Please check your connection and try again.'}
+                </p>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="tool-action-btn" id="retryToolLoadBtn">
+                        <i class="fas fa-redo"></i> Retry
+                    </button>
+                    <button class="tool-action-btn" style="background-color: var(--secondary-color); color: var(--text-primary);" id="closeToolErrorBtn">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            `;
+            
+            // Add event listeners
+            setTimeout(() => {
+                const retryBtn = document.getElementById('retryToolLoadBtn');
+                const closeBtn = document.getElementById('closeToolErrorBtn');
+                
+                if (retryBtn) {
+                    retryBtn.addEventListener('click', () => {
+                        // Find the tool again and retry
+                        const tool = tools.find(t => t.name === toolName);
+                        if (tool) {
+                            openToolIframe(tool);
+                        }
+                    });
+                }
+                
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
+                        toolIframeModal.classList.remove('active');
+                    });
+                }
+            }, 100);
         }
         
         // Show upgrade modal

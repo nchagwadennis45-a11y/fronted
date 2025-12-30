@@ -25,6 +25,9 @@
     <!-- WaveSurfer.js for voice messages -->
     <script src="https://unpkg.com/wavesurfer.js@7"></script>
     
+    <!-- Settings Manager -->
+    <script src="settingsManager.js"></script>
+    
     <style>
         /* INSTANT LOADING STYLES */
         .instant-load {
@@ -95,11 +98,33 @@
             --typing-indicator: #0084ff;
         }
         
+        /* Dark theme variables - will be applied by settings manager */
+        body.dark-theme {
+            --primary-color: #0084ff;
+            --primary-dark: #0073e6;
+            --secondary-color: #2a2a2a;
+            --danger-color: #ff3b30;
+            --success-color: #34c759;
+            --warning-color: #ff9500;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b3b8;
+            --bg-color: #121212;
+            --border-color: #3a3a3a;
+            --message-sent-bg: #0084ff;
+            --message-received-bg: #2a2a2a;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
+            --unread-badge: #ff3b30;
+            --online-indicator: #34c759;
+            --typing-indicator: #0084ff;
+        }
+        
         body {
             background-color: var(--bg-color);
             color: var(--text-primary);
             height: 100vh;
             overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         .app-container {
@@ -174,6 +199,7 @@
             background-color: var(--secondary-color);
             font-size: 15px;
             transition: all 0.2s;
+            color: var(--text-primary);
         }
         
         .search-input:focus {
@@ -520,7 +546,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 20px;
-            background-color: #f8f9fa;
+            background-color: var(--bg-color);
             display: flex;
             flex-direction: column;
             gap: 15px;
@@ -738,6 +764,7 @@
             max-height: 120px;
             min-height: 40px;
             line-height: 1.4;
+            color: var(--text-primary);
         }
         
         .message-input:focus {
@@ -924,6 +951,7 @@
             border: 1px solid var(--border-color);
             background-color: var(--secondary-color);
             font-size: 15px;
+            color: var(--text-primary);
         }
         
         .new-chat-search-input:focus {
@@ -1480,6 +1508,12 @@
         
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize settings manager first
+            if (typeof initializeSettings === 'function') {
+                initializeSettings();
+                applySettings(); // Apply settings immediately for instant theme application
+            }
+            
             // Load cached data immediately - NO AUTH DEPENDENCY
             instantLoadFromCache();
             
