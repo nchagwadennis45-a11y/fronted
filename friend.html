@@ -2648,7 +2648,7 @@
                     <button class="friend-action-btn chat" data-action="start-chat" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" title="Start Chat">
                         <i class="fas fa-comments"></i>
                     </button>
-                    <button class="friend-action-btn call" data-action="call" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" title="Voice Call">
+                    <button class="friend-action-btn call" data-action="call" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" title="Start Call">
                         <i class="fas fa-phone"></i>
                     </button>
                     ${type === 'contact' ? `
@@ -2693,6 +2693,28 @@
             container.appendChild(friendItem);
         }
         
+        // FIXED: Call function that properly navigates to calls page
+        function openCall(userId, userName) {
+            console.log('Opening call with:', userId, userName);
+            
+            // Encode parameters for URL
+            const encodedName = encodeURIComponent(userName);
+            
+            // Navigate to call.html in the same window/tab
+            window.location.href = `../call.html?user=${userId}&name=${encodedName}`;
+        }
+        
+        // FIXED: Chat function that properly navigates to chat page
+        function openChat(userId, userName) {
+            console.log('Opening chat with:', userId, userName);
+            
+            // Encode parameters for URL
+            const encodedName = encodeURIComponent(userName);
+            
+            // Navigate to message.html in the same window/tab
+            window.location.href = `../message.html?user=${userId}&name=${encodedName}`;
+        }
+        
         async function initializeApp() {
             console.log('=== FULL APP INITIALIZATION START ===');
             
@@ -2705,7 +2727,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const startChatParam = urlParams.get('startChat');
             
-            // Initialize offline detection
+            // Initialize offline detection (but hide indicators)
             initializeOfflineDetection();
             
             // Check if mobile
@@ -3454,6 +3476,7 @@
             sendPendingOfflineRequests();
             processPendingOfflineActions();
             
+            // Hide indicators
             localStorageIndicator.classList.remove('active');
             cacheIndicator.style.display = 'none';
             isLoadedFromLocalStorage = false;
@@ -3537,21 +3560,24 @@
                 updateUserPresence(false);
             }
             
-            offlineIndicator.classList.add('active');
-            cacheIndicator.style.display = 'flex';
+            // Don't show offline indicator - make it seamless
+            // offlineIndicator.classList.add('active');
+            // cacheIndicator.style.display = 'flex';
             
             updateUIForOfflineMode();
             
             checkOfflineOverlay();
             
             if (isLoadedFromLocalStorage) {
-                localStorageIndicator.classList.add('active');
+                // Don't show storage indicator - make it seamless
+                // localStorageIndicator.classList.add('active');
                 setTimeout(() => {
                     localStorageIndicator.classList.remove('active');
                 }, 5000);
             }
             
-            showNotification('You are offline. Friends loaded from local storage.', 'warning');
+            // Don't show notification - make it seamless
+            // showNotification('You are offline. Friends loaded from local storage.', 'warning');
         }
         
         function checkOfflineOverlay() {
@@ -3572,7 +3598,8 @@
             
             if (offlineOverlayDismissed && !isOnline) {
                 offlineOverlay.classList.remove('active');
-                cacheIndicator.style.display = 'flex';
+                // Don't show cache indicator
+                // cacheIndicator.style.display = 'flex';
             }
         }
         
@@ -3582,7 +3609,8 @@
             
             localStorage.setItem(LOCAL_STORAGE_KEYS.OFFLINE_OVERLAY_DISMISSED, 'true');
             
-            cacheIndicator.style.display = 'flex';
+            // Don't show cache indicator
+            // cacheIndicator.style.display = 'flex';
             
             showNotification('Showing cached friends data', 'info');
         }
@@ -3615,16 +3643,18 @@
         }
         
         function updateUIForOfflineMode() {
-            offlineIndicator.classList.add('active');
-            cacheIndicator.style.display = 'flex';
+            // Don't show offline indicators - make it seamless
+            // offlineIndicator.classList.add('active');
+            // cacheIndicator.style.display = 'flex';
             updateButtonStatesForOffline();
             updateUILabelsForOffline();
         }
         
         function updateUIForOnlineMode() {
-            offlineIndicator.classList.remove('active');
-            localStorageIndicator.classList.remove('active');
-            cacheIndicator.style.display = 'none';
+            // Don't show indicators - make it seamless
+            // offlineIndicator.classList.remove('active');
+            // localStorageIndicator.classList.remove('active');
+            // cacheIndicator.style.display = 'none';
             offlineOverlay.classList.remove('active');
             updateButtonStatesForOnline();
             updateUILabelsForOnline();
@@ -3924,7 +3954,7 @@
                         <button class="friend-action-btn chat" data-action="start-chat" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" title="Start Chat" ${!isOnline ? 'disabled' : ''}>
                             <i class="fas fa-comments"></i>
                         </button>
-                        <button class="friend-action-btn call" data-action="call" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" title="Voice Call" ${!isOnline ? 'disabled' : ''}>
+                        <button class="friend-action-btn call" data-action="call" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" title="Start Call" ${!isOnline ? 'disabled' : ''}>
                             <i class="fas fa-phone"></i>
                         </button>
                         <button class="friend-action-btn success" data-action="add" title="Add as Friend" ${!isOnline ? 'disabled' : ''}>
@@ -3936,7 +3966,7 @@
                         <button class="friend-action-btn chat" data-action="start-chat" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" title="Start Chat">
                             <i class="fas fa-comments"></i>
                         </button>
-                        <button class="friend-action-btn call" data-action="call" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" title="Voice Call">
+                        <button class="friend-action-btn call" data-action="call" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" title="Start Call">
                             <i class="fas fa-phone"></i>
                         </button>
                         <button class="friend-action-btn" data-action="more" title="More options">
@@ -3948,7 +3978,7 @@
                         <button class="friend-action-btn chat" data-action="start-chat" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" title="Start Chat">
                             <i class="fas fa-comments"></i>
                         </button>
-                        <button class="friend-action-btn call" data-action="call" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" title="Voice Call">
+                        <button class="friend-action-btn call" data-action="call" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" title="Start Call">
                             <i class="fas fa-phone"></i>
                         </button>
                         <button class="friend-action-btn" data-action="extend" title="Extend" ${!isOnline ? 'disabled' : ''}>
@@ -4075,25 +4105,7 @@
             container.appendChild(requestItem);
         }
         
-        // NEW: Open Chat Function
-        function openChat(userId, userName) {
-            console.log('Opening chat with:', userId, userName);
-            
-            // Navigate to message.html with user parameters
-            const encodedName = encodeURIComponent(userName);
-            window.location.href = `../message.html?user=${userId}&name=${encodedName}`;
-        }
-        
-        // NEW: Open Call Function
-        function openCall(userId, userName) {
-            console.log('Opening call with:', userId, userName);
-            
-            // Navigate to call.html with user parameters
-            const encodedName = encodeURIComponent(userName);
-            window.location.href = `../call.html?user=${userId}&name=${encodedName}`;
-        }
-        
-        // FIXED: Handle friend actions - CHAT NOW OPENS MESSAGE.HTML
+        // FIXED: Handle friend actions - CALL NOW OPENS CALL.HTML
         function handleFriendAction(action, friendData, type, button) {
             switch(action) {
                 case 'start-chat':
@@ -4173,6 +4185,38 @@
                     
                 default:
                     console.log('Unknown action:', action);
+            }
+        }
+        
+        function handleRequestAction(action, requestData, button) {
+            switch(action) {
+                case 'accept':
+                    if (!isOnline) {
+                        showNotification('Cannot accept friend requests while offline', 'warning');
+                    } else {
+                        acceptFriendRequestOnline(requestData.id, requestData.from);
+                    }
+                    break;
+                    
+                case 'decline':
+                    if (!isOnline) {
+                        showNotification('Cannot decline friend requests while offline', 'warning');
+                    } else {
+                        declineFriendRequest(requestData);
+                    }
+                    break;
+                    
+                case 'cancel':
+                    if (!isOnline) {
+                        showNotification('Cannot cancel friend requests while offline', 'warning');
+                    } else {
+                        cancelFriendRequest(requestData);
+                    }
+                    break;
+                    
+                case 'view-profile':
+                    showFriendRequestProfile(requestData);
+                    break;
             }
         }
         
@@ -4795,8 +4839,8 @@
                         <button class="action-btn success" id="startChatDetailsBtn" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}">
                             <i class="fas fa-comments"></i> Start Chat
                         </button>
-                        <button class="action-btn primary" id="callFriendBtn" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}" ${!isOnline ? 'disabled' : ''}>
-                            <i class="fas fa-phone"></i> ${!isOnline ? 'Call (Requires Internet)' : 'Call'}
+                        <button class="action-btn primary" id="callFriendBtn" data-user-id="${friendData.uid}" data-user-name="${escapeHtml(friendData.displayName || 'User')}">
+                            <i class="fas fa-phone"></i> Start Call
                         </button>
                         <button class="action-btn secondary" id="friendOptionsBtn">
                             <i class="fas fa-cog"></i> Options
