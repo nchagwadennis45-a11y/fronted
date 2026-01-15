@@ -1910,20 +1910,33 @@
                     overlay.classList.remove('active');
                 });
             }
-
-            // Live reload for development (preserved from original)
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                const script = document.createElement('script');
-                script.src = 'http://localhost:35729/livereload.js';
-                document.body.appendChild(script);
-            }
         });
     </script>
     
     <!-- Load JavaScript modules with correct order -->
-     
-    <script src="api.js?v=<?php echo time(); ?>"></script>
+    <script src="js/api.js" type="module"></script>
+    <script src="js/app.js" type="module"></script>
+    
+    <!-- Service Worker Registration (placed after auth initialization) -->
+    <script>
+        // Register service worker only after app is initialized
+        document.addEventListener('appInitialized', function() {
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    // Wait for auth check to complete before registering SW
+                    if (window.authInitialized) {
+                        navigator.serviceWorker.register('/service-worker.js')
+                            .then(function(registration) {
+                                console.log('Service Worker registered with scope:', registration.scope);
+                            })
+                            .catch(function(error) {
+                                console.log('Service Worker registration failed:', error);
+                            });
+                    }
+                });
+            }
+        });
+    </script>
 
-    <script src="app.js"></script>
 </body>
 </html>

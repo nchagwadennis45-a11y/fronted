@@ -2,9 +2,9 @@
 // Version: 3.1.5 - Fixed critical caching rules for auth and API endpoints
 // Cache Strategy: Cache-First for static assets, Network-First for API/HTML
 
-const CACHE_NAME = 'pwa-chat-v3.1.5';
-const API_CACHE_NAME = 'pwa-chat-api-v3.1.5';
-const OFFLINE_CACHE_NAME = 'pwa-chat-offline-v3.1.5';
+const CACHE_NAME = 'moodchat-v9';
+const API_CACHE_NAME = 'moodchat-api-v9';
+const OFFLINE_CACHE_NAME = 'moodchat-offline-v9';
 
 // App shell - all static assets that make up the UI
 const APP_SHELL_ASSETS = [
@@ -27,7 +27,6 @@ const APP_SHELL_ASSETS = [
   // JavaScript files (assuming these exist locally)
   '/js/app.js',
   '/chat.js',
-  '/js/api.js',
   
   
   // Manifest and icons
@@ -74,7 +73,9 @@ const NEVER_CACHE_ENDPOINTS = [
   '/api/verify',
   '/api/token',
   '/api/session',
-  '/api/auth/'
+  '/api/auth/',
+  // CRITICAL FIX: Add /api/status to NEVER cache
+  '/api/status'
 ];
 
 // Authentication HTML pages - NEVER cache these (to prevent auth loops)
@@ -84,6 +85,13 @@ const NEVER_CACHE_HTML = [
   '/auth.html',
   '/validate.html',
   '/auth/'
+];
+
+// CRITICAL FIX: Add api.js to never cache/intercept list
+const NEVER_CACHE_JS = [
+  '/api.js',
+  '/js/api.js',
+  '/assets/api.js'
 ];
 
 // Install event - cache app shell with error handling
@@ -108,6 +116,12 @@ self.addEventListener('install', event => {
             // Skip if asset starts with auth path
             if (asset.startsWith('/auth/')) {
               console.log('[Service Worker] Skipping auth path:', asset);
+              return false;
+            }
+            
+            // CRITICAL FIX: Skip api.js
+            if (isNeverCacheJs(asset)) {
+              console.log('[Service Worker] Skipping never-cache JS:', asset);
               return false;
             }
             
@@ -139,6 +153,11 @@ self.addEventListener('install', event => {
         const optionalPromises = OPTIONAL_ASSETS.map(async (asset) => {
           if (shouldNeverCache(asset) || asset.startsWith('/auth/')) {
             return; // Skip never-cache assets
+          }
+          
+          // CRITICAL FIX: Skip api.js
+          if (isNeverCacheJs(asset)) {
+            return;
           }
           
           // Skip invalid URLs
@@ -212,13 +231,18 @@ self.addEventListener('activate', event => {
 function shouldNeverCache(requestUrl) {
   const url = new URL(requestUrl, self.location.origin);
   
-  // NEVER cache POST requests
-  if (typeof requestUrl === 'object' && requestUrl.method === 'POST') {
+  // NEVER cache POST, PUT, DELETE requests
+  if (typeof requestUrl === 'object' && ['POST', 'PUT', 'DELETE'].includes(requestUrl.method)) {
     return true;
   }
   
   // Skip auth paths entirely
   if (url.pathname.startsWith('/auth/')) {
+    return true;
+  }
+  
+  // CRITICAL FIX: Check for never-cache JS files (api.js)
+  if (isNeverCacheJs(url.pathname)) {
     return true;
   }
   
@@ -269,6 +293,28 @@ function isNeverCacheHtml(path) {
     
     // Starts with match for paths
     if (page.endsWith('/') && path.startsWith(page)) {
+      return true;
+    }
+    
+    return false;
+  });
+}
+
+// CRITICAL FIX: Helper to check if JS file should never be cached
+function isNeverCacheJs(path) {
+  return NEVER_CACHE_JS.some(jsFile => {
+    // Exact match
+    if (path === jsFile) {
+      return true;
+    }
+    
+    // Ends with match
+    if (path.endsWith(jsFile)) {
+      return true;
+    }
+    
+    // Contains match
+    if (path.includes(jsFile)) {
       return true;
     }
     
@@ -333,6 +379,27 @@ function isValidUrl(url) {
   }
 }
 
+// CRITICAL FIX: Enhanced helper to check if request is for authentication-sensitive endpoint
+function isAuthSensitiveRequest(request) {
+  const url = new URL(request.url);
+  
+  // Check for auth endpoints
+  if (shouldNeverCache(request.url)) {
+    return true;
+  }
+  
+  // Check for authentication headers or cookies
+  const hasAuthHeader = request.headers.get('Authorization') || 
+                       request.headers.get('X-Auth-Token') ||
+                       request.headers.get('Cookie');
+  
+  if (hasAuthHeader && url.pathname.includes('/api/')) {
+    return true;
+  }
+  
+  return false;
+}
+
 // CRITICAL: Handle HTML page requests with network-first strategy
 async function handleHtmlRequest(request) {
   const url = new URL(request.url);
@@ -385,10 +452,36 @@ async function handleHtmlRequest(request) {
 async function handleApiRequest(request) {
   const url = new URL(request.url);
   
-  // NEVER cache POST requests or auth endpoints
-  if (request.method !== 'GET' || shouldNeverCache(request.url) || url.pathname.startsWith('/auth/')) {
-    console.log('[Service Worker] Never-cache API (POST/auth):', request.method, url.pathname);
+  // CRITICAL FIX: NEVER cache POST, PUT, DELETE requests or auth endpoints
+  if (['POST', 'PUT', 'DELETE'].includes(request.method) || shouldNeverCache(request.url) || url.pathname.startsWith('/auth/')) {
+    console.log('[Service Worker] Never-cache API (' + request.method + '):', url.pathname);
     return fetch(request);
+  }
+  
+  // CRITICAL FIX: Special handling for /api/status - always fetch from network, no fallback
+  if (url.pathname.startsWith('/api/status')) {
+    console.log('[Service Worker] /api/status - network only, no cache');
+    try {
+      const response = await fetch(request);
+      // Don't cache status endpoint even if successful
+      return response;
+    } catch (error) {
+      // For /api/status, return proper error instead of cached data
+      console.log('[Service Worker] /api/status network failed');
+      return new Response(JSON.stringify({
+        status: 'error',
+        online: false,
+        message: 'Network error checking status',
+        timestamp: Date.now()
+      }), {
+        status: 503, // Service Unavailable
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Status': 'offline',
+          'X-SW-Fallback': 'network-error'
+        }
+      });
+    }
   }
   
   try {
@@ -411,11 +504,54 @@ async function handleApiRequest(request) {
   } catch (error) {
     console.log('[Service Worker] API network failed, trying cache:', error);
     
+    // CRITICAL FIX: Don't return fake 200 OK for auth-sensitive requests
+    if (isAuthSensitiveRequest(request)) {
+      console.log('[Service Worker] Auth-sensitive API offline - returning proper error');
+      return new Response(JSON.stringify({
+        status: 'auth_error',
+        message: 'Authentication required - offline',
+        requiresOnline: true,
+        cached: false
+      }), {
+        status: 401, // Unauthorized
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Cache': 'MISS',
+          'X-SW-Auth-Required': 'true'
+        }
+      });
+    }
+    
     // Fall back to cache ONLY for GET non-auth requests
     const cache = await caches.open(API_CACHE_NAME);
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
+      // Check if cached response is still valid for non-sensitive data
+      const dateHeader = cachedResponse.headers.get('date');
+      const cachedTime = dateHeader ? new Date(dateHeader).getTime() : 0;
+      const now = Date.now();
+      const maxAge = 5 * 60 * 1000; // 5 minutes max cache age
+      
+      if (now - cachedTime > maxAge) {
+        console.log('[Service Worker] Cached API data expired');
+        // Return offline response instead of stale cached data
+        return new Response(JSON.stringify({
+          status: 'offline',
+          message: 'You are offline and cached data is expired',
+          data: [],
+          cached: false,
+          expired: true
+        }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Cache': 'EXPIRED',
+            'X-SW-Offline': 'true'
+          }
+        });
+      }
+      
       // Add cache indicator header
       const response = new Response(cachedResponse.body, {
         status: cachedResponse.status,
@@ -425,6 +561,7 @@ async function handleApiRequest(request) {
       
       response.headers.set('X-Cache', 'HIT');
       response.headers.set('X-SW-Cached', 'true');
+      response.headers.set('X-Cache-Age', (now - cachedTime).toString());
       
       return response;
     }
@@ -434,9 +571,9 @@ async function handleApiRequest(request) {
       status: 'offline',
       message: 'You are offline and no cached data is available',
       data: [],
-      cached: true
+      cached: false
     }), {
-      status: 200, // Return 200 instead of 503 to prevent UI errors
+      status: 200,
       headers: {
         'Content-Type': 'application/json',
         'X-Cache': 'MISS',
@@ -460,6 +597,12 @@ async function handleStaticAsset(request) {
     return fetch(request);
   }
   
+  // CRITICAL FIX: Never cache or intercept api.js
+  if (isNeverCacheJs(url.pathname)) {
+    console.log('[Service Worker] Never-cache JS (api.js):', request.url);
+    return fetch(request);
+  }
+  
   const cache = await caches.open(CACHE_NAME);
   const cachedResponse = await cache.match(request);
   
@@ -478,7 +621,7 @@ async function handleStaticAsset(request) {
     const networkResponse = await fetch(request);
     
     // Cache successful responses
-    if (networkResponse.ok && !shouldNeverCache(request.url) && !url.pathname.startsWith('/auth/')) {
+    if (networkResponse.ok && !shouldNeverCache(request.url) && !url.pathname.startsWith('/auth/') && !isNeverCacheJs(url.pathname)) {
       await cache.put(request, networkResponse.clone());
     }
     
@@ -603,8 +746,9 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   const url = new URL(request.url);
   
-  // Skip non-GET requests for non-static assets
-  if (request.method !== 'GET' && !isStaticAssetRequest(request)) {
+  // CRITICAL FIX: Skip non-GET requests completely (POST, PUT, DELETE)
+  if (['POST', 'PUT', 'DELETE'].includes(request.method)) {
+    console.log('[Service Worker] Skipping non-GET request:', request.method, url.pathname);
     return;
   }
   
@@ -613,9 +757,16 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // CRITICAL: Handle never-cache requests immediately
-  if (shouldNeverCache(request.url) || request.method === 'POST' || url.pathname.startsWith('/auth/')) {
+  // CRITICAL FIX: Handle never-cache requests immediately (including api.js)
+  if (shouldNeverCache(request.url) || isNeverCacheJs(url.pathname)) {
     console.log('[Service Worker] Never-cache request:', request.method, url.pathname);
+    event.respondWith(fetch(request));
+    return;
+  }
+  
+  // CRITICAL FIX: Never intercept /auth/ paths
+  if (url.pathname.startsWith('/auth/')) {
+    console.log('[Service Worker] Auth path - fetch only:', url.pathname);
     event.respondWith(fetch(request));
     return;
   }
