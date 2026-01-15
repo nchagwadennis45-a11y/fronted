@@ -3,15 +3,18 @@
 <head>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4F46E5">
-    <link rel="icon" href="icons/moodchat-192.png">
-    <link rel="icon" href="icons/moodchat-512.png">
+    <!-- Local favicon -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/moodchat-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/moodchat-512.png">
+    <link rel="apple-touch-icon" href="icons/moodchat-192.png">
     <meta name="theme-color" content="#000000">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kynecta Chat - Global Chat Platform</title>
+    <title>MoodChat - Global Chat Platform</title>
     
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Local Font Awesome -->
+  
     
     <!-- CSS Styles -->
     <style>
@@ -1297,7 +1300,7 @@
     <div class="mobile-header">
         <div class="logo">
             <i class="fas fa-comments logo-icon"></i>
-            <span class="logo-text">Kynecta Chat</span>
+            <span class="logo-text">MoodChat</span>
         </div>
         <button class="mobile-menu-toggle" id="mobileMenuToggle">
             <i class="fas fa-bars"></i>
@@ -1315,7 +1318,7 @@
                 <div class="logo-large">
                     <i class="fas fa-comments"></i>
                 </div>
-                <h1>Kynecta Chat</h1>
+                <h1>MoodChat</h1>
                 <p class="tagline">Connect with the world</p>
             </div>
             
@@ -1422,7 +1425,7 @@
                 <div class="logo-large">
                     <i class="fas fa-comments"></i>
                 </div>
-                <h1>Kynecta Chat</h1>
+                <h1>MoodChat</h1>
                 <p class="tagline">Connect with the world, one chat at a time</p>
             </div>
             
@@ -1482,7 +1485,7 @@
                 <h2>🌟 Success Stories</h2>
                 <div class="testimonial">
                     <div class="testimonial-content">
-                        "Kynecta Chat helped me find amazing friends across continents!"
+                        "MoodChat helped me find amazing friends across continents!"
                     </div>
                     <div class="testimonial-author">
                         <div class="testimonial-avatar">SR</div>
@@ -1497,7 +1500,7 @@
             <div class="download-section">
                 <h2>📱 Get The App</h2>
                 <div class="badge-grid">
-                    <a href="https://play.google.com/store/apps" target="_blank" class="download-badge">
+                    <a href="#" class="download-badge">
                         <i class="fab fa-google-play badge-icon"></i>
                         <div class="badge-text">
                             <span>GET IT ON</span>
@@ -1548,7 +1551,7 @@
                     <div class="double-clock">
                         <i class="fas fa-clock"></i>
                     </div>
-                    <h2 id="panelTitle">Welcome to Kynecta</h2>
+                    <h2 id="panelTitle">Welcome to MoodChat</h2>
                     <p id="panelSubtitle">Login to continue</p>
                 </div>
                 
@@ -1615,7 +1618,7 @@
                             
                             <div class="form-group mb-30">
                                 <button type="submit" class="btn btn-primary" id="loginSubmitBtn">
-                                    <span>Login to Kynecta</span>
+                                    <span>Login to MoodChat</span>
                                     <div class="spinner hidden" id="loginSpinner"></div>
                                 </button>
                             </div>
@@ -1872,7 +1875,7 @@
                 </div>
                 
                 <div class="auth-footer">
-                    <p>© 2024 Kynecta Chat. All rights reserved.</p>
+                    <p>© 2024 MoodChat. All rights reserved.</p>
                     <div class="auth-footer-links">
                         <a href="#" class="footer-link">Privacy</a>
                         <a href="#" class="footer-link">Terms</a>
@@ -1907,11 +1910,20 @@
                     overlay.classList.remove('active');
                 });
             }
+
+            // Live reload for development (preserved from original)
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                const script = document.createElement('script');
+                script.src = 'http://localhost:35729/livereload.js';
+                document.body.appendChild(script);
+            }
         });
     </script>
     
-    <!-- Load JavaScript modules with correct order and paths -->
-    <script src="js/api.js" defer></script>
-    <script src="js/app.js" defer></script>
+    <!-- Load JavaScript modules with correct order -->
+     
+    <script src="api.js?v=<?php echo time(); ?>"></script>
+
+    <script src="app.js"></script>
 </body>
 </html>
