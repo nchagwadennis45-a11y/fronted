@@ -2010,6 +2010,159 @@
                 }, 10);
             }
             
+            // =============================================
+            // REDIRECT FUNCTIONALITY TO CHAT.HTML
+            // =============================================
+            function redirectToChat() {
+                console.log('Redirecting to chat.html...');
+                
+                // Show loading state
+                const loginButton = document.getElementById('login-button');
+                const loginSpinner = document.getElementById('loginSpinner');
+                const registerSpinner = document.getElementById('registerSpinner');
+                
+                if (loginSpinner) loginSpinner.classList.remove('hidden');
+                if (registerSpinner) registerSpinner.classList.remove('hidden');
+                if (loginButton) loginButton.disabled = true;
+                
+                // Simulate API call delay
+                setTimeout(() => {
+                    // Redirect to chat.html
+                    window.location.href = 'chat.html';
+                }, 1500);
+            }
+            
+            // =============================================
+            // LOGIN FORM SUBMISSION HANDLER
+            // =============================================
+            const loginFormElement = document.getElementById('login-form');
+            if (loginFormElement) {
+                loginFormElement.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Get form values
+                    const identifier = document.getElementById('loginIdentifier').value;
+                    const password = document.getElementById('loginPassword').value;
+                    
+                    // Simple validation
+                    if (!identifier || !password) {
+                        // Show error messages
+                        const identifierError = document.getElementById('loginIdentifierError');
+                        const passwordError = document.getElementById('loginPasswordError');
+                        
+                        if (!identifier && identifierError) identifierError.classList.remove('hidden');
+                        if (!password && passwordError) passwordError.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    // Hide error messages
+                    document.querySelectorAll('.error-message').forEach(el => el.classList.add('hidden'));
+                    
+                    // Simulate successful login
+                    console.log('Login successful for:', identifier);
+                    
+                    // Show dashboard temporarily
+                    showForm('dashboard');
+                    
+                    // Redirect to chat.html after 2 seconds
+                    setTimeout(redirectToChat, 2000);
+                });
+            }
+            
+            // =============================================
+            // REGISTER FORM SUBMISSION HANDLER
+            // =============================================
+            const registerFormElement = document.getElementById('register-form');
+            if (registerFormElement) {
+                registerFormElement.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Get form values
+                    const displayName = document.getElementById('registerDisplayName').value;
+                    const username = document.getElementById('registerUsername').value;
+                    const email = document.getElementById('registerEmail').value;
+                    const password = document.getElementById('registerPassword').value;
+                    const confirmPassword = document.getElementById('registerConfirmPassword').value;
+                    const acceptTerms = document.getElementById('acceptTerms').checked;
+                    
+                    // Simple validation
+                    let isValid = true;
+                    
+                    if (!displayName) {
+                        document.getElementById('registerNameError')?.classList.remove('hidden');
+                        isValid = false;
+                    }
+                    
+                    if (!username || username.length < 3) {
+                        document.getElementById('registerUsernameError')?.classList.remove('hidden');
+                        isValid = false;
+                    }
+                    
+                    if (!email || !email.includes('@')) {
+                        document.getElementById('registerEmailError')?.classList.remove('hidden');
+                        isValid = false;
+                    }
+                    
+                    if (!password || password.length < 8) {
+                        document.getElementById('registerPasswordError')?.classList.remove('hidden');
+                        isValid = false;
+                    }
+                    
+                    if (password !== confirmPassword) {
+                        document.getElementById('registerConfirmPasswordError')?.classList.remove('hidden');
+                        isValid = false;
+                    }
+                    
+                    if (!acceptTerms) {
+                        alert('Please accept the Terms and Privacy Policy');
+                        isValid = false;
+                    }
+                    
+                    if (!isValid) return;
+                    
+                    // Hide error messages
+                    document.querySelectorAll('.error-message').forEach(el => el.classList.add('hidden'));
+                    
+                    // Simulate successful registration
+                    console.log('Registration successful for:', email);
+                    
+                    // Show dashboard temporarily
+                    showForm('dashboard');
+                    
+                    // Redirect to chat.html after 2 seconds
+                    setTimeout(redirectToChat, 2000);
+                });
+            }
+            
+            // =============================================
+            // QUICK LOGIN HANDLER
+            // =============================================
+            const quickLoginBtn = document.getElementById('quickLoginBtn');
+            if (quickLoginBtn) {
+                quickLoginBtn.addEventListener('click', function() {
+                    console.log('Quick login initiated');
+                    
+                    // Show dashboard temporarily
+                    showForm('dashboard');
+                    
+                    // Redirect to chat.html after 1 second
+                    setTimeout(redirectToChat, 1000);
+                });
+            }
+            
+            // =============================================
+            // ENTER CHAT BUTTON HANDLER (from dashboard)
+            // =============================================
+            const enterChatBtn = document.getElementById('enterChatBtn');
+            if (enterChatBtn) {
+                enterChatBtn.addEventListener('click', function() {
+                    redirectToChat();
+                });
+            }
+            
+            // =============================================
+            // EXISTING FORM TOGGLING LOGIC
+            // =============================================
             // Set up event listeners for immediate form toggling
             if (signupButton) {
                 signupButton.addEventListener('click', function(e) {
@@ -2041,7 +2194,10 @@
             
             console.log('Form Toggler: Immediate form switching initialized.');
             
-            // Initialize mobile menu toggle (existing functionality)
+            // =============================================
+            // EXISTING MOBILE MENU FUNCTIONALITY
+            // =============================================
+            // Initialize mobile menu toggle
             const menuToggle = document.getElementById('mobileMenuToggle');
             const mobileSidebar = document.getElementById('mobileSidebar');
             const overlay = document.getElementById('mobileSidebarOverlay');
@@ -2058,6 +2214,9 @@
                 });
             }
             
+            // =============================================
+            // EXISTING PASSWORD TOGGLE FUNCTIONALITY
+            // =============================================
             // Setup password toggles
             const passwordToggles = document.querySelectorAll('.password-toggle');
             passwordToggles.forEach(toggle => {
@@ -2076,6 +2235,9 @@
                 });
             });
             
+            // =============================================
+            // EXISTING FEATURE TAGS FUNCTIONALITY
+            // =============================================
             // Setup feature tags
             const featureTags = document.querySelectorAll('.feature-tag');
             featureTags.forEach(tag => {
@@ -2084,6 +2246,9 @@
                 });
             });
             
+            // =============================================
+            // EXISTING AUTH TABS FUNCTIONALITY
+            // =============================================
             // Setup auth tabs
             const authTabs = document.querySelectorAll('.auth-tab');
             authTabs.forEach(tab => {
@@ -2126,6 +2291,79 @@
                     }
                 });
             });
+            
+            // =============================================
+            // EXISTING FORGOT PASSWORD FORM HANDLER
+            // =============================================
+            const forgotFormElement = document.getElementById('forgot-form');
+            if (forgotFormElement) {
+                forgotFormElement.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const email = document.getElementById('forgotPasswordEmail').value;
+                    const forgotPasswordError = document.getElementById('forgotPasswordError');
+                    const forgotPasswordSuccess = document.getElementById('forgotPasswordSuccess');
+                    const forgotPasswordSpinner = document.getElementById('forgotPasswordSpinner');
+                    
+                    if (!email || !email.includes('@')) {
+                        if (forgotPasswordError) forgotPasswordError.classList.remove('hidden');
+                        if (forgotPasswordSuccess) forgotPasswordSuccess.classList.add('hidden');
+                        return;
+                    }
+                    
+                    // Show loading
+                    if (forgotPasswordSpinner) forgotPasswordSpinner.classList.remove('hidden');
+                    
+                    // Simulate API call
+                    setTimeout(() => {
+                        if (forgotPasswordSpinner) forgotPasswordSpinner.classList.add('hidden');
+                        if (forgotPasswordError) forgotPasswordError.classList.add('hidden');
+                        if (forgotPasswordSuccess) forgotPasswordSuccess.classList.remove('hidden');
+                    }, 1500);
+                });
+            }
+            
+            // =============================================
+            // EXISTING QUICK LOGIN CARD FUNCTIONALITY
+            // =============================================
+            const removeQuickLogin = document.getElementById('removeQuickLogin');
+            if (removeQuickLogin) {
+                removeQuickLogin.addEventListener('click', function() {
+                    const quickLoginCard = document.getElementById('quickLoginCard');
+                    if (quickLoginCard) quickLoginCard.classList.add('hidden');
+                });
+            }
+            
+            const useDifferentAccountBtn = document.getElementById('useDifferentAccountBtn');
+            if (useDifferentAccountBtn) {
+                useDifferentAccountBtn.addEventListener('click', function() {
+                    const quickLoginCard = document.getElementById('quickLoginCard');
+                    if (quickLoginCard) quickLoginCard.classList.add('hidden');
+                    showForm('login');
+                });
+            }
+            
+            // =============================================
+            // EXISTING LOGOUT FUNCTIONALITY
+            // =============================================
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    console.log('User logged out');
+                    showForm('login');
+                });
+            }
+            
+            // =============================================
+            // INITIALIZE QUICK LOGIN CARD (for demo)
+            // =============================================
+            // Uncomment to show quick login card on page load for demo
+            // const quickLoginCard = document.getElementById('quickLoginCard');
+            // if (quickLoginCard) {
+            //     setTimeout(() => {
+            //         quickLoginCard.classList.remove('hidden');
+            //     }, 1000);
+            // }
         });
     </script>
     
