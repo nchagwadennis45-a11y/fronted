@@ -46,6 +46,7 @@ window.api = function(endpoint, options = {}) {
         }
     };
     
+    // Read token from localStorage for every request
     const token = localStorage.getItem('moodchat_auth_token');
     if (token && fetchOptions.auth !== false) {
         fetchOptions.headers['Authorization'] = 'Bearer ' + token;
@@ -151,8 +152,12 @@ const apiObject = {
             const data = await response.json();
             
             if (response.ok) {
+                // FIX: Ensure token is properly stored and propagated
                 if (data.token) {
+                    console.log(`🔧 [API] Login successful, storing token: ${data.token.substring(0, 20)}...`);
                     localStorage.setItem('moodchat_auth_token', data.token);
+                    // Also store in authToken for compatibility with app.core.js
+                    localStorage.setItem('authToken', data.token);
                 }
                 if (data.user) {
                     localStorage.setItem('moodchat_auth_user', JSON.stringify(data.user));
@@ -207,8 +212,12 @@ const apiObject = {
             const data = await response.json();
             
             if (response.ok) {
+                // FIX: Perform EXACT SAME token handling as login
                 if (data.token) {
+                    console.log(`🔧 [API] Registration successful, storing token: ${data.token.substring(0, 20)}...`);
                     localStorage.setItem('moodchat_auth_token', data.token);
+                    // Also store in authToken for compatibility with app.core.js
+                    localStorage.setItem('authToken', data.token);
                 }
                 if (data.user) {
                     localStorage.setItem('moodchat_auth_user', JSON.stringify(data.user));
@@ -670,6 +679,7 @@ const apiObject = {
     _clearAuthData: function() {
         localStorage.removeItem('moodchat_auth_token');
         localStorage.removeItem('moodchat_auth_user');
+        localStorage.removeItem('authToken'); // Also clear compatibility token
         this._sessionChecked = false;
     },
     
@@ -705,7 +715,8 @@ const apiObject = {
             timestamp: new Date().toISOString(),
             backendUrl: BACKEND_BASE_URL,
             baseApiUrl: BASE_URL,
-            sessionChecked: this._sessionChecked
+            sessionChecked: this._sessionChecked,
+            hasAuthToken: !!localStorage.getItem('moodchat_auth_token')
         };
     },
     
@@ -815,6 +826,16 @@ const apiObject = {
         console.log('🔧 [API] 🔗 Backend URL:', BASE_URL);
         console.log('🔧 [API] 🌐 Environment:', IS_LOCAL_DEVELOPMENT ? 'Local' : 'Production');
         
+        // On initialization: Read authToken from localStorage if present
+        const storedToken = localStorage.getItem('moodchat_auth_token');
+        if (storedToken) {
+            console.log(`🔧 [API] Restoring token from localStorage: ${storedToken.substring(0, 20)}...`);
+            // Ensure compatibility with app.core.js by also setting authToken
+            if (!localStorage.getItem('authToken')) {
+                localStorage.setItem('authToken', storedToken);
+            }
+        }
+        
         if (this.isLoggedIn() && !this._sessionChecked) {
             console.log('🔧 [API] 🔄 Auto-login on initialization...');
             try {
@@ -830,6 +851,7 @@ const apiObject = {
                 const health = await this.checkBackendHealth();
                 console.log('🔧 [API] 📶 Backend status:', health.message);
                 console.log('🔧 [API] 🔐 Auth:', this.isLoggedIn() ? 'Logged in' : 'Not logged in');
+                console.log('🔧 [API] 🔑 Token present:', !!localStorage.getItem('moodchat_auth_token'));
                 console.log('🔧 [API] 💾 Device ID:', this.getDeviceId());
                 
             } catch (error) {
@@ -849,7 +871,8 @@ const apiObject = {
                     version: this._version,
                     timestamp: new Date().toISOString(),
                     backendUrl: BASE_URL,
-                    user: this.getCurrentUser()
+                    user: this.getCurrentUser(),
+                    hasToken: !!localStorage.getItem('moodchat_auth_token')
                 }
             }));
         } catch (e) {
@@ -889,6 +912,7 @@ const apiObject = {
         const results = {
             localStorage: {
                 token: !!localStorage.getItem('moodchat_auth_token'),
+                authToken: !!localStorage.getItem('authToken'), // Compatibility check
                 user: !!localStorage.getItem('moodchat_auth_user'),
                 deviceId: !!localStorage.getItem('moodchat_device_id')
             },
@@ -1050,7 +1074,8 @@ setTimeout(() => {
         version: window.api._version,
         timestamp: new Date().toISOString(),
         backendUrl: BASE_URL,
-        user: window.api.getCurrentUser()
+        user: window.api.getCurrentUser(),
+        hasToken: !!localStorage.getItem('moodchat_auth_token')
     };
     
     window.__MOODCHAT_API_EVENTS.push({
