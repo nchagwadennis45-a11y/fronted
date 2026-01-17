@@ -154,12 +154,13 @@ function _safeFetchCall(fullUrl, options = {}) {
         }
     };
     
-    // Handle body safely
+    // Handle body safely - DO NOT MUTATE OR RENAME FIELDS
     if (options.body && normalizedMethod !== 'GET') {
         if (typeof options.body === 'string') {
             safeOptions.body = options.body;
         } else {
             try {
+                // Pass body exactly as provided
                 safeOptions.body = JSON.stringify(options.body);
             } catch (e) {
                 console.warn('⚠️ [API] Could not stringify body, sending empty');
@@ -314,13 +315,11 @@ const apiObject = {
         try {
             console.log(`🔧 [API] Login attempt for: ${emailOrUsername}`);
             
-            const requestData = { password: String(password) };
-            
-            if (emailOrUsername.includes('@')) {
-                requestData.email = String(emailOrUsername).trim();
-            } else {
-                requestData.username = String(emailOrUsername).trim();
-            }
+            // CORRECTED: Use { identifier, password } payload structure
+            const requestData = { 
+                identifier: String(emailOrUsername).trim(),
+                password: String(password) 
+            };
             
             // USE THE SINGLE FETCH FUNCTION
             const result = await _safeFetchCall(`${BASE_URL}/auth/login`, {
@@ -354,28 +353,39 @@ const apiObject = {
                     data: result.data
                 };
             } else {
-                // Soft auth failure - don't clear existing data
+                // Clean error propagation without crashing
+                let errorMessage = 'Login failed';
+                
                 if (result.status === 401 || result.status === 403) {
+                    errorMessage = 'Invalid credentials';
                     console.log('🔧 [API] Auth failed, maintaining soft-auth mode');
                     return {
                         success: false,
-                        message: 'Invalid credentials',
+                        message: errorMessage,
                         softAuth: true
                     };
                 }
                 
+                if (result.data && result.data.message) {
+                    errorMessage = result.data.message;
+                } else if (result.message) {
+                    errorMessage = result.message;
+                }
+                
                 return {
                     success: false,
-                    message: result.message || 'Login failed',
+                    message: errorMessage,
+                    status: result.status,
                     error: result.error
                 };
             }
         } catch (error) {
             console.error('🔧 [API] Login error:', error);
             
+            // Safe error propagation
             return {
                 success: false,
-                message: 'Login failed: ' + error.message,
+                message: 'Login failed: ' + (error.message || 'Network error'),
                 error: error.message,
                 isNetworkError: true
             };
@@ -395,10 +405,37 @@ const apiObject = {
         try {
             console.log('🔧 [API] Register attempt');
             
+            // CORRECTED: Ensure correct payload structure { username, email, password, confirmPassword }
+            const registerPayload = {
+                username: String(userData.username || '').trim(),
+                email: String(userData.email || '').trim(),
+                password: String(userData.password || ''),
+                confirmPassword: String(userData.confirmPassword || '')
+            };
+            
+            // Validate required fields
+            if (!registerPayload.username || !registerPayload.email || 
+                !registerPayload.password || !registerPayload.confirmPassword) {
+                return {
+                    success: false,
+                    message: 'All fields are required',
+                    validationError: true
+                };
+            }
+            
+            // Validate password match
+            if (registerPayload.password !== registerPayload.confirmPassword) {
+                return {
+                    success: false,
+                    message: 'Passwords do not match',
+                    validationError: true
+                };
+            }
+            
             // USE THE SINGLE FETCH FUNCTION
             const result = await _safeFetchCall(`${BASE_URL}/auth/register`, {
                 method: 'POST',
-                body: userData
+                body: registerPayload
             });
             
             if (result.success) {
@@ -427,18 +464,35 @@ const apiObject = {
                     data: result.data
                 };
             } else {
+                // Clean error propagation without crashing
+                let errorMessage = 'Registration failed';
+                
+                if (result.status === 409) {
+                    errorMessage = 'Username or email already exists';
+                } else if (result.status === 400) {
+                    errorMessage = 'Invalid registration data';
+                }
+                
+                if (result.data && result.data.message) {
+                    errorMessage = result.data.message;
+                } else if (result.message) {
+                    errorMessage = result.message;
+                }
+                
                 return {
                     success: false,
-                    message: result.message || 'Registration failed',
+                    message: errorMessage,
+                    status: result.status,
                     error: result.error
                 };
             }
         } catch (error) {
             console.error('🔧 [API] Register error:', error);
             
+            // Safe error propagation
             return {
                 success: false,
-                message: 'Registration failed: ' + error.message,
+                message: 'Registration failed: ' + (error.message || 'Network error'),
                 error: error.message,
                 isNetworkError: true
             };
@@ -576,11 +630,12 @@ const apiObject = {
             }
             
             try {
-                // USE THE SINGLE FETCH FUNCTION
+                // USE THE SINGLE FETCH FUNCTION with proper headers
                 const result = await _safeFetchCall(`${BASE_URL}/auth/me`, {
                     method: 'GET',
                     headers: {
-                        'Authorization': 'Bearer ' + authUser.token
+                        'Authorization': 'Bearer ' + authUser.token,
+                        'Content-Type': 'application/json'
                     }
                 });
                 

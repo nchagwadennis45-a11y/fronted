@@ -320,6 +320,11 @@
             transition: all var(--transition-fast);
         }
         
+        .feature-card:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
         .feature-icon {
             width: 36px;
             height: 36px;
@@ -394,6 +399,17 @@
             flex-shrink: 0;
         }
         
+        .testimonial-author h4 {
+            font-size: 14px;
+            color: white;
+            margin-bottom: 2px;
+        }
+        
+        .testimonial-author p {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
         /* Download Section - Mobile Optimized */
         .download-section {
             margin-top: auto;
@@ -424,6 +440,12 @@
             text-decoration: none;
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all var(--transition-fast);
+        }
+        
+        .download-badge:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
         }
         
         .badge-icon {
@@ -503,6 +525,7 @@
             transform: translateY(-50%);
             font-size: 24px;
             opacity: 0.5;
+            animation: clockPulse 2s ease-in-out infinite;
         }
         
         /* Auth Tabs - Mobile Optimized */
@@ -525,6 +548,11 @@
             position: relative;
             overflow: hidden;
             white-space: nowrap;
+            transition: background-color var(--transition-fast);
+        }
+        
+        .auth-tab:hover {
+            background: rgba(255, 255, 255, 0.15);
         }
         
         .auth-tab i {
@@ -571,6 +599,12 @@
             text-decoration: none;
             font-weight: 500;
             font-size: 14px;
+            transition: color var(--transition-fast);
+        }
+        
+        .footer-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
         }
         
         /* ============================================= */
@@ -601,11 +635,13 @@
             background: var(--bg-color);
             color: var(--text-primary);
             -webkit-appearance: none;
+            transition: border-color var(--transition-fast);
         }
         
         .form-input:focus {
             outline: none;
             border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
         .input-icon {
@@ -631,6 +667,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: color var(--transition-fast);
+        }
+        
+        .password-toggle:hover {
+            color: var(--primary-color);
         }
         
         .error-message {
@@ -664,12 +705,14 @@
             height: 18px;
             margin-top: 3px;
             accent-color: var(--primary-color);
+            cursor: pointer;
         }
         
         .checkbox-label {
             font-size: 14px;
             color: var(--text-secondary);
             line-height: 1.5;
+            cursor: pointer;
         }
         
         /* Feature Tags - Mobile Optimized */
@@ -690,11 +733,20 @@
             border: 2px solid transparent;
             background: var(--border-color);
             color: var(--text-secondary);
+            transition: all var(--transition-fast);
+        }
+        
+        .feature-tag:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
         }
         
         .feature-tag.selected {
             background: var(--primary-color);
             color: white;
+            border-color: var(--primary-dark);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
         
         /* Language Tags */
@@ -729,6 +781,27 @@
             cursor: pointer;
             text-decoration: none;
             width: 100%;
+            transition: all var(--transition-fast);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+        
+        .btn:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
         }
         
         .btn-primary {
@@ -736,9 +809,19 @@
             color: white;
         }
         
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
         .btn-success {
             background: var(--gradient-success);
             color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
         }
         
         .btn-secondary {
@@ -747,14 +830,27 @@
             border: 2px solid var(--primary-color);
         }
         
+        .btn-secondary:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
         .btn-danger {
             background: var(--danger-color);
             color: white;
         }
         
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4);
+        }
+        
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
         }
         
         /* Loading Spinner */
@@ -801,6 +897,7 @@
             border: 1px solid var(--border-color);
             border-left: 5px solid var(--success-color);
             position: relative;
+            animation: slideInRight 0.3s ease-out;
         }
         
         .quick-login-header {
@@ -854,6 +951,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all var(--transition-fast);
+        }
+        
+        .remove-quick-login:hover {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
         }
         
         /* Premium Promotion - Mobile Optimized */
@@ -865,6 +968,20 @@
             color: white;
             position: relative;
             overflow: hidden;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .premium-promotion::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.2;
+            animation: float 20s linear infinite;
         }
         
         .premium-badge {
@@ -875,6 +992,7 @@
             font-size: 11px;
             font-weight: 600;
             margin-bottom: 12px;
+            backdrop-filter: blur(10px);
         }
         
         .premium-promotion h3 {
@@ -902,6 +1020,10 @@
             font-size: 13px;
         }
         
+        .premium-feature i {
+            color: #ffd700;
+        }
+        
         /* Dashboard - Mobile Optimized */
         .dashboard-content {
             width: 100%;
@@ -925,6 +1047,8 @@
             font-size: 28px;
             font-weight: 700;
             margin: 0 auto 15px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            animation: float 4s ease-in-out infinite;
         }
         
         .dashboard-header h1 {
@@ -936,19 +1060,6 @@
         .dashboard-header p {
             font-size: 16px;
             color: var(--text-secondary);
-        }
-        
-        .connection-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            background: rgba(46, 204, 113, 0.1);
-            border-radius: 20px;
-            color: var(--success-color);
-            font-size: 13px;
-            font-weight: 600;
-            margin-top: 12px;
         }
         
         .dashboard-stats {
@@ -964,6 +1075,12 @@
             padding: 15px;
             text-align: center;
             border: 1px solid var(--border-color);
+            transition: all var(--transition-fast);
+        }
+        
+        .dashboard-stat:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px var(--shadow-color);
         }
         
         .dashboard-stat .number {
@@ -1072,6 +1189,11 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            transition: color var(--transition-fast);
+        }
+        
+        .notification-close:hover {
+            color: var(--text-primary);
         }
         
         /* ============================================= */
@@ -1129,6 +1251,14 @@
             .dashboard-actions {
                 flex-direction: column;
             }
+            
+            .quick-login-actions {
+                flex-direction: column;
+            }
+            
+            .feature-tags {
+                justify-content: center;
+            }
         }
         
         /* Mobile (480px and below) */
@@ -1161,12 +1291,12 @@
             }
             
             .dashboard-stats {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
                 gap: 10px;
             }
             
             .stats-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
             }
             
             .badge-grid {
@@ -1175,6 +1305,14 @@
             
             .quick-login-actions {
                 flex-direction: column;
+            }
+            
+            .feature-grid {
+                gap: 8px;
+            }
+            
+            .feature-card {
+                padding: 12px;
             }
         }
         
@@ -1201,6 +1339,14 @@
             .feature-tag {
                 padding: 6px 12px;
                 font-size: 12px;
+            }
+            
+            .dashboard-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
             }
         }
         
@@ -1266,6 +1412,21 @@
             0%, 100% { transform: translateX(0); }
             10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
             20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 1;
+            }
+            20% {
+                transform: scale(25, 25);
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(40, 40);
+            }
         }
         
         /* Floating Animation for Stats */
@@ -1845,10 +2006,6 @@
                                 <div class="dashboard-avatar" id="dashboardAvatar">U</div>
                                 <h1 id="dashboardGreeting">Welcome!</h1>
                                 <p id="dashboardEmail">user@example.com</p>
-                                <div class="connection-status">
-                                    <i class="fas fa-wifi"></i>
-                                    <span>Connected to Network</span>
-                                </div>
                             </div>
                             
                             <div class="dashboard-stats">
@@ -1916,11 +2073,6 @@
         window.jQuery || document.write('<script src="js/vendor/jquery.min.js"><\/script>');
     </script>
     
-    <!-- 2. Spectrum Color Picker - For color selection features (if needed) -->
-    <!-- Note: Only include if actually used in the app -->
-    <!-- <script src="js/vendor/spectrum.min.js"></script> -->
-    <!-- <link rel="stylesheet" href="css/spectrum.min.css"> -->
-    
     <!-- 3. Auth UI JavaScript - Embedded for immediate form toggling -->
     <!-- This handles the instant form switching without network dependency -->
     <script>
@@ -1974,6 +2126,9 @@
                 notification.classList.remove('show');
                 setTimeout(() => notification.remove(), 300);
             });
+            
+            // Return the notification element for potential programmatic control
+            return notification;
         }
         
         function showFormError(elementId, message) {
@@ -2066,7 +2221,7 @@
         }
         
         // =============================================
-        // BACKEND API FUNCTIONS
+        // BACKEND API FUNCTIONS - UPDATED WITH CORRECT PAYLOAD
         // =============================================
         async function loginWithBackend(identifier, password) {
             if (!isOnline()) {
@@ -2074,24 +2229,43 @@
             }
             
             try {
+                // CORRECT PAYLOAD: { identifier, password }
+                const requestBody = {
+                    identifier: identifier.trim(),
+                    password: password
+                };
+                
+                console.log('Login payload:', requestBody);
+                
                 const response = await fetch(LOGIN_ENDPOINT, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ identifier, password })
+                    body: JSON.stringify(requestBody)
                 });
+                
+                // Handle non-JSON responses gracefully
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    throw new Error('Server returned an invalid response. Please try again.');
+                }
                 
                 const data = await response.json();
                 
                 if (!response.ok) {
-                    throw new Error(data.message || 'Login failed. Please check your credentials.');
+                    throw new Error(data.message || data.error || 'Login failed. Please check your credentials.');
                 }
                 
                 return {
                     success: true,
-                    token: data.token || data.accessToken,
-                    user: data.user || { username: identifier.split('@')[0], email: identifier.includes('@') ? identifier : null }
+                    token: data.token || data.accessToken || data.data?.token,
+                    user: data.user || data.data?.user || { 
+                        username: identifier.includes('@') ? identifier.split('@')[0] : identifier,
+                        email: identifier.includes('@') ? identifier : null 
+                    }
                 };
             } catch (error) {
                 console.error('Login error:', error);
@@ -2099,37 +2273,57 @@
             }
         }
         
-        async function registerWithBackend(username, email, password, displayName) {
+        async function registerWithBackend(username, email, password, confirmPassword) {
             if (!isOnline()) {
                 throw new Error('No internet connection. Registration requires an internet connection.');
             }
             
             try {
+                // CORRECT PAYLOAD: { username, email, password, confirmPassword }
+                const requestBody = {
+                    username: username.trim(),
+                    email: email.trim(),
+                    password: password,
+                    confirmPassword: confirmPassword
+                };
+                
+                console.log('Register payload:', { ...requestBody, password: '[REDACTED]', confirmPassword: '[REDACTED]' });
+                
                 const response = await fetch(REGISTER_ENDPOINT, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ 
-                        username, 
-                        email, 
-                        password,
-                        displayName: displayName || username
-                    })
+                    body: JSON.stringify(requestBody)
                 });
+                
+                // Handle non-JSON responses gracefully
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    throw new Error('Server returned an invalid response. Please try again.');
+                }
                 
                 const data = await response.json();
                 
                 if (!response.ok) {
-                    const errorMsg = data.message || 
-                                   (data.errors ? data.errors.map(e => e.msg).join(', ') : 'Registration failed');
+                    // Handle validation errors from backend
+                    let errorMsg = data.message || 'Registration failed';
+                    
+                    if (data.errors && Array.isArray(data.errors)) {
+                        errorMsg = data.errors.map(e => e.message || e.msg).join(', ');
+                    } else if (data.error) {
+                        errorMsg = data.error;
+                    }
+                    
                     throw new Error(errorMsg);
                 }
                 
                 return {
                     success: true,
-                    token: data.token || data.accessToken,
-                    user: data.user || { username, email, displayName: displayName || username }
+                    token: data.token || data.accessToken || data.data?.token,
+                    user: data.user || data.data?.user || { username, email }
                 };
             } catch (error) {
                 console.error('Registration error:', error);
@@ -2280,6 +2474,9 @@
                 if (registerSpinner) registerSpinner.classList.remove('hidden');
                 if (loginButton) loginButton.disabled = true;
                 
+                // Show redirect notification
+                showNotification('info', 'Redirecting', 'Taking you to the chat...');
+                
                 // Redirect to chat.html after a short delay
                 setTimeout(() => {
                     window.location.href = 'chat.html';
@@ -2287,7 +2484,7 @@
             }
             
             // =============================================
-            // LOGIN FORM SUBMISSION HANDLER
+            // LOGIN FORM SUBMISSION HANDLER - UPDATED
             // =============================================
             const loginFormElement = document.getElementById('login-form');
             if (loginFormElement) {
@@ -2356,7 +2553,7 @@
             }
             
             // =============================================
-            // REGISTER FORM SUBMISSION HANDLER
+            // REGISTER FORM SUBMISSION HANDLER - UPDATED
             // =============================================
             const registerFormElement = document.getElementById('register-form');
             if (registerFormElement) {
@@ -2403,7 +2600,7 @@
                     }
                     
                     if (!acceptTerms) {
-                        alert('Please accept the Terms and Privacy Policy');
+                        showNotification('warning', 'Terms Required', 'Please accept the Terms and Privacy Policy');
                         isValid = false;
                     }
                     
@@ -2414,11 +2611,11 @@
                     
                     try {
                         // Attempt registration with backend
-                        const result = await registerWithBackend(username, email, password, displayName);
+                        const result = await registerWithBackend(username, email, password, confirmPassword);
                         
                         if (result.success) {
                             // Save auth data to localStorage (registration implies remember me)
-                            saveAuthData(result.token, result.user);
+                            saveAuthData(result.token, { ...result.user, displayName: displayName });
                             
                             showNotification('success', 'Registration Successful', 'Welcome to MoodChat!');
                             
@@ -2435,9 +2632,9 @@
                         let errorMessage = error.message || 'Registration failed. Please try again.';
                         
                         if (errorMessage.includes('duplicate') || errorMessage.includes('already exists')) {
-                            if (errorMessage.includes('email')) {
+                            if (errorMessage.toLowerCase().includes('email')) {
                                 showFormError('registerEmailError', 'This email is already registered');
-                            } else if (errorMessage.includes('username')) {
+                            } else if (errorMessage.toLowerCase().includes('username')) {
                                 showFormError('registerUsernameError', 'This username is already taken');
                             }
                         } else if (errorMessage.includes('validation') || errorMessage.includes('invalid')) {
@@ -2526,16 +2723,19 @@
             const menuToggle = document.getElementById('mobileMenuToggle');
             const mobileSidebar = document.getElementById('mobileSidebar');
             const overlay = document.getElementById('mobileSidebarOverlay');
+            const authPanel = document.getElementById('authPanel');
             
-            if (menuToggle && mobileSidebar && overlay) {
+            if (menuToggle && mobileSidebar && overlay && authPanel) {
                 menuToggle.addEventListener('click', function() {
                     mobileSidebar.classList.toggle('active');
                     overlay.classList.toggle('active');
+                    authPanel.classList.toggle('mobile-active');
                 });
                 
                 overlay.addEventListener('click', function() {
                     mobileSidebar.classList.remove('active');
                     overlay.classList.remove('active');
+                    authPanel.classList.remove('mobile-active');
                 });
             }
             
@@ -2565,9 +2765,25 @@
             // =============================================
             // Setup feature tags
             const featureTags = document.querySelectorAll('.feature-tag');
+            const selectedInterests = [];
+            
             featureTags.forEach(tag => {
                 tag.addEventListener('click', function() {
                     this.classList.toggle('selected');
+                    const interest = this.dataset.interest;
+                    
+                    if (this.classList.contains('selected')) {
+                        if (!selectedInterests.includes(interest)) {
+                            selectedInterests.push(interest);
+                        }
+                    } else {
+                        const index = selectedInterests.indexOf(interest);
+                        if (index > -1) {
+                            selectedInterests.splice(index, 1);
+                        }
+                    }
+                    
+                    console.log('Selected interests:', selectedInterests);
                 });
             });
             
@@ -2613,6 +2829,9 @@
                         
                         // Update icon
                         loginMethodIcon.className = `fas ${iconMap[method] || 'fa-envelope'} input-icon`;
+                        
+                        // Clear any existing error
+                        hideFormError('loginIdentifierError');
                     }
                 });
             });
@@ -2625,10 +2844,11 @@
                 forgotFormElement.addEventListener('submit', function(e) {
                     e.preventDefault();
                     
-                    const email = document.getElementById('forgotPasswordEmail').value;
+                    const email = document.getElementById('forgotPasswordEmail').value.trim();
                     const forgotPasswordError = document.getElementById('forgotPasswordError');
                     const forgotPasswordSuccess = document.getElementById('forgotPasswordSuccess');
                     const forgotPasswordSpinner = document.getElementById('forgotPasswordSpinner');
+                    const forgotPasswordBtn = this.querySelector('button[type="submit"]');
                     
                     if (!email || !email.includes('@')) {
                         if (forgotPasswordError) {
@@ -2641,12 +2861,14 @@
                     
                     // Show loading
                     if (forgotPasswordSpinner) forgotPasswordSpinner.classList.remove('hidden');
+                    if (forgotPasswordBtn) forgotPasswordBtn.disabled = true;
                     
                     // Simulate API call
                     setTimeout(() => {
                         if (forgotPasswordSpinner) forgotPasswordSpinner.classList.add('hidden');
                         if (forgotPasswordError) forgotPasswordError.classList.add('hidden');
                         if (forgotPasswordSuccess) forgotPasswordSuccess.classList.remove('hidden');
+                        if (forgotPasswordBtn) forgotPasswordBtn.disabled = false;
                         showNotification('info', 'Reset Email Sent', 'Check your email for password reset instructions');
                     }, 1500);
                 });
@@ -2710,29 +2932,85 @@
             }
             
             // =============================================
-            // NETWORK STATUS MONITORING
+            // AUTO-FOCUS ON FIRST INPUT
             // =============================================
-            function updateNetworkStatus() {
-                const connectionStatus = document.querySelector('.connection-status');
-                if (connectionStatus) {
-                    if (isOnline()) {
-                        connectionStatus.innerHTML = '<i class="fas fa-wifi"></i><span>Connected to Network</span>';
-                        connectionStatus.style.background = 'rgba(46, 204, 113, 0.1)';
-                        connectionStatus.style.color = 'var(--success-color)';
-                    } else {
-                        connectionStatus.innerHTML = '<i class="fas fa-wifi-slash"></i><span>Offline Mode</span>';
-                        connectionStatus.style.background = 'rgba(241, 196, 15, 0.1)';
-                        connectionStatus.style.color = 'var(--warning-color)';
+            // Auto-focus on the first input when form is shown
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        const activeForm = document.querySelector('.auth-form.active');
+                        if (activeForm) {
+                            const firstInput = activeForm.querySelector('input:not([type="hidden"]):not([type="checkbox"])');
+                            if (firstInput) {
+                                setTimeout(() => firstInput.focus(), 100);
+                            }
+                        }
                     }
+                });
+            });
+            
+            // Observe all auth forms for class changes
+            document.querySelectorAll('.auth-form').forEach(form => {
+                observer.observe(form, { attributes: true });
+            });
+            
+            // Initial focus
+            const activeForm = document.querySelector('.auth-form.active');
+            if (activeForm) {
+                const firstInput = activeForm.querySelector('input:not([type="hidden"]):not([type="checkbox"])');
+                if (firstInput) {
+                    setTimeout(() => firstInput.focus(), 300);
                 }
             }
             
-            // Initial status
+            // =============================================
+            // ENTER KEY SUBMISSION
+            // =============================================
+            // Allow form submission with Enter key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const activeForm = document.querySelector('.auth-form.active');
+                    if (activeForm) {
+                        const submitBtn = activeForm.querySelector('button[type="submit"]');
+                        if (submitBtn && !submitBtn.disabled) {
+                            submitBtn.click();
+                        }
+                    }
+                }
+            });
+            
+            // =============================================
+            // INPUT VALIDATION ON BLUR
+            // =============================================
+            // Add blur validation for inputs
+            document.querySelectorAll('.form-input').forEach(input => {
+                input.addEventListener('blur', function() {
+                    if (this.value.trim() === '') {
+                        this.classList.add('shake');
+                        setTimeout(() => this.classList.remove('shake'), 500);
+                    }
+                });
+            });
+            
+            // =============================================
+            // NETWORK STATUS INDICATOR
+            // =============================================
+            // Update UI based on network status
+            function updateNetworkStatus() {
+                const isOnline = navigator.onLine;
+                if (!isOnline) {
+                    showNotification('warning', 'Offline Mode', 'You are currently offline. Some features may be limited.');
+                }
+            }
+            
+            // Initial check
             updateNetworkStatus();
             
             // Listen for network changes
             window.addEventListener('online', updateNetworkStatus);
             window.addEventListener('offline', updateNetworkStatus);
+            
+            console.log('All initialization complete.');
         });
     </script>
     
@@ -2753,11 +3031,15 @@
                     navigator.serviceWorker.register('/service-worker.js')
                         .then(function(registration) {
                             console.log('Service Worker registered with scope:', registration.scope);
+                            showNotification('success', 'App Ready', 'MoodChat is ready to use!');
                         })
                         .catch(function(error) {
                             console.log('Service Worker registration failed:', error);
+                            showNotification('info', 'App Loaded', 'MoodChat is ready to use!');
                         });
                 }, 1000);
+            } else {
+                showNotification('info', 'Welcome', 'MoodChat is ready to use!');
             }
         });
     </script>

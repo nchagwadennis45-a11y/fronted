@@ -90,6 +90,31 @@ function clearAuthData() {
 }
 
 /**
+ * Safely parses HTTP response with error handling
+ */
+async function safeParseResponse(response) {
+  const text = await response.text();
+  let data;
+  
+  try {
+    data = JSON.parse(text);
+  } catch {
+    // If response is not JSON, throw error with the text
+    throw new Error(text || `HTTP ${response.status}: ${response.statusText}`);
+  }
+  
+  // Check for HTTP errors (400, 401, 429, 500, etc.)
+  if (!response.ok) {
+    // Try to extract error message from JSON response
+    const errorMessage = data?.error || data?.message || data?.details || 
+                        `HTTP ${response.status}: ${response.statusText}`;
+    throw new Error(errorMessage);
+  }
+  
+  return data;
+}
+
+/**
  * Checks if user is already logged in via JWT and validates token
  * Returns true if auto-login succeeds, false otherwise
  */
@@ -130,8 +155,18 @@ async function checkAutoLogin() {
           }
         });
         
-        if (!response || !response.success) {
-          throw new Error('Token validation failed');
+        // Use safe parsing instead of direct response access
+        let parsedResponse;
+        if (response && typeof response === 'object' && 'ok' in response) {
+          // This appears to be a raw Response object
+          parsedResponse = await safeParseResponse(response);
+        } else {
+          // This might already be parsed, but ensure it has expected structure
+          parsedResponse = response;
+        }
+        
+        if (!parsedResponse || !parsedResponse.success) {
+          throw new Error(parsedResponse?.error || 'Token validation failed');
         }
         
         console.log('Token validated successfully with backend');
@@ -216,11 +251,21 @@ async function handleLoginSubmit(event) {
       body: { identifier, password }
     });
     
-    console.log('Login API response:', response);
+    // Safely parse the response
+    let parsedResponse;
+    if (response && typeof response === 'object' && 'ok' in response) {
+      // This is a raw Response object
+      parsedResponse = await safeParseResponse(response);
+    } else {
+      // Already parsed or different format
+      parsedResponse = response;
+    }
+    
+    console.log('Login API response:', parsedResponse);
     
     // Check for success
-    if (response && response.user && response.token) {
-      const { token, user } = response;
+    if (parsedResponse && parsedResponse.user && parsedResponse.token) {
+      const { token, user } = parsedResponse;
       
       // Save JWT and user info
       saveAuthData(token, user);
@@ -243,7 +288,7 @@ async function handleLoginSubmit(event) {
         window.location.href = 'chat.html';
       }, 1000);
     } else {
-      throw new Error(response?.error || 'Login failed');
+      throw new Error(parsedResponse?.error || 'Login failed');
     }
   } catch (error) {
     console.error('Login error:', error);
@@ -295,11 +340,21 @@ async function handleRegisterSubmit(event) {
       body: { username, email, password, firstName, lastName }
     });
     
-    console.log('Register API response:', response);
+    // Safely parse the response
+    let parsedResponse;
+    if (response && typeof response === 'object' && 'ok' in response) {
+      // This is a raw Response object
+      parsedResponse = await safeParseResponse(response);
+    } else {
+      // Already parsed or different format
+      parsedResponse = response;
+    }
+    
+    console.log('Register API response:', parsedResponse);
     
     // Check for success
-    if (response && response.user && response.token) {
-      const { token, user } = response;
+    if (parsedResponse && parsedResponse.user && parsedResponse.token) {
+      const { token, user } = parsedResponse;
       
       // Save JWT and user info
       saveAuthData(token, user);
@@ -322,7 +377,7 @@ async function handleRegisterSubmit(event) {
         window.location.href = 'chat.html';
       }, 1000);
     } else {
-      throw new Error(response?.error || 'Registration failed');
+      throw new Error(parsedResponse?.error || 'Registration failed');
     }
   } catch (error) {
     console.error('Registration error:', error);
@@ -365,10 +420,20 @@ async function handleForgotPasswordSubmit(event) {
       body: { email }
     });
     
-    console.log('Forgot password API response:', response);
+    // Safely parse the response
+    let parsedResponse;
+    if (response && typeof response === 'object' && 'ok' in response) {
+      // This is a raw Response object
+      parsedResponse = await safeParseResponse(response);
+    } else {
+      // Already parsed or different format
+      parsedResponse = response;
+    }
+    
+    console.log('Forgot password API response:', parsedResponse);
     
     // Show success/error message
-    if (response && response.success) {
+    if (parsedResponse && parsedResponse.success) {
       updateNetworkStatusUI('online', 'Password reset email sent!');
       
       // Switch back to login form after delay
@@ -376,7 +441,7 @@ async function handleForgotPasswordSubmit(event) {
         showLoginForm();
       }, 3000);
     } else {
-      throw new Error(response?.message || 'Password reset failed');
+      throw new Error(parsedResponse?.message || 'Password reset failed');
     }
   } catch (error) {
     console.error('Forgot password error:', error);
@@ -585,15 +650,26 @@ async function readNetworkStatusFromApi() {
       );
       
       const response = await Promise.race([statusPromise, timeoutPromise]);
-      console.log('/status API response:', response);
+      
+      // Safely parse the response
+      let parsedResponse;
+      if (response && typeof response === 'object' && 'ok' in response) {
+        // This is a raw Response object
+        parsedResponse = await safeParseResponse(response);
+      } else {
+        // Already parsed or different format
+        parsedResponse = response;
+      }
+      
+      console.log('/status API response:', parsedResponse);
       
       // Check if response indicates backend is reachable
-      const isReachable = response && (
-        response.status === 'ok' || 
-        response.success === true ||
-        response.healthy === true ||
-        (response.statusCode && response.statusCode === 200) ||
-        (response.code && response.code === 200)
+      const isReachable = parsedResponse && (
+        parsedResponse.status === 'ok' || 
+        parsedResponse.success === true ||
+        parsedResponse.healthy === true ||
+        (parsedResponse.statusCode && parsedResponse.statusCode === 200) ||
+        (parsedResponse.code && parsedResponse.code === 200)
       );
       
       console.log('Direct API check says backendReachable:', isReachable);
