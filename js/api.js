@@ -1,6 +1,7 @@
 // api.js - HARDENED BACKEND API INTEGRATION WITH DEFENSIVE FETCH HANDLING
 // ULTRA-ROBUST VERSION: Never breaks, even with incorrect frontend calls
 // UPDATED: Enhanced error handling for 429 and 500 errors
+// UPDATED: Support for new token structure from backend
 // ============================================================================
 // CRITICAL IMPROVEMENTS APPLIED:
 // 1. SINGLE internal fetch function with comprehensive input validation
@@ -9,6 +10,7 @@
 // 4. Graceful degradation when frontend calls API incorrectly
 // 5. Absolute protection against invalid fetch() calls
 // 6. Enhanced error handling for rate limiting and server errors
+// 7. Updated to handle new token structure from backend
 // ============================================================================
 
 // ============================================================================
@@ -302,10 +304,15 @@ window.api = function(endpoint, options = {}) {
         const authUserStr = localStorage.getItem('authUser');
         if (authUserStr && safeOptions.auth !== false) {
             const authUser = JSON.parse(authUserStr);
-            if (authUser.token) {
+            // Handle both old token format and new token format
+            let token = authUser.token;
+            if (!token && authUser.tokens && authUser.tokens.accessToken) {
+                token = authUser.tokens.accessToken;
+            }
+            if (token) {
                 safeOptions.headers = {
                     ...safeOptions.headers,
-                    'Authorization': 'Bearer ' + authUser.token
+                    'Authorization': 'Bearer ' + token
                 };
             }
         }
@@ -323,7 +330,7 @@ window.api = function(endpoint, options = {}) {
 
 const apiObject = {
     _singleton: true,
-    _version: '12.0.0', // Hardened version with enhanced error handling
+    _version: '13.0.0', // Updated version for new token structure
     _safeInitialized: true,
     _backendReachable: null,
     _sessionChecked: false,
@@ -371,18 +378,44 @@ const apiObject = {
             });
             
             if (result.success) {
-                // Store auth data
-                if (result.data.token && result.data.user) {
-                    console.log(`🔧 [API] Login successful, storing authUser`);
+                // UPDATED: Handle new token structure from backend
+                // Backend now returns: { user, tokens: { accessToken, refreshToken } }
+                const userData = result.data;
+                const accessToken = userData.tokens?.accessToken || userData.token;
+                const refreshToken = userData.tokens?.refreshToken;
+                const user = userData.user || userData;
+                
+                if (accessToken && user) {
+                    console.log(`🔧 [API] Login successful, storing authUser with new token structure`);
                     
+                    // Store with new token structure
                     localStorage.setItem('authUser', JSON.stringify({
-                        token: result.data.token,
-                        user: result.data.user
+                        token: accessToken, // Keep backward compatibility
+                        tokens: {
+                            accessToken: accessToken,
+                            refreshToken: refreshToken
+                        },
+                        user: user
+                    }));
+                    
+                    // Backward compatibility with old storage keys
+                    localStorage.setItem('moodchat_auth_token', accessToken);
+                    localStorage.setItem('moodchat_auth_user', JSON.stringify(user));
+                    
+                    if (refreshToken) {
+                        localStorage.setItem('moodchat_refresh_token', refreshToken);
+                    }
+                } else if (userData.token && userData.user) {
+                    // Fallback for old token structure
+                    console.log(`🔧 [API] Login successful (legacy token structure)`);
+                    localStorage.setItem('authUser', JSON.stringify({
+                        token: userData.token,
+                        user: userData.user
                     }));
                     
                     // Backward compatibility
-                    localStorage.setItem('moodchat_auth_token', result.data.token);
-                    localStorage.setItem('moodchat_auth_user', JSON.stringify(result.data.user));
+                    localStorage.setItem('moodchat_auth_token', userData.token);
+                    localStorage.setItem('moodchat_auth_user', JSON.stringify(userData.user));
                 }
                 
                 this._sessionChecked = true;
@@ -391,8 +424,10 @@ const apiObject = {
                 return {
                     success: true,
                     message: 'Login successful',
-                    token: result.data.token,
-                    user: result.data.user,
+                    token: accessToken, // For backward compatibility
+                    accessToken: accessToken,
+                    refreshToken: refreshToken,
+                    user: user,
                     data: result.data,
                     isRateLimited: false,
                     isServerError: false
@@ -504,18 +539,44 @@ const apiObject = {
             });
             
             if (result.success) {
-                // Store auth data
-                if (result.data.token && result.data.user) {
-                    console.log(`🔧 [API] Registration successful`);
+                // UPDATED: Handle new token structure from backend
+                // Backend now returns: { user, tokens: { accessToken, refreshToken } }
+                const userData = result.data;
+                const accessToken = userData.tokens?.accessToken || userData.token;
+                const refreshToken = userData.tokens?.refreshToken;
+                const user = userData.user || userData;
+                
+                if (accessToken && user) {
+                    console.log(`🔧 [API] Registration successful, storing with new token structure`);
                     
+                    // Store with new token structure
                     localStorage.setItem('authUser', JSON.stringify({
-                        token: result.data.token,
-                        user: result.data.user
+                        token: accessToken, // Keep backward compatibility
+                        tokens: {
+                            accessToken: accessToken,
+                            refreshToken: refreshToken
+                        },
+                        user: user
+                    }));
+                    
+                    // Backward compatibility with old storage keys
+                    localStorage.setItem('moodchat_auth_token', accessToken);
+                    localStorage.setItem('moodchat_auth_user', JSON.stringify(user));
+                    
+                    if (refreshToken) {
+                        localStorage.setItem('moodchat_refresh_token', refreshToken);
+                    }
+                } else if (userData.token && userData.user) {
+                    // Fallback for old token structure
+                    console.log(`🔧 [API] Registration successful (legacy token structure)`);
+                    localStorage.setItem('authUser', JSON.stringify({
+                        token: userData.token,
+                        user: userData.user
                     }));
                     
                     // Backward compatibility
-                    localStorage.setItem('moodchat_auth_token', result.data.token);
-                    localStorage.setItem('moodchat_auth_user', JSON.stringify(result.data.user));
+                    localStorage.setItem('moodchat_auth_token', userData.token);
+                    localStorage.setItem('moodchat_auth_user', JSON.stringify(userData.user));
                 }
                 
                 this._sessionChecked = true;
@@ -524,8 +585,10 @@ const apiObject = {
                 return {
                     success: true,
                     message: 'Registration successful',
-                    token: result.data.token,
-                    user: result.data.user,
+                    token: accessToken, // For backward compatibility
+                    accessToken: accessToken,
+                    refreshToken: refreshToken,
+                    user: user,
                     data: result.data,
                     isRateLimited: false,
                     isServerError: false
@@ -701,7 +764,9 @@ const apiObject = {
             let authUser;
             try {
                 authUser = JSON.parse(authUserStr);
-                if (!authUser.token || !authUser.user) {
+                // UPDATED: Check for both old and new token structures
+                const hasToken = authUser.token || (authUser.tokens && authUser.tokens.accessToken);
+                if (!hasToken || !authUser.user) {
                     // Soft failure - don't clear, just report
                     this._sessionChecked = true;
                     return {
@@ -752,11 +817,14 @@ const apiObject = {
             }
             
             try {
+                // Get token from new or old structure
+                const token = authUser.tokens?.accessToken || authUser.token;
+                
                 // USE THE SINGLE FETCH FUNCTION with proper headers
                 const result = await _safeFetchCall(`${BASE_URL}/auth/me`, {
                     method: 'GET',
                     headers: {
-                        'Authorization': 'Bearer ' + authUser.token,
+                        'Authorization': 'Bearer ' + token,
                         'Content-Type': 'application/json'
                     }
                 });
@@ -1101,7 +1169,9 @@ const apiObject = {
             if (!authUserStr) return false;
             
             const authUser = JSON.parse(authUserStr);
-            return !!(authUser.token && authUser.user);
+            // UPDATED: Check for both old and new token structures
+            const hasToken = authUser.token || (authUser.tokens && authUser.tokens.accessToken);
+            return !!(hasToken && authUser.user);
         } catch (error) {
             return false;
         }
@@ -1125,10 +1195,28 @@ const apiObject = {
             const authUserStr = localStorage.getItem('authUser');
             if (authUserStr) {
                 const authUser = JSON.parse(authUserStr);
-                return authUser.token || null;
+                // UPDATED: Return accessToken from new structure or old token
+                return authUser.tokens?.accessToken || authUser.token || null;
             }
         } catch (e) {
             console.error('🔧 [API] Error parsing authUser for token:', e);
+        }
+        return null;
+    },
+    
+    getAccessToken: function() {
+        return this.getCurrentToken();
+    },
+    
+    getRefreshToken: function() {
+        try {
+            const authUserStr = localStorage.getItem('authUser');
+            if (authUserStr) {
+                const authUser = JSON.parse(authUserStr);
+                return authUser.tokens?.refreshToken || null;
+            }
+        } catch (e) {
+            console.error('🔧 [API] Error parsing authUser for refresh token:', e);
         }
         return null;
     },
@@ -1139,6 +1227,7 @@ const apiObject = {
             localStorage.removeItem('authUser');
             localStorage.removeItem('moodchat_auth_token');
             localStorage.removeItem('moodchat_auth_user');
+            localStorage.removeItem('moodchat_refresh_token');
             this._sessionChecked = false;
             console.log('🔧 [API] User logged out');
             return { 
@@ -1163,6 +1252,7 @@ const apiObject = {
         localStorage.removeItem('authUser');
         localStorage.removeItem('moodchat_auth_token');
         localStorage.removeItem('moodchat_auth_user');
+        localStorage.removeItem('moodchat_refresh_token');
         this._sessionChecked = false;
     },
     
@@ -1199,7 +1289,8 @@ const apiObject = {
             baseApiUrl: BASE_URL,
             sessionChecked: this._sessionChecked,
             hasAuthToken: !!this.getCurrentToken(),
-            hasAuthUser: !!localStorage.getItem('authUser')
+            hasAuthUser: !!localStorage.getItem('authUser'),
+            tokenStructure: this.getCurrentToken() ? (localStorage.getItem('authUser')?.includes('"tokens"') ? 'new' : 'old') : 'none'
         };
     },
     
@@ -1208,7 +1299,7 @@ const apiObject = {
     // ============================================================================
     
     initialize: async function() {
-        console.log('🔧 [API] ⚡ MoodChat API v12.0.0 (HARDENED WITH ENHANCED ERROR HANDLING) initializing...');
+        console.log('🔧 [API] ⚡ MoodChat API v13.0.0 (UPDATED FOR NEW TOKEN STRUCTURE) initializing...');
         console.log('🔧 [API] 🔗 Backend URL:', BASE_URL);
         console.log('🔧 [API] 🌐 Environment:', IS_LOCAL_DEVELOPMENT ? 'Local' : 'Production');
         
@@ -1255,6 +1346,7 @@ const apiObject = {
                 console.log('🔧 [API] 📶 Backend status:', health.message);
                 console.log('🔧 [API] 🔐 Auth:', this.isLoggedIn() ? 'Logged in' : 'Not logged in');
                 console.log('🔧 [API] 🔑 Token present:', !!this.getCurrentToken());
+                console.log('🔧 [API] 🔄 Token structure:', this.getConnectionStatus().tokenStructure);
                 console.log('🔧 [API] 💾 Device ID:', this.getDeviceId());
             } catch (error) {
                 console.log('🔧 [API] Initial health check failed:', error.message);
@@ -1288,7 +1380,9 @@ const apiObject = {
         
         try {
             const authUser = JSON.parse(authUserStr);
-            if (!authUser.token || !authUser.user) {
+            // UPDATED: Check for both old and new token structures
+            const hasToken = authUser.token || (authUser.tokens && authUser.tokens.accessToken);
+            if (!hasToken || !authUser.user) {
                 return { 
                     success: false, 
                     authenticated: false, 
@@ -1332,7 +1426,8 @@ const apiObject = {
             hasToken: !!this.getCurrentToken(),
             hasAuthUser: !!localStorage.getItem('authUser'),
             hardened: true,
-            enhancedErrorHandling: true
+            enhancedErrorHandling: true,
+            supportsNewTokenStructure: true
         };
         
         const events = ['api-ready', 'apiready', 'apiReady'];
@@ -1368,7 +1463,7 @@ const apiObject = {
                     // Silent fail
                 }
             });
-            console.log('🔧 [API] API synchronization ready (hardened with enhanced error handling)');
+            console.log('🔧 [API] API synchronization ready (updated for new token structure)');
         }, 1000);
     },
     
@@ -1384,6 +1479,7 @@ const apiObject = {
                 authUser: !!localStorage.getItem('authUser'),
                 moodchat_auth_token: !!localStorage.getItem('moodchat_auth_token'),
                 moodchat_auth_user: !!localStorage.getItem('moodchat_auth_user'),
+                moodchat_refresh_token: !!localStorage.getItem('moodchat_refresh_token'),
                 deviceId: !!localStorage.getItem('moodchat_device_id')
             },
             network: {
@@ -1394,20 +1490,24 @@ const apiObject = {
                 checked: this._sessionChecked,
                 authenticated: this.isLoggedIn(),
                 user: this.getCurrentUser(),
-                token: this.getCurrentToken() ? 'Present' : 'Missing'
+                accessToken: this.getAccessToken() ? 'Present' : 'Missing',
+                refreshToken: this.getRefreshToken() ? 'Present' : 'Missing',
+                tokenStructure: this.getConnectionStatus().tokenStructure
             },
             config: {
                 backendUrl: BASE_URL,
                 environment: IS_LOCAL_DEVELOPMENT ? 'local' : 'production',
                 hardened: true,
-                enhancedErrorHandling: true
+                enhancedErrorHandling: true,
+                supportsNewTokenStructure: true
             },
             validation: {
                 methodNormalization: 'ACTIVE',
                 endpointSanitization: 'ACTIVE',
                 singleFetchFunction: 'ACTIVE',
                 offlineDetection: 'ACTIVE',
-                errorTypeDetection: 'ACTIVE'
+                errorTypeDetection: 'ACTIVE',
+                tokenStructureSupport: 'ACTIVE'
             }
         };
         
@@ -1441,7 +1541,7 @@ const apiObject = {
 Object.assign(window.api, apiObject);
 Object.setPrototypeOf(window.api, Object.getPrototypeOf(apiObject));
 
-console.log('🔧 [API] Starting hardened initialization with enhanced error handling...');
+console.log('🔧 [API] Starting hardened initialization with new token structure support...');
 
 // Safe initialization with timeout
 setTimeout(() => {
@@ -1544,7 +1644,9 @@ setTimeout(() => {
                     const authUserStr = localStorage.getItem('authUser');
                     if (!authUserStr) return false;
                     const authUser = JSON.parse(authUserStr);
-                    return !!(authUser.token && authUser.user);
+                    // Check for both old and new token structures
+                    const hasToken = authUser.token || (authUser.tokens && authUser.tokens.accessToken);
+                    return !!(hasToken && authUser.user);
                 } catch (e) {
                     return false;
                 }
@@ -1566,7 +1668,7 @@ setTimeout(() => {
                     const authUserStr = localStorage.getItem('authUser');
                     if (authUserStr) {
                         const authUser = JSON.parse(authUserStr);
-                        return authUser.token || null;
+                        return authUser.tokens?.accessToken || authUser.token || null;
                     }
                 } catch (e) {
                     return null;
@@ -1668,7 +1770,7 @@ window.__MOODCHAT_API_INSTANCE = window.api;
 window.__MOODCHAT_API_READY = true;
 window.MOODCHAT_API_READY = true;
 
-console.log('🔧 [API] HARDENED Backend API integration complete with enhanced error handling');
+console.log('🔧 [API] UPDATED Backend API integration complete with new token structure support');
 console.log('🔧 [API] ✅ Method normalization: ACTIVE');
 console.log('🔧 [API] ✅ Endpoint sanitization: ACTIVE');
 console.log('🔧 [API] ✅ Single fetch function: ACTIVE');
@@ -1676,4 +1778,5 @@ console.log('🔧 [API] ✅ Offline detection: ACTIVE');
 console.log('🔧 [API] ✅ Rate limit error detection: ACTIVE');
 console.log('🔧 [API] ✅ Server error detection: ACTIVE');
 console.log('🔧 [API] ✅ AbortError handling: FIXED (does not mark backend offline)');
+console.log('🔧 [API] ✅ New token structure support: ACTIVE');
 console.log('🔧 [API] ✅ NEVER breaks on frontend errors');
